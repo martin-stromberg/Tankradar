@@ -427,3 +427,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+issue.md
+
+# Abgelegte Windows-Zwischenstände (lokal, nicht versioniert)
+review-versions/
