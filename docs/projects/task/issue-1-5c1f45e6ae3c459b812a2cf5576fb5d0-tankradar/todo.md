@@ -13,7 +13,7 @@ Branch: `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar`
 | [x] | 5a | Offene Punkte prüfen und ggf. Planung wiederholen | `project-plan.md` (aktualisiert) |
 | [x] | 5b | Projektplan gegen Anforderung prüfen (Unteragent) | `project-plan-check.md` |
 | [x] | 5c | Planungscommit | – |
-| [ ] | 6 | Entwicklungsschritte-Tracking anlegen | `steps.md` |
+| [x] | 6 | Entwicklungsschritte-Tracking anlegen | `steps.md` |
 | [ ] | 7 | Entwicklungsschritte abarbeiten (Schleife über `/lifecycle`) | Codeänderungen je Schritt |
 | [ ] | – | Projekt-Verzeichnis aufräumen | – |
 | [ ] | 8 | Abschlusscommit | – |
