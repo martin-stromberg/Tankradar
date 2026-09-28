@@ -24,7 +24,7 @@ Einstellungen für Ihre App — Sprache, Darstellung und weitere Konfigurationen
 
 ### Navigation zwischen den Bereichen
 
-Tippen Sie auf die Schaltfläche des gewünschten Bereichs am unteren Bildschirmrand. Die App wechselt sofort zu diesem Bereich.
+Tippen Sie auf die Schaltfläche des gewünschten Bereichs am unteren Bildschirmrand. Die App wechselt sofort zu diesem Bereich. Der aktive Bereich ist deutlich an der Petrol-/Teal-Farbe von Titel und Symbol erkennbar, während die übrigen Schaltflächen gedämpft dargestellt werden. Der Hintergrund der Menüleiste passt sich ebenfalls an Hell- oder Dunkelmodus an.
 
 ### Hell- und Dunkelmodus
 

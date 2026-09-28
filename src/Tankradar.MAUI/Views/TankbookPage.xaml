@@ -12,7 +12,8 @@
         <Label Text="Tankbuch"
                Style="{StaticResource headline-lg}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center" />
+               HorizontalOptions="Center"
+               AutomationId="TankbookPage.Headline" />
         <Label Text="Hier erfasst du bald deine Fahrzeuge und Tankvorgänge."
                Style="{StaticResource body-md}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"

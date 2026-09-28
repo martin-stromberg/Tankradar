@@ -5,7 +5,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Tankradar.MAUI.Views"
     Title="Tankradar"
-    FlyoutBehavior="Disabled">
+    FlyoutBehavior="Disabled"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}"
+    Shell.TabBarForegroundColor="{StaticResource ColorPrimaryTeal}"
+    Shell.TabBarTitleColor="{StaticResource ColorPrimaryTeal}"
+    Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}">
 
     <TabBar>
         <ShellContent

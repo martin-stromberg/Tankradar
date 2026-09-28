@@ -12,7 +12,8 @@
         <Label Text="Karte"
                Style="{StaticResource headline-lg}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center" />
+               HorizontalOptions="Center"
+               AutomationId="MapPage.Headline" />
         <Label Text="Hier findest du bald Tankstellen in deiner Nähe."
                Style="{StaticResource body-md}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"

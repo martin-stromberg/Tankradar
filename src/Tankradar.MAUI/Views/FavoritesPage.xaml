@@ -12,7 +12,8 @@
         <Label Text="Favoriten"
                Style="{StaticResource headline-lg}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center" />
+               HorizontalOptions="Center"
+               AutomationId="FavoritesPage.Headline" />
         <Label Text="Hier erscheinen bald deine favorisierten Tankstellen in Gruppen."
                Style="{StaticResource body-md}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"

@@ -22,7 +22,7 @@ Die vier Schaltflächen am unteren Bildschirmrand zeigen die Symbole für:
 - **Tankbuch** (Quittungs-Symbol)
 - **Optionen** (Zahnrad-Symbol)
 
-Tippen Sie auf eine dieser Schaltflächen, um zu diesem Bereich zu wechseln. Die aktive Schaltfläche ist hervorgehoben.
+Tippen Sie auf eine dieser Schaltflächen, um zu diesem Bereich zu wechseln. Die aktive Schaltfläche wird in der Petrol-/Teal-Akzentfarbe der App hervorgehoben, die übrigen Schaltflächen erscheinen gedämpft.
 
 ### 3. Bereich erkunden
 

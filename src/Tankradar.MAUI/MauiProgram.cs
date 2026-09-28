@@ -21,14 +21,18 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .ConfigureFonts(fonts =>
             {
-                // Inter/JetBrains Mono sind als Ziel-Schriftarten vorgesehen; ohne verfügbare TTF-Dateien
-                // (siehe README, Abschnitt "Bekannte Einschränkungen") wird auf die mitgelieferten
-                // OpenSans-Schriften bzw. die Plattform-Systemschrift zurückgegriffen.
+                // Vollständige Font-Registrierung: OpenSans (Fallback-Schrift), Inter (Fließtext/Headlines)
+                // und JetBrains Mono (Code-Darstellung), jeweils Regular- und SemiBold-Schnitt.
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Inter-Regular.ttf", "InterRegular");
+                fonts.AddFont("Inter-SemiBold.ttf", "InterSemibold");
+                fonts.AddFont("JetBrainsMono-Regular.ttf", "JetBrainsMonoRegular");
+                fonts.AddFont("JetBrainsMono-SemiBold.ttf", "JetBrainsMonoSemibold");
             });
 
         builder.Services.AddSingleton<AppConfiguration>();
+        builder.Services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
 
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();

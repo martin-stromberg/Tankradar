@@ -71,7 +71,10 @@ gebaut worden sein (geschieht automatisch, wenn die gesamte Solution gebaut/gete
 
 E2E-Tests verwenden ein eigenes, temporäres Testdatenverzeichnis (Umgebungsvariable
 `TEST_DATA_PATH`, vom Testlauf automatisch gesetzt und danach wieder gelöscht), damit sie nicht mit
-Entwicklungs- oder Echtbetriebsdaten kollidieren.
+Entwicklungs- oder Echtbetriebsdaten kollidieren. Die App selbst löst ihr Datenverzeichnis zentral
+über `IAppDataPathProvider` (`src/Tankradar.MAUI/Services/AppDataPathProvider.cs`) auf: Ist
+`TEST_DATA_PATH` gesetzt, wird dieses Verzeichnis verwendet, andernfalls das reguläre
+Plattform-Datenverzeichnis (`FileSystem.AppDataDirectory`).
 
 ## Windows-Zwischenstände (Review-Versionen)
 
@@ -106,6 +109,12 @@ sind im projektweiten Design-System-Inventar dokumentiert:
 Hell- und Dunkelmodus folgen dem System-Theme (`AppTheme.Unspecified`); Farben werden über
 `AppThemeBinding` auf Light-/Dark-Ressourcen aufgelöst.
 
+Als Schriften sind Inter (Fließtext, Headlines, `price-hero`) und JetBrains Mono (`label-code`)
+vollständig als TTF-Dateien in `src/Tankradar.MAUI/Resources/Fonts/` eingebettet und über
+`MauiProgram.ConfigureFonts(...)` registriert; OpenSans dient als zusätzliche Basisschrift.
+Lizenzhinweise (SIL Open Font License) liegen als `OFL-Inter.txt` und `OFL-JetBrainsMono.txt` im
+selben Verzeichnis.
+
 ### Bewusste Designabweichung
 
 Der Umschalter „Kraftstoff/Laden" und die Ladestecker-Kennzeichnungen aus dem Designentwurf werden
@@ -114,14 +123,6 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
 
 ## Bekannte Einschränkungen
 
-- **Schriftarten Inter und JetBrains Mono:** Der Designentwurf (`design-draft/`) enthält keine
-  TTF-Dateien dieser Schriftarten, und in dieser Entwicklungsumgebung bestand kein Internetzugriff,
-  um sie zu beschaffen. Die App verwendet daher aktuell die mitgelieferten OpenSans-Schriften bzw.
-  die Plattform-Systemschrift als Fallback (siehe `MauiProgram.cs`). Für `label-code`
-  (JetBrains-Mono-Ersatz) wird plattformabhängig eine vorhandene Monospace-Schrift verwendet
-  (Windows: Consolas, iOS: Menlo). **TODO:** Sobald die offiziellen Inter- und JetBrains-Mono-TTF-
-  Dateien vorliegen, in `src/Tankradar.MAUI/Resources/Fonts/` ablegen, per `<MauiFont>` im
-  `.csproj` registrieren und in `MauiProgram.cs` per `AddFont()` einbinden.
 - **iOS-Build:** Diese Entwicklungsumgebung ist ein Windows-Rechner ohne Mac/Xcode. Die
   `.csproj`-Konfiguration enthält iOS 16 korrekt als Ziel-Framework/Mindestversion
   (`net10.0-ios`, `SupportedOSPlatformVersion=16.0`); ein tatsächlicher iOS-Build (App-Bundle,

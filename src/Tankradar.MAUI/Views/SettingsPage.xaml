@@ -12,7 +12,8 @@
         <Label Text="Optionen"
                Style="{StaticResource headline-lg}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center" />
+               HorizontalOptions="Center"
+               AutomationId="SettingsPage.Headline" />
         <Label Text="Hier stellst du bald Spritsorten, Standort und Ansicht ein."
                Style="{StaticResource body-md}"
                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
