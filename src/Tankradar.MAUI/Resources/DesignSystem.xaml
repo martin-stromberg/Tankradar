@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Farben: Markenpalette -->
+    <Color x:Key="ColorPrimaryTeal">#0F766E</Color>
+    <Color x:Key="ColorSecondaryEmerald">#10B981</Color>
+    <Color x:Key="ColorTertiaryAmber">#F59E0B</Color>
+    <Color x:Key="ColorErrorRed">#EF4444</Color>
+    <Color x:Key="ColorNeutralGray">#94A3B8</Color>
+
+    <!-- Farben: Hintergrund/Oberfläche (Light/Dark) -->
+    <Color x:Key="ColorBackgroundLight">#FAF8FF</Color>
+    <Color x:Key="ColorBackgroundDark">#131B2E</Color>
+    <Color x:Key="ColorSurfaceLight">#FFFFFF</Color>
+    <Color x:Key="ColorSurfaceDark">#283044</Color>
+    <Color x:Key="ColorBorderLight">#E2E8F0</Color>
+    <Color x:Key="ColorBorderDark">#3E4947</Color>
+
+    <!-- Farben: Text (Light/Dark) -->
+    <Color x:Key="ColorTextPrimaryLight">#0F172A</Color>
+    <Color x:Key="ColorTextPrimaryDark">#EEF0FF</Color>
+    <Color x:Key="ColorTextSecondaryLight">#64748B</Color>
+    <Color x:Key="ColorTextSecondaryDark">#94A3B8</Color>
+
+    <!-- Spacing-Skala -->
+    <x:Double x:Key="space-xs">4</x:Double>
+    <x:Double x:Key="space-sm">8</x:Double>
+    <x:Double x:Key="space-md">16</x:Double>
+    <x:Double x:Key="space-lg">24</x:Double>
+    <x:Double x:Key="space-xl">40</x:Double>
+
+    <!-- Border-Radius-Skala -->
+    <CornerRadius x:Key="rounded-sm">4</CornerRadius>
+    <CornerRadius x:Key="rounded">8</CornerRadius>
+    <CornerRadius x:Key="rounded-md">12</CornerRadius>
+    <CornerRadius x:Key="rounded-lg">16</CornerRadius>
+    <CornerRadius x:Key="rounded-xl">24</CornerRadius>
+    <CornerRadius x:Key="rounded-full">9999</CornerRadius>
+
+    <!-- Mindestgröße für Bedienelemente (44x44 px, iOS/Android-Standard) -->
+    <x:Double x:Key="MinimumTouchTarget">44</x:Double>
+
+    <!-- Schatten-Ebenen 0-3 -->
+    <Shadow x:Key="ShadowLevel0" Brush="Black" Offset="0,0" Radius="0" Opacity="0" />
+    <Shadow x:Key="ShadowLevel1" Brush="Black" Offset="0,1" Radius="3" Opacity="0.04" />
+    <Shadow x:Key="ShadowLevel2" Brush="Black" Offset="0,4" Radius="12" Opacity="0.08" />
+    <Shadow x:Key="ShadowLevel3" Brush="Black" Offset="0,12" Radius="32" Opacity="0.16" />
+
+    <!-- Typografie -->
+    <Style x:Key="headline-xl" TargetType="Label">
+        <Setter Property="FontSize" Value="32" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="LineHeight" Value="1.25" />
+    </Style>
+    <Style x:Key="headline-lg" TargetType="Label">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="LineHeight" Value="1.333" />
+    </Style>
+    <Style x:Key="headline-md" TargetType="Label">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="LineHeight" Value="1.4" />
+    </Style>
+    <Style x:Key="body-lg" TargetType="Label">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="LineHeight" Value="1.5" />
+    </Style>
+    <Style x:Key="body-md" TargetType="Label">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="1.429" />
+    </Style>
+    <Style x:Key="body-sm" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="1.333" />
+    </Style>
+    <Style x:Key="price-hero" TargetType="Label">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="LineHeight" Value="1.143" />
+    </Style>
+    <Style x:Key="label-code" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="1.333" />
+        <Setter Property="CharacterSpacing" Value="0.24" />
+        <Setter Property="FontFamily">
+            <Setter.Value>
+                <OnPlatform x:TypeArguments="x:String">
+                    <On Platform="WinUI" Value="Consolas" />
+                    <On Platform="iOS" Value="Menlo-Regular" />
+                </OnPlatform>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

@@ -119,6 +119,8 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+# but not changes.log, the project's tracked changelog (see docs/help conventions)
+!changes.log
 *.tlog
 *.vspscc
 *.vssscc
@@ -431,3 +433,11 @@ issue.md
 
 # Abgelegte Windows-Zwischenstände (lokal, nicht versioniert)
 review-versions/
+
+# Designentwurf-Rohdaten (ZIP und ggf. entpackte Inhalte), nicht versionieren
+design-draft/
+
+# Ausnahme von der Regel "*.e2e" (Visual Studio Trace Files) weiter oben: Der Verzeichnisname
+# des E2E-Testprojekts "Tankradar.Tests.E2E" endet zufaellig ebenfalls auf ".e2e" (Groß-/
+# Kleinschreibung wird von Git unter Windows ignoriert) und wuerde sonst komplett ausgeschlossen.
+!src/Tankradar.Tests.E2E/
