@@ -1,0 +1,19 @@
+using Tankradar.MAUI.ViewModels;
+
+namespace Tankradar.MAUI.Views;
+
+/// <summary>
+/// Seite für den Bereich „Karte" (Suche). Aktuell ohne Inhalt außer Platzhaltertext.
+/// </summary>
+public partial class MapPage : TankradarContentPage
+{
+    /// <summary>
+    /// Erstellt die Seite und setzt das per Dependency Injection bereitgestellte <see cref="MapViewModel"/> als Bindungskontext.
+    /// </summary>
+    /// <param name="viewModel">Das per Dependency Injection bereitgestellte ViewModel der Seite.</param>
+    public MapPage(MapViewModel viewModel)
+    {
+        InitializeComponent();
+        BindingContext = viewModel;
+    }
+}

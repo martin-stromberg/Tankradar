@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Tankradar.MAUI.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+    Title="Tankradar"
+    FlyoutBehavior="Disabled"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}"
+    Shell.TabBarForegroundColor="{StaticResource ColorPrimaryTeal}"
+    Shell.TabBarTitleColor="{StaticResource ColorPrimaryTeal}"
+    Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}">
+
+    <TabBar>
+        <ShellContent
+            Title="Favoriten"
+            Icon="icon_favorites"
+            Route="favorites"
+            ContentTemplate="{DataTemplate views:FavoritesPage}" />
+
+        <ShellContent
+            Title="Karte"
+            Icon="icon_map"
+            Route="map"
+            ContentTemplate="{DataTemplate views:MapPage}" />
+
+        <ShellContent
+            Title="Tankbuch"
+            Icon="icon_tankbook"
+            Route="tankbook"
+            ContentTemplate="{DataTemplate views:TankbookPage}" />
+
+        <ShellContent
+            Title="Optionen"
+            Icon="icon_settings"
+            Route="settings"
+            ContentTemplate="{DataTemplate views:SettingsPage}" />
+    </TabBar>
+
+</Shell>

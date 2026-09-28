@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             x:Class="Tankradar.MAUI.Views.MapPage"
+             Title="Karte"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <VerticalStackLayout Padding="{StaticResource space-md}"
+                          Spacing="{StaticResource space-sm}"
+                          VerticalOptions="Center">
+        <Label Text="Karte"
+               Style="{StaticResource headline-lg}"
+               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+               HorizontalOptions="Center"
+               AutomationId="MapPage.Headline" />
+        <Label Text="Hier findest du bald Tankstellen in deiner Nähe."
+               Style="{StaticResource body-md}"
+               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+               HorizontalOptions="Center"
+               HorizontalTextAlignment="Center" />
+    </VerticalStackLayout>
+
+</views:TankradarContentPage>

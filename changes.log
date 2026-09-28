@@ -1,0 +1,19 @@
+## 2026-09-28 — Nachbesserung: Schriften, Navigation-Styling und Testdatenverzeichnis (Tankradar Schritt 1)
+
+- Design-System bindet jetzt tatsächlich die Schriften Inter und JetBrains Mono ein; alle Textstile (Überschriften, Fließtext, Preisanzeige, Code-Darstellung) verwenden die vorgesehenen Schriftarten statt einer Ersatzschrift.
+- Hauptnavigation (`AppShell`) zeigt den aktiven Tab in der Teal-Markenfarbe hervorgehoben, inaktive Tabs gedämpft und die Tableiste mit Oberflächenfarbe, passend zu Hell- und Dunkelmodus.
+- Neuer zentraler Dienst `IAppDataPathProvider`/`AppDataPathProvider` (`Tankradar.MAUI.Services`) ermittelt das App-Datenverzeichnis und leitet es bei gesetzter Testumgebungsvariable `TEST_DATA_PATH` auf ein isoliertes Testverzeichnis um, damit automatisierte Tests nicht die echten App-Daten berühren.
+- E2E-Navigationstest (`NavigationE2ETests`) prüft nach jedem Tab-Wechsel jetzt ein seitenspezifisches Element (`AutomationId`) statt nur den Tab-Namen, wodurch ein tatsächlicher Seitenwechsel zuverlässig nachgewiesen wird.
+- App-Icon und Startbildschirm verwenden nun die Teal-Markenfarbe statt der MAUI-Vorlagenfarbe; das ungenutzte Vorlagenbild `dotnet_bot.png` wurde entfernt.
+
+## 2026-09-28 — App-Grundgerüst, Navigation und Design-System (Schritt 1)
+
+- Hauptprojekt `Tankradar.MAUI` mit MVVM-Architektur für iOS 16+ und Windows etabliert
+- Bottom-TabBar-Navigation mit vier Hauptbereichen: Favoriten, Karte, Tankbuch, Optionen
+- Zentrales Design-System mit Farbpalette (Teal, Emerald, Amber, Rot), Typografie (Inter, JetBrains Mono), Spacing-Tokens, Border-Radius und Schatten-Ebenen
+- Hell- und Dunkelmodus mit AppThemeBinding-Unterstützung
+- Test-Infrastruktur mit Unit-, Integrations- und E2E-Tests (FlaUI) aufgebaut
+- AppConfiguration für Bundle-ID-Verwaltung mit Umgebungsvariablen-Support
+- PowerShell-Skript `create-review-version.ps1` für Windows-Zwischenstände implementiert
+- ADR zur Designabweichung (keine Strompreise in v1.0) dokumentiert
+- Version 0.1.0 als Initial-Release vorbereitet
