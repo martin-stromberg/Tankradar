@@ -27,23 +27,33 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   esac
 done
 
+# --- Python-Interpreter ermitteln (python3 bevorzugt, sonst python) ---
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON="python"
+else
+  echo "FEHLER: Weder 'python3' noch 'python' im PATH gefunden. Die Git-Hooks benötigen Python 3.x." >&2
+  exit 1
+fi
+
 # --- Strict Checks (ganzes Repo, blockierend) ---
 echo "Prüfe: Platzhalter-Implementierungen (no-notimplemented-check.py --all --strict) ..."
-if ! python3 "$repo_root/.githooks/no-notimplemented-check.py" --all --strict; then
+if ! "$PYTHON" "$repo_root/.githooks/no-notimplemented-check.py" --all --strict; then
   echo "FEHLER: Platzhalter-Implementierungen gefunden. Push abgebrochen." >&2
   exit 1
 fi
 echo
 
 echo "Prüfe: Enum-Testabdeckung (enum-coverage-check.py --all --strict) ..."
-if ! python3 "$repo_root/.githooks/enum-coverage-check.py" --all --strict; then
+if ! "$PYTHON" "$repo_root/.githooks/enum-coverage-check.py" --all --strict; then
   echo "FEHLER: Unvollständige Enum-Testabdeckung. Push abgebrochen." >&2
   exit 1
 fi
 echo
 
 echo "Prüfe: Verbotene Muster / Secrets (forbidden-patterns-check.py --all --strict) ..."
-if ! python3 "$repo_root/.githooks/forbidden-patterns-check.py" --all --strict; then
+if ! "$PYTHON" "$repo_root/.githooks/forbidden-patterns-check.py" --all --strict; then
   echo "FEHLER: Verbotene Muster (Secrets, Zertifikate, DB-Dumps, große Logdateien) gefunden. Push abgebrochen." >&2
   exit 1
 fi
@@ -51,7 +61,7 @@ echo
 
 # --- Conventional Commits Validierung (blockierend) ---
 echo "Prüfe: Commit-Nachrichten (conventional-commits-check.py) ..."
-if ! python3 "$repo_root/.githooks/conventional-commits-check.py"; then
+if ! "$PYTHON" "$repo_root/.githooks/conventional-commits-check.py"; then
   echo "FEHLER: Commit-Nachrichten entsprechen nicht dem Conventional-Commits-Format. Push abgebrochen." >&2
   exit 1
 fi
@@ -59,7 +69,7 @@ echo
 
 # --- Test-Ausführungs-Validierung (blockierend) ---
 echo "Prüfe: Testausführung (test-execution-check.py) ..."
-if ! python3 "$repo_root/.githooks/test-execution-check.py"; then
+if ! "$PYTHON" "$repo_root/.githooks/test-execution-check.py"; then
   echo "FEHLER: Tests sind fehlgeschlagen oder ein Timeout wurde erreicht. Push abgebrochen." >&2
   exit 1
 fi

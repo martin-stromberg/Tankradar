@@ -26,12 +26,22 @@ case "$branch_name" in
     ;;
 esac
 
+# --- Python-Interpreter ermitteln (python3 bevorzugt, sonst python) ---
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON="python"
+else
+  echo "FEHLER: Weder 'python3' noch 'python' im PATH gefunden. Die Git-Hooks benötigen Python 3.x." >&2
+  exit 1
+fi
+
 # Führt einen Python-Check aus; meldet Verstöße als Warnung, blockiert aber nicht.
 warn_check() {
   label="$1"
   shift
   echo "Prüfe: $label ..."
-  if ! python3 "$@"; then
+  if ! "$PYTHON" "$@"; then
     echo "WARNUNG: $label meldet Verstöße (siehe Ausgabe oben). Der Commit wird trotzdem fortgesetzt, muss aber vor dem Push behoben sein." >&2
   fi
   echo
@@ -45,7 +55,7 @@ warn_check "Verbotene Muster / Secrets (forbidden-patterns-check.py)" "$repo_roo
 
 # --- Code-Formatierung (dotnet format --verify-no-changes), nur Warnung ---
 echo "Prüfe: Code-Formatierung (format-code-style-check.py) ..."
-python3 "$repo_root/.githooks/format-code-style-check.py"
+"$PYTHON" "$repo_root/.githooks/format-code-style-check.py"
 echo
 
 # --- Optionale .NET-Prüfprojekte (falls vorhanden), nur Warnung ---
