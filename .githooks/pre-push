@@ -1,0 +1,68 @@
+#!/usr/bin/env sh
+# Pre-Push-Hook: strikte Qualitätssicherung für Tankradar vor dem Push.
+#
+# Blockiert direkte Pushes auf main/staging (Branch-Schutz) sowie Pushes bei
+# Verstößen gegen die strikten Checks, das Conventional-Commits-Format oder
+# fehlschlagende Tests.
+#
+# Notfall-Fallback: SKIP_HOOKS=1 git push ... überspringt alle Hooks
+# (mit sichtbarer Warnung auf stderr).
+set -u
+
+if [ "${SKIP_HOOKS:-}" = "1" ]; then
+  echo "WARNUNG: SKIP_HOOKS=1 gesetzt - alle Git-Hooks werden übersprungen." >&2
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+# --- Branch-Schutz (blockierend) ---
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/staging)
+      branch_name="${remote_ref#refs/heads/}"
+      echo "FEHLER: Direkte Pushes auf '$branch_name' sind nicht erlaubt. Bitte per Pull Request aktualisieren." >&2
+      exit 1
+      ;;
+  esac
+done
+
+# --- Strict Checks (ganzes Repo, blockierend) ---
+echo "Prüfe: Platzhalter-Implementierungen (no-notimplemented-check.py --all --strict) ..."
+if ! python3 "$repo_root/.githooks/no-notimplemented-check.py" --all --strict; then
+  echo "FEHLER: Platzhalter-Implementierungen gefunden. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Enum-Testabdeckung (enum-coverage-check.py --all --strict) ..."
+if ! python3 "$repo_root/.githooks/enum-coverage-check.py" --all --strict; then
+  echo "FEHLER: Unvollständige Enum-Testabdeckung. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Verbotene Muster / Secrets (forbidden-patterns-check.py --all --strict) ..."
+if ! python3 "$repo_root/.githooks/forbidden-patterns-check.py" --all --strict; then
+  echo "FEHLER: Verbotene Muster (Secrets, Zertifikate, DB-Dumps, große Logdateien) gefunden. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+# --- Conventional Commits Validierung (blockierend) ---
+echo "Prüfe: Commit-Nachrichten (conventional-commits-check.py) ..."
+if ! python3 "$repo_root/.githooks/conventional-commits-check.py"; then
+  echo "FEHLER: Commit-Nachrichten entsprechen nicht dem Conventional-Commits-Format. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+# --- Test-Ausführungs-Validierung (blockierend) ---
+echo "Prüfe: Testausführung (test-execution-check.py) ..."
+if ! python3 "$repo_root/.githooks/test-execution-check.py"; then
+  echo "FEHLER: Tests sind fehlgeschlagen oder ein Timeout wurde erreicht. Push abgebrochen." >&2
+  exit 1
+fi
+
+echo "Pre-Push-Prüfungen erfolgreich abgeschlossen."
+exit 0

@@ -1,3 +1,13 @@
+## 2026-09-29 — Lokale Git-Hooks zur Qualitätssicherung (Tankradar Schritt 2)
+
+- Versionierte Git-Hooks unter `.githooks/` implementiert, die automatisch vor Commit und Push Qualitätsprüfungen durchführen
+- Pre-Commit-Hook prüft im Warn-Modus: XML-Dokumentation, Platzhalter-Implementierungen, Enum-Testabdeckung, Übersetzungen, Code-Formatierung, verbotene Muster (API-Schlüssel, Zertifikate, Secrets)
+- Pre-Push-Hook blockiert im strikten Modus: unvollständige Implementierungen, Enum-Coverage, Conventional-Commits-Formatierung, fehlgeschlagene Tests, sowie direkte Pushes auf `main`/`staging`
+- Python-Prüfskripte für neue Anforderungen implementiert: `conventional-commits-check.py`, `forbidden-patterns-check.py`, `format-code-style-check.py`, `test-execution-check.py`
+- Installationsskripte für Windows (`.cmd`) und Unix (`.sh`) bereitgestellt; Hook-Aktivierung über `git config core.hooksPath .githooks`
+- Benutzerfreundliche Dokumentation in `docs/help/git-hooks/` mit Übersicht, Installationsanleitung und Detailbeschreibung aller Prüfungen
+- `.gitignore` erweitert um Ausschlüsse für `review-versions/`, `design-draft/`, `.claude/` sowie temporäre Dateien
+
 ## 2026-09-28 — Nachbesserung: Schriften, Navigation-Styling und Testdatenverzeichnis (Tankradar Schritt 1)
 
 - Design-System bindet jetzt tatsächlich die Schriften Inter und JetBrains Mono ein; alle Textstile (Überschriften, Fließtext, Preisanzeige, Code-Darstellung) verwenden die vorgesehenen Schriftarten statt einer Ersatzschrift.

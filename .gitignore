@@ -441,3 +441,15 @@ design-draft/
 # des E2E-Testprojekts "Tankradar.Tests.E2E" endet zufaellig ebenfalls auf ".e2e" (Groß-/
 # Kleinschreibung wird von Git unter Windows ignoriert) und wuerde sonst komplett ausgeschlossen.
 !src/Tankradar.Tests.E2E/
+
+# Claude Code Workspace-Konfiguration (lokal, nicht versioniert)
+.claude/
+
+# Umgebungsvariablen-Dateien mit Secrets (Ergänzung zu "*.env" weiter oben)
+*.env.*
+
+# Datenbank-Dumps (nicht versionieren)
+*.db
+*.sqlite
+*.sqlite3
+
