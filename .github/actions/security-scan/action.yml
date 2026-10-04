@@ -1,0 +1,30 @@
+name: Security scan
+description: Prüft alle NuGet-Abhängigkeiten (inklusive transitiver) auf bekannte Sicherheitslücken und lässt den Schritt bei Funden fehlschlagen.
+
+inputs:
+  solution-path:
+    description: Pfad zur Solution-Datei.
+    required: true
+  artifact-name:
+    description: Name des hochgeladenen Berichts-Artefakts.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Scan for vulnerable packages
+      shell: bash
+      # Gemeinsame, sprachunabhängige JSON-Auswertung (auch vom lokalen Prüflauf genutzt). Benötigt Node.js (>= 22).
+      run: |
+        if ! node scripts/check-vulnerabilities.mjs --run "${{ inputs.solution-path }}" vulnerable-packages.json; then
+          echo "::error::Vulnerable packages detected or scan failed - see the uploaded report."
+          exit 1
+        fi
+
+    - name: Upload report
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: vulnerable-packages.json
+        retention-days: 14

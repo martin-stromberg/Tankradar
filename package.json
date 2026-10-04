@@ -1,0 +1,12 @@
+{
+  "name": "tankradar-ci-tooling",
+  "private": true,
+  "type": "module",
+  "description": "Hilfsskripte der CI/CD-Pipeline (Versionsermittlung, Release-Aufloesung, Coverage-Pruefung). Keine Laufzeitabhaengigkeiten.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"scripts/*.test.mjs\""
+  }
+}

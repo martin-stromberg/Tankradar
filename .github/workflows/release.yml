@@ -1,0 +1,160 @@
+name: Release
+
+# Beide Trigger gehören zusammen: ein manuell gepushter Tag v*.*.* ist ein vollwertiger Release-Weg
+# (z. B. der bewusste Start von 1.0.0). Automatische Versionen (Push auf main) bleiben nach den
+# Projektregeln unter 1.0.
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release
+    runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeAndroidTarget: 'false'
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
+    timeout-minutes: 60
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      released: ${{ steps.version.outputs.released }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      release_action: ${{ steps.version.outputs.release_action }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Resolve release version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/resolve-release-version.mjs
+
+      - name: Check out release tag for asset repair
+        if: steps.version.outputs.release_action == 'upload-existing'
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git fetch origin "refs/tags/$RELEASE_TAG"
+          git checkout --detach "$RELEASE_TAG"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse "$RELEASE_TAG")" ]; then
+            echo "::error::Release tag checkout did not resolve to the tagged commit."
+            exit 1
+          fi
+
+      - name: Setup .NET
+        if: steps.version.outputs.released == 'true'
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install MAUI workloads
+        if: steps.version.outputs.released == 'true'
+        run: dotnet workload restore Tankradar.sln
+
+      - name: Release gate - regular tests
+        # Erster Lauf von `dotnet test --configuration Release` der Pipeline-Kette: hartkodierte Debug-Pfade in
+        # Testhelfern würden hier auffallen (Vorlage, Abschnitt 11.6).
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        run: |
+          dotnet test src/Tankradar.Tests.Unit --configuration Release
+          dotnet test src/Tankradar.Tests.Integration --configuration Release
+
+      - name: Build and package
+        if: steps.version.outputs.released == 'true'
+        uses: ./.github/actions/build-and-package
+        with:
+          release-version: ${{ steps.version.outputs.version }}
+          release-tag: ${{ steps.version.outputs.tag }}
+          fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
+          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
+
+      - name: Create GitHub release
+        # Beide Wege (automatisch auf main, manuell per Tag) nutzen die gh CLI (Vorlage, Abschnitt 11.3).
+        # Beim automatischen Weg legt gh den Tag v<version> auf dem Commit des Pushes an.
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_KIND: ${{ steps.version.outputs.release_kind }}
+        run: |
+          set -euo pipefail
+          target_args=()
+          if [ "$RELEASE_KIND" = "automatic" ]; then
+            target_args=(--target "$GITHUB_SHA" --latest)
+          fi
+          gh release create "$RELEASE_TAG" artifacts/release-win-x64.zip artifacts/update.json \
+            "${target_args[@]}" \
+            --title "$RELEASE_TAG" \
+            --generate-notes
+
+      - name: Upload asset to existing GitHub release
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'upload-existing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" artifacts/release-win-x64.zip artifacts/update.json --clobber
+
+  # iOS-Variante des Releases: signiert (und optional nach TestFlight hochgeladen), wenn IOS_SIGNING_ENABLED='true'
+  # und alle Secrets vorhanden sind, sonst unsigniert (Compile-Prüfung) - ohne Fehlschlag.
+  ios:
+    name: ios
+    needs: release
+    if: needs.release.outputs.released == 'true' && needs.release.outputs.release_action == 'create'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build, sign and upload iOS
+        id: ios
+        uses: ./.github/actions/package-ios
+        with:
+          release-version: ${{ needs.release.outputs.version }}
+          signing-enabled: ${{ vars.IOS_SIGNING_ENABLED }}
+          bundle-id: ${{ vars.APP_BUNDLE_ID }}
+          codesign-key: ${{ secrets.IOS_CODESIGN_KEY }}
+          provisioning-profile: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          certificate-p12-base64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          certificate-p12-password: ${{ secrets.IOS_CERTIFICATE_P12_PASSWORD }}
+          provisioning-profile-base64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          api-key-id: ${{ secrets.IOS_API_KEY_ID }}
+          api-issuer-id: ${{ secrets.IOS_API_ISSUER_ID }}
+          api-key-p8: ${{ secrets.IOS_API_KEY_P8 }}
+          xcode-version: ${{ vars.IOS_XCODE_VERSION }}
+          fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
+          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
+
+      - name: Upload signed IPA
+        if: steps.ios.outputs.signed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-ipa-release
+          path: release-ios.ipa
+          if-no-files-found: error
+          retention-days: 14

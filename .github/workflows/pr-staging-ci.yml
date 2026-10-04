@@ -1,0 +1,231 @@
+name: PR CI for Staging
+
+on:
+  pull_request:
+    branches:
+      - staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+concurrency:
+  group: pr-staging-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  detect-backmerge:
+    runs-on: ubuntu-latest
+    outputs:
+      is_backmerge: ${{ steps.check.outputs.is_backmerge }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check whether this PR is a pure back-merge from main
+        id: check
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch origin main:refs/remotes/origin/main --no-tags
+
+          # Ausgewertet wird der Head-Commit, nicht HEAD: Bei pull_request ist HEAD der GitHub-Merge-Commit,
+          # dessen erster Parent die Spitze des Basisbranches ist (== main, wenn staging == main).
+          # Logik und Tests: scripts/detect-backmerge.mjs
+          main_sha="$(git rev-parse origin/main)"
+          is_backmerge="$(node scripts/detect-backmerge.mjs "$HEAD_SHA" "$main_sha")"
+          echo "is_backmerge=$is_backmerge" >> "$GITHUB_OUTPUT"
+          if [[ "$is_backmerge" == "true" ]]; then
+            echo "::notice::Back-merge from main detected - CI checks will be skipped."
+          fi
+
+  # Schnelle Prüfungen (Format, Sicherheit, statische Analyse). Läuft parallel zu build-and-test,
+  # absichtlich ohne needs: zwischen beiden (Vorlage, Abschnitt 4).
+  static-checks:
+    name: static checks
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeAndroidTarget: 'false'
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install MAUI workloads
+        run: dotnet workload restore Tankradar.sln
+
+      - name: Restore
+        run: dotnet restore Tankradar.sln -p:Configuration=Release
+
+      - name: Pipeline script tests
+        run: npm test
+
+      - name: iOS deployment script checks
+        # Syntax-, Hilfe- und Abbruchprüfung von scripts/iOS-Deployment.ps1 (ohne Mac).
+        run: pwsh -NoProfile -File scripts/test-ios-deployment.ps1
+
+      - name: Format check
+        # --severity error beschränkt die Prüfung auf Whitespace/Stil und echte Analyzer-Fehler.
+        # Warnungen werden vom Schritt "Static analysis" behandelt (Vorlage, Abschnitt 4).
+        run: dotnet format Tankradar.sln --verify-no-changes --no-restore --severity error
+
+      - name: Security scan
+        uses: ./.github/actions/security-scan
+        with:
+          solution-path: Tankradar.sln
+          artifact-name: vulnerable-packages-pr
+
+      - name: Static analysis
+        # Baut die Solution (nur Windows-Ziel; Apple-Ziele werden vom macOS-Job "ios build" geprüft) mit Warnungen als Fehler.
+        run: dotnet build Tankradar.sln --configuration Release --no-restore -p:TreatWarningsAsErrors=true
+
+  build-and-test:
+    name: build & test
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      IncludeAndroidTarget: 'false'
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
+      COVERAGE_THRESHOLD: '70'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install MAUI workloads
+        run: dotnet workload restore Tankradar.sln
+
+      - name: Restore
+        run: dotnet restore Tankradar.sln -p:Configuration=Release
+
+      - name: Build
+        # Baut u. a. die Windows-App, die der FlaUI-E2E-Test startet.
+        run: dotnet build Tankradar.sln --configuration Release --no-restore
+
+      - name: Test unit (blocking)
+        run: >
+          dotnet test src/Tankradar.Tests.Unit --configuration Release --no-build
+          --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+          --logger "trx;LogFileName=test-results-unit.trx" --logger "console;verbosity=normal"
+
+      - name: Test integration (blocking)
+        run: >
+          dotnet test src/Tankradar.Tests.Integration --configuration Release --no-build
+          --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
+          --logger "trx;LogFileName=test-results-integration.trx" --logger "console;verbosity=normal"
+
+      - name: Test E2E with FlaUI (best-effort)
+        # Best-effort-Kategorie (Vorlage, Abschnitt 4): UI-Tests auf gehosteten Runnern sind anfällig und
+        # dürfen weder den PR scheitern lassen noch die Coverage verwässern (kein Coverage-Collector).
+        id: e2e
+        continue-on-error: true
+        run: >
+          dotnet test src/Tankradar.Tests.E2E --configuration Release --no-build
+          --results-directory TestResults
+          --logger "trx;LogFileName=test-results-e2e.trx" --logger "console;verbosity=normal"
+
+      - name: Report E2E result
+        if: steps.e2e.outcome == 'failure'
+        run: echo "::warning::Die FlaUI-E2E-Tests sind fehlgeschlagen (best-effort, blockiert nicht). Siehe Artefakt test-results-pr."
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
+
+      - name: Generate coverage report
+        run: reportgenerator "-reports:TestResults/**/coverage.cobertura.xml" "-targetdir:coverage-report" "-reporttypes:TextSummary"
+
+      - name: Enforce coverage threshold
+        run: node scripts/check-coverage.mjs coverage-report/Summary.txt "$COVERAGE_THRESHOLD"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report-pr
+          path: coverage-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-pr
+          path: TestResults/*.trx
+          retention-days: 14
+
+      - name: Upload E2E diagnostics
+        # Screenshot, UI-Automation-Baum und Fehlerbeschreibung fehlgeschlagener FlaUI-Tests (Vorlage 11.4).
+        # if: always(), damit auch bei best-effort-Läufen Diagnosematerial erhalten bleibt.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-diagnostics-pr
+          path: e2e-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # iOS-Variante (Mindestversion iOS 16): im PR immer unsigniert (Compile-Prüfung), es werden keine Secrets
+  # übergeben.
+  ios-build:
+    name: ios build
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build iOS (unsigned)
+        uses: ./.github/actions/package-ios
+        with:
+          xcode-version: ${{ vars.IOS_XCODE_VERSION }}
+
+  back-merge-skip:
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Back-merge detected
+        run: echo "This PR is a pure back-merge from main - all checks skipped."

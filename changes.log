@@ -1,0 +1,56 @@
+## 2026-10-04 — Lokale Datenhaltung und Einstellungen (Tankradar Schritt 4, Version 0.1.3)
+
+- Neue lokale SQLite-Datenbank (`tankatlas.db`) über Entity Framework Core 10.0.10; Anlage beim ersten Start und Aktualisierung bei App-Updates per Migrationen ohne Datenverlust (`InitialCreate`, `AddFuelTypeSettings`); Pfad ausschließlich über `IAppDataPathProvider` (Testisolation über `TEST_DATA_PATH`)
+- iOS: Dateischutz (Data Protection, `CompleteUntilFirstUserAuthentication`) auf Datenbankdateien; keine zusätzliche Verschlüsselung
+- Bereich „Optionen“ ist jetzt funktional: Spritsorten (Super E5, Super E10, Diesel) auswählen und per Pfeilen ordnen (mindestens eine bleibt ausgewählt), Standort und GPS (Immer, Nur bei Nutzung, Nie), Standardansicht (Liste, Karte) und Standardsortierung (Preis, Entfernung, Name); Änderungen werden sofort gespeichert und überstehen einen Neustart
+- Standardwerte: Spritsorten E5/E10/Diesel, GPS „Nur bei Nutzung“, Ansicht Liste, Sortierung Preis
+- Neue Dienste `IDatabaseInitializer`, `ISettingsService`, `IDatabaseFileProtector`; neue Unit-, Integrations- und FlaUI-E2E-Tests für Einstellungen, Migration und Neustart
+- Projektdatei: `<Product>Tankatlas</Product>`; README auf Entwicklungsstand Schritt 4 aktualisiert; neue Anwenderdokumentation unter `docs/help/Einstellungen/`
+
+## 2026-10-04 — App-Anzeigename „Tankatlas“ (Tankradar Schritt 3a)
+
+- Der für Anwender sichtbare App-Name wechselt von „Tankradar“ auf „Tankatlas“: iOS-Homescreen-Name (`ApplicationTitle`), Titel der Shell und des Windows-Hauptfensters, Anwenderdokumentation und README
+- Unverändert bleiben Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und Assembly-Namen, Repository, `TANKRADAR_*`-Umgebungsvariablen und der Name des Windows-Release-Artefakts
+- Abweichung vom ursprünglichen Namen „Tankradar“ (Stakeholder-Entscheidung vom 2026-10-04); neuer E2E-Test prüft den Fenstertitel, `scripts/test-ios-deployment.ps1` prüft Anzeigename und unveränderte Bundle-ID
+
+## 2026-10-04 — CI/CD-Pipeline mit Pre-Releases und Releases (Tankradar Schritt 3)
+
+- GitHub-Actions-Pipeline nach dem Branch-Modell `main`/`staging`: PR-Quellenprüfung, PR-CI, Pre-Release bei Push auf `staging`, Promotion- und Backmerge-PRs, Release bei Push auf `main`, wöchentlicher Sicherheitsscan
+- Prüfungen: Formatprüfung, Abhängigkeits-Sicherheitsprüfung, statische Analyse (Warnungen als Fehler), Unit-, Integrations- und FlaUI-E2E-Tests (E2E best-effort), Mindest-Testabdeckung 70 %
+- Windows-Release als gezipptes, ohne Installation startbares Build (`release-win-x64.zip`, self-contained) mit `update.json`; kein Installer
+- iOS-Build (iOS 16) signiert bei vollständigen Secrets/Variablen, sonst unsigniert, ohne dass die Pipeline fehlschlägt
+- Versionierung ab 0.1.0 ohne automatische Anhebung auf 1.0 (eigene Versionsermittlung statt semantic-release, mit Tests)
+- Lokaler Prüflauf `scripts/local-ci.ps1` als Ersatz für Actions; Dokumentation und Einrichtungs-Checkliste unter `docs/help/ci-cd/`
+- Build-Hygiene: Warnungen behoben (XML-Doku-Verweise, doppelt eingebundene Testhilfsdatei), E2E-Test findet die App in Debug und Release, zusätzliche Unit-Tests
+- Nacharbeiten Schritt 2: `install-hooks.sh` mit Ausführungsrecht im Index; Hook-Dokumentation korrigiert (Formatprüfung beim Commit über die gesamte Solution und blockierend, Commit-Nachrichten erst beim Push geprüft, Merge-Commits als `merge: …`)
+
+## 2026-09-29 — Lokale Git-Hooks zur Qualitätssicherung (Tankradar Schritt 2)
+
+- Versionierte Git-Hooks unter `.githooks/` implementiert, die automatisch vor Commit und Push Qualitätsprüfungen durchführen
+- Pre-Commit-Hook blockiert bei Verstößen gegen Code-Formatierung (immer über die gesamte Solution, nicht nur gestagte Dateien), XML-Dokumentation, Übersetzungs-Konsistenz und verbotene Muster (API-Schlüssel, Zertifikate, Secrets); Platzhalter-Implementierungen und Enum-Testabdeckung werden nur als Warnung gemeldet
+- Commit-Nachrichten werden erst beim Push geprüft (nicht beim Commit); Merge-Commits müssen das Format `merge: …` haben, die Git-Standardnachricht „Merge branch …“ wird abgelehnt
+- Pre-Push-Hook blockiert im strikten Modus: unvollständige Implementierungen, Enum-Coverage, Conventional-Commits-Formatierung, fehlgeschlagene Tests, sowie direkte Pushes auf `main`/`staging`
+- Python-Prüfskripte für neue Anforderungen implementiert: `conventional-commits-check.py`, `forbidden-patterns-check.py`, `format-code-style-check.py`, `test-execution-check.py`
+- Installationsskripte für Windows (`.cmd`) und Unix (`.sh`) bereitgestellt; Hook-Aktivierung über `git config core.hooksPath .githooks`
+- Benutzerfreundliche Dokumentation in `docs/help/git-hooks/` mit Übersicht, Installationsanleitung und Detailbeschreibung aller Prüfungen
+- `.gitignore` erweitert um Ausschlüsse für `review-versions/`, `design-draft/`, `.claude/` sowie temporäre Dateien
+
+## 2026-09-28 — Nachbesserung: Schriften, Navigation-Styling und Testdatenverzeichnis (Tankradar Schritt 1)
+
+- Design-System bindet jetzt tatsächlich die Schriften Inter und JetBrains Mono ein; alle Textstile (Überschriften, Fließtext, Preisanzeige, Code-Darstellung) verwenden die vorgesehenen Schriftarten statt einer Ersatzschrift.
+- Hauptnavigation (`AppShell`) zeigt den aktiven Tab in der Teal-Markenfarbe hervorgehoben, inaktive Tabs gedämpft und die Tableiste mit Oberflächenfarbe, passend zu Hell- und Dunkelmodus.
+- Neuer zentraler Dienst `IAppDataPathProvider`/`AppDataPathProvider` (`Tankradar.MAUI.Services`) ermittelt das App-Datenverzeichnis und leitet es bei gesetzter Testumgebungsvariable `TEST_DATA_PATH` auf ein isoliertes Testverzeichnis um, damit automatisierte Tests nicht die echten App-Daten berühren.
+- E2E-Navigationstest (`NavigationE2ETests`) prüft nach jedem Tab-Wechsel jetzt ein seitenspezifisches Element (`AutomationId`) statt nur den Tab-Namen, wodurch ein tatsächlicher Seitenwechsel zuverlässig nachgewiesen wird.
+- App-Icon und Startbildschirm verwenden nun die Teal-Markenfarbe statt der MAUI-Vorlagenfarbe; das ungenutzte Vorlagenbild `dotnet_bot.png` wurde entfernt.
+
+## 2026-09-28 — App-Grundgerüst, Navigation und Design-System (Schritt 1)
+
+- Hauptprojekt `Tankradar.MAUI` mit MVVM-Architektur für iOS 16+ und Windows etabliert
+- Bottom-TabBar-Navigation mit vier Hauptbereichen: Favoriten, Karte, Tankbuch, Optionen
+- Zentrales Design-System mit Farbpalette (Teal, Emerald, Amber, Rot), Typografie (Inter, JetBrains Mono), Spacing-Tokens, Border-Radius und Schatten-Ebenen
+- Hell- und Dunkelmodus mit AppThemeBinding-Unterstützung
+- Test-Infrastruktur mit Unit-, Integrations- und E2E-Tests (FlaUI) aufgebaut
+- AppConfiguration für Bundle-ID-Verwaltung mit Umgebungsvariablen-Support
+- PowerShell-Skript `create-review-version.ps1` für Windows-Zwischenstände implementiert
+- ADR zur Designabweichung (keine Strompreise in v1.0) dokumentiert
+- Version 0.1.0 als Initial-Release vorbereitet

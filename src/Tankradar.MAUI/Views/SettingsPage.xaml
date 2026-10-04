@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:DataType="vm:SettingsViewModel"
+             x:Class="Tankradar.MAUI.Views.SettingsPage"
+             Title="Optionen"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <Style x:Key="SettingsCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        </Style>
+        <Style x:Key="SettingsMoveButton" TargetType="Button">
+            <Setter Property="WidthRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="HeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+        <Style x:Key="SettingsRadio" TargetType="RadioButton">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}"
+                             Spacing="{StaticResource space-md}">
+            <Label Text="Optionen"
+                   Style="{StaticResource headline-lg}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   AutomationId="SettingsPage.Headline" />
+
+            <Label Text="Einstellungen geladen"
+                   IsVisible="{Binding IsLoaded}"
+                   Style="{StaticResource body-sm}"
+                   Opacity="0"
+                   HeightRequest="1"
+                   AutomationId="Settings.Loaded" />
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="Settings.StatusMessage" />
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding FuelTypesHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding FuelTypesHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding FuelTypes}" Spacing="{StaticResource space-xs}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FuelTypeItemViewModel">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                                    <Switch Grid.Column="0"
+                                            IsToggled="{Binding IsSelected}"
+                                            VerticalOptions="Center"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.Switch'}"
+                                            SemanticProperties.Description="{Binding DisplayName}" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding DisplayName}"
+                                           Style="{StaticResource body-lg}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           VerticalOptions="Center" />
+                                    <Button Grid.Column="2"
+                                            Text="▲"
+                                            Style="{StaticResource SettingsMoveButton}"
+                                            Command="{Binding MoveUpCommand}"
+                                            IsEnabled="{Binding CanMoveUp}"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.MoveUp'}"
+                                            SemanticProperties.Description="{x:Static texts:SettingsTexts.MoveUpDescription}" />
+                                    <Button Grid.Column="3"
+                                            Text="▼"
+                                            Style="{StaticResource SettingsMoveButton}"
+                                            Command="{Binding MoveDownCommand}"
+                                            IsEnabled="{Binding CanMoveDown}"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.MoveDown'}"
+                                            SemanticProperties.Description="{x:Static texts:SettingsTexts.MoveDownDescription}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding GpsHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding GpsHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding GpsOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="Gps"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.Gps.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding ViewHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding ViewOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="View"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.View.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding SortHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding SortOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="Sort"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.Sort.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</views:TankradarContentPage>
