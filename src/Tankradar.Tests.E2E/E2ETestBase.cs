@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
@@ -18,6 +19,8 @@ public abstract class E2ETestBase : IDisposable
 #endif
 
     private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\" + BuildConfiguration + @"\net10.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
+
+    private static readonly string DefaultDiagnosticsDirectory = E2EDiagnostics.ResolveDirectory();
 
     private readonly string _testDataDirectory;
     private bool _disposed;
@@ -39,8 +42,54 @@ public abstract class E2ETestBase : IDisposable
         startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
 
         Application = Application.Launch(startInfo);
-        MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
-            ?? throw new InvalidOperationException("Das Hauptfenster der Tankradar-App wurde nicht innerhalb von 30 Sekunden gefunden.");
+        try
+        {
+            MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
+                ?? throw new InvalidOperationException("Das Hauptfenster der Tankradar-App wurde nicht innerhalb von 30 Sekunden gefunden.");
+        }
+        catch (Exception ex)
+        {
+            // Startfehler: Diagnose erfassen (gesamter Bildschirm, da kein Fenster verfügbar ist) und Prozess aufräumen.
+            E2EDiagnostics.Capture(DiagnosticsDirectory, GetType().Name + ".Start", null, ex, DescribeProcess());
+            Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Das Verzeichnis, in das Diagnosedaten fehlgeschlagener Tests geschrieben werden (Standard: Verzeichnis e2e-diagnostics im Repository-Root).
+    /// </summary>
+    protected virtual string DiagnosticsDirectory => DefaultDiagnosticsDirectory;
+
+    /// <summary>
+    /// Führt den Testkörper aus und erfasst bei einem Fehlschlag Screenshot, UI-Automation-Baum und Fehlerbeschreibung (pro Test benannt), bevor der Fehler weitergereicht wird.
+    /// </summary>
+    /// <param name="test">Der Testkörper.</param>
+    /// <param name="testName">Name des Tests (wird automatisch vom aufrufenden Testmethodennamen übernommen).</param>
+    protected void RunWithDiagnostics(Action test, [CallerMemberName] string testName = "")
+    {
+        try
+        {
+            test();
+        }
+        catch (Exception ex)
+        {
+            E2EDiagnostics.Capture(DiagnosticsDirectory, GetType().Name + "." + testName, MainWindow, ex, DescribeProcess());
+            throw;
+        }
+    }
+
+    private string DescribeProcess()
+    {
+        try
+        {
+            using var process = Process.GetProcessById(Application.ProcessId);
+            return process.HasExited ? $"beendet, ExitCode={process.ExitCode}" : $"läuft (PID {process.Id})";
+        }
+        catch (Exception)
+        {
+            return "nicht mehr vorhanden";
+        }
     }
 
     /// <summary>

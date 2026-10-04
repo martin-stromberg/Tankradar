@@ -13,7 +13,8 @@
         5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (baut alle Zielplattformen,
                               also auch den iOS-Compile-Check, sofern die iOS-Workload installiert ist)
         6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
-        7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung)
+        7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung;
+                              Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
         8. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
 
     Beispiele:
@@ -83,7 +84,8 @@ function Skip-Step([string]$Name, [string]$Reason) {
 
 $testResults = Join-Path $repoRoot "TestResults"
 $coverageReport = Join-Path $repoRoot "coverage-report"
-foreach ($dir in @($testResults, $coverageReport)) {
+$e2eDiagnostics = Join-Path $repoRoot "e2e-diagnostics"
+foreach ($dir in @($testResults, $coverageReport, $e2eDiagnostics)) {
     if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
 }
 
@@ -134,6 +136,9 @@ else {
     Invoke-Step "Tests: FlaUI-E2E (best-effort)" -BestEffort {
         dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
             --logger "trx;LogFileName=test-results-e2e.trx"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
+        }
     }
 }
 

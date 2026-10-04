@@ -35,7 +35,9 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Windows-Paket (`-Package`) | `Build and package` |
 
 Am Ende zeigt eine Tabelle den Status jedes Schritts. Exit-Code 0 bedeutet: alle blockierenden Prüfungen
-bestanden. Berichte liegen unter `TestResults/` und `coverage-report/` (nicht versioniert).
+bestanden. Berichte liegen unter `TestResults/` und `coverage-report/` (nicht versioniert). Schlägt ein E2E-Test fehl,
+weist der Lauf auf das Diagnoseverzeichnis `e2e-diagnostics/` hin (Screenshot, UI-Baum, Fehlertext je Test;
+nicht versioniert, siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
 
 Der iOS-Teil wird lokal nur als Compile-Prüfung des iOS-Zielframeworks im Schritt „Statische Analyse“
 abgedeckt; die iOS-Pakete selbst entstehen nur auf einem Mac bzw. im macOS-Runner.

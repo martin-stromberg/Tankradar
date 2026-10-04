@@ -187,6 +187,17 @@ jobs:
           path: TestResults/*.trx
           retention-days: 14
 
+      - name: Upload E2E diagnostics
+        # Screenshot, UI-Automation-Baum und Fehlerbeschreibung fehlgeschlagener FlaUI-Tests (Vorlage 11.4).
+        # if: always(), damit auch bei best-effort-Läufen Diagnosematerial erhalten bleibt.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-diagnostics-pr
+          path: e2e-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14
+
   # iOS-Variante (Mindestversion iOS 16): im PR immer unsigniert, es werden keine Secrets übergeben.
   ios-build:
     name: ios build

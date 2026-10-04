@@ -460,3 +460,4 @@ TestResults/
 coverage-report/
 artifacts/
 vulnerable-packages.txt
+e2e-diagnostics/

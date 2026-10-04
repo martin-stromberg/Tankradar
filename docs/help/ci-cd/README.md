@@ -52,7 +52,8 @@ führt [`scripts/local-ci.ps1`](lokaler-pruefung.md) dieselben Prüfungen lokal 
 
 - Die FlaUI-E2E-Tests laufen als *best-effort*: Ein Fehlschlag erscheint als Warnung und als
   Test-Artefakt, blockiert aber weder PR noch Release (UI-Tests auf gehosteten Runnern sind
-  störanfällig). Sie zählen nicht zur Testabdeckung.
+  störanfällig). Sie zählen nicht zur Testabdeckung. Bei fehlgeschlagenen E2E-Tests erzeugt die Testbasis
+  Diagnosedaten (siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
 - Die Mindest-Testabdeckung (70 %) bezieht sich auf die per `coverlet.runsettings` eingegrenzte
   Logik (ohne generierten Code, Plattformcode und XAML-Code-Behind).
 - Die Workflows wurden syntaktisch geprüft (`scripts/validate-workflows.py`, `actionlint`); ein echter

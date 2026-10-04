@@ -62,3 +62,18 @@ Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion) laufen auf `ubuntu-
   Coverage ein, E2E ist best-effort (Vorlage: „best-effort test category“).
 - **Restore:** `dotnet restore` läuft mit `-p:Configuration=Release`, weil die MacCatalyst-Laufzeiten
   konfigurationsabhängig sind; `dotnet list package` läuft deshalb mit `--no-restore`.
+
+## E2E-Diagnosedaten
+
+Die FlaUI-E2E-Tests sind best-effort; damit ein Fehlschlag trotzdem nachvollziehbar bleibt, erfasst die
+Testbasis (`E2ETestBase.RunWithDiagnostics`, `E2EDiagnostics`) bei einem fehlgeschlagenen Test pro Test:
+
+- `<Testklasse>.<Test>.png` – Screenshot des App-Fensters (bei Startfehlern des gesamten Bildschirms),
+- `<Testklasse>.<Test>.uitree.txt` – Dump des UI-Automation-Baums (Typ, Name, AutomationId, Klasse, Position),
+- `<Testklasse>.<Test>.error.txt` – Fehlermeldung samt Stacktrace und Zustand des App-Prozesses.
+
+Die Dateien liegen im Verzeichnis `e2e-diagnostics/` im Repository-Root (überschreibbar über die
+Umgebungsvariable `TANKRADAR_E2E_DIAGNOSTICS_DIR`); es ist nicht versioniert. Beide CI-Workflows
+(`pr-staging-ci.yml`, `staging-ci.yml`) laden es im Schritt `Upload E2E diagnostics` mit `if: always()` als
+Artefakt `e2e-diagnostics-pr` bzw. `e2e-diagnostics-staging` hoch, also auch bei best-effort-Fehlschlägen.
+Neue E2E-Tests kapseln ihren Testkörper dafür in `RunWithDiagnostics(...)`.
