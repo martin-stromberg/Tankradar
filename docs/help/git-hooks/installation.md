@@ -94,6 +94,6 @@ git branch -D test/hooks-check
 | `dotnet: command not found` bei `pre-push` | .NET SDK nicht im `PATH` | .NET SDK 10.0+ installieren |
 | Commit/Push wird trotz Feature-Branch blockiert | Branchname ist zufällig `main` oder `staging` | Feature-Branch mit anderem Namen verwenden |
 | Hook scheint gar nicht zu laufen | `core.hooksPath` nicht gesetzt (z. B. nach einem frischen Klon ohne Installation) | Installationsskript erneut ausführen; mit `git config --local core.hooksPath` prüfen |
-| Pre-Push hängt sehr lange | Testlauf (`dotnet test`) dauert ungewöhnlich lange | Bis zu 5 Minuten warten (Standard-Timeout); im Ausnahmefall `HOOK_SKIP_TESTS=1` setzen (siehe [`checks.md`](checks.md#test-execution-checkpy)) |
+| Pre-Push hängt sehr lange | Testlauf (`dotnet test`) dauert ungewöhnlich lange | Bis zu 10 Minuten warten (Standard-Timeout); im Ausnahmefall `HOOK_SKIP_TESTS=1` setzen (siehe [`checks.md`](checks.md#test-execution-checkpy)) |
 
 Weitere Details zu den einzelnen Prüfungen: [`checks.md`](checks.md).

@@ -14,7 +14,7 @@
 | Code-Formatierung | pre-commit, pre-push (`--strict`) | blockierend | `dotnet format --verify-no-changes` | `format-code-style-check.py` |
 | Verbotene Muster / Secrets | pre-commit, pre-push (`--all --strict`) | blockierend | API-Schlüssel, Zertifikate, Signierungsdaten, DB-Dumps, Logdateien | `forbidden-patterns-check.py` |
 | Commit-Nachrichten-Format | pre-push | blockierend | Conventional-Commits-Format für gepushte Commits | `conventional-commits-check.py` |
-| Testausführung | pre-push | blockierend | `dotnet test Tankradar.sln` (Timeout 5 Min.) | `test-execution-check.py` |
+| Testausführung | pre-push | blockierend | `dotnet build` + `dotnet test --no-build` (Timeout 10 Min.) | `test-execution-check.py` |
 
 ## Branch-Schutz
 
@@ -183,10 +183,12 @@ Rebase (`git rebase -i`) korrigieren.
 
 ## test-execution-check.py
 
-Führt `dotnet test <Solution> --nologo --verbosity quiet` aus und blockiert den Push, wenn
-Tests fehlschlagen oder ein Zeitlimit überschritten wird.
+Baut die Solution einmal (`dotnet build <Solution> --nologo --verbosity quiet`) und führt
+danach `dotnet test <Solution> --no-build --nologo --verbosity quiet` aus. So läuft kein Build
+parallel zu den E2E-Tests (die App-EXE wäre sonst gesperrt, MSB3027). Der Push wird blockiert,
+wenn Build oder Tests fehlschlagen oder ein Zeitlimit überschritten wird.
 
-- **Timeout:** 5 Minuten (Standard), überschreibbar über die Umgebungsvariable
+- **Timeout:** 10 Minuten gesamt für Build und Tests (Standard), überschreibbar über die Umgebungsvariable
   `TEST_TIMEOUT_SECONDS=<Sekunden>`.
 - **Notfall-Fallback:** `HOOK_SKIP_TESTS=1 git push ...` überspringt die Testausführung (mit
   Warnung auf stderr).
@@ -194,13 +196,13 @@ Tests fehlschlagen oder ein Zeitlimit überschritten wird.
 Beispielausgabe (Fehlschlag):
 
 ```
-FEHLER: Tests fehlgeschlagen (Exit-Code 1, nach 6s).
+FEHLER: Build oder Tests fehlgeschlagen (Exit-Code 1, nach 6s).
 ```
 
 Beispielausgabe (Timeout):
 
 ```
-FEHLER: Testlauf nach 300s abgebrochen (Timeout: 300s).
+FEHLER: Testlauf nach 600s abgebrochen (Timeout: 600s).
 Hinweis: HOOK_SKIP_TESTS=1 kann als Notfall-Fallback gesetzt werden, um die Testausführung zu überspringen.
 ```
 

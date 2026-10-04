@@ -59,9 +59,47 @@ class TestExecutionCheckTests_DotnetTest(unittest.TestCase):
             exit_code = self.module.main()
 
         self.assertEqual(exit_code, 0)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(calls[1][:2], ['dotnet', 'test'])
+        self.assertIn('--verbosity', calls[1])
+
+    def test_test_execution_check_builds_once_before_testing_with_no_build(self):
+        # Regression: paralleler Build neben laufenden E2E-Tests sperrte Tankradar.MAUI.exe (MSB3027).
+        calls = []
+
+        def fake_subprocess_run(args, **kwargs):
+            calls.append(args)
+            return _FakeCompletedProcess(0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / 'Test.sln').write_text('')
+            self.module.repo_root = lambda: tmp_root
+            subprocess.run = fake_subprocess_run
+
+            self.module.main()
+
+        self.assertEqual([c[:2] for c in calls], [['dotnet', 'build'], ['dotnet', 'test']])
+        self.assertNotIn('--no-build', calls[0])
+        self.assertIn('--no-build', calls[1])
+
+    def test_test_execution_check_build_failure_skips_tests(self):
+        calls = []
+
+        def fake_subprocess_run(args, **kwargs):
+            calls.append(args)
+            return _FakeCompletedProcess(1)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / 'Test.sln').write_text('')
+            self.module.repo_root = lambda: tmp_root
+            subprocess.run = fake_subprocess_run
+
+            exit_code = self.module.main()
+
+        self.assertEqual(exit_code, 1)
         self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0][:2], ['dotnet', 'test'])
-        self.assertIn('--verbosity', calls[0])
 
     def test_test_execution_check_timeout(self):
         def fake_subprocess_run(args, **kwargs):
