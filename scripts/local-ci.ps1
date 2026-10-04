@@ -10,7 +10,8 @@
                               Pruefung von scripts/iOS-Deployment.ps1 (Syntax, Hilfe, sauberer Abbruch ohne Mac)
         2. Restore
         3. Formatprüfung      dotnet format --verify-no-changes --severity error
-        4. Sicherheitsprüfung dotnet list package --vulnerable --include-transitive --no-restore
+        4. Sicherheitsprüfung dotnet list package --vulnerable --include-transitive --format json, sprachunabhängig
+                              ausgewertet von scripts/check-vulnerabilities.mjs (dieselbe Logik wie die CI-Action)
         5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (Windows-Job-Simulation: wie die Windows-Jobs
                               der CI mit IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; die
                               Variablen werden am Ende wiederhergestellt)
@@ -51,6 +52,9 @@ Set-Location $repoRoot
 
 $solution = "Tankradar.sln"
 $windowsJobEnv = [ordered]@{ IncludeAndroidTarget = 'false'; IncludeIosTarget = 'false'; IncludeMacCatalystTarget = 'false' }
+# Gesamtzustand der Windows-Job-Simulation: zusätzlich IncludeWindowsTarget=true, damit eine vorbelegte Sitzung
+# (z. B. IncludeWindowsTarget=false) nicht zu einem Projekt ohne Zielframework führt.
+$windowsSimEnv = [ordered]@{ IncludeAndroidTarget = 'false'; IncludeIosTarget = 'false'; IncludeMacCatalystTarget = 'false'; IncludeWindowsTarget = 'true' }
 $results = New-Object System.Collections.Generic.List[object]
 
 function Invoke-Step {
@@ -126,9 +130,9 @@ Invoke-Step "iOS-Deployment-Skript mit Windows-Job-Umgebung (Include*Target=fals
 # (auch bei Fehler/Abbruch) auf die ursprünglichen Werte zurückgesetzt, damit eine aufrufende PowerShell-Sitzung
 # nicht dauerhaft nur noch Windows baut.
 $originalEnv = @{}
-foreach ($n in $windowsJobEnv.Keys) { $originalEnv[$n] = [Environment]::GetEnvironmentVariable($n) }
+foreach ($n in $windowsSimEnv.Keys) { $originalEnv[$n] = [Environment]::GetEnvironmentVariable($n) }
 try {
-    foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, 'false') }
+    foreach ($n in $windowsSimEnv.Keys) { Set-ProcessEnv $n $windowsSimEnv[$n] }
     Invoke-Step "Restore" { dotnet restore $solution -p:Configuration=Release }
     Invoke-Step "Formatprüfung" { dotnet format $solution --verify-no-changes --no-restore --severity error }
 
@@ -137,11 +141,10 @@ try {
     }
     else {
         Invoke-Step "Sicherheitsprüfung (Abhängigkeiten)" {
-            $output = (dotnet list $solution package --vulnerable --include-transitive --no-restore 2>&1 | Out-String)
-            Write-Host $output
-            if ($output -match "(?i)has the following vulnerable packages|Severity") {
-                throw "Anfällige Pakete gefunden."
-            }
+            # Sprachunabhängige JSON-Auswertung (die Textausgabe von dotnet list ist lokalisiert); Exit-Code 1 = Funde,
+            # 2 = Aufruf-/Ausgabefehler. Bericht liegt unter vulnerable-packages.json (gitignoriert).
+            node scripts/check-vulnerabilities.mjs --run $solution vulnerable-packages.json
+            if ($LASTEXITCODE -ne 0) { throw "Sicherheitsprüfung fehlgeschlagen (anfällige Pakete oder Prüffehler, Exit-Code $LASTEXITCODE)." }
         }
     }
 
@@ -202,15 +205,29 @@ try {
             [Environment]::SetEnvironmentVariable('IncludeAndroidTarget', 'false')
             [Environment]::SetEnvironmentVariable('IncludeIosTarget', 'true')
             [Environment]::SetEnvironmentVariable('IncludeMacCatalystTarget', 'false')
-            # Eigener Restore, weil der Restore oben ohne Apple-Ziele erfolgte.
-            dotnet build "src/Tankradar.MAUI/Tankradar.MAUI.csproj" --configuration Release --framework net10.0-ios `
-                -p:RuntimeIdentifier=iossimulator-arm64 -p:TreatWarningsAsErrors=true -p:MauiXamlInflator=XamlC
+            [Environment]::SetEnvironmentVariable('IncludeWindowsTarget', 'false')
+            $buildExit = 1
+            try {
+                # Eigener Restore (impliziert im Build), weil der Restore oben ohne Apple-Ziele erfolgte.
+                dotnet build "src/Tankradar.MAUI/Tankradar.MAUI.csproj" --configuration Release --framework net10.0-ios `
+                    -p:RuntimeIdentifier=iossimulator-arm64 -p:TreatWarningsAsErrors=true -p:MauiXamlInflator=XamlC
+                $buildExit = $LASTEXITCODE
+            }
+            finally {
+                # Der iOS-Restore überschreibt obj/project.assets.json der MAUI-App (ohne Windows-Ziel). Damit spätere
+                # --no-restore-Builds/-Tests (auch nach diesem Lauf) nicht darauf stoßen, wird der Windows-Zustand
+                # wiederhergestellt: Umgebung der Windows-Job-Simulation setzen und erneut restoren.
+                foreach ($n in $windowsSimEnv.Keys) { Set-ProcessEnv $n $windowsSimEnv[$n] }
+                dotnet restore $solution -p:Configuration=Release
+                if ($LASTEXITCODE -ne 0 -and $buildExit -eq 0) { $buildExit = $LASTEXITCODE }
+            }
+            if ($buildExit -ne 0) { throw "iOS-Compile-Prüfung fehlgeschlagen (Exit-Code $buildExit)." }
         }
     }
 
 }
 finally {
-    foreach ($n in $windowsJobEnv.Keys) { Set-ProcessEnv $n $originalEnv[$n] }
+    foreach ($n in $windowsSimEnv.Keys) { Set-ProcessEnv $n $originalEnv[$n] }
 }
 
 Write-Host ""

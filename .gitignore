@@ -460,6 +460,7 @@ TestResults/
 coverage-report/
 artifacts/
 vulnerable-packages.txt
+vulnerable-packages.json
 e2e-diagnostics/
 
 # iOS-Deployment (scripts/iOS-Deployment.ps1): lokale Auswahl, temporäre Response-Dateien und Laufprotokolle

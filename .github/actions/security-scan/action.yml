@@ -14,11 +14,10 @@ runs:
   steps:
     - name: Scan for vulnerable packages
       shell: bash
+      # Gemeinsame, sprachunabhängige JSON-Auswertung (auch vom lokalen Prüflauf genutzt). Benötigt Node.js (>= 22).
       run: |
-        set -o pipefail
-        output="$(dotnet list "${{ inputs.solution-path }}" package --vulnerable --include-transitive --no-restore 2>&1 | tee vulnerable-packages.txt)"
-        if echo "$output" | grep -qi "has the following vulnerable packages\|Severity"; then
-          echo "::error::Vulnerable packages detected - see the uploaded report."
+        if ! node scripts/check-vulnerabilities.mjs --run "${{ inputs.solution-path }}" vulnerable-packages.json; then
+          echo "::error::Vulnerable packages detected or scan failed - see the uploaded report."
           exit 1
         fi
 
@@ -27,5 +26,5 @@ runs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: vulnerable-packages.txt
+        path: vulnerable-packages.json
         retention-days: 14
