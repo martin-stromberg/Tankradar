@@ -28,26 +28,19 @@ jobs:
 
       - name: Check whether this push is a pure back-merge from main
         id: check
+        env:
+          HEAD_SHA: ${{ github.sha }}
         run: |
           git fetch origin main:refs/remotes/origin/main --no-tags
 
+          # Ausgewertet wird der Head-Commit, nicht HEAD: Bei pull_request ist HEAD der GitHub-Merge-Commit,
+          # dessen erster Parent die Spitze des Basisbranches ist (== main, wenn staging == main).
+          # Logik und Tests: scripts/detect-backmerge.mjs
           main_sha="$(git rev-parse origin/main)"
-          is_main_merge_parent=false
-          for parent in $(git show -s --format=%P HEAD); do
-            if [[ "$parent" == "$main_sha" ]]; then
-              is_main_merge_parent=true
-              break
-            fi
-          done
-
-          if [[ "$is_main_merge_parent" == "true" ]]; then
-            echo "is_backmerge=true" >> "$GITHUB_OUTPUT"
+          is_backmerge="$(node scripts/detect-backmerge.mjs "$HEAD_SHA" "$main_sha")"
+          echo "is_backmerge=$is_backmerge" >> "$GITHUB_OUTPUT"
+          if [[ "$is_backmerge" == "true" ]]; then
             echo "::notice::Back-merge from main detected - CI checks will be skipped."
-          elif git diff --quiet origin/main HEAD; then
-            echo "is_backmerge=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Pure back-merge from main detected (tree identical) - CI checks will be skipped."
-          else
-            echo "is_backmerge=false" >> "$GITHUB_OUTPUT"
           fi
 
   static-checks:
