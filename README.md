@@ -10,9 +10,9 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Dieses Repository befindet sich in Entwicklungsschritt 1 ("App-Grundgerüst, Navigation und
-Design-System"): Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier Bereichen
-(Favoriten, Karte, Tankbuch, Optionen), zentrales Design-System und Testinfrastruktur.
+Entwicklungsschritt 4 abgeschlossen: lokale Datenhaltung (SQLite, EF Core) und Einstellungen
+(Optionen). Enthalten sind außerdem Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier
+Bereichen (Favoriten, Karte, Tankbuch, Optionen), zentrales Design-System, Testinfrastruktur und CI/CD.
 
 ## Voraussetzungen
 
@@ -33,7 +33,8 @@ Design-System"): Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vi
 Tankradar.sln                        Solution-Datei
 src/
   Tankradar.MAUI/                    Hauptprojekt (Single Project, iOS + Windows)
-    Models/                          Datenmodelle (aktuell leer)
+    Models/                          Datenmodelle (Einstellungen, Enums)
+    Data/                            EF-Core-Kontext, Entitäten und Migrationen (SQLite)
     ViewModels/                      MVVM-ViewModels (BaseViewModel + vier Seiten-ViewModels)
     Views/                           XAML-Seiten der vier Hauptbereiche
     Services/                        AppConfiguration u. a. Dienste

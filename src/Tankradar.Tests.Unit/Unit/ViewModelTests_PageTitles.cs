@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.ViewModels;
+using Tankradar.Tests.Unit.Unit.Support;
 
 namespace Tankradar.Tests.Unit.Unit;
 
@@ -16,12 +18,22 @@ public class ViewModelTests_PageTitles : BaseTest
     [InlineData(typeof(FavoritesViewModel), "Favoriten")]
     [InlineData(typeof(MapViewModel), "Karte")]
     [InlineData(typeof(TankbookViewModel), "Tankbuch")]
-    [InlineData(typeof(SettingsViewModel), "Optionen")]
     public void Constructor_SetsExpectedTitle(Type viewModelType, string expectedTitle)
     {
         var viewModel = (BaseViewModel)Activator.CreateInstance(viewModelType)!;
 
         Assert.Equal(expectedTitle, viewModel.Title);
+    }
+
+    /// <summary>
+    /// Prüft den Seitentitel des <see cref="SettingsViewModel"/>, das einen Einstellungsdienst benötigt.
+    /// </summary>
+    [Fact]
+    public void SettingsViewModel_Constructor_SetsTitle()
+    {
+        var viewModel = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance);
+
+        Assert.Equal("Optionen", viewModel.Title);
     }
 
     /// <summary>

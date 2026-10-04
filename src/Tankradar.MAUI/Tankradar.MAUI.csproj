@@ -33,6 +33,7 @@
 
 		<!-- Display name -->
 		<ApplicationTitle>Tankatlas</ApplicationTitle>
+		<Product>Tankatlas</Product>
 
 		<!-- App Identifier (Bundle-ID, siehe Services/AppConfiguration.cs) -->
 		<ApplicationId>de.martinstromberg.tankradar</ApplicationId>
@@ -76,6 +77,13 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+		<!-- Hebt die transitiv gezogene, als anfällig gemeldete Version 2.1.11 (GHSA-2m69-gcr7-jv3q) an. -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>

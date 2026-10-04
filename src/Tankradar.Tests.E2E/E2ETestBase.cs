@@ -35,25 +35,7 @@ public abstract class E2ETestBase : IDisposable
 
         Automation = new UIA3Automation();
 
-        var startInfo = new ProcessStartInfo(ResolveAppPath())
-        {
-            UseShellExecute = false,
-        };
-        startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
-
-        Application = Application.Launch(startInfo);
-        try
-        {
-            MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
-                ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden.");
-        }
-        catch (Exception ex)
-        {
-            // Startfehler: Diagnose erfassen (gesamter Bildschirm, da kein Fenster verfügbar ist) und Prozess aufräumen.
-            E2EDiagnostics.Capture(DiagnosticsDirectory, GetType().Name + ".Start", null, ex, DescribeProcess());
-            Dispose();
-            throw;
-        }
+        LaunchApplication();
     }
 
     /// <summary>
@@ -100,12 +82,12 @@ public abstract class E2ETestBase : IDisposable
     /// <summary>
     /// Der gestartete App-Prozess.
     /// </summary>
-    protected Application Application { get; }
+    protected Application Application { get; private set; } = null!;
 
     /// <summary>
     /// Das Hauptfenster der gestarteten App.
     /// </summary>
-    protected Window MainWindow { get; }
+    protected Window MainWindow { get; private set; } = null!;
 
     /// <summary>
     /// Beendet die App, gibt die UI-Automation-Engine frei und löscht das Testdatenverzeichnis.
@@ -142,6 +124,65 @@ public abstract class E2ETestBase : IDisposable
 
         _disposed = true;
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Beendet die App, wartet auf das Prozessende und startet sie mit demselben Testdatenverzeichnis neu; <see cref="Application"/> und <see cref="MainWindow"/> zeigen danach auf die neue Instanz.
+    /// </summary>
+    protected void RestartApplication()
+    {
+        var processId = Application.ProcessId;
+        try
+        {
+            Application.Close();
+        }
+        catch (Exception)
+        {
+            // Best-effort: Der Prozess kann bereits beendet sein.
+        }
+
+        WaitForProcessExit(processId);
+        LaunchApplication();
+    }
+
+    private static void WaitForProcessExit(int processId)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            if (!process.WaitForExit(TimeSpan.FromSeconds(15)))
+            {
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit(TimeSpan.FromSeconds(10));
+            }
+        }
+        catch (ArgumentException)
+        {
+            // Der Prozess ist bereits beendet.
+        }
+    }
+
+    private void LaunchApplication()
+    {
+        var startInfo = new ProcessStartInfo(ResolveAppPath())
+        {
+            UseShellExecute = false,
+        };
+        startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
+
+        Application = Application.Launch(startInfo);
+        try
+        {
+            MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
+                ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden.");
+        }
+        catch (Exception ex)
+        {
+            // Startfehler: Diagnose erfassen (gesamter Bildschirm, da kein Fenster verfügbar ist) und Prozess aufräumen.
+            E2EDiagnostics.Capture(DiagnosticsDirectory, GetType().Name + ".Start", null, ex, DescribeProcess());
+            Dispose();
+            throw;
+        }
     }
 
     private static string ResolveAppPath()
