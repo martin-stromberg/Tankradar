@@ -146,6 +146,8 @@ runs:
       shell: bash
       env:
         IOS_WORKLOAD_VERSION: ${{ inputs.ios-workload-version }}
+        IncludeAndroidTarget: 'false'
+        IncludeMacCatalystTarget: 'false'
       run: |
         set -euo pipefail
         printf '{"microsoft.net.sdk.ios": "%s"}\n' "$IOS_WORKLOAD_VERSION" > "$RUNNER_TEMP/workload-rollback.json"
@@ -196,9 +198,11 @@ runs:
     # Suffix abgeschnitten (CFBundleShortVersionString muss numerisch sein).
     # MauiXamlInflator=XamlC: die Vorlage umgeht damit invaliden SourceGen-Code (CS0266/CS8422) der Runner-
     # MAUI-Version in der iOS-Kompilierung; übernommen, bis auf macOS das Gegenteil belegt ist.
-    # Abweichung zur Vorlage: kein separates 'restore -r ios-arm64' mit --no-restore. Die Tankradar-csproj
-    # hat mehrere Zielframeworks (Android/MacCatalyst/Windows); 'dotnet publish/build -f net10.0-ios' stellt
-    # über TargetFramework sicher, dass nur das iOS-Framework wiederhergestellt wird.
+    # Abweichung zur Vorlage: kein separates 'restore -r ios-arm64' mit --no-restore, der implizite Restore
+    # von build/publish reicht. Wichtig: Der Restore wertet ALLE Zielframeworks der csproj aus und bricht bei
+    # einer fehlenden Workload mit NETSDK1147 ab - '-f net10.0-ios' schränkt das nicht ein. Wie in der Vorlage
+    # werden deshalb die übrigen Zielframeworks per Eigenschaft ausgeblendet (IncludeAndroidTarget=false,
+    # IncludeMacCatalystTarget=false, siehe Tankradar.MAUI.csproj); installiert ist nur die iOS-Workload.
     - name: Build iOS
       shell: bash
       env:
@@ -210,6 +214,8 @@ runs:
         TANKRADAR_FUEL_PRICE_API_KEY: ${{ inputs.fuel-price-api-key }}
         TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
+        IncludeAndroidTarget: 'false'
+        IncludeMacCatalystTarget: 'false'
       run: |
         set -euo pipefail
         BUILD_NUMBER=$(( $(git rev-list --count HEAD) + RUN_ATTEMPT - 1 ))

@@ -13,7 +13,7 @@
 ## Ablauf
 
 1. **Pull Request nach `staging`** — `PR CI for Staging` läuft: Formatprüfung, Sicherheitsprüfung der
-   Abhängigkeiten, statische Analyse (Warnungen als Fehler, alle Zielplattformen), Build, Unit- und
+   Abhängigkeiten, statische Analyse (Warnungen als Fehler, Windows- und Android-Ziel; die Apple-Ziele prüft der iOS-Build), Build, Unit- und
    Integrationstests mit Mindest-Testabdeckung (70 %), FlaUI-E2E-Tests (Windows) und ein
    unsignierter iOS-Build (Compile-Prüfung).
 2. **Merge nach `staging`** — `Pre-Release` wiederholt die Prüfungen, ermittelt die nächste Version

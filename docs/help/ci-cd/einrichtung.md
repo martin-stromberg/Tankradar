@@ -115,11 +115,3 @@ Ein `workflow_run`-Trigger nutzt nur die Workflow-Datei auf dem Standardbranch. 
 Was **nur** auf GitHub/macOS geprüft werden kann (unter Windows nicht ausführbar): Workload-Pinning,
 signierter Build, Keychain-Import, iTMSTransporter-Suche/-Installation, TestFlight-Upload sowie alle
 Aktionen von [`scripts/iOS-Deployment.ps1`](ios-deployment.md), die einen Mac benötigen.
-- [ ] Nach dem Setzen von `IOS_SIGNING_ENABLED=true` und der Secrets: ein Pre-Release-Lauf erzeugt
-      `ios-ipa-prerelease`; bei gesetztem API-Key erscheint der Build nach der Verarbeitung in TestFlight.
-      Die Workload-Version (`ios-workload-version` in `.github/actions/package-ios`) muss zum Xcode des
-      Runners passen (der App Store lehnt Builds aus Beta-Xcode ab).
-
-Was **nur** auf GitHub/macOS geprüft werden kann (unter Windows nicht ausführbar): Workload-Pinning,
-signierter Build, Keychain-Import, iTMSTransporter-Suche/-Installation, TestFlight-Upload sowie alle
-Aktionen von [`scripts/iOS-Deployment.ps1`](ios-deployment.md), die einen Mac benötigen.

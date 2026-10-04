@@ -59,6 +59,10 @@ jobs:
     needs: detect-backmerge
     if: needs.detect-backmerge.outputs.is_backmerge != 'true'
     runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
     timeout-minutes: 30
     defaults:
       run:
@@ -102,7 +106,7 @@ jobs:
           artifact-name: vulnerable-packages-pr
 
       - name: Static analysis
-        # Baut die gesamte Solution (alle Zielplattformen inkl. iOS) mit Warnungen als Fehler.
+        # Baut die Solution (Windows/Android; Apple-Ziele werden vom macOS-Job "ios build" geprüft) mit Warnungen als Fehler.
         run: dotnet build Tankradar.sln --configuration Release --no-restore -p:TreatWarningsAsErrors=true
 
   build-and-test:
@@ -115,6 +119,8 @@ jobs:
       run:
         shell: bash
     env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
       COVERAGE_THRESHOLD: '70'
     steps:
       - name: Checkout

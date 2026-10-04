@@ -15,6 +15,10 @@ jobs:
   release:
     name: release
     runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
     timeout-minutes: 60
     concurrency:
       group: release

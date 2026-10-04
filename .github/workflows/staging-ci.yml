@@ -55,6 +55,10 @@ jobs:
     needs: detect-backmerge
     if: needs.detect-backmerge.outputs.is_backmerge != 'true'
     runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
     timeout-minutes: 30
     defaults:
       run:
@@ -108,6 +112,8 @@ jobs:
       run:
         shell: bash
     env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
       COVERAGE_THRESHOLD: '70'
     steps:
       - name: Checkout
@@ -228,6 +234,10 @@ jobs:
     needs: [detect-backmerge, version]
     if: needs.detect-backmerge.outputs.is_backmerge != 'true' && needs.version.outputs.changed == 'true'
     runs-on: windows-latest
+    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
+    env:
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
     timeout-minutes: 45
     permissions:
       contents: write

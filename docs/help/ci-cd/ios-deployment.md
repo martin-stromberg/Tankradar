@@ -91,10 +91,12 @@ $env:TANKRADAR_IOS_MAC_SERVER_USER    = "martin"
 ## Abweichungen von der Vorlage
 
 - Projekt, Umgebungsvariablen und Bundle-ID (`<ApplicationId>` der `.csproj`, optional `-BundleId`) für Tankradar.
-- Die Store-Validierung der `.ipa` prüft Signatur, Distribution-Profil (`get-task-allow`), Gerätefamilie
-  (iPhone muss enthalten sein) und führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankradar
-  nicht gelten (nur iPhone, `en`+`de`-Lokalisierung, Pflicht-`PrivacyInfo.xcprivacy`, Pflicht-
-  `ITSAppUsesNonExemptEncryption`), sind zu Warnungen abgeschwächt bzw. entfallen.
+- Die Store-Validierung der `.ipa` prüft Signatur, Distribution-Profil (`get-task-allow`), das Privacy-Manifest
+  `PrivacyInfo.xcprivacy` im Bundle-Root (Pflicht, Fehler bei Fehlen; die Datei liegt unter
+  `src/Tankradar.MAUI/Platforms/iOS/Resources/`), Gerätefamilie (iPhone muss enthalten sein),
+  `ITSAppUsesNonExemptEncryption` = `false` (Pflicht; in der `Info.plist` gesetzt, die App nutzt nur Standard-HTTPS)
+  und führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankradar nicht gelten (nur iPhone,
+  `en`+`de`-Lokalisierung), sind abgeschwächt bzw. entfallen.
 - Die Variablen `$isWindows`/`$isMacOS` heißen `$onWindows`/`$onMacOS`, weil PowerShell 7 gleichnamige
   Konstanten schreibgeschützt führt.
 - Android-Anteile der Vorlage entfallen.

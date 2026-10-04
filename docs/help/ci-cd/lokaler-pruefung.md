@@ -29,7 +29,7 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Node-Tests der Pipeline-Skripte, Workflow-Validierung | `Pipeline script tests` / Dateiprüfung |
 | Formatprüfung (`dotnet format --verify-no-changes --severity error`) | `Format check` |
 | Sicherheitsprüfung der Abhängigkeiten | `Security scan` |
-| Statische Analyse (Build aller Zielplattformen mit Warnungen als Fehler) | `Static analysis` |
+| Statische Analyse (Build aller Zielplattformen des lokalen Betriebssystems mit Warnungen als Fehler) | `Static analysis` |
 | Unit- und Integrationstests mit Coverage, Mindestabdeckung 70 % | `Test …` / `Enforce coverage threshold` |
 | FlaUI-E2E-Tests (best-effort, Fehlschlag = Warnung) | `Test E2E with FlaUI (best-effort)` |
 | Windows-Paket (`-Package`) | `Build and package` |

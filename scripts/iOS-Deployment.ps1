@@ -729,23 +729,20 @@ if echo "`$PROFILE_XML" | grep -A1 'get-task-allow' | grep -q '<true/>'; then
     echo "FEHLER: Development-Profil (get-task-allow=true) - nicht store-tauglich"; exit 1
 fi
 echo "==> Pruefe PrivacyInfo.xcprivacy"
-# Tankradar liefert derzeit kein Privacy-Manifest mit. Fehlt es und verwendet die App
-# Required-Reason-APIs, meldet die Verarbeitung ITMS-91053 - daher nur eine Warnung,
-# damit eine kuenftig ergaenzte Datei sofort geprueft wird.
+# Das Manifest (src/Tankradar.MAUI/Platforms/iOS/Resources/PrivacyInfo.xcprivacy) liegt im
+# Standard-Ressourcenordner und landet im Bundle-Root. Fehlt es, meldet die Verarbeitung
+# ITMS-91053 - das ist ein Packaging-Fehler.
 if [ ! -f "`$APP/PrivacyInfo.xcprivacy" ]; then
-    echo "WARNUNG: PrivacyInfo.xcprivacy fehlt im Bundle-Root - bei Required-Reason-APIs lehnt App Store Connect den Upload ab (ITMS-91053)."
-else
-    plutil -lint "`$APP/PrivacyInfo.xcprivacy" >/dev/null 2>&1 || { echo "FEHLER: PrivacyInfo.xcprivacy ist kein gueltiges plist"; exit 1; }
+    echo "FEHLER: PrivacyInfo.xcprivacy fehlt im Bundle-Root"; exit 1
 fi
+plutil -lint "`$APP/PrivacyInfo.xcprivacy" >/dev/null 2>&1 || { echo "FEHLER: PrivacyInfo.xcprivacy ist kein gueltiges plist"; exit 1; }
 echo "==> Pruefe Bundle-Metadaten (Info.plist)"
 # Tankradar ist universal (iPhone + iPad) deklariert und liefert noch keine
 # CFBundleLocalizations; geprueft wird nur, dass mindestens iPhone enthalten ist.
 FAMILY=`$(plutil -extract UIDeviceFamily json -o - "`$APP/Info.plist" 2>/dev/null || echo '[]')
 echo "`$FAMILY" | grep -q '1' || { echo "FEHLER: UIDeviceFamily ohne iPhone (1): `$FAMILY"; exit 1; }
 ENC=`$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "`$APP/Info.plist" 2>/dev/null || echo '?')
-if [ "`$ENC" != "false" ] && [ "`$ENC" != "0" ]; then
-    echo "WARNUNG: ITSAppUsesNonExemptEncryption ist nicht auf false gesetzt (`$ENC) - App Store Connect fragt die Exportkonformitaet bei jedem Build ab."
-fi
+[ "`$ENC" = "false" ] || [ "`$ENC" = "0" ] || { echo "FEHLER: ITSAppUsesNonExemptEncryption nicht false: `$ENC"; exit 1; }
 echo "==> Pruefe App-Icon-Kodierung"
 # ITMS-90717 lehnt Icons mit Transparenz ab. Der Resizetizer erzeugt
 # grundsaetzlich RGBA; actool kodiert ARGB - das ist bei vollstaendig

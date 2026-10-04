@@ -128,6 +128,31 @@ try {
     $TransporterPath = "/opt/it's/iTMSTransporter"
     $find = Get-TransporterFindScript
     Assert-That "Transporter-Override wird fuer die Shell maskiert" ($find.Contains("/opt/it'\''s/iTMSTransporter"))
+
+    Write-Host "Store-Validierung (Invarianten)"
+    $validation = Get-FunctionSource $ast "Invoke-IpaValidation"
+    Assert-That "Fehlendes PrivacyInfo.xcprivacy ist ein Fehler (exit 1)" ($validation -match 'FEHLER: PrivacyInfo\.xcprivacy fehlt im Bundle-Root"; exit 1')
+    Assert-That "Ungueltiges PrivacyInfo.xcprivacy ist ein Fehler" ($validation -match 'FEHLER: PrivacyInfo\.xcprivacy ist kein gueltiges plist')
+    Assert-That "ITSAppUsesNonExemptEncryption ungleich false ist ein Fehler" ($validation -match 'FEHLER: ITSAppUsesNonExemptEncryption nicht false')
+    Assert-That "Keine Warnung-Abschwaechung fuer Privacy-Manifest/Verschluesselung" ($validation -notmatch 'WARNUNG: (PrivacyInfo|ITSAppUsesNonExemptEncryption)')
+
+    Write-Host "Projektdateien zur Store-Validierung"
+    $repoRoot = Split-Path $PSScriptRoot -Parent
+    $mauiDir = Join-Path $repoRoot "src/Tankradar.MAUI"
+    Assert-That "PrivacyInfo.xcprivacy liegt im iOS-Ressourcenordner" (Test-Path (Join-Path $mauiDir "Platforms/iOS/Resources/PrivacyInfo.xcprivacy"))
+    $infoPlist = [IO.File]::ReadAllText((Join-Path $mauiDir "Platforms/iOS/Info.plist"))
+    Assert-That "Info.plist setzt ITSAppUsesNonExemptEncryption auf false" ($infoPlist -match '<key>ITSAppUsesNonExemptEncryption</key>\s*<false\s*/>')
+
+    Write-Host "Zielframeworks per Eigenschaft ausblendbar"
+    if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+        $csprojPath = Join-Path $mauiDir "Tankradar.MAUI.csproj"
+        $all = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks 2>&1 | Out-String).Trim()
+        Assert-That "Standard: iOS-Zielframework enthalten" ($all -match 'net10\.0-ios') $all
+        $iosOnly = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeAndroidTarget=false -p:IncludeMacCatalystTarget=false -p:IncludeWindowsTarget=false 2>&1 | Out-String).Trim().Trim(';')
+        Assert-That "Ausgeblendet: nur net10.0-ios (macOS-Job)" ($iosOnly -eq 'net10.0-ios') $iosOnly
+        $noApple = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeIosTarget=false -p:IncludeMacCatalystTarget=false 2>&1 | Out-String).Trim()
+        Assert-That "Ausgeblendet: keine Apple-Ziele (Windows-Jobs)" ($noApple -notmatch 'ios|maccatalyst') $noApple
+    }
 }
 finally {
     Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
