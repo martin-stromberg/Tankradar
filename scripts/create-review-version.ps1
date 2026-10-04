@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Erstellt einen startfaehigen Windows-Zwischenstand von Tankradar unter review-versions/.
+    Erstellt einen startfaehigen Windows-Zwischenstand von Tankatlas unter review-versions/.
 
 .DESCRIPTION
     Baut die Tankradar.MAUI-App als ungepacktes Windows-Release, kopiert die Build-Ausgabe nach
@@ -86,7 +86,7 @@ else {
     $changelogEntry = "Keine Changelog-Beschreibung angegeben."
 }
 
-$changelogContent = "# Changelog - Tankradar $Version ($dateStamp)`n`n$changelogEntry`n"
+$changelogContent = "# Changelog - Tankatlas $Version ($dateStamp)`n`n$changelogEntry`n"
 Set-Content -Path $changelogPath -Value $changelogContent -Encoding UTF8
 
 $exePath = Join-Path $binDir "Tankradar.MAUI.exe"

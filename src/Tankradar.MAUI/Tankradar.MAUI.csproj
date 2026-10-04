@@ -32,7 +32,7 @@
 		<WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
 		<!-- Display name -->
-		<ApplicationTitle>Tankradar</ApplicationTitle>
+		<ApplicationTitle>Tankatlas</ApplicationTitle>
 
 		<!-- App Identifier (Bundle-ID, siehe Services/AppConfiguration.cs) -->
 		<ApplicationId>de.martinstromberg.tankradar</ApplicationId>

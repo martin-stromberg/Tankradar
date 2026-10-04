@@ -34,7 +34,7 @@ Diese Schritte erfolgen im Apple-Developer-Konto (Mitgliedschaft im Apple Develo
 baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 
 - [ ] **App-ID / Bundle-ID** unter *Certificates, Identifiers & Profiles → Identifiers* anlegen (Typ *App IDs → App*).
-      Die Bundle-ID von Tankradar lautet `de.martinstromberg.tankradar` (steht als `ApplicationId` in der `.csproj`; keine
+      Die Bundle-ID von Tankatlas lautet `de.martinstromberg.tankradar` (steht als `ApplicationId` in der `.csproj`; keine
       Geheiminformation).
 - [ ] **App-Eintrag in App Store Connect** (*Apps → Neue App*) mit genau dieser Bundle-ID anlegen; ohne
       Eintrag lehnt der Upload den Build ab.

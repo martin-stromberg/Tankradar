@@ -1,3 +1,0 @@
-# Anforderung: App-Anzeigename "Tankatlas"
-
-Der fuer Anwender sichtbare Name der App wird von "Tankradar" auf "Tankatlas" geaendert: iOS-Anzeigename (ApplicationTitle/CFBundleDisplayName), Fenstertitel der Windows-App, sichtbare Texte, Startbild (sofern Name enthalten), Anwenderdokumentation und README. Unveraendert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-/Solution-/Namespace-/Assembly-Namen, Repository, `TANKRADAR_*`-Umgebungsvariablen, Name des Windows-Release-Artefakts. FlaUI-Tests finden das Hauptfenster weiterhin und pruefen den neuen Titel. Aenderungsprotokoll aktualisieren. Windows-Zwischenstand unter review-versions/ ablegen.

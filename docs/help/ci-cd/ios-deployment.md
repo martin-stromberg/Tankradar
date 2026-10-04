@@ -2,7 +2,7 @@
 
 # iOS-Deployment (`scripts/iOS-Deployment.ps1`)
 
-Das Skript stammt aus einem bewährten anderen Projekt und wurde für Tankradar angepasst (Projekt
+Das Skript stammt aus einem bewährten anderen Projekt und wurde für Tankatlas angepasst (Projekt
 `src/Tankradar.MAUI/Tankradar.MAUI.csproj`, Umgebungsvariablen mit Präfix `TANKRADAR_IOS_*`). Es baut die
 iOS-App, startet sie im Simulator oder auf einem Gerät und lädt signierte Builds nach TestFlight hoch. Unter
 Windows läuft der Build über *Pair to Mac*, alles andere per SSH auf dem Mac. Die automatische Variante in
@@ -90,12 +90,12 @@ $env:TANKRADAR_IOS_MAC_SERVER_USER    = "martin"
 
 ## Abweichungen von der Vorlage
 
-- Projekt, Umgebungsvariablen und Bundle-ID (`<ApplicationId>` der `.csproj`, optional `-BundleId`) für Tankradar.
+- Projekt, Umgebungsvariablen und Bundle-ID (`<ApplicationId>` der `.csproj`, optional `-BundleId`) für Tankatlas.
 - Die Store-Validierung der `.ipa` prüft Signatur, Distribution-Profil (`get-task-allow`), das Privacy-Manifest
   `PrivacyInfo.xcprivacy` im Bundle-Root (Pflicht, Fehler bei Fehlen; die Datei liegt unter
   `src/Tankradar.MAUI/Platforms/iOS/Resources/`), Gerätefamilie (iPhone muss enthalten sein),
   `ITSAppUsesNonExemptEncryption` = `false` (Pflicht; in der `Info.plist` gesetzt, die App nutzt nur Standard-HTTPS)
-  und führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankradar nicht gelten (nur iPhone,
+  und führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankatlas nicht gelten (nur iPhone,
   `en`+`de`-Lokalisierung), sind abgeschwächt bzw. entfallen.
 - Die Variablen `$isWindows`/`$isMacOS` heißen `$onWindows`/`$onMacOS`, weil PowerShell 7 gleichnamige
   Konstanten schreibgeschützt führt.

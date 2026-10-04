@@ -76,7 +76,7 @@ $assetUrl = if ($Repository) {
 
 $manifest = [ordered]@{
     version      = $Version
-    releaseNotes = "Tankradar release $Tag"
+    releaseNotes = "Tankatlas release $Tag"
     publishedAt  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     assets       = @(
         [ordered]@{

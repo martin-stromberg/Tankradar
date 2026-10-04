@@ -3,7 +3,7 @@
 namespace Tankradar.MAUI;
 
 /// <summary>
-/// MacCatalyst-App-Delegate der Tankradar-App.
+/// MacCatalyst-App-Delegate der Tankatlas-App.
 /// </summary>
 [Register("AppDelegate")]
 public class AppDelegate : MauiUIApplicationDelegate

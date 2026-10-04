@@ -38,7 +38,7 @@ Umlaut-Transliterationen (`ae`/`oe`/`ue` statt `ä`/`ö`/`ü`).
 - **pre-commit:** nur gestaffelte Dateien, blockierend.
 - **pre-push:** `--all`, gesamtes Repository, blockierend.
 
-Aktuell enthält Tankradar keine `.resx`-Dateien, daher meldet der Check "No .resx files found; nothing to check."
+Aktuell enthält Tankatlas keine `.resx`-Dateien, daher meldet der Check "No .resx files found; nothing to check."
 
 **Behebung:** Fehlende Schlüssel in der jeweiligen Sprachdatei ergänzen; ResX-Header nicht von
 Hand verändern (durch den Ressourcen-Editor von Visual Studio erzeugen lassen).

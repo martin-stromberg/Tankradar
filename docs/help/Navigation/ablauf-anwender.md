@@ -4,13 +4,13 @@
 
 ## Voraussetzungen
 
-Tankradar ist installiert und gestartet. Sie sehen die App mit vier Schaltflächen am unteren Bildschirmrand.
+Tankatlas ist installiert und gestartet. Sie sehen die App mit vier Schaltflächen am unteren Bildschirmrand.
 
 ## Schritt-für-Schritt-Anleitung
 
 ### 1. App starten
 
-Tippen Sie auf das Tankradar-App-Icon auf Ihrem Gerät. Die App öffnet sich und zeigt den **Favoriten**-Bereich als Startseite.
+Tippen Sie auf das Tankatlas-App-Icon auf Ihrem Gerät. Die App öffnet sich und zeigt den **Favoriten**-Bereich als Startseite.
 
 > **Hinweis:** Beim ersten Start kann das Laden einige Sekunden dauern.
 
@@ -33,20 +33,20 @@ Jeder Bereich zeigt aktuell einen Platzhalter-Text, der erklärt, was dort spät
 Die App passt sich automatisch an die Darstellungs-Einstellung Ihres Geräts an:
 
 **Auf iOS:**
-1. Öffnen Sie die Einstellungen (App-Icon außerhalb von Tankradar).
+1. Öffnen Sie die Einstellungen (App-Icon außerhalb von Tankatlas).
 2. Gehen Sie zu **Anzeige und Helligkeit**.
 3. Wählen Sie **Hell** oder **Dunkel** (oder **Automatisch** für zeitliche Umschaltung).
-4. Kehren Sie zu Tankradar zurück — die Farben und Texte passen sich sofort an.
+4. Kehren Sie zu Tankatlas zurück — die Farben und Texte passen sich sofort an.
 
 **Auf Windows:**
 1. Öffnen Sie die Windows-Einstellungen.
 2. Gehen Sie zu **Personalisierung > Farben**.
 3. Wählen Sie unter **Designmodus wählen** die Option **Hell** oder **Dunkel**.
-4. Kehren Sie zu Tankradar zurück — die Farben und Texte passen sich an.
+4. Kehren Sie zu Tankatlas zurück — die Farben und Texte passen sich an.
 
 ## Ergebnis
 
-Sie navigieren sicher zwischen den vier Hauptbereichen von Tankradar und können Ihre bevorzugte Darstellung (Hell/Dunkel) einstellen. Die App zeigt sich in beiden Modi übersichtlich und gut lesbar.
+Sie navigieren sicher zwischen den vier Hauptbereichen von Tankatlas und können Ihre bevorzugte Darstellung (Hell/Dunkel) einstellen. Die App zeigt sich in beiden Modi übersichtlich und gut lesbar.
 
 ## Barrierefreiheit
 

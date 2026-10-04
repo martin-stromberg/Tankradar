@@ -27,6 +27,15 @@ public class NavigationE2ETests : E2ETestBase
         RunWithDiagnostics(NavigateThroughAllTabs);
     }
 
+    /// <summary>
+    /// Prüft, dass das Hauptfenster den Anzeigenamen „Tankatlas“ als Titel trägt.
+    /// </summary>
+    [Fact]
+    public void MainWindowShowsDisplayNameAsTitle()
+    {
+        RunWithDiagnostics(() => Assert.Equal("Tankatlas", MainWindow.Title));
+    }
+
     private void NavigateThroughAllTabs()
     {
         Assert.NotNull(MainWindow);

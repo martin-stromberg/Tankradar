@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// Basisklasse für alle ViewModels der Tankradar-App mit MVVM-Grundfunktionalität.
+/// Basisklasse für alle ViewModels der Tankatlas-App mit MVVM-Grundfunktionalität.
 /// </summary>
 public abstract class BaseViewModel : INotifyPropertyChanged
 {
