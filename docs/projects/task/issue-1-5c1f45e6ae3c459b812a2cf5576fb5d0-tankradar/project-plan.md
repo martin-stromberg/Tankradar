@@ -39,6 +39,7 @@ Ablage startfähiger Windows-Zwischenstände aufgebaut.
 | CI-Verfügbarkeit | Zu jeder CI-Prüfung gibt es einen gleichwertigen lokalen Prüflauf. Scheitern GitHub Actions am Billing-Limit, gelten die lokalen Ergebnisse. | Das Repository bleibt bis 1.0 privat, Actions können daher scheitern. |
 | Feature-Flags | Es gibt keinen eigenen Mechanismus für Feature-Flags. Die Routensuche ist fester Bestandteil von Version 1.0. Das Offline-Verhalten ergibt sich aus der tatsächlichen Verbindung und wird nicht per Schalter erzwungen. Den E2E-Testmodus steuert die ohnehin geplante Test-Konfiguration (isolierte Testdatenbank, Mock-Dienste statt produktiver Endpunkte). Strom- und Cloud-Schalter entfallen mit den zugehörigen Funktionen. | Entscheidung des Projektleiters vom 2026-09-28: Die Feature-Flags stehen nicht in der Originalanforderung (`issue.md`), sondern sind ein Übersetzungsartefakt. Ein zusätzlicher Schaltmechanismus hätte in 1.0 keinen fachlichen Nutzen. |
 | Windows-Auslieferung | Für Windows gibt es keinen Installer (weder MSIX noch Setup.exe). Als Windows-Stände genügen die startfähigen Zwischenstände unter `review-versions/` und die CI-Release-Artefakte: ein gezipptes Build, das nach dem Entpacken ohne Installation startet. | Entscheidung des Projektleiters vom 2026-09-28: Laut Anforderung ist Windows Entwicklungs- und Testplattform. Der Installer steht nicht in der Originalanforderung, sondern stammt aus der Übersetzung. |
+| App-Anzeigename | Der für Anwender sichtbare Name der App lautet „Tankatlas“ (iOS-Homescreen/`CFBundleDisplayName`, Fenstertitel, Texte in der App, Anwenderdokumentation). Bundle-ID (`de.martinstromberg.tankradar`), Projekt-, Namespace- und Repository-Namen bleiben unverändert. Umsetzung als eigener Schritt 3a; alle folgenden Schritte verwenden den neuen Namen. | Stakeholder-Entscheidung vom 2026-10-04. |
 | Sprache | Die Oberfläche ist deutsch. Oberflächentexte werden zentral gepflegt, damit die Übersetzungsprüfung der Git-Hooks greift. | Zielgruppe und Designentwurf sind deutsch. |
 
 ## Entwicklungsschritte
@@ -155,6 +156,25 @@ Variable). Die Bundle-ID lautet `de.martinstromberg.tankradar` (Stakeholder-Anga
 **Abhängigkeiten:** 1, 2
 
 **Betroffene Bereiche:** Build, Tests, Release-Prozess, Versionierung, CI-Sicherheit
+
+### Schritt 3a: App-Anzeigename „Tankatlas“
+
+**Beschreibung:** Der für Anwender sichtbare Name der App wird von „Tankradar“ auf „Tankatlas“
+geändert. Das betrifft den unter iOS angezeigten App-Namen (Homescreen, `CFBundleDisplayName` bzw.
+`ApplicationTitle`), den Fenstertitel der Windows-App, alle in der App sichtbaren Texte, die den
+App-Namen nennen, das Startbild, sofern es den Namen enthält, sowie die Anwenderdokumentation und
+das README dort, wo vom Produkt aus Anwendersicht die Rede ist. Unverändert bleiben die Bundle-ID
+`de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und Assembly-Namen, das
+Repository, die Namen der Umgebungsvariablen (`TANKRADAR_*`) und der Name des
+Windows-Release-Artefakts, sofern er nicht für Anwender als Produktname erscheint. Die
+Oberflächentests (FlaUI) finden das Hauptfenster weiterhin zuverlässig und prüfen den neuen
+Titel. Die Änderung wird im Änderungsprotokoll und, als Abweichung vom ursprünglichen Namen, in der
+Projektdokumentation festgehalten. Zum Abschluss wird ein startfähiger Windows-Zwischenstand unter
+`review-versions/` abgelegt (nicht committen).
+
+**Abhängigkeiten:** 1, 3
+
+**Betroffene Bereiche:** App-Name, Oberfläche, Dokumentation, E2E-Tests
 
 ### Schritt 4: Lokale Datenhaltung und Einstellungen
 
