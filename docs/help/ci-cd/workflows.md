@@ -10,7 +10,7 @@ Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vor
 | Datei | Anzeigename | Trigger | Aufgabe |
 |---|---|---|---|
 | `verify-pr-source.yml` | Verify PR Source | PR → `main` | Lehnt PRs nach `main` ab, die nicht von `staging` kommen. |
-| `pr-staging-ci.yml` | PR CI for Staging | PR → `staging` | Qualitätsprüfungen (`static checks`, `build & test`, `ios build`). Reine Rückführungs-PRs (`main` → `staging`) überspringen die Prüfungen. |
+| `pr-staging-ci.yml` | PR CI for Staging | PR → `staging` | Qualitätsprüfungen (`static checks`, `build & test`, `ios build`). Reine Rückführungs-PRs (`main` → `staging`) überspringen die Prüfungen (Erkennung siehe unten). |
 | `staging-ci.yml` | Pre-Release | Push → `staging` | Dieselben Prüfungen, dann `version`, `prerelease` (Windows-ZIP als GitHub-Pre-Release) und `ios-prerelease`. |
 | `staging-to-main-promotion.yml` | Staging to Main Promotion | nach erfolgreichem `Pre-Release` | Eröffnet den Entwurfs-PR `staging` → `main` (Label `automated-promotion`). |
 | `sync-staging-with-main.yml` | Backmerge Main to Staging | Push → `main` | Eröffnet den PR `main` → `staging` (Label `automated-backmerge`). |
@@ -79,3 +79,13 @@ Umgebungsvariable `TANKRADAR_E2E_DIAGNOSTICS_DIR`); es ist nicht versioniert. Be
 (`pr-staging-ci.yml`, `staging-ci.yml`) laden es im Schritt `Upload E2E diagnostics` mit `if: always()` als
 Artefakt `e2e-diagnostics-pr` bzw. `e2e-diagnostics-staging` hoch, also auch bei best-effort-Fehlschlägen.
 Neue E2E-Tests kapseln ihren Testkörper dafür in `RunWithDiagnostics(...)`.
+
+## Erkennung von Rückführungen (Back-Merge)
+
+`pr-staging-ci.yml` und `staging-ci.yml` entscheiden im Job `detect-backmerge` mit
+`scripts/detect-backmerge.mjs <head-sha> <main-sha>`, ob die Prüfungen übersprungen werden. Ein Back-Merge liegt vor,
+wenn der **Head-Commit** (PR: `github.event.pull_request.head.sha`, Push: `github.sha`) ein Merge-Commit ist, dessen
+zweiter oder weiterer Parent die Spitze von `main` ist, oder wenn sein Inhalt identisch zu `main` ist. Der erste Parent
+zählt bewusst nicht: Bei PR-Events ist `HEAD` der von GitHub erzeugte Merge-Commit, dessen erster Parent die Spitze von
+`staging` ist (== `main`, solange noch nichts auf `staging` liegt oder nach einer Beförderung). Normale Feature-PRs
+durchlaufen daher immer die vollen Prüfungen. Die Logik ist über `npm test` (`scripts/detect-backmerge.test.mjs`) abgesichert.
