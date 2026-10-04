@@ -107,7 +107,7 @@ jobs:
           artifact-name: vulnerable-packages-pr
 
       - name: Static analysis
-        # Baut die Solution (Windows/Android; Apple-Ziele werden vom macOS-Job "ios build" geprüft) mit Warnungen als Fehler.
+        # Baut die Solution (nur Windows-Ziel; Apple-Ziele werden vom macOS-Job "ios build" geprüft) mit Warnungen als Fehler.
         run: dotnet build Tankradar.sln --configuration Release --no-restore -p:TreatWarningsAsErrors=true
 
   build-and-test:

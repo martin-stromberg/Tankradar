@@ -11,13 +11,15 @@
         2. Restore
         3. Formatprüfung      dotnet format --verify-no-changes --severity error
         4. Sicherheitsprüfung dotnet list package --vulnerable --include-transitive --no-restore
-        5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (wie die Windows-Jobs der CI mit
-                              IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; der iOS-Build samt
-                              signierten Paketen und TestFlight-Upload entsteht nur auf einem Mac bzw. in der CI)
+        5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (Windows-Job-Simulation: wie die Windows-Jobs
+                              der CI mit IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; die
+                              Variablen werden am Ende wiederhergestellt)
         6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
         7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung;
                               Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
         8. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
+        9. iOS-Compile-Prüfung: net10.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
+                              lokale iOS-Workload mit Hinweis übersprungen. Signierte Pakete/TestFlight nur auf dem Mac bzw. in der CI.
 
     Beispiele:
         .\scripts\local-ci.ps1
@@ -79,6 +81,12 @@ function Invoke-Step {
     $global:LASTEXITCODE = 0
 }
 
+# Setzt eine Prozess-Umgebungsvariable; $null entfernt sie wirklich (PowerShell würde $null sonst als leere Zeichenfolge übergeben).
+function Set-ProcessEnv([string]$Name, $Value) {
+    if ($null -eq $Value) { [Environment]::SetEnvironmentVariable($Name, [NullString]::Value) }
+    else { [Environment]::SetEnvironmentVariable($Name, [string]$Value) }
+}
+
 function Skip-Step([string]$Name, [string]$Reason) {
     Write-Host ""
     Write-Host "=== $Name === übersprungen ($Reason)" -ForegroundColor DarkGray
@@ -109,70 +117,100 @@ Invoke-Step "iOS-Deployment-Skript mit Windows-Job-Umgebung (Include*Target=fals
         if ($LASTEXITCODE -ne 0) { throw "iOS-Deployment-Pruefung mit Windows-Job-Umgebung fehlgeschlagen." }
     }
     finally {
-        foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, $saved[$n]) }
+        foreach ($n in $windowsJobEnv.Keys) { Set-ProcessEnv $n $saved[$n] }
     }
 }
 # Ab hier wie in den Windows-Jobs der Pipeline: nur das Windows-Zielframework der MAUI-App (kein Android/iOS/MacCatalyst;
 # Tankradar hat kein Android-Ziel, die Apple-Ziele baut nur der macOS-Job).
-foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, 'false') }
-Invoke-Step "Restore" { dotnet restore $solution -p:Configuration=Release }
-Invoke-Step "Formatprüfung" { dotnet format $solution --verify-no-changes --no-restore --severity error }
+# Die Include*Target-Variablen werden für die Windows-Job-Simulation prozessweit gesetzt und am Ende in jedem Fall
+# (auch bei Fehler/Abbruch) auf die ursprünglichen Werte zurückgesetzt, damit eine aufrufende PowerShell-Sitzung
+# nicht dauerhaft nur noch Windows baut.
+$originalEnv = @{}
+foreach ($n in $windowsJobEnv.Keys) { $originalEnv[$n] = [Environment]::GetEnvironmentVariable($n) }
+try {
+    foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, 'false') }
+    Invoke-Step "Restore" { dotnet restore $solution -p:Configuration=Release }
+    Invoke-Step "Formatprüfung" { dotnet format $solution --verify-no-changes --no-restore --severity error }
 
-if ($SkipSecurityScan) {
-    Skip-Step "Sicherheitsprüfung (Abhängigkeiten)" "-SkipSecurityScan"
-}
-else {
-    Invoke-Step "Sicherheitsprüfung (Abhängigkeiten)" {
-        $output = (dotnet list $solution package --vulnerable --include-transitive --no-restore 2>&1 | Out-String)
-        Write-Host $output
-        if ($output -match "(?i)has the following vulnerable packages|Severity") {
-            throw "Anfällige Pakete gefunden."
+    if ($SkipSecurityScan) {
+        Skip-Step "Sicherheitsprüfung (Abhängigkeiten)" "-SkipSecurityScan"
+    }
+    else {
+        Invoke-Step "Sicherheitsprüfung (Abhängigkeiten)" {
+            $output = (dotnet list $solution package --vulnerable --include-transitive --no-restore 2>&1 | Out-String)
+            Write-Host $output
+            if ($output -match "(?i)has the following vulnerable packages|Severity") {
+                throw "Anfällige Pakete gefunden."
+            }
         }
     }
-}
 
-Invoke-Step "Statische Analyse (Build mit Warnungen als Fehler)" {
-    dotnet build $solution --configuration Release --no-restore -p:TreatWarningsAsErrors=true
-}
-
-foreach ($project in @("Unit", "Integration")) {
-    Invoke-Step "Tests: $project" {
-        dotnet test "src/Tankradar.Tests.$project" --configuration Release --no-build `
-            --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory $testResults `
-            --logger "trx;LogFileName=test-results-$($project.ToLower()).trx"
+    Invoke-Step "Statische Analyse (Build mit Warnungen als Fehler)" {
+        dotnet build $solution --configuration Release --no-restore -p:TreatWarningsAsErrors=true
     }
-}
 
-Invoke-Step "Coverage-Bericht" {
-    if (-not (Get-Command reportgenerator -ErrorAction SilentlyContinue)) {
-        dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
-    }
-    reportgenerator "-reports:$testResults/**/coverage.cobertura.xml" "-targetdir:$coverageReport" "-reporttypes:TextSummary"
-}
-Invoke-Step "Mindest-Testabdeckung ($CoverageThreshold %)" {
-    node scripts/check-coverage.mjs (Join-Path $coverageReport "Summary.txt") $CoverageThreshold
-}
-
-if ($SkipE2E) {
-    Skip-Step "Tests: FlaUI-E2E (best-effort)" "-SkipE2E"
-}
-else {
-    Invoke-Step "Tests: FlaUI-E2E (best-effort)" -BestEffort {
-        dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
-            --logger "trx;LogFileName=test-results-e2e.trx"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
+    foreach ($project in @("Unit", "Integration")) {
+        Invoke-Step "Tests: $project" {
+            dotnet test "src/Tankradar.Tests.$project" --configuration Release --no-build `
+                --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory $testResults `
+                --logger "trx;LogFileName=test-results-$($project.ToLower()).trx"
         }
     }
-}
 
-if ($Package) {
-    Invoke-Step "Windows-Paket (release-win-x64.zip)" {
-        & (Join-Path $PSScriptRoot "package-windows.ps1") -Version $PackageVersion -Tag "v$PackageVersion" -OutputDirectory "artifacts"
+    Invoke-Step "Coverage-Bericht" {
+        if (-not (Get-Command reportgenerator -ErrorAction SilentlyContinue)) {
+            dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
+        }
+        reportgenerator "-reports:$testResults/**/coverage.cobertura.xml" "-targetdir:$coverageReport" "-reporttypes:TextSummary"
     }
+    Invoke-Step "Mindest-Testabdeckung ($CoverageThreshold %)" {
+        node scripts/check-coverage.mjs (Join-Path $coverageReport "Summary.txt") $CoverageThreshold
+    }
+
+    if ($SkipE2E) {
+        Skip-Step "Tests: FlaUI-E2E (best-effort)" "-SkipE2E"
+    }
+    else {
+        Invoke-Step "Tests: FlaUI-E2E (best-effort)" -BestEffort {
+            dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
+                --logger "trx;LogFileName=test-results-e2e.trx"
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
+            }
+        }
+    }
+
+    if ($Package) {
+        Invoke-Step "Windows-Paket (release-win-x64.zip)" {
+            & (Join-Path $PSScriptRoot "package-windows.ps1") -Version $PackageVersion -Tag "v$PackageVersion" -OutputDirectory "artifacts"
+        }
+    }
+    else {
+        Skip-Step "Windows-Paket (release-win-x64.zip)" "mit -Package aktivierbar"
+    }
+
+    # Eigener Schritt: iOS-Compile-Prüfung (Apple-Ziel aktiv, Android aus), da die Windows-Job-Simulation oben die
+    # Apple-Ziele ausblendet. Baut ohne Signierung für den Simulator (wie der unsignierte Build in der CI).
+    # Ohne lokale iOS-Workload wird der Schritt mit Hinweis übersprungen (kein Fehlschlag, keine Installation).
+    $iosWorkload = $false
+    try { $iosWorkload = [bool]((dotnet workload list 2>$null | Out-String) -match '(?m)^\s*ios\s') } catch { }
+    if (-not $iosWorkload) {
+        Skip-Step "iOS-Compile-Prüfung (net10.0-ios)" "iOS-Workload nicht installiert (dotnet workload restore Tankradar.sln)"
+    }
+    else {
+        Invoke-Step "iOS-Compile-Prüfung (net10.0-ios)" {
+            [Environment]::SetEnvironmentVariable('IncludeAndroidTarget', 'false')
+            [Environment]::SetEnvironmentVariable('IncludeIosTarget', 'true')
+            [Environment]::SetEnvironmentVariable('IncludeMacCatalystTarget', 'false')
+            # Eigener Restore, weil der Restore oben ohne Apple-Ziele erfolgte.
+            dotnet build "src/Tankradar.MAUI/Tankradar.MAUI.csproj" --configuration Release --framework net10.0-ios `
+                -p:RuntimeIdentifier=iossimulator-arm64 -p:TreatWarningsAsErrors=true -p:MauiXamlInflator=XamlC
+        }
+    }
+
 }
-else {
-    Skip-Step "Windows-Paket (release-win-x64.zip)" "mit -Package aktivierbar"
+finally {
+    foreach ($n in $windowsJobEnv.Keys) { Set-ProcessEnv $n $originalEnv[$n] }
 }
 
 Write-Host ""

@@ -29,18 +29,24 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Node-Tests der Pipeline-Skripte, Workflow-Validierung | `Pipeline script tests` / Dateiprüfung |
 | Formatprüfung (`dotnet format --verify-no-changes --severity error`) | `Format check` |
 | Sicherheitsprüfung der Abhängigkeiten | `Security scan` |
-| Statische Analyse (Build aller Zielplattformen des lokalen Betriebssystems mit Warnungen als Fehler) | `Static analysis` |
+| Statische Analyse (Windows-Job-Simulation: nur Windows-Ziel, Warnungen als Fehler) | `Static analysis` |
 | Unit- und Integrationstests mit Coverage, Mindestabdeckung 70 % | `Test …` / `Enforce coverage threshold` |
 | FlaUI-E2E-Tests (best-effort, Fehlschlag = Warnung) | `Test E2E with FlaUI (best-effort)` |
 | Windows-Paket (`-Package`) | `Build and package` |
+| iOS-Compile-Prüfung (`net10.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
 
 Am Ende zeigt eine Tabelle den Status jedes Schritts. Exit-Code 0 bedeutet: alle blockierenden Prüfungen
 bestanden. Berichte liegen unter `TestResults/` und `coverage-report/` (nicht versioniert). Schlägt ein E2E-Test fehl,
 weist der Lauf auf das Diagnoseverzeichnis `e2e-diagnostics/` hin (Screenshot, UI-Baum, Fehlertext je Test;
 nicht versioniert, siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
 
-Der iOS-Teil wird lokal nur als Compile-Prüfung des iOS-Zielframeworks im Schritt „Statische Analyse“
-abgedeckt; die iOS-Pakete selbst entstehen nur auf einem Mac bzw. im macOS-Runner. Zusätzlich prüft der Schritt
+Die Schritte von Restore bis Paketierung simulieren die Windows-Jobs der Pipeline: Das Skript setzt dafür
+`IncludeAndroidTarget`, `IncludeIosTarget` und `IncludeMacCatalystTarget` auf `false` (nur das Windows-Ziel wird
+gebaut) und stellt die ursprünglichen Werte am Ende in jedem Fall wieder her (auch bei Fehler oder Abbruch), sodass
+eine aufrufende PowerShell-Sitzung unverändert bleibt. Der iOS-Teil läuft als eigener Schritt
+„iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus). Ist die iOS-Workload lokal nicht installiert, wird er mit
+Hinweis übersprungen (kein Fehlschlag; das Skript installiert keine Workloads). Die iOS-Pakete selbst entstehen nur
+auf einem Mac bzw. im macOS-Runner. Zusätzlich prüft der Schritt
 „iOS-Deployment-Skript“ (`scripts/test-ios-deployment.ps1`) Syntax, Hilfe und das saubere Abbrechen von
 [`scripts/iOS-Deployment.ps1`](ios-deployment.md) ohne Mac.
 
