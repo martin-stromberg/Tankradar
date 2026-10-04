@@ -15,10 +15,10 @@
 1. **Pull Request nach `staging`** — `PR CI for Staging` läuft: Formatprüfung, Sicherheitsprüfung der
    Abhängigkeiten, statische Analyse (Warnungen als Fehler, alle Zielplattformen), Build, Unit- und
    Integrationstests mit Mindest-Testabdeckung (70 %), FlaUI-E2E-Tests (Windows) und ein
-   unsignierter iOS-Build.
+   unsignierter iOS-Build (Compile-Prüfung).
 2. **Merge nach `staging`** — `Pre-Release` wiederholt die Prüfungen, ermittelt die nächste Version
    und veröffentlicht ein GitHub-Pre-Release `vX.Y.Z-rc.N` mit der Windows-App. Zusätzlich wird iOS
-   gebaut (signiert, sobald die Signierungsdaten hinterlegt sind).
+   gebaut (signiert und nach TestFlight hochgeladen, sobald `IOS_SIGNING_ENABLED` und die Secrets hinterlegt sind).
 3. **Automatischer Promotion-Pull-Request** — Nach erfolgreichem `Pre-Release` eröffnet
    `Staging to Main Promotion` einen Entwurfs-PR `staging` → `main`. Ein Maintainer prüft und mergt.
 4. **Merge nach `main`** — `Release` veröffentlicht `vX.Y.Z` als finales Release; `Backmerge Main to
@@ -33,14 +33,14 @@
 |---|---|
 | `release-win-x64.zip` | Windows-App, self-contained (.NET-Laufzeit enthalten). Nach dem Entpacken `Tankradar.MAUI.exe` starten — keine Installation. Ein Installer (MSIX/Setup) wird bewusst nicht erstellt. |
 | `update.json` | Manifest mit Version, Download-URL, SHA-256 und Größe des ZIPs. |
-| iOS-`.ipa` | Nur als Workflow-Artefakt (14 Tage), nur bei vollständiger Signierung. Ohne Signierungsdaten wird iOS unsigniert (Simulator-Build) gebaut; dieser Build dient als Compile-Prüfung und erzeugt kein Release-Asset. Der Upload zu TestFlight/App Store Connect ist nicht Teil dieser Pipeline. |
+| iOS-`.ipa` | Nur als Workflow-Artefakt (14 Tage), nur bei `IOS_SIGNING_ENABLED=true` und vollständiger Signierung. Mit den API-Key-Secrets wird sie zusätzlich nach TestFlight hochgeladen. Sonst wird iOS unsigniert (Simulator-Build) gebaut; dieser Build dient als Compile-Prüfung und erzeugt kein Release-Asset. Lokal: [`scripts/iOS-Deployment.ps1`](ios-deployment.md). |
 
 ## Geheimnisse und Konfiguration
 
 Geheimnisse und umgebungsspezifische Werte kommen **ausschließlich** über GitHub Secrets und
 Repository-Variablen in die Pipeline, nie aus dem Repository. Welche Namen erwartet werden, steht in
-der [Einrichtungs-Checkliste](einrichtung.md). Fehlen Signierungsdaten oder Apple-Kennungen, schlägt die
-Pipeline deswegen nicht fehl, sondern baut iOS unsigniert und schreibt eine Notiz mit den fehlenden
+der [Einrichtungs-Checkliste](einrichtung.md). Ist `IOS_SIGNING_ENABLED` nicht `true` oder fehlen Signierungsdaten, schlägt die
+Pipeline deswegen nicht fehl, sondern baut iOS unsigniert und schreibt eine Notiz bzw. Warnung mit den fehlenden
 Werten in das Job-Protokoll.
 
 ## Wenn GitHub Actions nicht läuft

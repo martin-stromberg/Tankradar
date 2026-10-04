@@ -26,7 +26,7 @@ in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`valida
 |---|---|
 | `.github/actions/security-scan` | `dotnet list package --vulnerable --include-transitive`; lässt den Schritt bei Funden **fehlschlagen**. Von `static checks` und vom wöchentlichen Scan genutzt. |
 | `.github/actions/build-and-package` | Veröffentlicht die Windows-App und erzeugt ZIP und `update.json` (ruft `scripts/package-windows.ps1`). |
-| `.github/actions/build-ios` | Baut iOS (iOS 16); signiert nur bei vollständigen Secrets/Variablen, sonst unsigniert. |
+| `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`10.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa`, optional TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Sonst unsignierter Simulator-Build als Compile-Prüfung (kein Fehlschlag). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
 
 ## Skripte
 
@@ -39,6 +39,8 @@ in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`valida
 | `scripts/package-windows.ps1` | Windows-Publish, ZIP und `update.json` (auch lokal nutzbar). |
 | `scripts/validate-workflows.py` | Syntaktische und strukturelle Prüfung der Workflows. |
 | `scripts/local-ci.ps1` | [Lokaler Prüflauf](lokaler-pruefung.md). |
+| `scripts/iOS-Deployment.ps1` | [iOS-Build, Simulator, Gerät und TestFlight-Upload](ios-deployment.md) (lokal, mit Mac). |
+| `scripts/test-ios-deployment.ps1` | Prüfung des iOS-Skripts ohne Mac (Syntax, Hilfe, Abbruchverhalten, Hilfsfunktionen). |
 
 Tests der Node-Skripte: `npm test` (`scripts/*.test.mjs`, keine Abhängigkeiten nötig).
 

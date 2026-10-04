@@ -13,4 +13,5 @@ Entpacken ohne Installation startet.
 - [Workflows und gemeinsame Bausteine im Detail](workflows.md)
 - [Versionierung (0.1.0, keine automatische 1.0)](versionierung.md)
 - [Lokaler Prüflauf (Ersatz für GitHub Actions)](lokaler-pruefung.md)
-- [Einmalige Einrichtung auf GitHub (Checkliste, Secrets, Variablen)](einrichtung.md)
+- [Einmalige Einrichtung auf GitHub und bei Apple (Checkliste, Secrets, Variablen)](einrichtung.md)
+- [iOS-Deployment-Skript (Pair to Mac, TestFlight)](ios-deployment.md)

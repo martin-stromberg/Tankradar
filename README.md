@@ -169,6 +169,8 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
   `.csproj`-Konfiguration enthält iOS 16 korrekt als Ziel-Framework/Mindestversion
   (`net10.0-ios`, `SupportedOSPlatformVersion=16.0`); ein tatsächlicher iOS-Build (App-Bundle,
   Simulator/Gerät) ist hier jedoch nicht durchführbar und muss auf einem Mac bzw. über CI erfolgen.
+  Für Build, Simulator, Gerät und TestFlight-Upload (auch von Windows per Pair to Mac) gibt es
+  `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md).
 - **Android/MacCatalyst:** Das MAUI-Standardtemplate legt zusätzlich zu iOS und Windows auch
   Android- und MacCatalyst-Ziele an. Diese sind für Schritt 1 nicht erforderlich, aber unschädlich
   und bauen erfolgreich mit.
@@ -176,6 +178,6 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
 ## Bundle-ID
 
 Die Bundle-ID ist als Konfigurationswert vorgesehen (`Services/AppConfiguration.cs`), mit dem
-Platzhalterwert `com.softwareschmiede.tankradar.dev`, der die Entwicklung nicht blockiert. Sie kann
+Standardwert `de.martinstromberg.tankradar`. Sie kann
 über die Umgebungsvariable `TANKRADAR_BUNDLE_ID` oder über
 `src/Tankradar.MAUI/Resources/Raw/appsettings.json` überschrieben werden.

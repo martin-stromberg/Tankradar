@@ -40,7 +40,9 @@ weist der Lauf auf das Diagnoseverzeichnis `e2e-diagnostics/` hin (Screenshot, U
 nicht versioniert, siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
 
 Der iOS-Teil wird lokal nur als Compile-Prüfung des iOS-Zielframeworks im Schritt „Statische Analyse“
-abgedeckt; die iOS-Pakete selbst entstehen nur auf einem Mac bzw. im macOS-Runner.
+abgedeckt; die iOS-Pakete selbst entstehen nur auf einem Mac bzw. im macOS-Runner. Zusätzlich prüft der Schritt
+„iOS-Deployment-Skript“ (`scripts/test-ios-deployment.ps1`) Syntax, Hilfe und das saubere Abbrechen von
+[`scripts/iOS-Deployment.ps1`](ios-deployment.md) ohne Mac.
 
 ## Hinweise
 

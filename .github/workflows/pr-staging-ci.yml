@@ -86,6 +86,10 @@ jobs:
       - name: Pipeline script tests
         run: npm test
 
+      - name: iOS deployment script checks
+        # Syntax-, Hilfe- und Abbruchprüfung von scripts/iOS-Deployment.ps1 (ohne Mac).
+        run: pwsh -NoProfile -File scripts/test-ios-deployment.ps1
+
       - name: Format check
         # --severity error beschränkt die Prüfung auf Whitespace/Stil und echte Analyzer-Fehler.
         # Warnungen werden vom Schritt "Static analysis" behandelt (Vorlage, Abschnitt 4).
@@ -198,7 +202,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # iOS-Variante (Mindestversion iOS 16): im PR immer unsigniert, es werden keine Secrets übergeben.
+  # iOS-Variante (Mindestversion iOS 16): im PR immer unsigniert (Compile-Prüfung), es werden keine Secrets
+  # übergeben.
   ios-build:
     name: ios build
     needs: detect-backmerge
@@ -208,9 +213,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Build iOS (unsigned)
-        uses: ./.github/actions/build-ios
+        uses: ./.github/actions/package-ios
         with:
           xcode-version: ${{ vars.IOS_XCODE_VERSION }}
 

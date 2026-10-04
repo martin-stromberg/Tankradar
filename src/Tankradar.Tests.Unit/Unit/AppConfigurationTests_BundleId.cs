@@ -12,7 +12,7 @@ public class AppConfigurationTests_BundleId : BaseTest
     private readonly string? _originalValue = Environment.GetEnvironmentVariable(BundleIdEnvironmentVariable);
 
     /// <summary>
-    /// Prüft, dass ohne Umgebungsvariable der Platzhalterwert verwendet wird.
+    /// Prüft, dass ohne Umgebungsvariable der Standardwert verwendet wird.
     /// </summary>
     [Fact]
     public void Constructor_WithoutEnvironmentVariable_UsesDefaultBundleId()
@@ -25,7 +25,7 @@ public class AppConfigurationTests_BundleId : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass eine gesetzte Umgebungsvariable den Platzhalterwert überschreibt.
+    /// Prüft, dass eine gesetzte Umgebungsvariable den Standardwert überschreibt.
     /// </summary>
     [Fact]
     public void Constructor_WithEnvironmentVariable_UsesEnvironmentValue()

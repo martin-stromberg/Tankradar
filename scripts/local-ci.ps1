@@ -6,12 +6,14 @@
     des Billing-Limits des privaten Repositories nicht läuft, und als schnelle Vorab-Prüfung vor einem PR.
 
     Geprüft wird (Reihenfolge wie in der Pipeline):
-        1. Pipeline-Skripte: Node-Tests (npm test) und Workflow-Validierung (validate-workflows.py)
+        1. Pipeline-Skripte: Node-Tests (npm test), Workflow-Validierung (validate-workflows.py) und
+                              Pruefung von scripts/iOS-Deployment.ps1 (Syntax, Hilfe, sauberer Abbruch ohne Mac)
         2. Restore
         3. Formatprüfung      dotnet format --verify-no-changes --severity error
         4. Sicherheitsprüfung dotnet list package --vulnerable --include-transitive --no-restore
         5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (baut alle Zielplattformen,
-                              also auch den iOS-Compile-Check, sofern die iOS-Workload installiert ist)
+                              also auch den iOS-Compile-Check, sofern die iOS-Workload installiert ist; signierte iOS-Pakete
+                              und TestFlight-Upload entstehen nur auf einem Mac bzw. in der CI)
         6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
         7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung;
                               Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
@@ -91,6 +93,7 @@ foreach ($dir in @($testResults, $coverageReport, $e2eDiagnostics)) {
 
 Invoke-Step "Pipeline-Skripte: Node-Tests" { npm test }
 Invoke-Step "Pipeline-Skripte: Workflow-Validierung" { python scripts/validate-workflows.py }
+Invoke-Step "iOS-Deployment-Skript (Syntax, Hilfe, Abbruch ohne Mac)" { & (Join-Path $PSScriptRoot "test-ios-deployment.ps1"); if ($LASTEXITCODE -ne 0) { throw "iOS-Deployment-Pruefung fehlgeschlagen." } }
 Invoke-Step "Restore" { dotnet restore $solution -p:Configuration=Release }
 Invoke-Step "Formatprüfung" { dotnet format $solution --verify-no-changes --no-restore --severity error }
 

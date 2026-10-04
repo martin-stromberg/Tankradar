@@ -24,8 +24,8 @@
 		<!-- Display name -->
 		<ApplicationTitle>Tankradar</ApplicationTitle>
 
-		<!-- App Identifier (Placeholder-Bundle-ID, siehe Services/AppConfiguration.cs) -->
-		<ApplicationId>com.softwareschmiede.tankradar.dev</ApplicationId>
+		<!-- App Identifier (Bundle-ID, siehe Services/AppConfiguration.cs) -->
+		<ApplicationId>de.martinstromberg.tankradar</ApplicationId>
 
 		<!-- Versions -->
 		<Version>0.1.0</Version>
