@@ -20,7 +20,7 @@ Ablage startfähiger Windows-Zwischenstände aufgebaut.
 | Schnitt der Schritte | Jeder fachliche Schritt liefert Datenhaltung, Logik, Oberfläche und Tests (Unit, Integration, FlaUI-E2E) zusammen als vertikalen Schnitt. Eine nachgelagerte reine Test-Phase gibt es nicht. | Jeder Schritt muss eigenständig über `/lifecycle` lieferbar und testbar sein. Die in der Anforderung skizzierte Aufteilung nach technischen Schichten wäre nicht einzeln abnehmbar. |
 | Plattformen | Entwickelt und automatisiert getestet wird auf Windows. iOS wird ab dem CI-Schritt mitgebaut. Die iOS-Auslieferung (Signierung, TestFlight) ist ein eigener Schritt. | Die lokale Toolchain ist Windows. iOS-Builds benötigen macOS. |
 | Mindestversion iOS | iOS 16. | Stakeholder-Entscheidung (Empfehlung zu offenem Punkt 13 übernommen). |
-| Apple-Kennungen | Bundle-ID, Team-ID und Signierungsdaten werden als Konfiguration bzw. Secrets vorgesehen (GitHub Secrets und lokale Umgebungsvariablen), nie im Repository. Der Anwender liefert die Werte später. Bis dahin laufen alle Schritte ohne diese Werte; nur Signierung und Store-Upload setzen sie voraus. | Stakeholder-Entscheidung (offener Punkt 13). Fehlende Kennungen sollen die Umsetzung nicht blockieren. |
+| Apple-Kennungen | Die Bundle-ID lautet `de.martinstromberg.tankradar` (Stakeholder-Angabe vom 2026-10-04); sie ist keine Geheiminformation, steht im Repository und ist per Konfiguration überschreibbar. Team-ID und Signierungsdaten werden als Secrets vorgesehen (GitHub Secrets und lokale Umgebungsvariablen), nie im Repository. Der Anwender liefert sie später. Bis dahin laufen alle Schritte ohne diese Werte; nur Signierung und Store-Upload setzen sie voraus. | Stakeholder-Entscheidung (offener Punkt 13). Fehlende Kennungen sollen die Umsetzung nicht blockieren. |
 | Datenhaltung | Nutzer- und Abrufdaten liegen in einer einzigen lokalen SQLite-Datenbank, die mit jedem Schritt erweitert wird. Schemaänderungen erfolgen so, dass bestehende Installationen beim Update ihre Daten behalten. | Vorgabe der Anforderung („keine getrennten Datenbanken"). Spätere Updates dürfen Tankbuch und Favoriten nicht verlieren. |
 | Schutz lokaler Daten | API-Zugangsdaten liegen in der sicheren Ablage des Betriebssystems (iOS: Keychain, Windows: Credential Locker). Datenbank und Belegfotos werden über den systemseitigen Dateischutz geschützt (iOS Data Protection). Eine zusätzliche Verschlüsselung der Datenbank erfolgt nicht. | Stakeholder-Entscheidung (offener Punkt 11). |
 | Kraftstoffpreis-Quelle | Tankerkönig-API (offizielle Daten der Markttransparenzstelle für Kraftstoffe). Die App zeigt die Quellenangabe gemäß Lizenz CC BY 4.0 an und hält sich an die Nutzungsbedingungen des Anbieters (Abrufe drosseln, Cache nutzen). Den API-Schlüssel beantragt der Anwender. Er gelangt beim Build aus einem Secret bzw. einer nicht versionierten lokalen Konfiguration in die App und liegt zur Laufzeit in Keychain bzw. Credential Locker, nie im Code. | Stakeholder-Entscheidung (offener Punkt 1). |
@@ -125,7 +125,7 @@ bis Version 1.0 darf keine automatische Anhebung auf 1.0 erfolgen.
 
 Geheimnisse und umgebungsspezifische Werte kommen ausschließlich über GitHub Secrets bzw.
 Repository-Variablen in die Pipeline, nie aus dem Repository. Dazu gehören die API-Schlüssel für
-Kraftstoffpreis- und Routing-Dienst, Signierungsdaten, Bundle-ID und Apple-Team-ID. Solange
+Kraftstoffpreis- und Routing-Dienst, Signierungsdaten und Apple-Team-ID (die Bundle-ID `de.martinstromberg.tankradar` darf im Repository stehen). Solange
 Signierungsdaten und Apple-Kennungen fehlen, baut die Pipeline die iOS-Variante unsigniert und
 schlägt deswegen nicht fehl. Weil das Repository bis 1.0 privat ist und Actions am Billing-Limit
 scheitern können, gibt es einen gleichwertigen lokalen Prüflauf, der dieselben Prüfungen auf dem
@@ -150,7 +150,7 @@ Vorlage. Ohne gesetzte Variable bzw. Secrets läuft die Pipeline weiterhin ohne 
 Bestandteile der Vorlage entfallen, da Tankradar kein Android-Ziel hat. Die Einrichtungs-Checkliste
 nennt alle auf Apple- und GitHub-Seite nötigen Schritte (App-ID/Bundle-ID, App-Eintrag in App Store
 Connect, Provisioning-Profil, Distribution-Zertifikat, App-Store-Connect-API-Key, Secrets und
-Variable). Die Bundle-ID liefert der Anwender nach; bis dahin gilt der bestehende Platzhalter.
+Variable). Die Bundle-ID lautet `de.martinstromberg.tankradar` (Stakeholder-Angabe vom 2026-10-04).
 
 **Abhängigkeiten:** 1, 2
 
@@ -579,7 +579,7 @@ sind bereits mit Schritt 3 entstanden (Stakeholder-Entscheidung vom 2026-10-04, 
 Simulator, Gerät, Store-Upload mit automatischer Erhöhung der Buildnummer und den Upload vorhandener
 Pakete, nutzbar von Windows aus über einen gekoppelten Mac. Mindestversion ist iOS 16.
 
-Bundle-ID, Apple-Team-ID, Signierungsdaten und App-Store-Connect-Zugangsdaten liegen ausschließlich
+Die Bundle-ID ist `de.martinstromberg.tankradar`. Apple-Team-ID, Signierungsdaten und App-Store-Connect-Zugangsdaten liegen ausschließlich
 außerhalb des Repositorys (lokale Umgebungsvariablen bzw. GitHub Secrets und Variablen). Der
 Anwender liefert diese Werte nach. Bis dahin erkennt das Skript fehlende Werte und meldet sie
 verständlich, ohne andere Aktionen wie Simulator-Builds zu blockieren. Die App fordert unter iOS nur
@@ -633,7 +633,7 @@ Alle 14 offenen Punkte des vorherigen Plans hat der Stakeholder am 2026-09-28 en
 - Punkte 1 und 3–13: Die Empfehlungen des vorherigen Plans gelten als Entscheidungen.
 
 Die Entscheidungen stehen in der Tabelle der Vorgehensentscheidungen und sind in die
-Entwicklungsschritte eingearbeitet. Bundle-ID, Team-ID und die API-Schlüssel (Tankerkönig,
+Entwicklungsschritte eingearbeitet. Die Bundle-ID liegt inzwischen vor (`de.martinstromberg.tankradar`). Team-ID und die API-Schlüssel (Tankerkönig,
 OpenRouteService) liefert bzw. beantragt der Anwender. Sie sind als Konfiguration bzw. Secrets
 vorgesehen und blockieren die Umsetzung nicht: Tests laufen gegen Mock-Dienste, und Signierung und
 Store-Upload melden fehlende Werte verständlich.
