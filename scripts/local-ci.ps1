@@ -11,9 +11,9 @@
         2. Restore
         3. Formatprüfung      dotnet format --verify-no-changes --severity error
         4. Sicherheitsprüfung dotnet list package --vulnerable --include-transitive --no-restore
-        5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (baut alle Zielplattformen,
-                              also auch den iOS-Compile-Check, sofern die iOS-Workload installiert ist; signierte iOS-Pakete
-                              und TestFlight-Upload entstehen nur auf einem Mac bzw. in der CI)
+        5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (wie die Windows-Jobs der CI mit
+                              IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; der iOS-Build samt
+                              signierten Paketen und TestFlight-Upload entsteht nur auf einem Mac bzw. in der CI)
         6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
         7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung;
                               Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
@@ -48,6 +48,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
 $solution = "Tankradar.sln"
+$windowsJobEnv = [ordered]@{ IncludeAndroidTarget = 'false'; IncludeIosTarget = 'false'; IncludeMacCatalystTarget = 'false' }
 $results = New-Object System.Collections.Generic.List[object]
 
 function Invoke-Step {
@@ -93,7 +94,27 @@ foreach ($dir in @($testResults, $coverageReport, $e2eDiagnostics)) {
 
 Invoke-Step "Pipeline-Skripte: Node-Tests" { npm test }
 Invoke-Step "Pipeline-Skripte: Workflow-Validierung" { python scripts/validate-workflows.py }
-Invoke-Step "iOS-Deployment-Skript (Syntax, Hilfe, Abbruch ohne Mac)" { & (Join-Path $PSScriptRoot "test-ios-deployment.ps1"); if ($LASTEXITCODE -ne 0) { throw "iOS-Deployment-Pruefung fehlgeschlagen." } }
+# Das Pruefskript muss unabhaengig von geerbten Include*Target-Variablen gruen sein: einmal ohne, einmal mit den
+# Variablen der Windows-Jobs (inkl. Android) in einem Kindprozess.
+Invoke-Step "iOS-Deployment-Skript (Syntax, Hilfe, Abbruch ohne Mac)" {
+    & pwsh -NoProfile -File (Join-Path $PSScriptRoot "test-ios-deployment.ps1")
+    if ($LASTEXITCODE -ne 0) { throw "iOS-Deployment-Pruefung fehlgeschlagen." }
+}
+Invoke-Step "iOS-Deployment-Skript mit Windows-Job-Umgebung (Include*Target=false)" {
+    $saved = @{}
+    foreach ($n in $windowsJobEnv.Keys) { $saved[$n] = [Environment]::GetEnvironmentVariable($n) }
+    try {
+        foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, 'false') }
+        & pwsh -NoProfile -File (Join-Path $PSScriptRoot "test-ios-deployment.ps1")
+        if ($LASTEXITCODE -ne 0) { throw "iOS-Deployment-Pruefung mit Windows-Job-Umgebung fehlgeschlagen." }
+    }
+    finally {
+        foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, $saved[$n]) }
+    }
+}
+# Ab hier wie in den Windows-Jobs der Pipeline: nur das Windows-Zielframework der MAUI-App (kein Android/iOS/MacCatalyst;
+# Tankradar hat kein Android-Ziel, die Apple-Ziele baut nur der macOS-Job).
+foreach ($n in $windowsJobEnv.Keys) { [Environment]::SetEnvironmentVariable($n, 'false') }
 Invoke-Step "Restore" { dotnet restore $solution -p:Configuration=Release }
 Invoke-Step "Formatprüfung" { dotnet format $solution --verify-no-changes --no-restore --severity error }
 

@@ -61,6 +61,7 @@ jobs:
     runs-on: windows-latest
     # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
     env:
+      IncludeAndroidTarget: 'false'
       IncludeIosTarget: 'false'
       IncludeMacCatalystTarget: 'false'
     timeout-minutes: 30
@@ -119,6 +120,7 @@ jobs:
       run:
         shell: bash
     env:
+      IncludeAndroidTarget: 'false'
       IncludeIosTarget: 'false'
       IncludeMacCatalystTarget: 'false'
       COVERAGE_THRESHOLD: '70'

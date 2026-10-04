@@ -146,11 +146,14 @@ try {
     Write-Host "Zielframeworks per Eigenschaft ausblendbar"
     if (Get-Command dotnet -ErrorAction SilentlyContinue) {
         $csprojPath = Join-Path $mauiDir "Tankradar.MAUI.csproj"
-        $all = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks 2>&1 | Out-String).Trim()
+        # Deterministisch unabhaengig von geerbten Include*Target-Umgebungsvariablen (CI-Jobs setzen sie): alle vier
+        # Eigenschaften werden in jedem Aufruf explizit per -p: gesetzt (globale Eigenschaften schlagen Umgebungsvariablen).
+        $allOn = @("-p:IncludeAndroidTarget=true", "-p:IncludeIosTarget=true", "-p:IncludeMacCatalystTarget=true", "-p:IncludeWindowsTarget=true")
+        $all = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks @allOn 2>&1 | Out-String).Trim()
         Assert-That "Standard: iOS-Zielframework enthalten" ($all -match 'net10\.0-ios') $all
-        $iosOnly = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeAndroidTarget=false -p:IncludeMacCatalystTarget=false -p:IncludeWindowsTarget=false 2>&1 | Out-String).Trim().Trim(';')
+        $iosOnly = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeAndroidTarget=false -p:IncludeIosTarget=true -p:IncludeMacCatalystTarget=false -p:IncludeWindowsTarget=false 2>&1 | Out-String).Trim().Trim(';')
         Assert-That "Ausgeblendet: nur net10.0-ios (macOS-Job)" ($iosOnly -eq 'net10.0-ios') $iosOnly
-        $noApple = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeIosTarget=false -p:IncludeMacCatalystTarget=false 2>&1 | Out-String).Trim()
+        $noApple = (& dotnet msbuild $csprojPath -getProperty:TargetFrameworks -p:IncludeAndroidTarget=true -p:IncludeIosTarget=false -p:IncludeMacCatalystTarget=false -p:IncludeWindowsTarget=true 2>&1 | Out-String).Trim()
         Assert-That "Ausgeblendet: keine Apple-Ziele (Windows-Jobs)" ($noApple -notmatch 'ios|maccatalyst') $noApple
     }
 }

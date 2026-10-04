@@ -155,6 +155,9 @@ runs:
         dotnet workload install maui-ios ios --skip-manifest-update
         # Auf dem Runner vorinstallierte iOS-Packs anderer Version entfernen: die TPV-Resolution würde sonst
         # das neueste Pack wählen - unabhängig vom gepinnten Manifest.
+        # Bewusste Abweichung von der Vorlage (dort: rm -rf "$(dirname "$d")", also das ganze Pack-Verzeichnis):
+        # Hier wird nur das Versionsverzeichnis entfernt, damit ein Pack-Verzeichnis, das auch die gepinnte Version
+        # enthält, nicht samt dieser Version gelöscht wird.
         for d in "$HOME"/.dotnet/packs/Microsoft.iOS.Sdk.net10.0_*/*/; do
           [ -d "$d" ] || continue
           [ "$(basename "$d")" = "$IOS_WORKLOAD_VERSION" ] || rm -rf "$d"
