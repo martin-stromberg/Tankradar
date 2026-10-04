@@ -10,8 +10,8 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 1 | App-Grundgerüst, Navigation und Design-System | Keine | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-1-grundgeruest` | Fertig |
 | 2 | Lokale Git-Hooks zur Qualitätssicherung | 1 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-2-git-hooks` | Fertig |
 | 3 | CI/CD-Pipeline mit Pre-Releases und Releases | 1, 2 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-3-ci-cd` | Fertig |
-| 3a | App-Anzeigename „Tankatlas“ | 1, 3 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-3a-anzeigename-tankatlas` | In Arbeit |
-| 4 | Lokale Datenhaltung und Einstellungen | 1 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-4-datenhaltung` | Offen |
+| 3a | App-Anzeigename „Tankatlas“ | 1, 3 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-3a-anzeigename-tankatlas` | Fertig |
+| 4 | Lokale Datenhaltung und Einstellungen | 1 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-4-datenhaltung` | In Arbeit |
 | 5 | Anbindung der Kraftstoffpreis-API und Preis-Cache | 4 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-5-preis-api` | Offen |
 | 6 | Umkreissuche nach aktuellem Standort mit Ergebnisliste | 4, 5 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-6-umkreissuche` | Offen |
 | 7 | Suche nach Adresse, Ort oder PLZ | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-7-adresssuche` | Offen |
