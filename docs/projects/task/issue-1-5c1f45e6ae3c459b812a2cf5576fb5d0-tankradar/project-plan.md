@@ -134,6 +134,24 @@ Repository-Einstellungen (Branches, Branch-Schutz, Labels, Secrets und Variablen
 Checkliste in der Projektdokumentation festgehalten. Nachgewiesen wird das Ergebnis durch einen
 erfolgreichen lokalen Prüflauf und syntaktisch gültige Workflows.
 
+Ergänzung durch Stakeholder-Entscheidung vom 2026-10-04: Für das iOS-Deployment ist die in einem
+anderen Projekt bewährte Lösung maßgeblich, die der Anwender unter `drafts/` (Repository-Root,
+nicht versioniert, darf nicht committet werden) bereitgestellt hat. Das Skript
+`drafts/iOS-Deployment.ps1` wird unter demselben Namen als `scripts/iOS-Deployment.ps1` für
+Tankradar übernommen und angepasst (Projektpfade, Umgebungsvariablen mit Präfix `TANKRADAR_IOS_*`,
+alle Aktionen build/simulator/device/store/upload/list/menu einschließlich Pair-to-Mac von Windows
+und TestFlight-Upload). Die Workflows und gemeinsamen Bausteine werden an `drafts/github/`
+angeglichen, insbesondere der iOS-Paketierungsbaustein (`package-ios`: Import von Zertifikat und
+Provisioning-Profil in eine temporäre Keychain, Pinning der iOS-Workload auf eine mit Release-Xcode
+kompatible Version, Buildnummer aus der Commit-Anzahl, signierter `.ipa`-Build und TestFlight-Upload
+per iTMSTransporter, Aufräumen der Keychain) samt Einbindung in Pre-Release- und Release-Workflow,
+gesteuert über die Repository-Variable `IOS_SIGNING_ENABLED` und die Secrets `IOS_*` wie in der
+Vorlage. Ohne gesetzte Variable bzw. Secrets läuft die Pipeline weiterhin ohne Fehlschlag. Android-
+Bestandteile der Vorlage entfallen, da Tankradar kein Android-Ziel hat. Die Einrichtungs-Checkliste
+nennt alle auf Apple- und GitHub-Seite nötigen Schritte (App-ID/Bundle-ID, App-Eintrag in App Store
+Connect, Provisioning-Profil, Distribution-Zertifikat, App-Store-Connect-API-Key, Secrets und
+Variable). Die Bundle-ID liefert der Anwender nach; bis dahin gilt der bestehende Platzhalter.
+
 **Abhängigkeiten:** 1, 2
 
 **Betroffene Bereiche:** Build, Tests, Release-Prozess, Versionierung, CI-Sicherheit
@@ -554,11 +572,12 @@ im Repository-Root abgelegt (nicht committen).
 ### Schritt 18: iOS-Build, Signierung und TestFlight-Auslieferung
 
 **Beschreibung:** Die iOS-Variante von Tankradar soll reproduzierbar gebaut, signiert und über
-TestFlight bzw. den App Store ausgeliefert werden können. Grundlage ist das Beispielskript
-`docs/projects/task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar/inventory/external-sources/iOS-Deployment.ps1`,
-das für Tankradar übernommen und angepasst wird. Es bietet Aktionen für Build, Simulator, Gerät,
-Store-Upload mit automatischer Erhöhung der Buildnummer und den Upload vorhandener Pakete, und es
-lässt sich von Windows aus über einen gekoppelten Mac nutzen. Mindestversion ist iOS 16.
+TestFlight bzw. den App Store ausgeliefert werden können. Das Deployment-Skript
+`scripts/iOS-Deployment.ps1` und der signierte iOS-Build samt TestFlight-Upload in der CI-Pipeline
+sind bereits mit Schritt 3 entstanden (Stakeholder-Entscheidung vom 2026-10-04, Vorlage unter
+`drafts/`). Dieser Schritt prüft und vervollständigt sie für die fertige App: Aktionen für Build,
+Simulator, Gerät, Store-Upload mit automatischer Erhöhung der Buildnummer und den Upload vorhandener
+Pakete, nutzbar von Windows aus über einen gekoppelten Mac. Mindestversion ist iOS 16.
 
 Bundle-ID, Apple-Team-ID, Signierungsdaten und App-Store-Connect-Zugangsdaten liegen ausschließlich
 außerhalb des Repositorys (lokale Umgebungsvariablen bzw. GitHub Secrets und Variablen). Der
