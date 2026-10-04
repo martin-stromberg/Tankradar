@@ -1,0 +1,53 @@
+name: Build and package
+description: Baut die Windows-App und erzeugt das gezippte, ohne Installation startbare Release-Artefakt (release-win-x64.zip) samt Update-Manifest (update.json).
+
+inputs:
+  release-version:
+    description: Version ohne führendes v (bei Pre-Releases mit Suffix, z. B. 0.2.0-rc.1); wird als -p:Version und in update.json verwendet.
+    required: true
+  release-tag:
+    description: Release-Tag (z. B. v0.2.0 oder v0.2.0-rc.1), bestimmt die Download-URL der Assets in update.json.
+    required: true
+  fuel-price-api-key:
+    description: API-Schlüssel des Kraftstoffpreis-Dienstes (aus GitHub Secrets); darf leer sein.
+    required: false
+    default: ''
+  routing-api-key:
+    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein.
+    required: false
+    default: ''
+
+outputs:
+  zip-path:
+    description: Pfad des erzeugten ZIP-Archivs.
+    value: artifacts/release-win-x64.zip
+  manifest-path:
+    description: Pfad der erzeugten update.json.
+    value: artifacts/update.json
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Install MAUI workloads
+      run: dotnet workload restore Tankradar.sln
+      shell: bash
+
+    - name: Publish and package (win-x64, self-contained, no installer)
+      # scripts/package-windows.ps1 wird auch vom lokalen Prüflauf verwendet (scripts/local-ci.ps1 -Package).
+      # Asset-Namen sind bewusst fest (release-win-x64.zip, update.json): resolve-release-version.mjs
+      # erwartet genau diese Namen.
+      shell: pwsh
+      env:
+        TANKRADAR_FUEL_PRICE_API_KEY: ${{ inputs.fuel-price-api-key }}
+        TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
+      run: >
+        ./scripts/package-windows.ps1
+        -Version '${{ inputs.release-version }}'
+        -Tag '${{ inputs.release-tag }}'
+        -Repository '${{ github.repository }}'
+        -OutputDirectory artifacts

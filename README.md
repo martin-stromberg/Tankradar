@@ -41,6 +41,12 @@ src/
   Tankradar.Tests.E2E/               End-to-End-Tests gegen die Windows-App (xUnit + FlaUI)
 scripts/
   create-review-version.ps1          Erzeugt startfähige Windows-Zwischenstände
+  local-ci.ps1                       Lokaler Prüflauf (gleichwertig zur CI-Pipeline)
+  package-windows.ps1                Windows-Release-Paket (ZIP + update.json)
+  *.mjs, validate-workflows.py       Hilfsskripte der CI/CD-Pipeline (+ Tests)
+.github/
+  workflows/, actions/               CI/CD-Pipeline (GitHub Actions)
+coverlet.runsettings                 Coverage-Einstellungen für CI und lokalen Prüflauf
 docs/
   adr/                                Architekturentscheidungen (z. B. Designabweichungen)
 ```
@@ -75,6 +81,24 @@ Die Hooks prüfen vor jedem Commit und Push automatisch Übersetzungen, XML-Doku
 Platzhalter-Implementierungen, Enum-Testabdeckung, Code-Formatierung, verbotene Muster
 (Secrets, Zertifikate, DB-Dumps, iOS-Signierungsdaten), das Commit-Nachrichten-Format sowie die Testausführung.
 Details: [`docs/help/git-hooks/`](docs/help/git-hooks/README.md).
+
+## CI/CD-Pipeline
+
+GitHub Actions baut und prüft jeden Pull Request nach `staging`, erzeugt bei jedem Push auf `staging`
+automatisch Pre-Releases (`vX.Y.Z-rc.N`) und bei jedem Push auf `main` finale Releases (`vX.Y.Z`). Die
+Windows-App wird als ZIP veröffentlicht, das nach dem Entpacken ohne Installation startet. Die erste
+Version ist 0.1.0; bis 1.0 gibt es keine automatische Anhebung auf 1.0. Pull Requests nach `main` sind
+nur von `staging` aus zulässig.
+
+Weil Actions im privaten Repository am Billing-Limit scheitern können, führt
+
+```powershell
+.\scripts\local-ci.ps1
+```
+
+dieselben Prüfungen (Format, Sicherheit, statische Analyse, Tests, Mindest-Testabdeckung 70 %) lokal aus.
+Details, Versionierung und die einmalige Einrichtung auf GitHub (Branches, Branch-Schutz, Labels,
+Secrets, Variablen): [`docs/help/ci-cd/`](docs/help/ci-cd/index.md).
 
 ## Tests ausführen
 
@@ -145,6 +169,8 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
   `.csproj`-Konfiguration enthält iOS 16 korrekt als Ziel-Framework/Mindestversion
   (`net10.0-ios`, `SupportedOSPlatformVersion=16.0`); ein tatsächlicher iOS-Build (App-Bundle,
   Simulator/Gerät) ist hier jedoch nicht durchführbar und muss auf einem Mac bzw. über CI erfolgen.
+  Für Build, Simulator, Gerät und TestFlight-Upload (auch von Windows per Pair to Mac) gibt es
+  `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md).
 - **Android/MacCatalyst:** Das MAUI-Standardtemplate legt zusätzlich zu iOS und Windows auch
   Android- und MacCatalyst-Ziele an. Diese sind für Schritt 1 nicht erforderlich, aber unschädlich
   und bauen erfolgreich mit.
@@ -152,6 +178,6 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
 ## Bundle-ID
 
 Die Bundle-ID ist als Konfigurationswert vorgesehen (`Services/AppConfiguration.cs`), mit dem
-Platzhalterwert `com.softwareschmiede.tankradar.dev`, der die Entwicklung nicht blockiert. Sie kann
+Standardwert `de.martinstromberg.tankradar`. Sie kann
 über die Umgebungsvariable `TANKRADAR_BUNDLE_ID` oder über
 `src/Tankradar.MAUI/Resources/Raw/appsettings.json` überschrieben werden.

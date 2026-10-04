@@ -24,6 +24,11 @@ public class NavigationE2ETests : E2ETestBase
     [Fact]
     public void AppStartsAndNavigatesThroughAllTabs()
     {
+        RunWithDiagnostics(NavigateThroughAllTabs);
+    }
+
+    private void NavigateThroughAllTabs()
+    {
         Assert.NotNull(MainWindow);
 
         foreach (var tabTitle in TabTitles)

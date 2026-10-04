@@ -76,8 +76,10 @@ anlegen (`git checkout -b feature/...`) und dort committen.
 Das blockiert den Commit. Mit `dotnet format Tankradar.sln` lokal beheben.
 
 **Warum blockiert `pre-push`, obwohl `pre-commit` durchgelaufen ist?**
-`pre-commit` prüft nur gestaffelte Dateien; `pre-push` prüft das gesamte Repository im
-strikten Modus (`--all --strict`). Enum-Testabdeckung und Platzhalter-Implementierungen laufen in
+`pre-commit` prüft die meisten Checks nur für gestaffelte Dateien (die Formatprüfung läuft
+immer über die gesamte Solution); `pre-push` prüft das gesamte Repository im
+strikten Modus (`--all --strict`) und validiert zusätzlich die Commit-Nachrichten
+(Merge-Commits müssen mit `merge: …` beginnen, „Merge branch …“ wird abgelehnt). Enum-Testabdeckung und Platzhalter-Implementierungen laufen in
 `pre-commit` als Warnung und blockieren nicht, werden aber in `pre-push` blockiert — das ist
 beabsichtigt und gibt Zeit, Work-in-Progress schrittweise fertigzustellen, bevor sie das
 lokale Repository verlässt.

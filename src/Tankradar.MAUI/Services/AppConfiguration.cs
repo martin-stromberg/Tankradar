@@ -8,9 +8,9 @@ namespace Tankradar.MAUI.Services;
 public class AppConfiguration
 {
     /// <summary>
-    /// Platzhalterwert der Bundle-ID, der die Entwicklung ohne echte App-Kennung nicht blockiert.
+    /// Standardwert der Bundle-ID (keine Geheiminformation); per Umgebungsvariable oder appsettings.json überschreibbar.
     /// </summary>
-    public const string DefaultBundleId = "com.softwareschmiede.tankradar.dev";
+    public const string DefaultBundleId = "de.martinstromberg.tankradar";
 
     private const string BundleIdEnvironmentVariable = "TANKRADAR_BUNDLE_ID";
     private const string SettingsFileName = "appsettings.json";

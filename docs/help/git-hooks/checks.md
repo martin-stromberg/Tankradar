@@ -99,8 +99,8 @@ ERROR: unvollständige Enum-Testabdeckung:
 ## format-code-style-check.py
 
 Ruft `dotnet format Tankradar.sln --verify-no-changes` auf und blockiert bei Abweichungen.
-- **pre-commit:** gestaffelte Dateien, blockierend (`--strict`)
-- **pre-push:** gesamtes Repository, blockierend (`--strict`)
+- **pre-commit:** prüft immer die gesamte Solution (nicht nur gestagte Dateien), blockierend (`--strict`)
+- **pre-push:** prüft ebenfalls die gesamte Solution, blockierend (`--strict`)
 
 Die verbindliche Stilgrundlage ist `.editorconfig` im Repository-Root.
 
@@ -150,7 +150,8 @@ Anbieter rotieren.
 
 ## conventional-commits-check.py
 
-Validiert alle Commit-Nachrichten der tatsächlich gepushten Commits gegen das Format:
+Läuft ausschließlich im `pre-push`-Hook (nicht beim Commit) und validiert alle
+Commit-Nachrichten der tatsächlich gepushten Commits gegen das Format:
 
 ```
 type(scope): subject
@@ -159,6 +160,10 @@ type(scope): subject
 `(scope)` ist optional. Erlaubte `type`-Werte: `feat`, `fix`, `docs`, `test`, `refactor`,
 `chore`, `perf`, `plan` (Planungscommit), `merge` (Merge-Commit), `ci`, `build`, `style`,
 `revert`. `subject` muss mindestens 10 Zeichen lang sein.
+
+**Merge-Commits** müssen ebenfalls diesem Format folgen, also mit `merge: …` beginnen (z. B.
+`git merge --no-ff -m "merge: Entwicklungsschritt 3 - CI/CD-Pipeline"`). Die Git-Standardnachricht
+„Merge branch …“ wird abgelehnt.
 
 **Breaking Changes:** Werden durch `!` vor dem Doppelpunkt (z. B. `feat!: ...` oder
 `feat(scope)!: ...`) oder durch einen `BREAKING CHANGE:`-Footer im Commit-Body markiert.

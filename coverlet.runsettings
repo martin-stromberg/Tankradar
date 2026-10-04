@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Gemeinsame Coverage-Einstellungen für CI und lokalen Prüflauf (scripts/local-ci.ps1).
+  Ausgeschlossen werden generierter Code, plattformspezifischer Startcode und reiner UI-Glue-Code
+  (XAML-Code-Behind), der nur über die FlaUI-E2E-Tests (best-effort, nicht Teil der Coverage) läuft.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Tankradar.MAUI]*</Include>
+          <ExcludeByFile>**/obj/**,**/*.g.cs,**/*.g.i.cs,**/Platforms/**,**/*.xaml.cs,**/MauiProgram.cs,**/*AutoInitializer.cs,**/Views/TankradarContentPage.cs</ExcludeByFile>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

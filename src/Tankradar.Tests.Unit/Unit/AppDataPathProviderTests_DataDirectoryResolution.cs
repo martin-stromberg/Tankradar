@@ -50,7 +50,7 @@ public class AppDataPathProviderTests_DataDirectoryResolution : BaseTest
 
     /// <summary>
     /// Prüft, dass bei einer nur aus Leerzeichen bestehenden Umgebungsvariable das Ergebnis der
-    /// injizierten Default-Factory zurückgegeben wird (konsistent zu <see cref="Tankradar.Tests.Integration.TestDataContext"/>).
+    /// injizierten Default-Factory zurückgegeben wird (konsistent zu <c>Tankradar.Tests.Integration.TestDataContext</c>).
     /// </summary>
     [Fact]
     public void GetDataDirectory_WithWhitespaceOnlyTestDataPath_ReturnsDefaultDirectoryFactoryResult()

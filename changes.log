@@ -1,7 +1,19 @@
+## 2026-10-04 — CI/CD-Pipeline mit Pre-Releases und Releases (Tankradar Schritt 3)
+
+- GitHub-Actions-Pipeline nach dem Branch-Modell `main`/`staging`: PR-Quellenprüfung, PR-CI, Pre-Release bei Push auf `staging`, Promotion- und Backmerge-PRs, Release bei Push auf `main`, wöchentlicher Sicherheitsscan
+- Prüfungen: Formatprüfung, Abhängigkeits-Sicherheitsprüfung, statische Analyse (Warnungen als Fehler), Unit-, Integrations- und FlaUI-E2E-Tests (E2E best-effort), Mindest-Testabdeckung 70 %
+- Windows-Release als gezipptes, ohne Installation startbares Build (`release-win-x64.zip`, self-contained) mit `update.json`; kein Installer
+- iOS-Build (iOS 16) signiert bei vollständigen Secrets/Variablen, sonst unsigniert, ohne dass die Pipeline fehlschlägt
+- Versionierung ab 0.1.0 ohne automatische Anhebung auf 1.0 (eigene Versionsermittlung statt semantic-release, mit Tests)
+- Lokaler Prüflauf `scripts/local-ci.ps1` als Ersatz für Actions; Dokumentation und Einrichtungs-Checkliste unter `docs/help/ci-cd/`
+- Build-Hygiene: Warnungen behoben (XML-Doku-Verweise, doppelt eingebundene Testhilfsdatei), E2E-Test findet die App in Debug und Release, zusätzliche Unit-Tests
+- Nacharbeiten Schritt 2: `install-hooks.sh` mit Ausführungsrecht im Index; Hook-Dokumentation korrigiert (Formatprüfung beim Commit über die gesamte Solution und blockierend, Commit-Nachrichten erst beim Push geprüft, Merge-Commits als `merge: …`)
+
 ## 2026-09-29 — Lokale Git-Hooks zur Qualitätssicherung (Tankradar Schritt 2)
 
 - Versionierte Git-Hooks unter `.githooks/` implementiert, die automatisch vor Commit und Push Qualitätsprüfungen durchführen
-- Pre-Commit-Hook prüft im Warn-Modus: XML-Dokumentation, Platzhalter-Implementierungen, Enum-Testabdeckung, Übersetzungen, Code-Formatierung, verbotene Muster (API-Schlüssel, Zertifikate, Secrets)
+- Pre-Commit-Hook blockiert bei Verstößen gegen Code-Formatierung (immer über die gesamte Solution, nicht nur gestagte Dateien), XML-Dokumentation, Übersetzungs-Konsistenz und verbotene Muster (API-Schlüssel, Zertifikate, Secrets); Platzhalter-Implementierungen und Enum-Testabdeckung werden nur als Warnung gemeldet
+- Commit-Nachrichten werden erst beim Push geprüft (nicht beim Commit); Merge-Commits müssen das Format `merge: …` haben, die Git-Standardnachricht „Merge branch …“ wird abgelehnt
 - Pre-Push-Hook blockiert im strikten Modus: unvollständige Implementierungen, Enum-Coverage, Conventional-Commits-Formatierung, fehlgeschlagene Tests, sowie direkte Pushes auf `main`/`staging`
 - Python-Prüfskripte für neue Anforderungen implementiert: `conventional-commits-check.py`, `forbidden-patterns-check.py`, `format-code-style-check.py`, `test-execution-check.py`
 - Installationsskripte für Windows (`.cmd`) und Unix (`.sh`) bereitgestellt; Hook-Aktivierung über `git config core.hooksPath .githooks`

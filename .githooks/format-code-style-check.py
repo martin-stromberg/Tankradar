@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Code-Formatierungs-Check für Tankradar.
 
-Ruft 'dotnet format <Solution> --verify-no-changes' auf und meldet
-Verstöße als Warnung. Blockiert den Commit nicht (Work-in-Progress-
-Flexibilität); der Exit-Code ist immer 0, außer im (in pre-commit nicht
-verwendeten) --strict-Modus für eine mögliche spätere manuelle Nutzung.
+Ruft 'dotnet format <Solution> --verify-no-changes' auf und prüft dabei
+immer die gesamte Solution (nicht nur gestagte Dateien). Pre-commit und
+pre-push rufen den Check mit --strict auf; dann ist er blockierend und
+liefert bei Formatabweichungen Exit-Code 1. Ohne --strict (manueller
+Aufruf) werden Verstöße nur als Warnung gemeldet und der Exit-Code ist 0.
 """
 import argparse
 import sys
@@ -19,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Code-Formatierungs-Check (dotnet format --verify-no-changes)')
     parser.add_argument(
         '--strict', action='store_true',
-        help='bei Verstößen Exit-Code 1 (für manuelle Nutzung; wird in pre-commit nicht verwendet)',
+        help='bei Verstößen Exit-Code 1 (blockierend); pre-commit und pre-push verwenden diesen Modus',
     )
     return parser.parse_args()
 
@@ -50,7 +51,7 @@ def main():
         print('  -> Mit "dotnet format" lokal beheben.')
         if args.strict:
             return 1
-        print('(Nur Warnung beim Commit — blockiert nicht.)')
+        print('(Nur Warnung ohne --strict — blockiert nicht.)')
         return 0
 
     print(f'OK: {solution.name} entspricht den dotnet-format-Regeln.')

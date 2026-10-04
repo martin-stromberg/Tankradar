@@ -453,3 +453,20 @@ design-draft/
 *.sqlite
 *.sqlite3
 
+
+# CI/CD- und Prüflauf-Artefakte
+node_modules/
+TestResults/
+coverage-report/
+artifacts/
+vulnerable-packages.txt
+vulnerable-packages.json
+e2e-diagnostics/
+
+# iOS-Deployment (scripts/iOS-Deployment.ps1): lokale Auswahl, temporäre Response-Dateien und Laufprotokolle
+.ios-deploy.user.json
+.ios-deploy-*.rsp
+logs/
+
+# Vorlagen des Anwenders aus anderen Projekten (dürfen nie committet werden)
+drafts/
