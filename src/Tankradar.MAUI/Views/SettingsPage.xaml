@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:DataType="vm:SettingsViewModel"
              x:Class="Tankradar.MAUI.Views.SettingsPage"
              Title="Optionen"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
@@ -59,7 +61,7 @@
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding FuelTypes}" Spacing="{StaticResource space-xs}">
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="vm:FuelTypeItemViewModel">
                                 <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
                                     <Switch Grid.Column="0"
                                             IsToggled="{Binding IsSelected}"
@@ -102,7 +104,7 @@
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding GpsOptions}">
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
                                 <RadioButton GroupName="Gps"
                                              Content="{Binding Label}"
                                              IsChecked="{Binding IsSelected}"
@@ -121,7 +123,7 @@
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding ViewOptions}">
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
                                 <RadioButton GroupName="View"
                                              Content="{Binding Label}"
                                              IsChecked="{Binding IsSelected}"
@@ -140,7 +142,7 @@
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding SortOptions}">
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
                                 <RadioButton GroupName="Sort"
                                              Content="{Binding Label}"
                                              IsChecked="{Binding IsSelected}"

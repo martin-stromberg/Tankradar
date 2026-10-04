@@ -1,10 +1,31 @@
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
+/// Nicht generische Sicht auf eine auswählbare Option (für kompilierte Bindungen in XAML-Vorlagen).
+/// </summary>
+public interface IChoiceOption
+{
+    /// <summary>
+    /// Der Anzeigetext der Option.
+    /// </summary>
+    string Label { get; }
+
+    /// <summary>
+    /// Schlüssel für die AutomationId (Name des Enum-Werts).
+    /// </summary>
+    string AutomationKey { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Option ausgewählt ist.
+    /// </summary>
+    bool IsSelected { get; set; }
+}
+
+/// <summary>
 /// Eine auswählbare Option einer Einstellungsgruppe (z. B. eine Standortnutzung) mit Anzeigetext.
 /// </summary>
 /// <typeparam name="TValue">Der Typ des Werts der Option.</typeparam>
-public class ChoiceOptionViewModel<TValue> : BaseViewModel
+public class ChoiceOptionViewModel<TValue> : BaseViewModel, IChoiceOption
     where TValue : struct, Enum
 {
     private readonly Action<ChoiceOptionViewModel<TValue>> _onSelected;

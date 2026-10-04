@@ -21,8 +21,7 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// </summary>
     protected void OpenSettings()
     {
-        var tab = WaitForElement(cf => cf.ByName("Optionen").Or(cf.ByAutomationId("Optionen")));
-        tab.Click();
+        NavigateToTab("Optionen", "SettingsPage.Headline");
         WaitForElement(cf => cf.ByAutomationId("Settings.FuelType.SuperE5.Switch"));
         WaitForAutomationId("Settings.Loaded");
     }

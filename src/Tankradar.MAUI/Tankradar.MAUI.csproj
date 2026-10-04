@@ -34,6 +34,7 @@
 		<!-- Display name -->
 		<ApplicationTitle>Tankatlas</ApplicationTitle>
 		<Product>Tankatlas</Product>
+		<AssemblyTitle>Tankatlas</AssemblyTitle>
 
 		<!-- App Identifier (Bundle-ID, siehe Services/AppConfiguration.cs) -->
 		<ApplicationId>de.martinstromberg.tankradar</ApplicationId>
