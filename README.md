@@ -58,6 +58,24 @@ Die App für Windows starten (Debug, unpackaged, ohne Installation):
 dotnet run --project src/Tankradar.MAUI -f net10.0-windows10.0.19041.0
 ```
 
+## Git-Hooks zur Qualitätssicherung
+
+Nach dem Klonen des Repositories müssen die lokalen Git-Hooks installiert werden. Rufe dazu aus
+dem Repository-Verzeichnis auf:
+
+```powershell
+.\.githooks\install-hooks.cmd
+```
+
+```bash
+./.githooks/install-hooks.sh
+```
+
+Die Hooks prüfen vor jedem Commit und Push automatisch Übersetzungen, XML-Dokumentation,
+Platzhalter-Implementierungen, Enum-Testabdeckung, Code-Formatierung, verbotene Muster
+(Secrets, Zertifikate, DB-Dumps, iOS-Signierungsdaten), das Commit-Nachrichten-Format sowie die Testausführung.
+Details: [`docs/help/git-hooks/`](docs/help/git-hooks/README.md).
+
 ## Tests ausführen
 
 ```powershell

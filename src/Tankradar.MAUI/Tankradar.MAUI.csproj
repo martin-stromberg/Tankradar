@@ -19,11 +19,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<!-- CS1591 wird bewusst NICHT als Fehler erzwungen: Der MAUI-XAML-SourceGenerator erzeugt für
-		     jede XAML-Ressourcendatei (z. B. Resources/DesignSystem.xaml) einen undokumentierten
-		     öffentlichen Hilfstyp im obj-Verzeichnis, der sich nicht projektweit ausschließen lässt.
-		     Alle handgeschriebenen Typen/Member in diesem Projekt sind trotzdem vollständig per
-		     XML-Dokumentationskommentar dokumentiert. -->
+		<WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
 		<!-- Display name -->
 		<ApplicationTitle>Tankradar</ApplicationTitle>
