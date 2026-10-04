@@ -11,7 +11,13 @@ namespace Tankradar.Tests.E2E;
 /// </summary>
 public abstract class E2ETestBase : IDisposable
 {
-    private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\Debug\net10.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
+#if DEBUG
+    private const string BuildConfiguration = "Debug";
+#else
+    private const string BuildConfiguration = "Release";
+#endif
+
+    private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\" + BuildConfiguration + @"\net10.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
 
     private readonly string _testDataDirectory;
     private bool _disposed;

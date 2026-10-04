@@ -1,0 +1,197 @@
+name: Build iOS
+description: >
+  Baut die iOS-Variante (Mindestversion iOS 16). Sind Signierungsdaten und Apple-Kennungen vollständig
+  hinterlegt, entsteht eine signierte .ipa; andernfalls wird unsigniert gebaut (Simulator-Build ohne
+  Signierung) und der Schritt schlägt deswegen nicht fehl. Läuft ausschließlich auf macOS-Runnern.
+
+inputs:
+  release-version:
+    description: Version ohne führendes v (ggf. mit Pre-Release-Suffix). Leer = Version aus der csproj verwenden.
+    required: false
+    default: ''
+  build-number:
+    description: Fortlaufende Build-Nummer (ApplicationVersion / CFBundleVersion). Leer = Wert aus der csproj.
+    required: false
+    default: ''
+  bundle-id:
+    description: Bundle-ID (Repository-Variable APP_BUNDLE_ID). Leer = Platzhalter-Bundle-ID aus der csproj.
+    required: false
+    default: ''
+  apple-team-id:
+    description: Apple-Team-ID (Repository-Variable APPLE_TEAM_ID).
+    required: false
+    default: ''
+  codesign-key:
+    description: Name der Signierungsidentität, z. B. "Apple Distribution - Firmenname (TEAMID)" (Repository-Variable IOS_CODESIGN_KEY).
+    required: false
+    default: ''
+  provisioning-profile-name:
+    description: Name des Provisioning-Profils (Repository-Variable IOS_PROVISIONING_PROFILE).
+    required: false
+    default: ''
+  certificate-p12-base64:
+    description: Base64-kodiertes Signierungszertifikat (.p12) aus GitHub Secrets.
+    required: false
+    default: ''
+  certificate-password:
+    description: Passwort des Signierungszertifikats aus GitHub Secrets.
+    required: false
+    default: ''
+  provisioning-profile-base64:
+    description: Base64-kodiertes Provisioning-Profil (.mobileprovision) aus GitHub Secrets.
+    required: false
+    default: ''
+  xcode-version:
+    description: "Optional: gewünschte Xcode-Version (z. B. 26.0). Leer = Standard des Runners."
+    required: false
+    default: ''
+  fuel-price-api-key:
+    description: API-Schlüssel des Kraftstoffpreis-Dienstes (aus GitHub Secrets); darf leer sein.
+    required: false
+    default: ''
+  routing-api-key:
+    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein.
+    required: false
+    default: ''
+  artifact-name:
+    description: Name des hochgeladenen Build-Artefakts (nur bei signiertem Build).
+    required: false
+    default: ios-ipa
+
+outputs:
+  signed:
+    description: "'true', wenn signiert gebaut wurde, sonst 'false'."
+    value: ${{ steps.mode.outputs.signed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Select Xcode
+      if: inputs.xcode-version != ''
+      shell: bash
+      run: sudo xcode-select -s "/Applications/Xcode_${{ inputs.xcode-version }}.app"
+
+    - name: Install MAUI workloads
+      run: dotnet workload restore Tankradar.sln
+      shell: bash
+
+    - name: Determine signing mode
+      id: mode
+      shell: bash
+      env:
+        P12: ${{ inputs.certificate-p12-base64 }}
+        P12_PASSWORD: ${{ inputs.certificate-password }}
+        PROFILE: ${{ inputs.provisioning-profile-base64 }}
+        CODESIGN_KEY: ${{ inputs.codesign-key }}
+        PROFILE_NAME: ${{ inputs.provisioning-profile-name }}
+        BUNDLE_ID: ${{ inputs.bundle-id }}
+        TEAM_ID: ${{ inputs.apple-team-id }}
+      run: |
+        # Signiert wird nur, wenn ALLE Signierungsdaten und Apple-Kennungen vorhanden sind.
+        # Fehlt etwas, wird bewusst unsigniert gebaut statt zu scheitern (Projektvorgabe).
+        missing=""
+        [ -n "$P12" ] || missing="$missing IOS_CERTIFICATE_P12_BASE64"
+        [ -n "$P12_PASSWORD" ] || missing="$missing IOS_CERTIFICATE_PASSWORD"
+        [ -n "$PROFILE" ] || missing="$missing IOS_PROVISIONING_PROFILE_BASE64"
+        [ -n "$CODESIGN_KEY" ] || missing="$missing IOS_CODESIGN_KEY"
+        [ -n "$PROFILE_NAME" ] || missing="$missing IOS_PROVISIONING_PROFILE"
+        [ -n "$BUNDLE_ID" ] || missing="$missing APP_BUNDLE_ID"
+        [ -n "$TEAM_ID" ] || missing="$missing APPLE_TEAM_ID"
+        if [ -z "$missing" ]; then
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "signed=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::iOS wird unsigniert gebaut (Simulator-Build). Fehlende Secrets/Variablen:$missing"
+        fi
+
+    - name: Import signing certificate and provisioning profile
+      if: steps.mode.outputs.signed == 'true'
+      shell: bash
+      env:
+        P12: ${{ inputs.certificate-p12-base64 }}
+        P12_PASSWORD: ${{ inputs.certificate-password }}
+        PROFILE: ${{ inputs.provisioning-profile-base64 }}
+        TEAM_ID: ${{ inputs.apple-team-id }}
+      run: |
+        set -euo pipefail
+        keychain="$RUNNER_TEMP/tankradar-signing.keychain-db"
+        keychain_password="$(uuidgen)"
+        echo "$P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+        echo "$PROFILE" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+
+        security create-keychain -p "$keychain_password" "$keychain"
+        security set-keychain-settings -lut 21600 "$keychain"
+        security unlock-keychain -p "$keychain_password" "$keychain"
+        security import "$RUNNER_TEMP/certificate.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+        security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain"
+        security list-keychains -d user -s "$keychain" login.keychain-db
+
+        profile_plist="$RUNNER_TEMP/profile.plist"
+        security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$profile_plist"
+        if ! grep -q "$TEAM_ID" "$profile_plist"; then
+          echo "::error::Das Provisioning-Profil gehört nicht zur Apple-Team-ID aus APPLE_TEAM_ID."
+          exit 1
+        fi
+        profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist")"
+        mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+        cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
+        rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/profile.mobileprovision" "$profile_plist"
+
+    - name: Build iOS (signed .ipa)
+      if: steps.mode.outputs.signed == 'true'
+      shell: bash
+      env:
+        TANKRADAR_FUEL_PRICE_API_KEY: ${{ inputs.fuel-price-api-key }}
+        TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        BUILD_NUMBER: ${{ inputs.build-number }}
+        BUNDLE_ID: ${{ inputs.bundle-id }}
+        CODESIGN_KEY: ${{ inputs.codesign-key }}
+        PROFILE_NAME: ${{ inputs.provisioning-profile-name }}
+      run: |
+        set -euo pipefail
+        args=(-f net10.0-ios -c Release -p:RuntimeIdentifier=ios-arm64 -p:ArchiveOnBuild=true
+          "-p:CodesignKey=$CODESIGN_KEY" "-p:CodesignProvision=$PROFILE_NAME" "-p:ApplicationId=$BUNDLE_ID")
+        [ -z "$RELEASE_VERSION" ] || args+=("-p:Version=$RELEASE_VERSION" "-p:InformationalVersion=$RELEASE_VERSION" "-p:ApplicationDisplayVersion=${RELEASE_VERSION%%-*}")
+        [ -z "$BUILD_NUMBER" ] || args+=("-p:ApplicationVersion=$BUILD_NUMBER")
+        dotnet publish src/Tankradar.MAUI/Tankradar.MAUI.csproj "${args[@]}"
+
+    - name: Build iOS (unsigned)
+      if: steps.mode.outputs.signed != 'true'
+      shell: bash
+      env:
+        TANKRADAR_FUEL_PRICE_API_KEY: ${{ inputs.fuel-price-api-key }}
+        TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        BUILD_NUMBER: ${{ inputs.build-number }}
+        BUNDLE_ID: ${{ inputs.bundle-id }}
+      run: |
+        set -euo pipefail
+        # Simulator-RID: übersetzt und linkt die komplette iOS-Variante (iOS 16), benötigt aber weder
+        # Zertifikat noch Provisioning-Profil und kann daher ohne Signierungsdaten nicht daran scheitern.
+        args=(-f net10.0-ios -c Release -p:RuntimeIdentifier=iossimulator-arm64)
+        [ -z "$BUNDLE_ID" ] || args+=("-p:ApplicationId=$BUNDLE_ID")
+        [ -z "$RELEASE_VERSION" ] || args+=("-p:Version=$RELEASE_VERSION" "-p:InformationalVersion=$RELEASE_VERSION" "-p:ApplicationDisplayVersion=${RELEASE_VERSION%%-*}")
+        [ -z "$BUILD_NUMBER" ] || args+=("-p:ApplicationVersion=$BUILD_NUMBER")
+        dotnet build src/Tankradar.MAUI/Tankradar.MAUI.csproj "${args[@]}"
+
+    - name: Upload signed IPA
+      if: steps.mode.outputs.signed == 'true'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: src/Tankradar.MAUI/bin/Release/net10.0-ios/ios-arm64/**/*.ipa
+        if-no-files-found: error
+        retention-days: 14
+
+    - name: Remove signing keychain
+      if: always() && steps.mode.outputs.signed == 'true'
+      shell: bash
+      run: |
+        security delete-keychain "$RUNNER_TEMP/tankradar-signing.keychain-db" || true
+        rm -f "$HOME"/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision || true

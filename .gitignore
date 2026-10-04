@@ -453,3 +453,10 @@ design-draft/
 *.sqlite
 *.sqlite3
 
+
+# CI/CD- und Prüflauf-Artefakte
+node_modules/
+TestResults/
+coverage-report/
+artifacts/
+vulnerable-packages.txt

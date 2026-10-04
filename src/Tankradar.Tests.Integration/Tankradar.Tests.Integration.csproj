@@ -30,8 +30,4 @@
     <ProjectReference Include="..\Tankradar.MAUI\Tankradar.MAUI.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
-  </ItemGroup>
-
 </Project>
