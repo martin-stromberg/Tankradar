@@ -73,7 +73,7 @@ dem Repository-Verzeichnis auf:
 
 Die Hooks prüfen vor jedem Commit und Push automatisch Übersetzungen, XML-Dokumentation,
 Platzhalter-Implementierungen, Enum-Testabdeckung, Code-Formatierung, verbotene Muster
-(Secrets, Zertifikate, DB-Dumps), das Commit-Nachrichten-Format sowie die Testausführung.
+(Secrets, Zertifikate, DB-Dumps, iOS-Signierungsdaten), das Commit-Nachrichten-Format sowie die Testausführung.
 Details: [`docs/help/git-hooks/`](docs/help/git-hooks/README.md).
 
 ## Tests ausführen

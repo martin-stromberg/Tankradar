@@ -7,13 +7,13 @@
 | Check | Läuft in | Modus | Prüft | Skript |
 |---|---|---|---|---|
 | Branch-Schutz | pre-commit, pre-push | blockierend | Keine direkten Commits/Pushes auf `main`/`staging` | im Hook-Skript selbst |
-| Übersetzungs-Konsistenz | pre-commit | Warnung | Lokalisierungsschlüssel über alle `.resx`-Dateien konsistent | `translation-check.py` |
-| XML-Dokumentation | pre-commit | Warnung | `<summary>`, `<param>`, `<returns>`, `<typeparam>`, `<response>` an öffentlichen/internen Membern | `csproj-xmldoc-check.py` |
+| Übersetzungs-Konsistenz | pre-commit, pre-push (`--all`) | blockierend | Lokalisierungsschlüssel über alle `.resx`-Dateien konsistent | `translation-check.py` |
+| XML-Dokumentation | pre-commit, pre-push (`--all`) | blockierend | `<summary>`, `<param>`, `<returns>`, `<typeparam>`, `<response>` an öffentlichen/internen Membern | `csproj-xmldoc-check.py` |
 | Platzhalter-Implementierungen | pre-commit (Warnung), pre-push (blockierend, `--all --strict`) | siehe links | Keine `NotImplementedException`/reine throw-Stubs | `no-notimplemented-check.py` |
 | Enum-Testabdeckung | pre-commit (Warnung), pre-push (blockierend, `--all --strict`) | siehe links | Alle öffentlichen/internen Enum-Werte in Tests verwendet | `enum-coverage-check.py` |
-| Code-Formatierung | pre-commit | Warnung | `dotnet format --verify-no-changes` | `format-code-style-check.py` |
-| Verbotene Muster / Secrets | pre-commit (Warnung), pre-push (blockierend, `--all --strict`) | siehe links | API-Schlüssel, Zertifikate, Signierungsdaten, DB-Dumps, große Logdateien | `forbidden-patterns-check.py` |
-| Commit-Nachrichten-Format | pre-push | blockierend | Conventional-Commits-Format seit Divergenz von `main` | `conventional-commits-check.py` |
+| Code-Formatierung | pre-commit, pre-push (`--strict`) | blockierend | `dotnet format --verify-no-changes` | `format-code-style-check.py` |
+| Verbotene Muster / Secrets | pre-commit, pre-push (`--all --strict`) | blockierend | API-Schlüssel, Zertifikate, Signierungsdaten, DB-Dumps, Logdateien | `forbidden-patterns-check.py` |
+| Commit-Nachrichten-Format | pre-push | blockierend | Conventional-Commits-Format für gepushte Commits | `conventional-commits-check.py` |
 | Testausführung | pre-push | blockierend | `dotnet test Tankradar.sln` (Timeout 5 Min.) | `test-execution-check.py` |
 
 ## Branch-Schutz
@@ -34,18 +34,23 @@ FEHLER: Direkte Commits auf 'main' sind nicht erlaubt. Bitte einen Feature-Branc
 
 Prüft, ob lokalisierbare Ressourcenschlüssel über alle Sprachvarianten eines `.resx`-Pakets
 konsistent sind, sowie die ResX-Header-Struktur und deutsche Übersetzungen auf typische
-Umlaut-Transliterationen (`ae`/`oe`/`ue` statt `ä`/`ö`/`ü`). Aktuell enthält Tankradar keine
-`.resx`-Dateien, daher meldet der Check "No .resx files found; nothing to check."
+Umlaut-Transliterationen (`ae`/`oe`/`ue` statt `ä`/`ö`/`ü`).
+- **pre-commit:** nur gestaffelte Dateien, blockierend.
+- **pre-push:** `--all`, gesamtes Repository, blockierend.
+
+Aktuell enthält Tankradar keine `.resx`-Dateien, daher meldet der Check "No .resx files found; nothing to check."
 
 **Behebung:** Fehlende Schlüssel in der jeweiligen Sprachdatei ergänzen; ResX-Header nicht von
 Hand verändern (durch den Ressourcen-Editor von Visual Studio erzeugen lassen).
 
 ## csproj-xmldoc-check.py
 
-Prüft für gestaffelte `.cs`-Dateien, ob dokumentierte Member (die bereits ein `<summary>`-Tag
-haben) auch vollständige `<param>`-, `<typeparam>`- und `<returns>`-Tags besitzen, sowie für die
-zugehörigen `.csproj`-Dateien, ob `GenerateDocumentationFile` und `CS1591` als Fehler
-konfiguriert sind.
+Prüft für gestaffelte `.cs`-Dateien (in `pre-commit`) bzw. das gesamte Repository (in `pre-push`),
+ob dokumentierte Member (die bereits ein `<summary>`-Tag haben) auch vollständige `<param>`-,
+`<typeparam>`- und `<returns>`-Tags besitzen, sowie für die zugehörigen `.csproj`-Dateien, ob
+`GenerateDocumentationFile` und `CS1591` als Fehler konfiguriert sind. In `Tankradar.MAUI` ist
+`CS1591` als Fehler konfiguriert; `Resources/DesignSystem.xaml` ist mit `x:ClassModifier="Internal"`
+markiert, damit der XAML-SourceGenerator keinen undokumentierten öffentlichen Typ erzeugt.
 
 Beispielausgabe:
 
@@ -93,15 +98,17 @@ ERROR: unvollständige Enum-Testabdeckung:
 
 ## format-code-style-check.py
 
-Ruft `dotnet format Tankradar.sln --verify-no-changes` auf und meldet Abweichungen als Warnung
-(Exit-Code immer 0 im normalen Aufruf). Blockiert nie in `pre-commit`.
+Ruft `dotnet format Tankradar.sln --verify-no-changes` auf und blockiert bei Abweichungen.
+- **pre-commit:** gestaffelte Dateien, blockierend (`--strict`)
+- **pre-push:** gesamtes Repository, blockierend (`--strict`)
+
+Die verbindliche Stilgrundlage ist `.editorconfig` im Repository-Root.
 
 Beispielausgabe:
 
 ```
-WARNUNG: "dotnet format --verify-no-changes" meldet Formatierungsabweichungen in Tankradar.sln:
+ERROR: "dotnet format --verify-no-changes" meldet Formatierungsabweichungen in Tankradar.sln:
   .../MainApplication.cs(12,1): error WHITESPACE: Korrigieren Sie die Leerraumformatierung. ...
-(Nur Warnung beim Commit — blockiert nicht.)
 ```
 
 **Behebung:** Lokal `dotnet format Tankradar.sln` ausführen und die Änderungen committen.
@@ -112,22 +119,26 @@ Sucht nach versehentlich committeten Secrets und problematischen Dateien:
 
 - **API-Schlüssel:** z. B. `FUEL_API_KEY=`, `ROUTING_KEY=`, `MAPBOX_TOKEN=`,
   `NOMINATIM_TOKEN=` sowie generische Muster wie `api_key=`, `routing_secret=`
-  (case-insensitive). Zuweisungen an Umgebungsvariablen-Referenzen (`$env:...`,
+  (case-insensitive). Zusätzlich JSON-Notation (z. B. `"TankerkoenigApiKey": "..."`) mit
+  typischen Geheimnis-Feldnamen. Zuweisungen an Umgebungsvariablen-Referenzen (`$env:...`,
   `Environment.GetEnvironmentVariable(...)`, `os.environ`, …) gelten nicht als Fund, da sie
   keine Klartext-Secrets enthalten.
 - **Zertifikate/Signierungsdaten:** Dateiendungen `.pfx`, `.p12`, `.keystore`, `.jks`, `.pem`,
   `.cer`; PEM-Klartextinhalte (`-----BEGIN CERTIFICATE-----` u. ä.); konkrete (nicht
   platzhalterartige) Werte in `<SigningKey>`/`<CertificateThumbprint>` in `.csproj`-Dateien.
-- **Datenbank-Dumps:** Dateiendungen `.db`, `.sqlite`, `.sqlite3`.
-- **Große Logdateien:** `.log`-Dateien über 1 MB.
+- **iOS-Signierungsdaten:** Dateiendungen `.mobileprovision`, `.p8`.
+- **Datenbank-Dumps:** Dateiendungen `.db`, `.sqlite`, `.sqlite3`, `.sql`.
+- **Logdateien:** Alle `.log`-Dateien ohne Größenlimit (Ausnahme: `changes.log` im Repo-Root).
 
-- **pre-commit:** nur gestaffelte Dateien, Warnung, blockiert nicht.
+Es werden nur versionierbare (nicht von `.gitignore` ausgeschlossene) Dateien geprüft.
+
+- **pre-commit:** nur gestaffelte Dateien, blockierend (`--strict`).
 - **pre-push:** `--all --strict`, gesamtes Repository, blockiert.
 
 Beispielausgabe (strict):
 
 ```
-ERROR: verbotene Muster gefunden (Secrets, Zertifikate, DB-Dumps oder übergroße Logdateien):
+ERROR: verbotene Muster gefunden (Secrets, Zertifikate, DB-Dumps, iOS-Signierungsdateien, Logdateien):
   src/Tankradar.MAUI/appsettings.local.json:3: möglicher API-Schlüssel gefunden (FUEL_API_KEY=abc123...)
   secrets/prod.pfx: verbotene Zertifikats-/Schlüsseldatei (.pfx)
 ```
@@ -139,23 +150,26 @@ Anbieter rotieren.
 
 ## conventional-commits-check.py
 
-Validiert alle Commit-Nachrichten des aktuellen Branches seit der Divergenz von `main` gegen
-das Format:
+Validiert alle Commit-Nachrichten der tatsächlich gepushten Commits gegen das Format:
 
 ```
 type(scope): subject
 ```
 
 `(scope)` ist optional. Erlaubte `type`-Werte: `feat`, `fix`, `docs`, `test`, `refactor`,
-`chore`, `perf` sowie die projekteigenen, durch den automatisierten `/lifecycle`-Workflow
-erzeugten Types `plan` (Planungscommit) und `merge` (Merge-Commit eines abgeschlossenen
-Entwicklungsschritts). `subject` muss mindestens 10 Zeichen lang sein.
+`chore`, `perf`, `plan` (Planungscommit), `merge` (Merge-Commit), `ci`, `build`, `style`,
+`revert`. `subject` muss mindestens 10 Zeichen lang sein.
+
+**Breaking Changes:** Werden durch `!` vor dem Doppelpunkt (z. B. `feat!: ...` oder
+`feat(scope)!: ...`) oder durch einen `BREAKING CHANGE:`-Footer im Commit-Body markiert.
+Wird `!` verwendet, sollte ein `BREAKING CHANGE:`-Footer folgen (fehlender Footer gibt nur
+einen Hinweis, blockiert nicht).
 
 Beispielausgabe:
 
 ```
 ERROR: Commit a1b2c3d4 "foo: zu kurz":
-  -> unbekannter Type 'foo' (erlaubt: chore, docs, feat, fix, merge, perf, plan, refactor, test)
+  -> unbekannter Type 'foo' (erlaubt: build, chore, ci, docs, feat, fix, merge, perf, plan, refactor, revert, style, test)
   -> Nachricht zu kurz (8 Zeichen, mindestens 10 erforderlich)
 ```
 

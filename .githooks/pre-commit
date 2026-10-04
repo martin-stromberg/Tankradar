@@ -1,10 +1,12 @@
 #!/usr/bin/env sh
 # Pre-Commit-Hook: lokale Qualitätssicherung für Tankradar.
 #
-# Blockiert direkte Commits auf main/staging (Branch-Schutz). Alle weiteren
-# Prüfungen laufen im Warn-Modus (nicht blockierend), damit Work-in-Progress
-# weiterhin committet werden kann; sie müssen spätestens vor dem Push
-# (siehe .githooks/pre-push) behoben sein.
+# Blockiert direkte Commits auf main/staging (Branch-Schutz) sowie Verstöße
+# gegen die blockierenden Checks (Code-Formatierung, XML-Dokumentation,
+# Übersetzungs-Konsistenz, verbotene Muster). Enum-Testabdeckung und
+# Platzhalter-Implementierungen laufen weiterhin im Warn-Modus, damit
+# Work-in-Progress committet werden kann; sie müssen spätestens vor dem
+# Push (siehe .githooks/pre-push) behoben sein.
 #
 # Notfall-Fallback: SKIP_HOOKS=1 git commit ... überspringt alle Hooks
 # (mit sichtbarer Warnung auf stderr).
@@ -36,6 +38,19 @@ else
   exit 1
 fi
 
+# Führt einen Python-Check blockierend aus; bricht den Commit bei Verstößen ab.
+block_check() {
+  label="$1"
+  shift
+  echo "Prüfe: $label ..."
+  if ! "$PYTHON" "$@"; then
+    echo "FEHLER: $label meldet Verstöße (siehe Ausgabe oben). Commit abgebrochen." >&2
+    echo
+    exit 1
+  fi
+  echo
+}
+
 # Führt einen Python-Check aus; meldet Verstöße als Warnung, blockiert aber nicht.
 warn_check() {
   label="$1"
@@ -47,16 +62,15 @@ warn_check() {
   echo
 }
 
-warn_check "Übersetzungs-Konsistenz (translation-check.py)" "$repo_root/.githooks/translation-check.py"
-warn_check "XML-Dokumentation (csproj-xmldoc-check.py)" "$repo_root/.githooks/csproj-xmldoc-check.py"
-warn_check "Platzhalter-Implementierungen (no-notimplemented-check.py)" "$repo_root/.githooks/no-notimplemented-check.py"
-warn_check "Enum-Testabdeckung (enum-coverage-check.py)" "$repo_root/.githooks/enum-coverage-check.py"
-warn_check "Verbotene Muster / Secrets (forbidden-patterns-check.py)" "$repo_root/.githooks/forbidden-patterns-check.py"
+# --- Blockierende Checks auf gestagte Dateien ---
+block_check "Code-Formatierung (format-code-style-check.py --strict)" "$repo_root/.githooks/format-code-style-check.py" --strict
+block_check "XML-Dokumentation (csproj-xmldoc-check.py)" "$repo_root/.githooks/csproj-xmldoc-check.py"
+block_check "Übersetzungs-Konsistenz (translation-check.py)" "$repo_root/.githooks/translation-check.py"
+block_check "Verbotene Muster / Secrets (forbidden-patterns-check.py --strict)" "$repo_root/.githooks/forbidden-patterns-check.py" --strict
 
-# --- Code-Formatierung (dotnet format --verify-no-changes), nur Warnung ---
-echo "Prüfe: Code-Formatierung (format-code-style-check.py) ..."
-"$PYTHON" "$repo_root/.githooks/format-code-style-check.py"
-echo
+# --- Warnende Checks (nicht blockierend) ---
+warn_check "Enum-Testabdeckung (enum-coverage-check.py)" "$repo_root/.githooks/enum-coverage-check.py"
+warn_check "Platzhalter-Implementierungen (no-notimplemented-check.py)" "$repo_root/.githooks/no-notimplemented-check.py"
 
 # --- Optionale .NET-Prüfprojekte (falls vorhanden), nur Warnung ---
 if command -v dotnet >/dev/null 2>&1; then
@@ -80,5 +94,5 @@ if command -v dotnet >/dev/null 2>&1; then
   fi
 fi
 
-echo "Pre-Commit-Prüfungen abgeschlossen (etwaige Warnungen siehe oben, Commit wird nicht blockiert)."
+echo "Pre-Commit-Prüfungen erfolgreich abgeschlossen (etwaige Warnungen siehe oben)."
 exit 0

@@ -34,14 +34,15 @@ Details zu allen einzelnen Prüfungen: [`checks.md`](checks.md).
 
 ## Was passiert wann?
 
-- **`pre-commit`** (vor jedem `git commit`): blockiert nur direkte Commits auf `main`/`staging`.
-  Alle weiteren Prüfungen (Übersetzungen, XML-Doku, Platzhalter-Implementierungen,
-  Enum-Testabdeckung, verbotene Muster, Code-Formatierung) laufen im **Warn-Modus** — sie geben
+- **`pre-commit`** (vor jedem `git commit`): blockiert direkte Commits auf `main`/`staging` sowie
+  Verstöße gegen Code-Formatierung, XML-Dokumentation, Übersetzungs-Konsistenz und verbotene
+  Muster. Enum-Testabdeckung und Platzhalter-Implementierungen laufen im **Warn-Modus** — sie geben
   eine Meldung aus, blockieren den Commit aber nicht. So bleibt Work-in-Progress möglich.
 - **`pre-push`** (vor jedem `git push`): blockiert direkte Pushes auf `main`/`staging` sowie
-  Pushes, wenn Platzhalter-Implementierungen, unvollständige Enum-Testabdeckung, verbotene
-  Muster (Secrets, Zertifikate, DB-Dumps, große Logdateien), ein falsches
-  Commit-Nachrichten-Format oder fehlschlagende Tests gefunden werden.
+  Pushes, wenn Verstöße gegen verbotene Muster, Code-Formatierung, XML-Dokumentation,
+  Übersetzungs-Konsistenz, Enum-Testabdeckung, Platzhalter-Implementierungen, das
+  Commit-Nachrichten-Format oder fehlschlagende Tests gefunden werden (jeweils für das gesamte
+  Repository im strikten Modus).
 
 ## Notfall-Fallback
 
@@ -71,15 +72,15 @@ Windows alternativ `python`) aus einer normalen Shell heraus aufrufbar ist. Sieh
 Das ist gewollt, wenn direkt auf `main` oder `staging` gearbeitet wird. Einen Feature-Branch
 anlegen (`git checkout -b feature/...`) und dort committen.
 
-**`dotnet format` meldet viele Formatierungsabweichungen**
-Das ist im `pre-commit`-Hook nur eine Warnung und blockiert nichts. Mit `dotnet format
-Tankradar.sln` lokal beheben, wenn gewünscht.
+**`dotnet format` meldet Formatierungsabweichungen**
+Das blockiert den Commit. Mit `dotnet format Tankradar.sln` lokal beheben.
 
 **Warum blockiert `pre-push`, obwohl `pre-commit` durchgelaufen ist?**
-`pre-commit` prüft nur gestaffelte Dateien im Warn-Modus; `pre-push` prüft das gesamte
-Repository im strikten Modus (`--all --strict`). Ein Verstoß, der beim Commit nur eine Warnung
-war, kann beim Push zur Blockade werden — das ist beabsichtigt und gibt Zeit, Work-in-Progress
-schrittweise fertigzustellen, bevor sie das lokale Repository verlässt.
+`pre-commit` prüft nur gestaffelte Dateien; `pre-push` prüft das gesamte Repository im
+strikten Modus (`--all --strict`). Enum-Testabdeckung und Platzhalter-Implementierungen laufen in
+`pre-commit` als Warnung und blockieren nicht, werden aber in `pre-push` blockiert — das ist
+beabsichtigt und gibt Zeit, Work-in-Progress schrittweise fertigzustellen, bevor sie das
+lokale Repository verlässt.
 
 **Wie deaktiviere ich die Hooks dauerhaft?**
 `git config --local --unset core.hooksPath` im Repository ausführen. Dies wird nicht empfohlen,
