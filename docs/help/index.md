@@ -5,6 +5,7 @@
 ## Benutzung der App
 
 - [Navigation und Design-System](Navigation/index.md) — Die vier Hauptbereiche von Tankatlas und wie Sie zwischen ihnen navigieren. Die App passt sich automatisch an Ihre bevorzugte Darstellung (Hell-/Dunkelmodus) an.
+- [Einstellungen (Optionen)](Einstellungen/index.md) — Spritsorten auswählen und ordnen, Standortnutzung, Standardansicht und Standardsortierung festlegen. Änderungen werden sofort lokal gespeichert und überstehen Neustart und App-Updates.
 
 ## Lokale Entwicklung
 

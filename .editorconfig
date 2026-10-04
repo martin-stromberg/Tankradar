@@ -21,3 +21,7 @@ trim_trailing_whitespace = false
 [{pre-commit,pre-push}]
 end_of_line = lf
 indent_size = 4
+
+# Generierter Migrationscode (dotnet ef) wird nicht von Hand dokumentiert.
+[src/Tankradar.MAUI/Data/Migrations/*.cs]
+dotnet_diagnostic.CS1591.severity = none

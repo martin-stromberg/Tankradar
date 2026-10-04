@@ -20,7 +20,7 @@ Zeigt eine Kartenansicht für die Suche nach Tankstellen in Ihrer Nähe. Die Sei
 Hier führen Sie ein Verzeichnis Ihrer Tankvorgänge — welches Auto, wann, wo und wie viel Kraftstoff. Aktuell wird die Seite vorbereitet.
 
 ### Optionen
-Einstellungen für Ihre App — Sprache, Darstellung und weitere Konfigurationen. Aktuell wird die Seite vorbereitet.
+Einstellungen für Ihre App: Spritsorten auswählen und ordnen, Standortnutzung, Standardansicht und Standardsortierung. Details siehe [Einstellungen](../Einstellungen/index.md).
 
 ### Navigation zwischen den Bereichen
 
@@ -44,6 +44,6 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 
 ## Einschränkungen
 
-- Die vier Hauptbereiche sind aktuell in Vorbereitung — alle zeigen Platzhalter-Text.
+- Favoriten, Karte und Tankbuch sind aktuell in Vorbereitung und zeigen Platzhalter-Text; Optionen ist bereits funktional.
 - Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
-- Favoriten, Karte, Tankbuch und Optionen erhalten ihre Funktionen und Inhalte in späteren Versionen.
+- Favoriten, Karte und Tankbuch erhalten ihre Funktionen und Inhalte in späteren Versionen.

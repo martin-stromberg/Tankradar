@@ -26,7 +26,7 @@ Tippen Sie auf eine dieser Schaltflächen, um zu diesem Bereich zu wechseln. Die
 
 ### 3. Bereich erkunden
 
-Jeder Bereich zeigt aktuell einen Platzhalter-Text, der erklärt, was dort später zur Verfügung stehen wird. Tippen Sie auf andere Schaltflächen, um die anderen Bereiche kennenzulernen.
+Favoriten, Karte und Tankbuch zeigen aktuell einen Platzhalter-Text, der erklärt, was dort später zur Verfügung stehen wird. Im Bereich **Optionen** stellen Sie bereits Ihre Einstellungen ein (siehe [Einstellungen](../Einstellungen/index.md)). Tippen Sie auf andere Schaltflächen, um die anderen Bereiche kennenzulernen.
 
 ### 4. Darstellung ändern (Hell-/Dunkelmodus)
 

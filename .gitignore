@@ -470,3 +470,8 @@ logs/
 
 # Vorlagen des Anwenders aus anderen Projekten (dürfen nie committet werden)
 drafts/
+
+# Lokale Datenbankdateien (SQLite) gehören nie ins Repository
+*.db
+*.db-wal
+*.db-shm

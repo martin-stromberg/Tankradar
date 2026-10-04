@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -33,6 +35,14 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<AppConfiguration>();
         builder.Services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
+        builder.Services.AddSingleton<IDatabaseFileProtector, DatabaseFileProtector>();
+        builder.Services.AddDbContextFactory<TankradarDbContext>((serviceProvider, options) =>
+        {
+            var dataDirectory = serviceProvider.GetRequiredService<IAppDataPathProvider>().GetDataDirectory();
+            options.UseSqlite($"Data Source={TankradarDbContext.GetDatabasePath(dataDirectory)}");
+        });
+        builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
 
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();

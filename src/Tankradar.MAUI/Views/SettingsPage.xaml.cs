@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Optionen" (Einstellungen). Aktuell ohne Inhalt außer Platzhaltertext.
+/// Seite für den Bereich „Optionen" (Einstellungen). Zeigt die Einstellungen an und speichert Änderungen sofort.
 /// </summary>
 public partial class SettingsPage : TankradarContentPage
 {
