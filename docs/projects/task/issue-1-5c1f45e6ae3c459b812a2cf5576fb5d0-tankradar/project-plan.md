@@ -57,8 +57,8 @@ Eckenradien, Schatten, Mindestgröße 44×44 für Bedienelemente, Hell- und Dunk
 Strompreise und Ladestationen gehören nicht zum Umfang von Version 1.0. Die dafür gedachten
 Elemente des Entwurfs (Umschalter „Kraftstoff/Laden", Ladestecker-Kennzeichnungen) werden daher
 nicht umgesetzt; das wird als bewusste Designabweichung in der Projektdokumentation festgehalten.
-Die App-Kennung (Bundle-ID) wird als Konfigurationswert vorgesehen, den der Anwender später
-festlegt; bis dahin gilt ein Platzhalterwert, der die Entwicklung nicht blockiert. Die Windows-App
+Die App-Kennung (Bundle-ID) wird als Konfigurationswert vorgesehen; sie lautet
+`de.martinstromberg.tankradar` (Stakeholder-Angabe vom 2026-10-04, ursprünglich Platzhalter). Die Windows-App
 muss ohne Installation direkt startbar sein.
 
 Zusätzlich werden die Testgrundlagen geschaffen: je ein Projekt für Unit-Tests, Integrationstests
