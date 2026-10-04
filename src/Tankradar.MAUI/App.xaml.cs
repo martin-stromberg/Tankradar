@@ -3,7 +3,7 @@ using Tankradar.MAUI.Services;
 namespace Tankradar.MAUI;
 
 /// <summary>
-/// Einstiegspunkt der Tankradar-Anwendung; initialisiert AppShell und Theme-Unterstützung.
+/// Einstiegspunkt der Anwendung „Tankatlas“; initialisiert AppShell und Theme-Unterstützung.
 /// </summary>
 public partial class App : Application
 {
@@ -37,7 +37,7 @@ public partial class App : Application
     /// <returns>Das neu erstellte Anwendungsfenster.</returns>
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        return new Window(new AppShell());
+        return new Window(new AppShell()) { Title = AppConfiguration.AppDisplayName };
     }
 
     private void OnRequestedThemeChanged(object? sender, AppThemeChangedEventArgs e)

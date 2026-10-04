@@ -4,7 +4,7 @@
 
 ## Zweck
 
-Tankradar ist eine App für Ihre Tankstellen-Verwaltung mit vier Hauptbereichen, die Sie über eine Menüleiste am unteren Bildschirmrand erreichen. Die App passt sich automatisch an Ihr Geräte-Design (Hell- oder Dunkelmodus) an und bietet überall einheitliche Bedienelemente.
+Tankatlas ist eine App für Ihre Tankstellen-Verwaltung mit vier Hauptbereichen, die Sie über eine Menüleiste am unteren Bildschirmrand erreichen. Die App passt sich automatisch an Ihr Geräte-Design (Hell- oder Dunkelmodus) an und bietet überall einheitliche Bedienelemente.
 
 ## Funktionsweise
 
@@ -28,7 +28,7 @@ Tippen Sie auf die Schaltfläche des gewünschten Bereichs am unteren Bildschirm
 
 ### Hell- und Dunkelmodus
 
-Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellungen zwischen Hell- und Dunkelmodus wechseln, passt sich Tankradar automatisch an. Alle Farben und Texte bleiben lesbar.
+Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellungen zwischen Hell- und Dunkelmodus wechseln, passt sich Tankatlas automatisch an. Alle Farben und Texte bleiben lesbar.
 
 ## Beispiele
 
@@ -38,12 +38,12 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 3. Tippen Sie auf die Tankstelle und wählen Sie „Zu Favoriten hinzufügen" (verfügbar in späteren Versionen).
 
 **Sie wechseln zum Dunkelmodus:**
-1. Öffnen Sie die Einstellungen Ihres Geräts (nicht innerhalb von Tankradar).
+1. Öffnen Sie die Einstellungen Ihres Geräts (nicht innerhalb von Tankatlas).
 2. Wechseln Sie auf „Dunkelmodus".
-3. Öffnen Sie Tankradar neu — die App zeigt sich jetzt im Dunkelmodus.
+3. Öffnen Sie Tankatlas neu — die App zeigt sich jetzt im Dunkelmodus.
 
 ## Einschränkungen
 
 - Die vier Hauptbereiche sind aktuell in Vorbereitung — alle zeigen Platzhalter-Text.
-- Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankradar umschalten).
+- Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
 - Favoriten, Karte, Tankbuch und Optionen erhalten ihre Funktionen und Inhalte in späteren Versionen.

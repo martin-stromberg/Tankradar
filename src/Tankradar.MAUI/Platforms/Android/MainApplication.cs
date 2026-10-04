@@ -4,7 +4,7 @@ using Android.Runtime;
 namespace Tankradar.MAUI;
 
 /// <summary>
-/// Android-Anwendungsklasse der Tankradar-App.
+/// Android-Anwendungsklasse der Tankatlas-App.
 /// </summary>
 [Application]
 public class MainApplication : MauiApplication

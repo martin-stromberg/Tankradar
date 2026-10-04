@@ -1,6 +1,6 @@
 # Git-Hooks — Übersicht
 
-Tankradar verwendet lokale Git-Hooks zur Qualitätssicherung: Sie laufen automatisch vor jedem
+Tankatlas verwendet lokale Git-Hooks zur Qualitätssicherung: Sie laufen automatisch vor jedem
 Commit (`pre-commit`) und vor jedem Push (`pre-push`) und prüfen Dinge, die sonst erst spät
 auffallen würden — nicht mehr aktuelle Übersetzungen, fehlende XML-Dokumentation,
 Platzhalter-Implementierungen, unvollständige Enum-Testabdeckung, Formatierungsabweichungen,

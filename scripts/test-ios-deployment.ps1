@@ -75,6 +75,11 @@ try {
     Assert-That "AppConfiguration.DefaultBundleId = $expectedBundleId" ($configText.Contains("DefaultBundleId = `"$expectedBundleId`""))
     Assert-That "appsettings.json BundleId = $expectedBundleId" ($settingsText.Contains("`"$expectedBundleId`""))
 
+    Write-Host "Anzeigename"
+    Assert-That "csproj ApplicationTitle = Tankatlas (iOS-Anzeigename)" ($csprojText -match "<ApplicationTitle>Tankatlas</ApplicationTitle>")
+    Assert-That "AppConfiguration.AppDisplayName = Tankatlas" ($configText.Contains("AppDisplayName = `"Tankatlas`""))
+    Assert-That "Bundle-ID bleibt de.martinstromberg.tankradar" ($csprojText -match "<ApplicationId>de\.martinstromberg\.tankradar</ApplicationId>")
+
     Write-Host "Sauberer Abbruch ohne Mac"
     $hostPath = (Get-Process -Id $PID).Path
     $envNames = @(Get-ChildItem Env: | Where-Object { $_.Name -like "TANKRADAR_IOS_*" } | ForEach-Object { $_.Name })

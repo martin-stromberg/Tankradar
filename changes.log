@@ -1,3 +1,9 @@
+## 2026-10-04 — App-Anzeigename „Tankatlas“ (Tankradar Schritt 3a)
+
+- Der für Anwender sichtbare App-Name wechselt von „Tankradar“ auf „Tankatlas“: iOS-Homescreen-Name (`ApplicationTitle`), Titel der Shell und des Windows-Hauptfensters, Anwenderdokumentation und README
+- Unverändert bleiben Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und Assembly-Namen, Repository, `TANKRADAR_*`-Umgebungsvariablen und der Name des Windows-Release-Artefakts
+- Abweichung vom ursprünglichen Namen „Tankradar“ (Stakeholder-Entscheidung vom 2026-10-04); neuer E2E-Test prüft den Fenstertitel, `scripts/test-ios-deployment.ps1` prüft Anzeigename und unveränderte Bundle-ID
+
 ## 2026-10-04 — CI/CD-Pipeline mit Pre-Releases und Releases (Tankradar Schritt 3)
 
 - GitHub-Actions-Pipeline nach dem Branch-Modell `main`/`staging`: PR-Quellenprüfung, PR-CI, Pre-Release bei Push auf `staging`, Promotion- und Backmerge-PRs, Release bei Push auf `main`, wöchentlicher Sicherheitsscan

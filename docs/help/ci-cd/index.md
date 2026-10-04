@@ -2,7 +2,7 @@
 
 # CI/CD-Pipeline mit Pre-Releases und Releases
 
-Tankradar nutzt GitHub Actions, um Build, Prüfungen und Veröffentlichung zu automatisieren: Jeder
+Tankatlas nutzt GitHub Actions, um Build, Prüfungen und Veröffentlichung zu automatisieren: Jeder
 Pull Request wird geprüft, jeder Push auf `staging` erzeugt automatisch eine Pre-Release-Version und
 jeder Push auf `main` ein finales Release. Die Windows-App wird als ZIP veröffentlicht, das nach dem
 Entpacken ohne Installation startet.

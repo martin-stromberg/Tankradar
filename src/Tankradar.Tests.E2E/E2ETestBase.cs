@@ -45,7 +45,7 @@ public abstract class E2ETestBase : IDisposable
         try
         {
             MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
-                ?? throw new InvalidOperationException("Das Hauptfenster der Tankradar-App wurde nicht innerhalb von 30 Sekunden gefunden.");
+                ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden.");
         }
         catch (Exception ex)
         {

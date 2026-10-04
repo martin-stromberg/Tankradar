@@ -1,10 +1,14 @@
-# Tankradar
+# Tankatlas
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
 
-Tankradar ist eine .NET-MAUI-App für Kraftstoffpreise, Favoriten und ein offline nutzbares
+Tankatlas ist eine .NET-MAUI-App für Kraftstoffpreise, Favoriten und ein offline nutzbares
 Tankbuch. Zielplattformen sind iOS (Mindestversion iOS 16, primäre Zielplattform) und Windows
 (Entwicklung, Debugging, automatisierte Tests).
+
+Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Tankradar“). Technische Bezeichner
+bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
+Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
 Dieses Repository befindet sich in Entwicklungsschritt 1 ("App-Grundgerüst, Navigation und
 Design-System"): Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier Bereichen

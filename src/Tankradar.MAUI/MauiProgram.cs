@@ -11,7 +11,7 @@ namespace Tankradar.MAUI;
 public static class MauiProgram
 {
     /// <summary>
-    /// Erstellt die konfigurierte <see cref="MauiApp"/>-Instanz für Tankradar.
+    /// Erstellt die konfigurierte <see cref="MauiApp"/>-Instanz für die App „Tankatlas“.
     /// </summary>
     /// <returns>Die gebaute <see cref="MauiApp"/>.</returns>
     public static MauiApp CreateMauiApp()

@@ -11,7 +11,7 @@ Der verbindliche Designentwurf (`design-draft/stitch_smart_fuel_charge_tracker.z
 Strompreise: einen Umschalter „Kraftstoff/Laden" (Segmented Control) sowie Ladestecker-
 Kennzeichnungen (z. B. „HPC 300kW", „DC 150kW", „AC 22kW") auf Stationskarten und Karten-Pins.
 
-Für Version 1.0 der App „Tankradar" gibt es in Deutschland keine offizielle, frei nutzbare
+Für Version 1.0 der App „Tankatlas" gibt es in Deutschland keine offizielle, frei nutzbare
 Strompreis-API. Das Ladesäulenregister der Bundesnetzagentur liefert ausschließlich Standorte und
 Leistungsdaten, keine Preise. Eine reine Standortanzeige ohne Preise wäre eine nicht angeforderte
 Erweiterung und stünde außerhalb der ursprünglichen Anforderung, die sich auf Preisvergleich und

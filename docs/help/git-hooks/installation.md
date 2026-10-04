@@ -11,7 +11,7 @@
 | .NET SDK | 10.0 oder neuer | `dotnet format`, `dotnet test` (Formatierungs- und Testprüfung) |
 | Bash/sh | — | Ausführung der Hook-Skripte selbst (unter Windows über Git Bash, das mit Git for Windows mitgeliefert wird) |
 
-Alle vier Voraussetzungen sind auf einer normalen Tankradar-Entwicklungsumgebung ohnehin
+Alle vier Voraussetzungen sind auf einer normalen Tankatlas-Entwicklungsumgebung ohnehin
 vorhanden (siehe Haupt-[`README.md`](../../../README.md) für .NET/MAUI-Setup).
 
 ## Installation unter Windows

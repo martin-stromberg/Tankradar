@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Tankradar.MAUI.Services;
 
 /// <summary>
-/// Verwaltet die Konfiguration der Tankradar-App, insbesondere die App-Kennung (Bundle-ID).
+/// Verwaltet die Konfiguration der Tankatlas-App, insbesondere die App-Kennung (Bundle-ID).
 /// </summary>
 public class AppConfiguration
 {
@@ -11,6 +11,11 @@ public class AppConfiguration
     /// Standardwert der Bundle-ID (keine Geheiminformation); per Umgebungsvariable oder appsettings.json überschreibbar.
     /// </summary>
     public const string DefaultBundleId = "de.martinstromberg.tankradar";
+
+    /// <summary>
+    /// Der für Anwender sichtbare App-Name (Fenstertitel, Texte in der App); technische Bezeichner behalten den Namen Tankradar.
+    /// </summary>
+    public const string AppDisplayName = "Tankatlas";
 
     private const string BundleIdEnvironmentVariable = "TANKRADAR_BUNDLE_ID";
     private const string SettingsFileName = "appsettings.json";

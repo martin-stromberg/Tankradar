@@ -12,6 +12,16 @@ public class AppConfigurationTests_BundleId : BaseTest
     private readonly string? _originalValue = Environment.GetEnvironmentVariable(BundleIdEnvironmentVariable);
 
     /// <summary>
+    /// Prüft, dass der Anzeigename „Tankatlas“ lautet, die Bundle-ID aber unverändert bleibt.
+    /// </summary>
+    [Fact]
+    public void AppDisplayName_IsTankatlas_WhileBundleIdKeepsTechnicalName()
+    {
+        Assert.Equal("Tankatlas", AppConfiguration.AppDisplayName);
+        Assert.Equal("de.martinstromberg.tankradar", AppConfiguration.DefaultBundleId);
+    }
+
+    /// <summary>
     /// Prüft, dass ohne Umgebungsvariable der Standardwert verwendet wird.
     /// </summary>
     [Fact]
