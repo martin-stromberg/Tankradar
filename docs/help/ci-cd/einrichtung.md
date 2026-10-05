@@ -55,7 +55,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 
 | Name | Inhalt | Pflicht |
 |---|---|---|
-| `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes | optional, bis die App ihn nutzt |
+| `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes | optional (ohne Schlüssel zeigt die App nur zuletzt bekannte Preise) |
 | `ROUTING_API_KEY` | API-Schlüssel des Routing-Dienstes | optional, bis die App ihn nutzt |
 | `IOS_CODESIGN_KEY` | Name der Signierungsidentität, z. B. `Apple Distribution: Firma (TEAMID)` | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE` | Name des Provisioning-Profils (wie im Developer-Portal) | für signierten iOS-Build |
@@ -67,7 +67,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | `IOS_API_KEY_P8` | Inhalt der `.p8`-Datei des API-Keys (Klartext, mehrzeilig) | für TestFlight-Upload |
 
 Die Schlüssel `FUEL_PRICE_API_KEY`/`ROUTING_API_KEY` stehen den Build-Schritten als Umgebungsvariablen
-`TANKRADAR_FUEL_PRICE_API_KEY` und `TANKRADAR_ROUTING_API_KEY` zur Verfügung. Die App liest sie derzeit noch nicht.
+`TANKRADAR_FUEL_PRICE_API_KEY` und `TANKRADAR_ROUTING_API_KEY` zur Verfügung. Die App übernimmt `FUEL_PRICE_API_KEY` beim Build als Tankerkönig-Schlüssel (siehe [Preisdaten](../Preisdaten/index.md)); der Routing-Schlüssel wird noch nicht gelesen.
 
 Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("datei.p12"))`
 (auf dem Mac: `base64 -i datei.p12 | pbcopy`).

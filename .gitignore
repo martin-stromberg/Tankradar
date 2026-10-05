@@ -475,3 +475,7 @@ drafts/
 *.db
 *.db-wal
 *.db-shm
+
+# Lokaler Tankerkönig-API-Schlüssel (nie committen)
+tankerkoenig.local.props
+*.local.props

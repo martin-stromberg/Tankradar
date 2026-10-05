@@ -38,6 +38,7 @@ src/
     ViewModels/                      MVVM-ViewModels (BaseViewModel + vier Seiten-ViewModels)
     Views/                           XAML-Seiten der vier Hauptbereiche
     Services/                        AppConfiguration u. a. Dienste
+    Services/Pricing/                Tankerkönig-Client, Preis-Cache, Verbindungserkennung, API-Schlüssel
     Resources/DesignSystem.xaml      Zentrales Design-System (Farben, Typografie, Spacing, ...)
     Resources/Raw/appsettings.json   Konfigurationsdatei (Bundle-ID)
     Platforms/                       Plattformspezifischer Code (iOS, Windows, Android, MacCatalyst)
@@ -122,6 +123,16 @@ Entwicklungs- oder Echtbetriebsdaten kollidieren. Die App selbst löst ihr Daten
 über `IAppDataPathProvider` (`src/Tankradar.MAUI/Services/AppDataPathProvider.cs`) auf: Ist
 `TEST_DATA_PATH` gesetzt, wird dieses Verzeichnis verwendet, andernfalls das reguläre
 Plattform-Datenverzeichnis (`FileSystem.AppDataDirectory`).
+
+## Kraftstoffpreise und API-Schlüssel
+
+Die App ruft Preise über die Tankerkönig-API ab (Quellenangabe „Daten: Tankerkönig / MTS-K“, CC BY 4.0,
+sichtbar in den Optionen) und speichert jeden Preis mit Zeitstempel lokal (Offline-Betrieb, Alter „vor X Min.“,
+ab 60 Minuten veraltet). Der API-Schlüssel steht nie im Quellcode: lokal über die Umgebungsvariable
+`TANKRADAR_FUEL_PRICE_API_KEY` oder die nicht versionierte Datei `tankerkoenig.local.props`, in der CI über das
+Secret `FUEL_PRICE_API_KEY`; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
+Schlüssel baut und testet alles (Tests nutzen einen lokalen Mock-Server, nie produktive Endpunkte).
+Details: [`docs/help/Preisdaten/`](docs/help/Preisdaten/index.md).
 
 ## Windows-Zwischenstände (Review-Versionen)
 

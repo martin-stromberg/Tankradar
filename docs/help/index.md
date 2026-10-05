@@ -6,6 +6,7 @@
 
 - [Navigation und Design-System](Navigation/index.md) — Die vier Hauptbereiche von Tankatlas und wie Sie zwischen ihnen navigieren. Die App passt sich automatisch an Ihre bevorzugte Darstellung (Hell-/Dunkelmodus) an.
 - [Einstellungen (Optionen)](Einstellungen/index.md) — Spritsorten auswählen und ordnen, Standortnutzung, Standardansicht und Standardsortierung festlegen. Änderungen werden sofort lokal gespeichert und überstehen Neustart und App-Updates.
+- [Kraftstoffpreise und Preis-Cache](Preisdaten/index.md) — Abruf der Preise über die Tankerkönig-API (Daten: Tankerkönig / MTS-K), lokaler Preis-Cache mit Zeitstempel, Preisalter „vor X Min.“ (ab 60 Minuten veraltet), Offline-Betrieb mit zuletzt bekannten Preisen, Verbindungserkennung und Hinterlegen des API-Schlüssels lokal bzw. als GitHub-Secret.
 
 ## Lokale Entwicklung
 

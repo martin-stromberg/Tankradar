@@ -23,17 +23,29 @@ public abstract class E2ETestBase : IDisposable
     private static readonly string DefaultDiagnosticsDirectory = E2EDiagnostics.ResolveDirectory();
 
     private readonly string _testDataDirectory;
+    private readonly IReadOnlyDictionary<string, string> _additionalEnvironment;
     private bool _disposed;
 
     /// <summary>
     /// Erstellt die Testbasis, legt ein isoliertes Testdatenverzeichnis an und startet die Windows-App darauf ausgerichtet.
     /// </summary>
     protected E2ETestBase()
+        : this(null)
     {
+    }
+
+    /// <summary>
+    /// Erstellt die Testbasis wie <see cref="E2ETestBase()"/> und gibt der gestarteten App zusätzliche Umgebungsvariablen mit
+    /// (Testkonfiguration, z. B. die Adresse des Mock-Dienstes für Kraftstoffpreise).
+    /// </summary>
+    /// <param name="additionalEnvironment">Zusätzliche Umgebungsvariablen oder <see langword="null"/>.</param>
+    protected E2ETestBase(IReadOnlyDictionary<string, string>? additionalEnvironment)
+    {
+        _additionalEnvironment = additionalEnvironment ?? new Dictionary<string, string>();
         _testDataDirectory = Path.Combine(Path.GetTempPath(), "Tankradar.Tests.E2E", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDataDirectory);
 
-        Automation = new UIA3Automation();
+        Automation = TransientRetry.Run(() => new UIA3Automation(), "Aufbau der UI-Automation");
 
         LaunchApplication();
     }
@@ -114,7 +126,9 @@ public abstract class E2ETestBase : IDisposable
 
     private AutomationElement? FindTab(string title)
     {
-        return MainWindow.FindFirstDescendant(cf => cf.ByName(title).Or(cf.ByAutomationId(title)));
+        return TransientRetry.Run(
+            () => MainWindow.FindFirstDescendant(cf => cf.ByName(title).Or(cf.ByAutomationId(title))),
+            $"Suche des Reiters '{title}'");
     }
 
     private AutomationElement? WaitForTab(string title, TimeSpan timeout)
@@ -195,7 +209,15 @@ public abstract class E2ETestBase : IDisposable
         }
 
         _disposed = true;
+        Cleanup();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Wird am Ende von <see cref="Dispose"/> aufgerufen, damit abgeleitete Klassen eigene Ressourcen (z. B. einen Mock-Server) freigeben können.
+    /// </summary>
+    protected virtual void Cleanup()
+    {
     }
 
     /// <summary>
@@ -241,12 +263,21 @@ public abstract class E2ETestBase : IDisposable
             UseShellExecute = false,
         };
         startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
+        foreach (var (name, value) in _additionalEnvironment)
+        {
+            startInfo.Environment[name] = value;
+        }
 
         Application = Application.Launch(startInfo);
         try
         {
-            MainWindow = Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
-                ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden.");
+            // Ein UIA-Timeout beim Aufbau der Automation bzw. der ersten Fensterabfrage (beobachtet auf dem GitHub-Windows-Runner)
+            // wird begrenzt wiederholt; ein fehlendes Fenster oder andere Fehler bleiben sofort sichtbar.
+            MainWindow = TransientRetry.Run(
+                () => Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
+                    ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden."),
+                "Abfrage des Hauptfensters der Tankatlas-App");
+            TransientRetry.Run(() => MainWindow.Title, "Erste Abfrage des Hauptfensters");
         }
         catch (Exception ex)
         {
