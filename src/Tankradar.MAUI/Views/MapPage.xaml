@@ -11,22 +11,82 @@
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
     <views:TankradarContentPage.Resources>
+        <!-- Karten: Design-Tokens rounded-lg (16 px) und Schattenebene 1 -->
         <Style x:Key="SearchCard" TargetType="Border">
             <Setter Property="Padding" Value="{StaticResource space-md}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
             <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
             <Setter Property="StrokeThickness" Value="1" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
-        </Style>
-        <Style x:Key="SearchRadio" TargetType="RadioButton">
-            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
-            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+            <Setter Property="Shadow">
+                <Setter.Value>
+                    <Shadow Brush="Black" Offset="0,1" Radius="3" Opacity="0.04" />
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="SearchChip" TargetType="Border">
             <Setter Property="Padding" Value="8,2" />
             <Setter Property="StrokeThickness" Value="0" />
             <Setter Property="StrokeShape" Value="RoundRectangle 9999" />
         </Style>
+        <!-- Auswahl-Chips (Pill, mindestens 44 px hoch); ausgewählt = Teal mit weißem Text -->
+        <Style x:Key="SearchChipButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#334155, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <DataTemplate x:Key="RadiusChipTemplate" x:DataType="vm:IChoiceOption">
+            <Button Text="{Binding Label}"
+                    Command="{Binding SelectCommand}"
+                    Style="{StaticResource SearchChipButton}"
+                    SemanticProperties.Hint="{Binding SelectionHint}"
+                    AutomationId="{Binding AutomationKey, StringFormat='Search.Radius.{0}'}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="FilterChipTemplate" x:DataType="vm:IChoiceOption">
+            <Button Text="{Binding Label}"
+                    Command="{Binding SelectCommand}"
+                    Style="{StaticResource SearchChipButton}"
+                    SemanticProperties.Hint="{Binding SelectionHint}"
+                    AutomationId="{Binding AutomationKey, StringFormat='Search.Filter.{0}'}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="SortChipTemplate" x:DataType="vm:IChoiceOption">
+            <Button Text="{Binding Label}"
+                    Command="{Binding SelectCommand}"
+                    Style="{StaticResource SearchChipButton}"
+                    SemanticProperties.Hint="{Binding SelectionHint}"
+                    AutomationId="{Binding AutomationKey, StringFormat='Search.Sort.{0}'}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </DataTemplate>
     </views:TankradarContentPage.Resources>
 
     <ScrollView>
@@ -54,26 +114,14 @@
                     <Label Text="{x:Static texts:SearchTexts.RadiusHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                        <Entry Grid.Column="0"
-                               Text="{Binding RadiusText}"
-                               Keyboard="Numeric"
-                               MaxLength="3"
-                               MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                               ReturnCommand="{Binding SearchCommand}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                               SemanticProperties.Description="{x:Static texts:SearchTexts.RadiusHeading}"
-                               AutomationId="Search.Radius" />
-                        <Label Grid.Column="1"
-                               Text="{x:Static texts:SearchTexts.RadiusUnit}"
-                               Style="{StaticResource body-lg}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                               VerticalOptions="Center" />
-                    </Grid>
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding RadiusOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource RadiusChipTemplate}" />
                     <Button Text="{x:Static texts:SearchTexts.SearchButton}"
                             Command="{Binding SearchCommand}"
                             IsEnabled="{Binding IsNotBusy}"
                             MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                            CornerRadius="8"
                             BackgroundColor="{StaticResource ColorPrimaryTeal}"
                             TextColor="White"
                             AutomationId="Search.Submit" />
@@ -94,18 +142,9 @@
                     <Label Text="{x:Static texts:SearchTexts.FilterHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" BindableLayout.ItemsSource="{Binding FuelFilterOptions}">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="vm:IChoiceOption">
-                                <RadioButton GroupName="SearchFilter"
-                                             Content="{Binding Label}"
-                                             IsChecked="{Binding IsSelected}"
-                                             Margin="0,0,16,0"
-                                             Style="{StaticResource SearchRadio}"
-                                             AutomationId="{Binding AutomationKey, StringFormat='Search.Filter.{0}'}" />
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
-                    </FlexLayout>
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding FuelFilterOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource FilterChipTemplate}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -114,18 +153,9 @@
                     <Label Text="{x:Static texts:SearchTexts.SortHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" BindableLayout.ItemsSource="{Binding SortOptions}">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="vm:IChoiceOption">
-                                <RadioButton GroupName="SearchSort"
-                                             Content="{Binding Label}"
-                                             IsChecked="{Binding IsSelected}"
-                                             Margin="0,0,16,0"
-                                             Style="{StaticResource SearchRadio}"
-                                             AutomationId="{Binding AutomationKey, StringFormat='Search.Sort.{0}'}" />
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
-                    </FlexLayout>
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding SortOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource SortChipTemplate}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -152,6 +182,7 @@
                                     <Label Grid.Column="0"
                                            Text="{Binding Name}"
                                            Style="{StaticResource headline-md}"
+                                           FontSize="16"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="Search.Station.Name" />
                                     <Label Grid.Column="1"
@@ -162,6 +193,11 @@
                                            VerticalOptions="Center"
                                            AutomationId="Search.Station.Distance" />
                                 </Grid>
+                                <Label Text="{Binding AddressText}"
+                                       IsVisible="{Binding HasAddress}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="Search.Station.Address" />
                                 <Label Text="{Binding OpeningStatusText}"
                                        IsVisible="{Binding HasOpeningStatus}"
                                        Style="{StaticResource body-sm}"
@@ -170,7 +206,7 @@
                                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding PriceLines}" Spacing="{StaticResource space-xs}">
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate x:DataType="search:StationPriceLine">
-                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}">
                                                 <Label Grid.Column="0"
                                                        Text="{Binding FuelLabel}"
                                                        Style="{StaticResource body-lg}"
@@ -180,9 +216,7 @@
                                                 <Label Grid.Column="1"
                                                        Text="{Binding PriceText}"
                                                        Style="{StaticResource price-hero}"
-                                                       FontFamily="JetBrainsMonoSemibold"
-                                                       FontSize="20"
-                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
                                                        VerticalOptions="Center"
                                                        AutomationId="{Binding FuelType, StringFormat='Search.Price.{0}'}" />
                                                 <Label Grid.Column="2"
@@ -224,6 +258,15 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
+
+            <Button Text="{Binding ShowMoreText}"
+                    Command="{Binding ShowMoreCommand}"
+                    IsVisible="{Binding HasMore}"
+                    MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                    CornerRadius="22"
+                    BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                    TextColor="White"
+                    AutomationId="Search.ShowMore" />
         </VerticalStackLayout>
     </ScrollView>
 

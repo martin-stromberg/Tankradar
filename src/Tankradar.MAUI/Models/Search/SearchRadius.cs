@@ -23,6 +23,11 @@ public static class SearchRadius
     public const int Default = 5;
 
     /// <summary>
+    /// Die in der Oberfläche wählbaren Radiusstufen in Kilometern (alle innerhalb von <see cref="Min"/> bis <see cref="Max"/>).
+    /// </summary>
+    public static readonly IReadOnlyList<int> Steps = [2, 5, 10, 15, 25];
+
+    /// <summary>
     /// Wandelt eine Eingabe in einen gültigen Radius um (nur ganze Ziffern, keine Dezimalzahlen).
     /// </summary>
     /// <param name="text">Die Eingabe.</param>

@@ -79,7 +79,8 @@ public static class StationResultBuilder
             lines,
             StationHints.HasUnconfirmedPrice(shownPrices, nowUtc),
             StationHints.IsAutomatedStation(station.WholeDay, station.OpeningTimes),
-            station.IsOpen is { } isOpen ? (isOpen ? SearchTexts.Open : SearchTexts.Closed) : string.Empty);
+            station.IsOpen is { } isOpen ? (isOpen ? SearchTexts.Open : SearchTexts.Closed) : string.Empty,
+            SearchTexts.FormatAddress(station.Street, station.HouseNumber, station.PostCode, station.Place));
     }
 
     private static IReadOnlyList<StationListItem> Sort(List<StationListItem> items, ResultSortOrder sortOrder, FuelType sortFuel)

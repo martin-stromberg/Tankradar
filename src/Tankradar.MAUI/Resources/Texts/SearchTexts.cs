@@ -97,6 +97,36 @@ public static class SearchTexts
     public const string Closed = "Geschlossen";
 
     /// <summary>
+    /// Beschriftung der Schaltfläche zum Nachladen weiterer Tankstellen.
+    /// </summary>
+    public const string ShowMore = "Weitere anzeigen";
+
+    /// <summary>
+    /// Formatiert die Beschriftung zum Nachladen („Weitere anzeigen (12 weitere)“).
+    /// </summary>
+    /// <param name="remaining">Die Anzahl noch nicht angezeigter Tankstellen.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatShowMore(int remaining)
+    {
+        return $"{ShowMore} ({remaining.ToString(German)} weitere)";
+    }
+
+    /// <summary>
+    /// Formatiert die Adresszeile („Hauptstraße 1, 10115 Berlin“); fehlende Teile werden ausgelassen.
+    /// </summary>
+    /// <param name="street">Die Straße.</param>
+    /// <param name="houseNumber">Die Hausnummer.</param>
+    /// <param name="postCode">Die Postleitzahl.</param>
+    /// <param name="place">Der Ort.</param>
+    /// <returns>Der Text; leer, wenn keine Angabe vorliegt.</returns>
+    public static string FormatAddress(string? street, string? houseNumber, string? postCode, string? place)
+    {
+        var line1 = string.Join(' ', new[] { street, houseNumber }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
+        var line2 = string.Join(' ', new[] { postCode, place }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
+        return string.Join(", ", new[] { line1, line2 }.Where(part => part.Length > 0));
+    }
+
+    /// <summary>
     /// Liefert den Hinweistext zu einem Standortstatus ohne Position.
     /// </summary>
     /// <param name="status">Der Status.</param>

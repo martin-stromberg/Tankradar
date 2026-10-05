@@ -6,7 +6,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class SearchE2ETests_Basic : SearchE2ETestBase
 {
     /// <summary>
-    /// Prüft Radius-Vorbelegung, Auswahl der Tankstellen, Preise in Einstellungsreihenfolge, Altersangabe, Entfernungen und den Hinweis „Automatentankstelle“.
+    /// Prüft Radius-Vorbelegung, Auswahl der Tankstellen, Preise in Einstellungsreihenfolge, Altersangabe, Entfernungen und Adresszeile. Die Umkreissuche der Quelle liefert keine Öffnungszeiten, daher erscheint ohne bekannte Details kein Hinweis „Automatentankstelle“.
     /// </summary>
     [Fact]
     public void Search_DefaultRadius_ShowsNearStationsWithPricesAgeAndHints()
@@ -29,7 +29,8 @@ public class SearchE2ETests_Basic : SearchE2ETestBase
             var distances = ReadTexts("Search.Station.Distance");
             Assert.Equal(2, distances.Count);
             Assert.All(distances, text => Assert.EndsWith(" km", text, StringComparison.Ordinal));
-            Assert.Equal(["Alpha Tankstelle"], StationNamesOf("Search.Hint.Automated"));
+            Assert.False(Exists("Search.Hint.Automated"));
+            Assert.Equal(["Hauptstraße 1, 10115 Berlin", "Nebenweg 22, 10117 Berlin"], ReadTexts("Search.Station.Address"));
             Assert.Equal(["Alpha Tankstelle"], StationNamesOf("Search.Price.Diesel"));
             Assert.Equal(1, Server.ListRequests);
             Assert.Equal(5, Server.LastListRadius);

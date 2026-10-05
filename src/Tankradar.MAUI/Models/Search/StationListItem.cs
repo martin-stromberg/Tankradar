@@ -11,6 +11,7 @@ namespace Tankradar.MAUI.Models.Search;
 /// <param name="HasUnconfirmedPrice">Gibt an, ob der Hinweis „Preis unbestätigt“ gilt.</param>
 /// <param name="IsAutomatedStation">Gibt an, ob der Hinweis „Automatentankstelle“ gilt.</param>
 /// <param name="OpeningStatusText">Der Öffnungsstatus als Text; leer, wenn die Quelle ihn nicht liefert.</param>
+/// <param name="AddressText">Die Adresszeile; leer, wenn die Quelle keine Adresse liefert.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationListItem(
     string Id,
@@ -20,8 +21,14 @@ public sealed record StationListItem(
     IReadOnlyList<StationPriceLine> PriceLines,
     bool HasUnconfirmedPrice,
     bool IsAutomatedStation,
-    string OpeningStatusText)
+    string OpeningStatusText,
+    string AddressText = "")
 {
+    /// <summary>
+    /// Gibt an, ob eine Adresse vorliegt.
+    /// </summary>
+    public bool HasAddress => AddressText.Length > 0;
+
     /// <summary>
     /// Gibt an, ob die Entfernung bekannt ist.
     /// </summary>

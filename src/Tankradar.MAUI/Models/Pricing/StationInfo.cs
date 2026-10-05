@@ -81,6 +81,35 @@ public sealed class StationInfo
     public DateTime? DetailsUpdatedUtc { get; init; }
 
     /// <summary>
+    /// Liefert eine Kopie, die die Detailangaben (Öffnungszeiten, durchgehende Öffnung) einer früheren Detailabfrage übernimmt.
+    /// Die Umkreissuche der Quelle liefert diese Angaben nicht.
+    /// </summary>
+    /// <param name="details">Die lokal bekannte Tankstelle mit Detailangaben.</param>
+    /// <returns>Die Kopie.</returns>
+    public StationInfo WithDetails(StationInfo details)
+    {
+        ArgumentNullException.ThrowIfNull(details);
+        return new StationInfo
+        {
+            Id = Id,
+            Name = Name,
+            Brand = Brand,
+            Street = Street,
+            HouseNumber = HouseNumber,
+            PostCode = PostCode,
+            Place = Place,
+            Latitude = Latitude,
+            Longitude = Longitude,
+            DistanceKm = DistanceKm,
+            IsOpen = IsOpen,
+            WholeDay = details.WholeDay,
+            OpeningTimes = details.OpeningTimes,
+            Prices = Prices,
+            DetailsUpdatedUtc = details.DetailsUpdatedUtc,
+        };
+    }
+
+    /// <summary>
     /// Liefert eine Kopie mit anderen Preisen.
     /// </summary>
     /// <param name="prices">Die neuen Preise.</param>

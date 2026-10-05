@@ -18,6 +18,11 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     protected const string TestLocation = "52.5200,13.4050";
 
     /// <summary>
+    /// Die angebotenen Radiusstufen in Kilometern.
+    /// </summary>
+    protected static readonly string[] RadiusSteps = ["2", "5", "10", "15", "25"];
+
+    /// <summary>
     /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
     /// </summary>
     protected SearchE2ETestBase()
@@ -77,27 +82,48 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     protected void OpenSearch()
     {
         NavigateToTab("Karte", "MapPage.Headline");
-        WaitForAutomationId("Search.Radius");
+        WaitForAutomationId("Search.Radius.5");
         WaitForAutomationId("Search.Filter.All");
         WaitForAutomationId("Search.Sort.Price");
     }
 
     /// <summary>
-    /// Trägt den Radius ein.
+    /// Wählt die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („2“, „5“, „10“, „15“, „25“).
     /// </summary>
-    /// <param name="text">Der Text des Radiusfeldes.</param>
+    /// <param name="text">Der Radius in Kilometern.</param>
     protected void SetRadius(string text)
     {
-        WaitForAutomationId("Search.Radius").Patterns.Value.Pattern.SetValue(text);
+        SelectChip("Search.Radius." + text);
     }
 
     /// <summary>
-    /// Liefert den Text des Radiusfeldes.
+    /// Liefert den Radius der ausgewählten Radiusstufe in Kilometern.
     /// </summary>
-    /// <returns>Der Text.</returns>
+    /// <returns>Der Radius als Text; leer, wenn keine Stufe ausgewählt ist.</returns>
     protected string ReadRadius()
     {
-        return WaitForAutomationId("Search.Radius").Patterns.Value.Pattern.Value.Value;
+        return RadiusSteps.FirstOrDefault(step => IsChipSelected("Search.Radius." + step)) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Liefert, ob der Chip mit der AutomationId ausgewählt ist (Hinweistext „Ausgewählt“ der Schaltfläche).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    /// <returns><see langword="true"/>, wenn der Chip ausgewählt ist.</returns>
+    protected bool IsChipSelected(string automationId)
+    {
+        var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+        return element is not null && element.Properties.HelpText.ValueOrDefault == "Ausgewählt";
+    }
+
+    /// <summary>
+    /// Wählt den Chip mit der AutomationId aus und wartet, bis er als ausgewählt gilt.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    protected void SelectChip(string automationId)
+    {
+        WaitForAutomationId(automationId).Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => IsChipSelected(automationId), $"Der Chip '{automationId}' wurde nicht ausgewählt.");
     }
 
     /// <summary>
@@ -205,7 +231,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="key">Der Schlüssel der Sortierung.</param>
     protected void SelectSort(string key)
     {
-        SelectRadio("Search.Sort." + key);
+        SelectChip("Search.Sort." + key);
     }
 
     /// <summary>
@@ -214,7 +240,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="key">Der Schlüssel des Filters.</param>
     protected void SelectFilter(string key)
     {
-        SelectRadio("Search.Filter." + key);
+        SelectChip("Search.Filter." + key);
     }
 
     /// <summary>

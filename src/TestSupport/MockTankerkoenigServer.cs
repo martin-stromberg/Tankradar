@@ -52,6 +52,7 @@ public sealed class MockTankerkoenigServer : IDisposable
         new(StationEpsilon, "Epsilon Tankstelle", "EPSILON", "Epsilonstraße", "5", "16515", "Oranienburg", 52.8800, 13.4050, 1.809m, 1.749m, 1.669m, true, "Mo-So", "00:00:00", "24:00:00"),
     ];
 
+    private readonly List<MockStation> _generated = [];
     private readonly HttpListener _listener = new();
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
@@ -158,6 +159,26 @@ public sealed class MockTankerkoenigServer : IDisposable
     }
 
     /// <summary>
+    /// Fügt dem Mock zusätzliche Tankstellen hinzu (alle Sorten, alle innerhalb von etwa 3 km um Berlin-Mitte), z. B. für Tests mit großer Ergebnismenge.
+    /// </summary>
+    /// <param name="count">Die Anzahl der zusätzlichen Tankstellen.</param>
+    public void AddGeneratedStations(int count)
+    {
+        lock (_gate)
+        {
+            var start = _generated.Count;
+            for (var i = start; i < start + count; i++)
+            {
+                var id = new Guid(i + 1, 0, 0, [0, 0, 0, 0, 0, 0, 0, 7]).ToString("D");
+                var offset = (i % 20) * 0.0012;
+                var offsetLng = (i / 20 % 20) * 0.0018;
+                var e5 = 1.700m + ((i * 7 % 90) / 1000m);
+                _generated.Add(new MockStation(id, $"Station {i + 1:D3}", "GEN", "Generierte Straße", (i % 50 + 1).ToString(CultureInfo.InvariantCulture), "10115", "Berlin", 52.5000 + offset, 13.3900 + offsetLng, e5, e5 - 0.060m, e5 - 0.160m, false, "Mo-Fr", "06:00:00", "22:00:00"));
+            }
+        }
+    }
+
+    /// <summary>
     /// Lässt die nächsten Anfragen mit den angegebenen HTTP-Statuscodes beantworten (je Anfrage einer).
     /// </summary>
     /// <param name="statuses">Die Statuscodes in Reihenfolge.</param>
@@ -211,10 +232,11 @@ public sealed class MockTankerkoenigServer : IDisposable
 
     private static string AlphaJson(bool detailed, double distance)
     {
+        // Die Umkreissuche (list.php) liefert laut Dokumentation keine Öffnungszeiten (weder openingTimes noch wholeDay); nur detail.php tut das.
         const string AroundTheClock = ",\"wholeDay\":true,\"openingTimes\":[{\"text\":\"Mo-So\",\"start\":\"00:00:00\",\"end\":\"24:00:00\"}]";
         var extra = detailed
             ? AroundTheClock + ",\"overrides\":[],\"state\":\"open\""
-            : $",\"dist\":{Number(distance)}" + AroundTheClock;
+            : $",\"dist\":{Number(distance)}";
         return "{\"id\":\"" + StationAlpha + "\",\"name\":\"Alpha Tankstelle\",\"brand\":\"ALPHA\",\"street\":\"Hauptstraße\",\"houseNumber\":\"1\",\"postCode\":\"10115\",\"place\":\"Berlin\",\"lat\":52.5201,\"lng\":13.4051,\"isOpen\":true,\"e5\":1.859,\"e10\":1.799,\"diesel\":1.699" + extra + "}";
     }
 
@@ -247,7 +269,7 @@ public sealed class MockTankerkoenigServer : IDisposable
             + ",\"openingTimes\":[{\"text\":\"" + station.TimesText + "\",\"start\":\"" + station.TimesStart + "\",\"end\":\"" + station.TimesEnd + "\"}]";
         var extra = detailed
             ? times + ",\"overrides\":[]"
-            : $",\"dist\":{Number(distance)}" + times;
+            : $",\"dist\":{Number(distance)}";
         return "{\"id\":\"" + station.Id + "\",\"name\":\"" + station.Name + "\",\"brand\":\"" + station.Brand + "\",\"street\":\"" + station.Street
             + "\",\"houseNumber\":\"" + station.HouseNumber + "\",\"postCode\":\"" + station.PostCode + "\",\"place\":\"" + station.Place
             + "\",\"lat\":" + Number(station.Latitude) + ",\"lng\":" + Number(station.Longitude)
@@ -257,6 +279,14 @@ public sealed class MockTankerkoenigServer : IDisposable
     private static double? ParseQuery(string? value)
     {
         return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+    }
+
+    private MockStation[] GeneratedSnapshot()
+    {
+        lock (_gate)
+        {
+            return _generated.ToArray();
+        }
     }
 
     private string ListBody(HttpListenerContext context)
@@ -285,7 +315,7 @@ public sealed class MockTankerkoenigServer : IDisposable
             (alphaDistance, AlphaJson(false, Math.Round(alphaDistance, 1))),
             (betaDistance, BetaJson(false, Math.Round(betaDistance, 1))),
         };
-        foreach (var station in GenericStations)
+        foreach (var station in GenericStations.Concat(GeneratedSnapshot()))
         {
             var distance = DistanceKm(centerLat, centerLng, station.Latitude, station.Longitude);
             entries.Add((distance, GenericJson(station, false, Math.Round(distance, 1))));
@@ -378,7 +408,7 @@ public sealed class MockTankerkoenigServer : IDisposable
             {
                 body = "{\"ok\":true,\"status\":\"ok\",\"station\":" + BetaJson(true, 0) + "}";
             }
-            else if (GenericStations.FirstOrDefault(station => station.Id == id) is { } generic)
+            else if (GenericStations.Concat(GeneratedSnapshot()).FirstOrDefault(station => station.Id == id) is { } generic)
             {
                 body = "{\"ok\":true,\"status\":\"ok\",\"station\":" + GenericJson(generic, true, 0) + "}";
             }

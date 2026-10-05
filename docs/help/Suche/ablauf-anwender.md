@@ -16,7 +16,7 @@ Tippen Sie in der unteren Menüleiste auf **Karte**.
 
 ### 2. Radius festlegen
 
-Unter **Suchradius** steht voreingestellt 5 (km). Geben Sie bei Bedarf eine ganze Zahl von 1 bis 25 ein.
+Unter **Suchradius** ist voreingestellt **5 km** gewählt. Tippen Sie bei Bedarf auf einen anderen Chip (**2**, **5**, **10**, **15** oder **25 km**).
 
 ### 3. Suchen
 
@@ -26,11 +26,11 @@ Tippen Sie auf **Suchen**. Beim ersten Mal fragt das Gerät eventuell, ob Tankat
 
 ### 4. Ergebnis eingrenzen
 
-Wählen Sie unter **Spritsorte** **Alle** oder eine Sorte und unter **Sortierung** **Preis**, **Entfernung** oder **Name**. Die Liste ändert sich sofort.
+Tippen Sie unter **Spritsorte** auf **Alle** oder eine Sorte und unter **Sortierung** auf **Preis**, **Entfernung** oder **Name**. Die Liste ändert sich sofort. Bei sehr langen Listen tippen Sie unten auf **Weitere anzeigen**.
 
 ### 5. Preise lesen
 
-Je Tankstelle sehen Sie Name, Entfernung, Preise mit Alter („vor X Min.“, ab 60 Minuten amberfarben) und gegebenenfalls **Preis unbestätigt** bzw. **Automatentankstelle**.
+Je Tankstelle sehen Sie Name, Entfernung, Adresse, Preise mit Alter („vor X Min.“, ab 60 Minuten amberfarben) und gegebenenfalls **Preis unbestätigt** bzw. **Automatentankstelle**.
 
 ## Ergebnis
 

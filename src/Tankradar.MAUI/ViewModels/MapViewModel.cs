@@ -17,6 +17,11 @@ namespace Tankradar.MAUI.ViewModels;
 /// </summary>
 public class MapViewModel : BaseViewModel
 {
+    /// <summary>
+    /// Anzahl der Tankstellen, die auf einmal in der Liste dargestellt werden (weitere über „Weitere anzeigen“).
+    /// </summary>
+    public const int PageSize = 25;
+
     private static readonly IReadOnlyList<StationListItem> NoStations = [];
 
     private readonly ISettingsService _settingsService;
@@ -33,6 +38,9 @@ public class MapViewModel : BaseViewModel
     private CancellationTokenSource? _searchCancellation;
     private bool _subscribed;
     private string _radiusText = SearchRadius.Default.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private readonly List<RadiusOptionViewModel> _radiusOptions;
+    private IReadOnlyList<StationListItem> _allStations = NoStations;
+    private int _visibleCount = PageSize;
     private IReadOnlyList<StationListItem> _stations = NoStations;
     private IReadOnlyList<FuelFilterOptionViewModel> _fuelFilterOptions = [];
     private string? _statusMessage;
@@ -72,6 +80,10 @@ public class MapViewModel : BaseViewModel
 
         SortOptions = _sortOptions;
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
+        _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
+        RadiusOptions = _radiusOptions;
+        SyncRadiusSelection();
+        ShowMoreCommand = new Command(ShowMore);
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
         LastSearchTask = Task.CompletedTask;
@@ -85,11 +97,45 @@ public class MapViewModel : BaseViewModel
     public string RadiusText
     {
         get => _radiusText;
-        set => SetProperty(ref _radiusText, value);
+        set
+        {
+            if (SetProperty(ref _radiusText, value))
+            {
+                SyncRadiusSelection();
+            }
+        }
     }
 
     /// <summary>
-    /// Die aufbereitete Ergebnisliste; wird bei jeder Änderung vollständig ersetzt.
+    /// Die wählbaren Radiusstufen (Chips) innerhalb von 1 bis 25 km.
+    /// </summary>
+    public IReadOnlyList<RadiusOptionViewModel> RadiusOptions { get; }
+
+    /// <summary>
+    /// Befehl zum Anzeigen weiterer Tankstellen der Ergebnisliste.
+    /// </summary>
+    public ICommand ShowMoreCommand { get; }
+
+    /// <summary>
+    /// Die Gesamtzahl der Tankstellen des aktuellen Ergebnisses nach Filter (angezeigt werden davon höchstens die ersten Seiten).
+    /// </summary>
+    public int TotalStationCount => _allStations.Count;
+
+    /// <summary>
+    /// Gibt an, ob weitere Tankstellen zum Nachladen vorhanden sind.
+    /// </summary>
+    public bool HasMore => _allStations.Count > _stations.Count;
+
+    /// <summary>
+    /// Die Beschriftung der Schaltfläche „Weitere anzeigen“.
+    /// </summary>
+    public string ShowMoreText
+    {
+        get { return SearchTexts.FormatShowMore(_allStations.Count - _stations.Count); }
+    }
+
+    /// <summary>
+    /// Die dargestellten Tankstellen der aufbereiteten Ergebnisliste (höchstens die ersten <see cref="PageSize"/>, je „Weitere anzeigen“ mehr); wird bei jeder Änderung vollständig ersetzt.
     /// </summary>
     public IReadOnlyList<StationListItem> Stations
     {
@@ -100,6 +146,9 @@ public class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasResults));
                 OnPropertyChanged(nameof(ShowEmptyState));
+                OnPropertyChanged(nameof(TotalStationCount));
+                OnPropertyChanged(nameof(HasMore));
+                OnPropertyChanged(nameof(ShowMoreText));
             }
         }
     }
@@ -283,20 +332,60 @@ public class MapViewModel : BaseViewModel
     /// </summary>
     public void ApplyFilterAndSort()
     {
+        ApplyFilterAndSort(resetPaging: true);
+    }
+
+    /// <summary>
+    /// Zeigt die nächste Seite der Ergebnisliste an.
+    /// </summary>
+    public void ShowMore()
+    {
+        _visibleCount += PageSize;
+        PublishVisible();
+    }
+
+    private void ApplyFilterAndSort(bool resetPaging)
+    {
+        if (resetPaging)
+        {
+            _visibleCount = PageSize;
+        }
+
         if (_lastResult is null || _settings is null)
         {
-            Stations = NoStations;
+            _allStations = NoStations;
+            PublishVisible();
             return;
         }
 
         var filter = FuelFilterOptions.FirstOrDefault(option => option.IsSelected)?.FuelType;
         var sort = _sortOptions.FirstOrDefault(option => option.IsSelected)?.Value ?? ResultSortOrder.Price;
-        Stations = StationResultBuilder.Build(
+        _allStations = StationResultBuilder.Build(
             _lastResult.Stations,
             _settings.FuelTypes,
             filter,
             sort,
             _timeProvider.GetUtcNow().UtcDateTime);
+        PublishVisible();
+    }
+
+    private void PublishVisible()
+    {
+        Stations = _allStations.Count <= _visibleCount ? _allStations : _allStations.Take(_visibleCount).ToList();
+    }
+
+    private void SyncRadiusSelection()
+    {
+        var parsed = SearchRadius.TryParse(_radiusText, out var radiusKm);
+        foreach (var option in _radiusOptions)
+        {
+            option.SetSelectedSilently(parsed && option.RadiusKm == radiusKm);
+        }
+    }
+
+    private void OnRadiusSelected(RadiusOptionViewModel selected)
+    {
+        RadiusText = selected.RadiusKm.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
     private async Task RunSearchAsync(int radiusKm, CancellationToken token)
@@ -387,7 +476,7 @@ public class MapViewModel : BaseViewModel
                 previousFilter);
             if (_lastResult is not null)
             {
-                ApplyFilterAndSort();
+                ApplyFilterAndSort(resetPaging: false);
             }
 
             return settings;
@@ -452,6 +541,8 @@ public class MapViewModel : BaseViewModel
     {
         _lastResult = null;
         SourceNote = null;
+        _allStations = NoStations;
+        _visibleCount = PageSize;
         Stations = NoStations;
         UpdateOfflineState();
         OnPropertyChanged(nameof(ShowEmptyState));

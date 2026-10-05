@@ -71,8 +71,8 @@ public class SearchE2ETests_FilterSort : SearchE2ETestBase
 
             OpenSearch();
 
-            WaitUntil(() => IsRadioChecked("Search.Sort.Name"), "Die Standardsortierung 'Name' ist nicht vorgewählt.");
-            Assert.False(IsRadioChecked("Search.Sort.Price"));
+            WaitUntil(() => IsChipSelected("Search.Sort.Name"), "Die Standardsortierung 'Name' ist nicht vorgewählt.");
+            Assert.False(IsChipSelected("Search.Sort.Price"));
             SetRadius("25");
             Submit();
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle", "Delta Tankstelle", "Gamma Tankstelle");

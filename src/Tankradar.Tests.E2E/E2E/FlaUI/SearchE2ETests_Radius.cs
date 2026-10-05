@@ -1,12 +1,11 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Der Suchradius von 1 bis 25 km wirkt; ungültige Werte werden vor jedem Abruf abgewiesen.
+/// E2E-Test: Der Suchradius wird als Chip aus sinnvollen Stufen (2, 5, 10, 15, 25 km) gewählt und wirkt; die Eingabeprüfung vor dem Abruf
+/// ist durch Unit- und Integrationstests abgedeckt, da die Oberfläche nur gültige Stufen anbietet.
 /// </summary>
 public class SearchE2ETests_Radius : SearchE2ETestBase
 {
-    private const string RadiusInvalid = "Bitte einen Radius von 1 bis 25 km eingeben.";
-
     /// <summary>
     /// Prüft, dass 25 km Gamma und Delta, aber nicht Epsilon liefert und genau der Radius 25 gesendet wird.
     /// </summary>
@@ -27,64 +26,61 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass ein Radius von 1 km nur die nächste Tankstelle liefert.
+    /// Prüft, dass 10 km zusätzlich Gamma (rund 8 km) liefert und genau der Radius 10 gesendet wird.
     /// </summary>
     [Fact]
-    public void Radius1_ShowsOnlyNearestStation()
+    public void Radius10_ShowsGammaToo()
     {
         RunWithDiagnostics(() =>
         {
             OpenSearch();
-            SetRadius("1");
+            SetRadius("10");
 
             Submit();
 
-            WaitForStationNames("Alpha Tankstelle");
-            Assert.Equal(1, Server.LastListRadius);
+            WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle", "Gamma Tankstelle");
+            Assert.Equal(10, Server.LastListRadius);
         });
     }
 
     /// <summary>
-    /// Prüft, dass ungültige Radien eine Meldung zeigen und keine Anfrage an den Preisdienst auslösen.
+    /// Prüft, dass genau eine Radiusstufe ausgewählt ist (Standard 5 km) und die Wahl einer anderen Stufe die bisherige abwählt.
     /// </summary>
-    /// <param name="radius">Die Eingabe.</param>
-    [Theory]
-    [InlineData("26")]
-    [InlineData("0")]
-    public void InvalidRadius_ShowsMessageAndSendsNoRequest(string radius)
+    [Fact]
+    public void RadiusChips_AreExclusiveAndDefaultIsFive()
     {
         RunWithDiagnostics(() =>
         {
             OpenSearch();
-            SetRadius(radius);
+            Assert.Equal("5", ReadRadius());
 
-            Submit();
+            SetRadius("15");
 
-            WaitForStatusMessage(RadiusInvalid);
+            Assert.Equal("15", ReadRadius());
+            Assert.False(IsChipSelected("Search.Radius.5"));
             Assert.Equal(0, Server.TotalRequests);
-            Assert.False(Exists("Search.Station.Name"));
         });
     }
 
     /// <summary>
-    /// Prüft, dass nach einer ungültigen Eingabe die Korrektur auf einen gültigen Radius die Suche ermöglicht und die Meldung verschwindet.
+    /// Prüft, dass ein Wechsel der Radiusstufe nach einer Suche erst mit dem nächsten Suchen einen neuen Abruf mit dem neuen Radius auslöst.
     /// </summary>
     [Fact]
-    public void InvalidRadiusThenValid_SearchesAndClearsMessage()
+    public void ChangingRadiusAfterSearch_SearchesAgainWithNewRadius()
     {
         RunWithDiagnostics(() =>
         {
             OpenSearch();
-            SetRadius("26");
             Submit();
-            WaitForStatusMessage(RadiusInvalid);
-
-            SetRadius("5");
-            Submit();
-
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
-            WaitUntil(() => !Exists("Search.StatusMessage"), "Die Meldung zum Radius wurde nicht entfernt.");
+
+            SetRadius("2");
             Assert.Equal(1, Server.ListRequests);
+            Submit();
+
+            WaitUntil(() => Server.ListRequests == 2, "Der zweite Abruf wurde nicht ausgelöst.");
+            Assert.Equal(2, Server.LastListRadius);
+            WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
         });
     }
 }

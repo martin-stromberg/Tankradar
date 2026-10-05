@@ -1,3 +1,10 @@
+## 2026-10-05 — Suchseite nach Designentwurf, Ergebnisliste in Seiten, realistischer Mock (Tankradar Schritt 6, Nachbesserung Runde 1, Version 0.1.8)
+
+- Suchseite an den Designentwurf angeglichen: Radius (2/5/10/15/25 km, Standard 5), Spritsorte und Sortierung als Chips; Ergebniskarten mit 16 px Rundung, Schatten, hervorgehobenem Preis und Adresszeile; die Radiusprüfung vor dem Abruf bleibt; Abweichungen in `docs/adr/0002-search-page-design-deviations.md`
+- Ergebnisliste zeigt höchstens 25 Karten, „Weitere anzeigen“ ergänzt weitere; Filter-/Sortierwechsel bleiben auch bei 300 Treffern zügig
+- „Automatentankstelle“ nur bei bekannten Öffnungszeiten (aus früherer Detailabfrage im Cache; die Umkreissuche der Quelle liefert sie nicht); der Mock liefert in der Umkreissuche das reale Format
+- `scripts/create-review-version.ps1` verlangt einen Changelog (Aufruf ohne wird vor dem Build abgelehnt)
+
 ## 2026-10-05 — Umkreissuche am aktuellen Standort mit Ergebnisliste (Tankradar Schritt 6, Version 0.1.7)
 
 - Bereich „Karte“ ist jetzt die Umkreissuche: Radius 1 bis 25 km (Standard 5 km, Eingabe wird vor jedem Abruf geprüft), Ergebnisliste mit Name, Entfernung, Öffnungsstatus (falls geliefert), den Preisen der in den Optionen gewählten Sorten in deren Reihenfolge, Alter „vor X Min.“ (ab 60 Minuten amber) und den Hinweisen „Preis unbestätigt“ und „Automatentankstelle“; Filter nach Spritsorte und Sortierung (Preis, Entfernung, Name; Standard aus den Optionen) wirken ohne neuen Abruf

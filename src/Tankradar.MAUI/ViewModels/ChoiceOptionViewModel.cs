@@ -1,3 +1,6 @@
+using System.Windows.Input;
+using Tankradar.MAUI.Resources.Texts;
+
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
@@ -19,17 +22,26 @@ public interface IChoiceOption
     /// Gibt an, ob die Option ausgewählt ist.
     /// </summary>
     bool IsSelected { get; set; }
+
+    /// <summary>
+    /// Befehl, der die Option auswählt (für Chips und Schaltflächen).
+    /// </summary>
+    ICommand SelectCommand { get; }
+
+    /// <summary>
+    /// Zugänglichkeitshinweis zum Auswahlzustand („Ausgewählt“ oder leer).
+    /// </summary>
+    string SelectionHint { get; }
 }
 
 /// <summary>
 /// Eine auswählbare Option einer Einstellungsgruppe (z. B. eine Standortnutzung) mit Anzeigetext.
 /// </summary>
 /// <typeparam name="TValue">Der Typ des Werts der Option.</typeparam>
-public class ChoiceOptionViewModel<TValue> : BaseViewModel, IChoiceOption
+public class ChoiceOptionViewModel<TValue> : ChoiceOptionBase
     where TValue : struct, Enum
 {
     private readonly Action<ChoiceOptionViewModel<TValue>> _onSelected;
-    private bool _isSelected;
 
     /// <summary>
     /// Erstellt eine Option.
@@ -38,10 +50,9 @@ public class ChoiceOptionViewModel<TValue> : BaseViewModel, IChoiceOption
     /// <param name="label">Der Anzeigetext.</param>
     /// <param name="onSelected">Wird aufgerufen, wenn der Anwender die Option auswählt.</param>
     public ChoiceOptionViewModel(TValue value, string label, Action<ChoiceOptionViewModel<TValue>> onSelected)
+        : base(label, value.ToString())
     {
         Value = value;
-        Label = label;
-        AutomationKey = value.ToString();
         _onSelected = onSelected;
     }
 
@@ -50,37 +61,9 @@ public class ChoiceOptionViewModel<TValue> : BaseViewModel, IChoiceOption
     /// </summary>
     public TValue Value { get; }
 
-    /// <summary>
-    /// Der Anzeigetext der Option.
-    /// </summary>
-    public string Label { get; }
-
-    /// <summary>
-    /// Schlüssel für die AutomationId (Name des Enum-Werts).
-    /// </summary>
-    public string AutomationKey { get; }
-
-    /// <summary>
-    /// Gibt an, ob die Option ausgewählt ist; ein Auswählen durch den Anwender meldet die Änderung an den Besitzer.
-    /// </summary>
-    public bool IsSelected
+    /// <inheritdoc />
+    protected override void NotifySelected()
     {
-        get => _isSelected;
-        set
-        {
-            if (SetProperty(ref _isSelected, value) && value)
-            {
-                _onSelected(this);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Setzt den Auswahlzustand, ohne die Änderung zu melden (für Laden und Abgleich der Gruppe).
-    /// </summary>
-    /// <param name="isSelected">Der neue Auswahlzustand.</param>
-    internal void SetSelectedSilently(bool isSelected)
-    {
-        SetProperty(ref _isSelected, isSelected, nameof(IsSelected));
+        _onSelected(this);
     }
 }

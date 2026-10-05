@@ -28,6 +28,15 @@ public interface IPriceRepository
     Task<StationInfo?> GetStationAsync(string stationId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Liefert die Tankstellen aus der Liste, deren Detailangaben (Öffnungszeiten) lokal aus einer früheren Detailabfrage bekannt sind.
+    /// Die Preise der gelieferten Tankstellen sind nicht gefüllt.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die Tankstellen mit bekannten Detailangaben, je Kennung.</returns>
+    Task<IReadOnlyDictionary<string, StationInfo>> GetKnownDetailsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Liefert die lokal bekannten Tankstellen im Umkreis einer Position mit den zuletzt bekannten Preisen und berechneter Entfernung, nach Entfernung sortiert.
     /// Die Position wird nicht gespeichert.
     /// </summary>
@@ -150,6 +159,26 @@ public sealed class PriceRepository : IPriceRepository
 
         var prices = await LoadLatestPricesAsync(context, [stationId], cancellationToken).ConfigureAwait(false);
         return Map(entity, prices.GetValueOrDefault(stationId) ?? [], null);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<string, StationInfo>> GetKnownDetailsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationIds);
+        if (stationIds.Count == 0)
+        {
+            return new Dictionary<string, StationInfo>();
+        }
+
+        await _initializer.InitializeAsync().ConfigureAwait(false);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = stationIds.ToList();
+        var entities = await context.Stations.AsNoTracking()
+            .Where(s => ids.Contains(s.Id) && s.DetailsUpdatedUtc != null)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return entities.ToDictionary(entity => entity.Id, entity => Map(entity, [], null));
     }
 
     /// <inheritdoc />

@@ -10,7 +10,7 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Entwicklungsschritt 6 umgesetzt: Umkreissuche am aktuellen Standort (Radius 1 bis 25 km, Standard 5 km)
+Entwicklungsschritt 6 umgesetzt: Umkreissuche am aktuellen Standort (Radius als Chip-Auswahl 2/5/10/15/25 km, Standard 5 km)
 mit Ergebnisliste, Filter nach Spritsorte und Sortierung. Zuvor abgeschlossen: Preisdaten über die
 Tankerkönig-API (Schritt 5) sowie lokale Datenhaltung (SQLite, EF Core) und Einstellungen (Optionen,
 Schritt 4). Enthalten sind außerdem Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier
@@ -164,8 +164,9 @@ Ein startfähiger Windows-Zwischenstand lässt sich jederzeit lokal erzeugen:
 
 Das Skript baut die Windows-App als Release (`dotnet publish`), kopiert die startfähige,
 ungepackte Ausgabe nach `review-versions/<Version>_<JJJJ-MM-TT>/bin/` und legt dort eine
-`CHANGELOG.md` an. `-ChangelogFile` akzeptiert wahlweise einen Dateipfad mit dem Changelog-Text
-oder den Changelog-Text direkt als Zeichenkette. Der Aufruf ist idempotent: ein erneuter Aufruf mit
+`CHANGELOG.md` an. `-ChangelogFile` ist Pflicht und akzeptiert wahlweise einen Dateipfad mit dem
+Changelog-Text oder den Changelog-Text direkt als Zeichenkette; ein Aufruf ohne (oder mit leerem)
+Changelog wird abgelehnt, bevor gebaut wird. Der Aufruf ist idempotent: ein erneuter Aufruf mit
 derselben Version (am selben Tag) überschreibt das vorhandene Verzeichnis.
 
 Die App im erzeugten Zwischenstand wird direkt über die `.exe` gestartet, ohne Installation:
