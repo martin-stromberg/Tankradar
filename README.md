@@ -152,6 +152,13 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
 
+Neben der Standortsuche bietet „Karte“ die Suche nach Adresse, Ort oder Postleitzahl (Suchart „Adresse, Ort oder
+PLZ“): Die Eingabe wird erst beim ausdrücklichen Absenden geprüft und über OpenStreetMap-Nominatim in eine
+Position umgewandelt (höchstens eine Anfrage je Sekunde, identifizierende Kennung, Quellenangabe
+„Geodaten © OpenStreetMap-Mitwirkende“); Adresse und Position werden nicht gespeichert, GPS ist nicht nötig. Im Testmodus
+gibt `TANKRADAR_GEOCODING_URL` die Adresse eines Mock-Dienstes (`MockNominatimServer`) vor; ohne Adresse
+wird die Auflösung verweigert.
+
 Ohne Testmodus meldet die Suche unter Windows ohne Standortdienst, dass der Standort nicht ermittelt werden
 kann; es gibt keinen stillen Ersatzstandort.
 

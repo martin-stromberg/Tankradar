@@ -17,6 +17,11 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
     public List<Uri> Requests { get; } = [];
 
     /// <summary>
+    /// Die <c>User-Agent</c>-Kopfzeilen der empfangenen Anfragen (leer, wenn keiner gesetzt war).
+    /// </summary>
+    public List<string> UserAgents { get; } = [];
+
+    /// <summary>
     /// Hängt eine Antwort mit Statuscode und JSON-Inhalt an.
     /// </summary>
     /// <param name="status">Der Statuscode.</param>
@@ -60,6 +65,7 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         Requests.Add(request.RequestUri!);
+        UserAgents.Add(request.Headers.UserAgent.ToString());
         var step = _steps[Math.Min(_index, _steps.Count - 1)];
         _index++;
         return step(cancellationToken);

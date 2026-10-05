@@ -16,7 +16,7 @@ public abstract class MapViewModelTestBase : BaseTest
     /// </summary>
     protected MapViewModelTestBase()
     {
-        ViewModel = new MapViewModel(Settings, Location, Prices, Connection, Clock, Logger);
+        ViewModel = new MapViewModel(Settings, Location, Geocoding, Prices, Connection, Clock, Logger);
     }
 
     /// <summary>
@@ -30,6 +30,12 @@ public abstract class MapViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeLocationService Location { get; } = new();
+
+    /// <summary>
+    /// Der Geokodierungsdienst.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakeGeocodingService Geocoding { get; } = new();
 
     /// <summary>
     /// Der Preisdienst.

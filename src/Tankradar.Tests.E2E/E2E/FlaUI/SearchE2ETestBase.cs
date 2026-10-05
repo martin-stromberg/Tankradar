@@ -7,7 +7,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// Basis für E2E-Tests der Umkreissuche: startet die App im Testmodus mit Mock-Preisdienst, Test-Schlüssel und festem Teststandort
+/// Basis für E2E-Tests der Umkreissuche: startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Test-Schlüssel und festem Teststandort
 /// (Berlin-Mitte); produktive Endpunkte und der echte Standortdienst werden nie berührt.
 /// </summary>
 public abstract class SearchE2ETestBase : SettingsE2ETestBase
@@ -26,14 +26,15 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
     /// </summary>
     protected SearchE2ETestBase()
-        : this(new MockTankerkoenigServer())
+        : this(new MockTankerkoenigServer(), new MockNominatimServer())
     {
     }
 
-    private SearchE2ETestBase(MockTankerkoenigServer server)
-        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey))
+    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding)
+        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl))
     {
         Server = server;
+        Geocoding = geocoding;
     }
 
     /// <summary>
@@ -42,13 +43,19 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     protected MockTankerkoenigServer Server { get; }
 
     /// <summary>
+    /// Der Mock-Server des Ortssuchdienstes (Nominatim).
+    /// </summary>
+    protected MockNominatimServer Geocoding { get; }
+
+    /// <summary>
     /// Erstellt die Umgebungsvariablen der App für den Testmodus (Preisdienst-Adresse, Schlüssel und optional der Teststandort).
     /// </summary>
     /// <param name="baseUrl">Die Adresse des Preisdienstes.</param>
     /// <param name="location">Der Teststandort oder <see langword="null"/>, wenn keiner gesetzt werden soll.</param>
     /// <param name="apiKey">Der Test-Schlüssel.</param>
+    /// <param name="geocodingUrl">Die Adresse des Ortssuchdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Adressauflösung).</param>
     /// <returns>Die Umgebungsvariablen.</returns>
-    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey)
+    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null)
     {
         var environment = new Dictionary<string, string>
         {
@@ -58,6 +65,11 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         if (location is not null)
         {
             environment[TestDataPaths.TestLocationEnvironmentVariable] = location;
+        }
+
+        if (geocodingUrl is not null)
+        {
+            environment[TestDataPaths.GeocodingUrlEnvironmentVariable] = geocodingUrl.ToString();
         }
 
         return environment;
@@ -254,9 +266,64 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         OpenSearch();
     }
 
+    /// <summary>
+    /// Wählt die Suchart „Adresse, Ort oder PLZ“ und wartet, bis das Eingabefeld erscheint.
+    /// </summary>
+    protected void SelectAddressMode()
+    {
+        SelectChip("Search.Mode.Address");
+        WaitForAutomationId("Search.Address.Input");
+    }
+
+    /// <summary>
+    /// Wählt die Suchart „Aktueller Standort“ und wartet, bis das Eingabefeld verschwindet.
+    /// </summary>
+    protected void SelectLocationMode()
+    {
+        SelectChip("Search.Mode.CurrentLocation");
+        WaitUntil(() => !Exists("Search.Address.Input"), "Das Adressfeld wurde nicht ausgeblendet.");
+    }
+
+    /// <summary>
+    /// Trägt den Text in das Adressfeld ein und wartet, bis er dort steht.
+    /// </summary>
+    /// <param name="text">Der Text.</param>
+    protected void SetAddress(string text)
+    {
+        WaitForAutomationId("Search.Address.Input").Patterns.Value.Pattern.SetValue(text);
+        WaitUntil(() => ReadAddress() == text, $"Das Adressfeld enthält nicht '{text}'.");
+    }
+
+    /// <summary>
+    /// Liefert den Text des Adressfelds.
+    /// </summary>
+    /// <returns>Der Text; leer, wenn das Feld nicht vorhanden ist.</returns>
+    protected string ReadAddress()
+    {
+        var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.Address.Input"));
+        return element?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Wartet, bis der Hinweis auf den aufgelösten Ort den Text zeigt.
+    /// </summary>
+    /// <param name="expected">Der erwartete Text.</param>
+    protected void WaitForResolvedPlace(string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.ResolvedPlace"))?.Name ?? string.Empty;
+                return last == expected;
+            },
+            $"Der Ortshinweis lautet nicht '{expected}', zuletzt: '{last}'.");
+    }
+
     /// <inheritdoc />
     protected override void Cleanup()
     {
         Server.Dispose();
+        Geocoding.Dispose();
     }
 }
