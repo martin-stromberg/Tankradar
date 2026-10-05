@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+#if WINDOWS
+using Microsoft.Maui.LifecycleEvents;
+#endif
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Location;
@@ -34,6 +37,15 @@ public static class MauiProgram
                 fonts.AddFont("JetBrainsMono-Regular.ttf", "JetBrainsMonoRegular");
                 fonts.AddFont("JetBrainsMono-SemiBold.ttf", "JetBrainsMonoSemibold");
             });
+
+#if WINDOWS
+        if (TestWindowMode.ShouldHideWindow(Environment.GetEnvironmentVariable))
+        {
+            // Testmodus mit Off-Screen-Betrieb: Fenster außerhalb des Bildschirms, ohne Vordergrundwechsel.
+            builder.ConfigureLifecycleEvents(events => events.AddWindows(windows =>
+                windows.OnWindowCreated(window => Platforms.Windows.OffscreenWindow.Apply(window))));
+        }
+#endif
 
         builder.Services.AddSingleton<AppConfiguration>();
         builder.Services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();

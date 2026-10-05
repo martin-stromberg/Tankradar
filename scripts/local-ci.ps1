@@ -16,8 +16,9 @@
                               der CI mit IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; die
                               Variablen werden am Ende wiederhergestellt)
         6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
-        7. FlaUI-E2E-Tests (best-effort wie in der Pipeline: Fehlschlag ist nur eine Warnung;
-                              Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
+        7. FlaUI-E2E-Tests (blockierend wie in der Pipeline; die App läuft im Testmodus außerhalb des sichtbaren
+                              Bildschirms. Rückfall auf den Vordergrundbetrieb: -E2EForeground. Diagnosedaten
+                              fehlgeschlagener Tests liegen unter e2e-diagnostics\)
         8. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
         9. iOS-Compile-Prüfung: net10.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
                               lokale iOS-Workload mit Hinweis übersprungen. Signierte Pakete/TestFlight nur auf dem Mac bzw. in der CI.
@@ -32,6 +33,9 @@
 param(
     [Parameter(HelpMessage = "FlaUI-E2E-Tests überspringen (benötigen eine interaktive Desktop-Sitzung).")]
     [switch]$SkipE2E,
+
+    [Parameter(HelpMessage = "FlaUI-E2E-Tests im Vordergrund statt außerhalb des Bildschirms ausführen (Rückfall; setzt TANKRADAR_E2E_WINDOW=foreground).")]
+    [switch]$E2EForeground,
 
     [Parameter(HelpMessage = "Sicherheitsprüfung überspringen (benötigt Zugriff auf nuget.org).")]
     [switch]$SkipSecurityScan,
@@ -171,14 +175,21 @@ try {
     }
 
     if ($SkipE2E) {
-        Skip-Step "Tests: FlaUI-E2E (best-effort)" "-SkipE2E"
+        Skip-Step "Tests: FlaUI-E2E" "-SkipE2E"
     }
     else {
-        Invoke-Step "Tests: FlaUI-E2E (best-effort)" -BestEffort {
-            dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
-                --logger "trx;LogFileName=test-results-e2e.trx"
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
+        Invoke-Step "Tests: FlaUI-E2E" {
+            $savedWindow = [Environment]::GetEnvironmentVariable('TANKRADAR_E2E_WINDOW')
+            try {
+                if ($E2EForeground) { Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' 'foreground' }
+                dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
+                    --logger "trx;LogFileName=test-results-e2e.trx"
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
+                }
+            }
+            finally {
+                Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' $savedWindow
             }
         }
     }
