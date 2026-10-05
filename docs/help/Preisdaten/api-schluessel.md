@@ -33,7 +33,7 @@ Der Schlüssel gelangt beim Build als Assembly-Metadatum in die App. Der beim Bu
 
 ## Tests
 
-Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testmodus liegt der Schlüssel nie im echten Credential Locker bzw. in der Keychain (isolierte Ablage im Speicher), und ohne `TANKRADAR_PRICE_API_URL` verweigert die App den Abruf mit einer Meldung, statt den produktiven Endpunkt anzusprechen. Der Test-Mock akzeptiert einen festen Test-Schlüssel, der nur im Testmodus (`TEST_DATA_PATH` gesetzt) über `TANKRADAR_PRICE_API_KEY` an die App gegeben wird.
+Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testmodus liegt der Schlüssel nie im echten Credential Locker bzw. in der Keychain (isolierte Ablage im Speicher), und ohne `TANKRADAR_PRICE_API_URL` verweigert die App den Abruf mit einer Meldung, statt den produktiven Endpunkt anzusprechen. Der Test-Mock akzeptiert einen festen Test-Schlüssel, der nur im Testmodus (`TANKATLAS_TEST_DATA_PATH` gesetzt) über `TANKRADAR_PRICE_API_KEY` an die App gegeben wird.
 
 ## Hinweis zur Sicherheit des Build-Schlüssels
 

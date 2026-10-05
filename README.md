@@ -10,8 +10,10 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Entwicklungsschritt 4 abgeschlossen: lokale Datenhaltung (SQLite, EF Core) und Einstellungen
-(Optionen). Enthalten sind außerdem Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier
+Entwicklungsschritt 6 umgesetzt: Umkreissuche am aktuellen Standort (Radius 1 bis 25 km, Standard 5 km)
+mit Ergebnisliste, Filter nach Spritsorte und Sortierung. Zuvor abgeschlossen: Preisdaten über die
+Tankerkönig-API (Schritt 5) sowie lokale Datenhaltung (SQLite, EF Core) und Einstellungen (Optionen,
+Schritt 4). Enthalten sind außerdem Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier
 Bereichen (Favoriten, Karte, Tankbuch, Optionen), zentrales Design-System, Testinfrastruktur und CI/CD.
 
 ## Voraussetzungen
@@ -118,10 +120,10 @@ Navigationsbereiche; dafür muss `src/Tankradar.MAUI` zuvor für `net10.0-window
 gebaut worden sein (geschieht automatisch, wenn die gesamte Solution gebaut/getestet wird).
 
 E2E-Tests verwenden ein eigenes, temporäres Testdatenverzeichnis (Umgebungsvariable
-`TEST_DATA_PATH`, vom Testlauf automatisch gesetzt und danach wieder gelöscht), damit sie nicht mit
+`TANKATLAS_TEST_DATA_PATH`, vom Testlauf automatisch gesetzt und danach wieder gelöscht), damit sie nicht mit
 Entwicklungs- oder Echtbetriebsdaten kollidieren. Die App selbst löst ihr Datenverzeichnis zentral
 über `IAppDataPathProvider` (`src/Tankradar.MAUI/Services/AppDataPathProvider.cs`) auf: Ist
-`TEST_DATA_PATH` gesetzt, wird dieses Verzeichnis verwendet, andernfalls das reguläre
+`TANKATLAS_TEST_DATA_PATH` gesetzt, wird dieses Verzeichnis verwendet, andernfalls das reguläre
 Plattform-Datenverzeichnis (`FileSystem.AppDataDirectory`).
 
 ## Kraftstoffpreise und API-Schlüssel
@@ -133,6 +135,24 @@ ab 60 Minuten veraltet). Der API-Schlüssel steht nie im Quellcode: lokal über 
 Secret `FUEL_PRICE_API_KEY`; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
 Schlüssel baut und testet alles (Tests nutzen einen lokalen Mock-Server, nie produktive Endpunkte).
 Details: [`docs/help/Preisdaten/`](docs/help/Preisdaten/index.md).
+
+## Umkreissuche und Testmodus unter Windows (ohne GPS)
+
+Die Suche („Karte“) fragt den Standort nur auf Anforderung ab und speichert ihn nie; bei der Standortnutzung
+„Nie“ in den Optionen erfolgt keine Abfrage. Windows-Rechner haben in der Regel kein GPS. Für die manuelle
+Abnahme unter Windows (und für alle automatisierten Tests) gibt es den Testmodus: Er wird ausschließlich über
+die Umgebungsvariable `TANKATLAS_TEST_DATA_PATH` (isoliertes Datenverzeichnis, der frühere Name `TEST_DATA_PATH`
+wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
+
+- `TANKATLAS_TEST_LOCATION` – fester Standort im Format `breite,länge` mit Dezimalpunkt (z. B. `52.5200,13.4050`);
+  ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
+- `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
+  (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
+
+Ohne Testmodus meldet die Suche unter Windows ohne Standortdienst, dass der Standort nicht ermittelt werden
+kann; es gibt keinen stillen Ersatzstandort.
+
+Details: [`docs/help/Suche/`](docs/help/Suche/index.md).
 
 ## Windows-Zwischenstände (Review-Versionen)
 

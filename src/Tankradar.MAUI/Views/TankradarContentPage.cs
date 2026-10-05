@@ -14,4 +14,11 @@ public abstract class TankradarContentPage : ContentPage
         base.OnAppearing();
         (BindingContext as BaseViewModel)?.OnAppearing();
     }
+
+    /// <inheritdoc />
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        (BindingContext as BaseViewModel)?.OnDisappearing();
+    }
 }

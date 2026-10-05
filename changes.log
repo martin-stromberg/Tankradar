@@ -1,3 +1,12 @@
+## 2026-10-05 — Umkreissuche am aktuellen Standort mit Ergebnisliste (Tankradar Schritt 6, Version 0.1.7)
+
+- Bereich „Karte“ ist jetzt die Umkreissuche: Radius 1 bis 25 km (Standard 5 km, Eingabe wird vor jedem Abruf geprüft), Ergebnisliste mit Name, Entfernung, Öffnungsstatus (falls geliefert), den Preisen der in den Optionen gewählten Sorten in deren Reihenfolge, Alter „vor X Min.“ (ab 60 Minuten amber) und den Hinweisen „Preis unbestätigt“ und „Automatentankstelle“; Filter nach Spritsorte und Sortierung (Preis, Entfernung, Name; Standard aus den Optionen) wirken ohne neuen Abruf
+- Standort nur auf Anforderung der Suche und gemäß Einstellung („Nie“: keine Berechtigungs- und keine Standortabfrage, stattdessen Hinweis); der Standort wird nie gespeichert oder protokolliert; verständliche Hinweise bei verweigerter Berechtigung, nicht ermittelbarem Standort und Fehlern des Preisdienstes
+- Offline-Hinweis in der Kopfzeile; ohne Verbindung oder bei nicht erreichbarem Preisdienst erscheinen die zuletzt bekannten Preise mit ihrem Alter
+- Neu: `ILocationService` (MAUI-Implementierung, Testimplementierung mit festem Standort), `StationResultBuilder`, `SearchRadius`; iOS/MacCatalyst: `NSLocationWhenInUseUsageDescription` und Datenschutzangabe zum Standort, Windows: Capability `location`
+- Breaking für lokale Testumgebungen: Die Umgebungsvariable des Testmodus heißt jetzt `TANKATLAS_TEST_DATA_PATH` (bisher `TEST_DATA_PATH`, wirkt nicht mehr); neu für den festen Teststandort: `TANKATLAS_TEST_LOCATION` (`breite,länge`, nur im Testmodus)
+- Tests: Mock-Server mit Umkreisberechnung und weiteren Stationen; neue Unit-, Integrations- und FlaUI-E2E-Tests (Suche, Radius, Filter/Sortierung, „Nie“, Sortenreihenfolge, Offline, Fehlerfälle, Umbenennung der Variable)
+
 ## 2026-10-05 — Preis-API: Schlüsselabgleich und Testisolation (Tankradar Schritt 5, Nachbesserung, Version 0.1.6)
 
 - Ein neuer oder rotierter Build-Schlüssel setzt sich bei bestehenden Installationen durch: Weicht er vom gespeicherten ab, wird die sichere Ablage (Credential Locker bzw. Keychain) beim Start aktualisiert; ohne Build-Schlüssel gilt weiter der gespeicherte

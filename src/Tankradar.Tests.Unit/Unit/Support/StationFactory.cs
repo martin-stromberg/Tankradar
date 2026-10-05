@@ -37,4 +37,37 @@ public static class StationFactory
             Prices = prices.Select(p => new FuelPrice(p.Item1, p.Item2, retrievedUtc)).ToList(),
         };
     }
+
+    /// <summary>
+    /// Erzeugt eine Station mit frei wählbaren Angaben für die Aufbereitung der Ergebnisliste.
+    /// </summary>
+    /// <param name="number">Laufende Nummer (bestimmt die Kennung).</param>
+    /// <param name="name">Der Name.</param>
+    /// <param name="distanceKm">Die Entfernung oder <see langword="null"/>.</param>
+    /// <param name="retrievedUtc">Abrufzeitpunkt der Preise.</param>
+    /// <param name="wholeDay">Angabe „durchgehend geöffnet“ oder <see langword="null"/>.</param>
+    /// <param name="isOpen">Angabe „geöffnet“ oder <see langword="null"/>.</param>
+    /// <param name="prices">Sorte und Preis.</param>
+    /// <returns>Die Station.</returns>
+    public static StationInfo CreateCustom(
+        int number,
+        string name,
+        double? distanceKm,
+        DateTime retrievedUtc,
+        bool? wholeDay,
+        bool? isOpen,
+        params (FuelType, decimal)[] prices)
+    {
+        return new StationInfo
+        {
+            Id = $"{number:D8}-0000-4000-8000-000000000000",
+            Name = name,
+            Latitude = CenterLatitude,
+            Longitude = CenterLongitude,
+            DistanceKm = distanceKm,
+            WholeDay = wholeDay,
+            IsOpen = isOpen,
+            Prices = prices.Select(p => new FuelPrice(p.Item1, p.Item2, retrievedUtc)).ToList(),
+        };
+    }
 }

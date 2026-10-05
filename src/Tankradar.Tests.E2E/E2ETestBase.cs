@@ -23,7 +23,7 @@ public abstract class E2ETestBase : IDisposable
     private static readonly string DefaultDiagnosticsDirectory = E2EDiagnostics.ResolveDirectory();
 
     private readonly string _testDataDirectory;
-    private readonly IReadOnlyDictionary<string, string> _additionalEnvironment;
+    private IReadOnlyDictionary<string, string> _additionalEnvironment;
     private bool _disposed;
 
     /// <summary>
@@ -239,6 +239,17 @@ public abstract class E2ETestBase : IDisposable
         LaunchApplication();
     }
 
+    /// <summary>
+    /// Wie <see cref="RestartApplication()"/>, ersetzt aber die zusätzlichen Umgebungsvariablen der App für den Neustart (gleiches Testdatenverzeichnis).
+    /// </summary>
+    /// <param name="additionalEnvironment">Die Umgebungsvariablen der neu gestarteten App.</param>
+    protected void RestartApplication(IReadOnlyDictionary<string, string> additionalEnvironment)
+    {
+        ArgumentNullException.ThrowIfNull(additionalEnvironment);
+        _additionalEnvironment = additionalEnvironment;
+        RestartApplication();
+    }
+
     private static void WaitForProcessExit(int processId)
     {
         try
@@ -263,6 +274,7 @@ public abstract class E2ETestBase : IDisposable
             UseShellExecute = false,
         };
         startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
+
         foreach (var (name, value) in _additionalEnvironment)
         {
             startInfo.Environment[name] = value;

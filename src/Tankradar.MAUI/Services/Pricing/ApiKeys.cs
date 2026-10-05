@@ -147,7 +147,7 @@ public sealed class InMemoryApiKeyStore : IApiKeyStore
 }
 
 /// <summary>
-/// Wählt die Ablage des API-Schlüssels: Im Testmodus (<c>TEST_DATA_PATH</c> gesetzt) isoliert im Speicher,
+/// Wählt die Ablage des API-Schlüssels: Im Testmodus (<c>TANKATLAS_TEST_DATA_PATH</c> gesetzt) isoliert im Speicher,
 /// sonst die echte Ablage des Betriebssystems (Credential Locker bzw. Keychain).
 /// </summary>
 public static class ApiKeyStoreSelector

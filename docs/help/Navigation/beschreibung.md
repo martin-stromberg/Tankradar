@@ -14,7 +14,7 @@ Die App zeigt immer einen der vier Hauptbereiche:
 Der Startbildschirm. Hier sehen Sie später Ihre favorisierten Tankstellen, übersichtlich in Gruppen angeordnet. Aktuell wird die Seite vorbereitet.
 
 ### Karte
-Zeigt eine Kartenansicht für die Suche nach Tankstellen in Ihrer Nähe. Die Seite ist in Vorbereitung.
+Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Eine Kartenansicht gibt es noch nicht.
 
 ### Tankbuch
 Hier führen Sie ein Verzeichnis Ihrer Tankvorgänge — welches Auto, wann, wo und wie viel Kraftstoff. Aktuell wird die Seite vorbereitet.
@@ -44,6 +44,6 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 
 ## Einschränkungen
 
-- Favoriten, Karte und Tankbuch sind aktuell in Vorbereitung und zeigen Platzhalter-Text; Optionen ist bereits funktional.
+- Favoriten und Tankbuch sind aktuell in Vorbereitung und zeigen Platzhalter-Text; Optionen und Karte (Umkreissuche) sind bereits funktional.
 - Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
-- Favoriten, Karte und Tankbuch erhalten ihre Funktionen und Inhalte in späteren Versionen.
+- Favoriten und Tankbuch erhalten ihre Funktionen und Inhalte in späteren Versionen.

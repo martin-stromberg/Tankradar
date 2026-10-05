@@ -20,3 +20,19 @@ public enum GpsUsage
     /// </summary>
     Never,
 }
+
+/// <summary>
+/// Erweiterungen zu <see cref="GpsUsage"/>.
+/// </summary>
+public static class GpsUsageExtensions
+{
+    /// <summary>
+    /// Gibt an, ob die Einstellung eine Standortabfrage erlaubt (nur „Immer“ und „Nur bei Nutzung“; alles andere, auch undefinierte Werte, sperrt: Fail Secure).
+    /// </summary>
+    /// <param name="usage">Die Einstellung.</param>
+    /// <returns><see langword="true"/>, wenn eine Abfrage zulässig ist.</returns>
+    public static bool AllowsLocation(this GpsUsage usage)
+    {
+        return usage is GpsUsage.Always or GpsUsage.WhileInUse;
+    }
+}

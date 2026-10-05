@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -45,6 +46,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
+        builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
 
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();

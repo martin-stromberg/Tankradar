@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Services;
+using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Unit.Unit;
@@ -7,6 +8,7 @@ namespace Tankradar.Tests.Unit.Unit;
 /// Prüft die Auflösung des App-Datenverzeichnisses durch <see cref="AppDataPathProvider"/>
 /// in Abhängigkeit von der Umgebungsvariable <see cref="TestDataPaths.TestDataPathEnvironmentVariable"/>.
 /// </summary>
+[Collection(EnvironmentCollection.Name)]
 public class AppDataPathProviderTests_DataDirectoryResolution : BaseTest
 {
     /// <summary>

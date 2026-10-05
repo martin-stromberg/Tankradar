@@ -26,6 +26,32 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public const string StationBeta = "22222222-2222-4222-8222-222222222222";
 
+    /// <summary>
+    /// Kennung der dritten Teststation (rund 8 km von Berlin-Mitte, nur Super E5 und Diesel, Diesel am günstigsten, nicht durchgehend geöffnet).
+    /// </summary>
+    public const string StationGamma = "33333333-3333-4333-8333-333333333333";
+
+    /// <summary>
+    /// Kennung der vierten Teststation (rund 22 km von Berlin-Mitte, alle Sorten, durchgehend geöffnet).
+    /// </summary>
+    public const string StationDelta = "44444444-4444-4444-8444-444444444444";
+
+    /// <summary>
+    /// Kennung der fünften Teststation (rund 40 km von Berlin-Mitte, außerhalb jedes zulässigen Suchradius).
+    /// </summary>
+    public const string StationEpsilon = "55555555-5555-4555-8555-555555555555";
+
+    private const double MaxRadiusKm = 25;
+    private const double DefaultLatitude = 52.52;
+    private const double DefaultLongitude = 13.405;
+
+    private static readonly MockStation[] GenericStations =
+    [
+        new(StationGamma, "Gamma Tankstelle", "GAMMA", "Gammaweg", "3", "13125", "Berlin", 52.5920, 13.4050, 1.899m, null, 1.659m, false, "Mo-Fr", "06:00:00", "22:00:00"),
+        new(StationDelta, "Delta Tankstelle", "DELTA", "Deltaallee", "4", "16225", "Eberswalde", 52.5200, 13.7300, 1.829m, 1.769m, 1.689m, true, "Mo-So", "00:00:00", "24:00:00"),
+        new(StationEpsilon, "Epsilon Tankstelle", "EPSILON", "Epsilonstraße", "5", "16515", "Oranienburg", 52.8800, 13.4050, 1.809m, 1.749m, 1.669m, true, "Mo-So", "00:00:00", "24:00:00"),
+    ];
+
     private readonly HttpListener _listener = new();
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
@@ -35,6 +61,9 @@ public sealed class MockTankerkoenigServer : IDisposable
     private int _detailRequests;
     private int _disposed;
     private volatile string? _lastRequest;
+    private int? _lastListRadius;
+    private double? _lastListLatitude;
+    private double? _lastListLongitude;
 
     /// <summary>
     /// Startet den Server auf einem freien Port.
@@ -84,6 +113,48 @@ public sealed class MockTankerkoenigServer : IDisposable
     {
         get => _lastRequest;
         private set => _lastRequest = value;
+    }
+
+    /// <summary>
+    /// Der Radius (km) der zuletzt empfangenen Umkreisanfrage; <see langword="null"/>, wenn keine empfangen wurde oder der Wert nicht lesbar war.
+    /// </summary>
+    public int? LastListRadius
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _lastListRadius;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Der Breitengrad der zuletzt empfangenen Umkreisanfrage.
+    /// </summary>
+    public double? LastListLatitude
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _lastListLatitude;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Der Längengrad der zuletzt empfangenen Umkreisanfrage.
+    /// </summary>
+    public double? LastListLongitude
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _lastListLongitude;
+            }
+        }
     }
 
     /// <summary>
@@ -140,9 +211,10 @@ public sealed class MockTankerkoenigServer : IDisposable
 
     private static string AlphaJson(bool detailed, double distance)
     {
+        const string AroundTheClock = ",\"wholeDay\":true,\"openingTimes\":[{\"text\":\"Mo-So\",\"start\":\"00:00:00\",\"end\":\"24:00:00\"}]";
         var extra = detailed
-            ? ",\"wholeDay\":true,\"openingTimes\":[{\"text\":\"Mo-So\",\"start\":\"00:00:00\",\"end\":\"24:00:00\"}],\"overrides\":[],\"state\":\"open\""
-            : $",\"dist\":{Number(distance)}";
+            ? AroundTheClock + ",\"overrides\":[],\"state\":\"open\""
+            : $",\"dist\":{Number(distance)}" + AroundTheClock;
         return "{\"id\":\"" + StationAlpha + "\",\"name\":\"Alpha Tankstelle\",\"brand\":\"ALPHA\",\"street\":\"Hauptstraße\",\"houseNumber\":\"1\",\"postCode\":\"10115\",\"place\":\"Berlin\",\"lat\":52.5201,\"lng\":13.4051,\"isOpen\":true,\"e5\":1.859,\"e10\":1.799,\"diesel\":1.699" + extra + "}";
     }
 
@@ -152,6 +224,75 @@ public sealed class MockTankerkoenigServer : IDisposable
             ? ",\"wholeDay\":false,\"openingTimes\":[{\"text\":\"Mo-Fr\",\"start\":\"06:00:00\",\"end\":\"22:00:00\"}],\"overrides\":[]"
             : $",\"dist\":{Number(distance)}";
         return "{\"id\":\"" + StationBeta + "\",\"name\":\"Beta Tankstelle\",\"brand\":\"BETA\",\"street\":\"Nebenweg\",\"houseNumber\":\"22\",\"postCode\":\"10117\",\"place\":\"Berlin\",\"lat\":52.5301,\"lng\":13.4151,\"isOpen\":true,\"e5\":1.879,\"e10\":1.819,\"diesel\":false" + extra + "}";
+    }
+
+    private static double DistanceKm(double lat1, double lng1, double lat2, double lng2)
+    {
+        const double EarthRadiusKm = 6371.0;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLng = (lng2 - lng1) * Math.PI / 180;
+        var a = (Math.Sin(dLat / 2) * Math.Sin(dLat / 2))
+            + (Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) * Math.Sin(dLng / 2) * Math.Sin(dLng / 2));
+        return EarthRadiusKm * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
+    private static string PriceOrFalse(decimal? price)
+    {
+        return price is { } value ? value.ToString("0.000", CultureInfo.InvariantCulture) : "false";
+    }
+
+    private static string GenericJson(MockStation station, bool detailed, double distance)
+    {
+        var times = ",\"wholeDay\":" + (station.WholeDay ? "true" : "false")
+            + ",\"openingTimes\":[{\"text\":\"" + station.TimesText + "\",\"start\":\"" + station.TimesStart + "\",\"end\":\"" + station.TimesEnd + "\"}]";
+        var extra = detailed
+            ? times + ",\"overrides\":[]"
+            : $",\"dist\":{Number(distance)}" + times;
+        return "{\"id\":\"" + station.Id + "\",\"name\":\"" + station.Name + "\",\"brand\":\"" + station.Brand + "\",\"street\":\"" + station.Street
+            + "\",\"houseNumber\":\"" + station.HouseNumber + "\",\"postCode\":\"" + station.PostCode + "\",\"place\":\"" + station.Place
+            + "\",\"lat\":" + Number(station.Latitude) + ",\"lng\":" + Number(station.Longitude)
+            + ",\"isOpen\":true,\"e5\":" + PriceOrFalse(station.E5) + ",\"e10\":" + PriceOrFalse(station.E10) + ",\"diesel\":" + PriceOrFalse(station.Diesel) + extra + "}";
+    }
+
+    private static double? ParseQuery(string? value)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+    }
+
+    private string ListBody(HttpListenerContext context)
+    {
+        var latitude = ParseQuery(context.Request.QueryString["lat"]);
+        var longitude = ParseQuery(context.Request.QueryString["lng"]);
+        var radius = ParseQuery(context.Request.QueryString["rad"]);
+        lock (_gate)
+        {
+            _lastListLatitude = latitude;
+            _lastListLongitude = longitude;
+            _lastListRadius = radius is { } r ? (int)Math.Round(r) : null;
+        }
+
+        if (radius is null or < 0 or > MaxRadiusKm)
+        {
+            return "{\"ok\":false,\"message\":\"rad ungültig oder größer als 25\"}";
+        }
+
+        var centerLat = latitude ?? DefaultLatitude;
+        var centerLng = longitude ?? DefaultLongitude;
+        var alphaDistance = DistanceKm(centerLat, centerLng, 52.5201, 13.4051);
+        var betaDistance = DistanceKm(centerLat, centerLng, 52.5301, 13.4151);
+        var entries = new List<(double Distance, string Json)>
+        {
+            (alphaDistance, AlphaJson(false, Math.Round(alphaDistance, 1))),
+            (betaDistance, BetaJson(false, Math.Round(betaDistance, 1))),
+        };
+        foreach (var station in GenericStations)
+        {
+            var distance = DistanceKm(centerLat, centerLng, station.Latitude, station.Longitude);
+            entries.Add((distance, GenericJson(station, false, Math.Round(distance, 1))));
+        }
+
+        var inRadius = entries.Where(entry => entry.Distance <= radius).OrderBy(entry => entry.Distance).Select(entry => entry.Json);
+        return "{\"ok\":true,\"license\":\"CC BY 4.0 - https://creativecommons.tankerkoenig.de\",\"data\":\"MTS-K\",\"status\":\"ok\",\"stations\":[" + string.Join(",", inRadius) + "]}";
     }
 
     private async Task RunAsync()
@@ -224,8 +365,7 @@ public sealed class MockTankerkoenigServer : IDisposable
         }
         else if (isList)
         {
-            body = "{\"ok\":true,\"license\":\"CC BY 4.0 - https://creativecommons.tankerkoenig.de\",\"data\":\"MTS-K\",\"status\":\"ok\",\"stations\":["
-                + AlphaJson(false, 0.1) + "," + BetaJson(false, 1.4) + "]}";
+            body = ListBody(context);
         }
         else if (isDetail)
         {
@@ -237,6 +377,10 @@ public sealed class MockTankerkoenigServer : IDisposable
             else if (id == StationBeta)
             {
                 body = "{\"ok\":true,\"status\":\"ok\",\"station\":" + BetaJson(true, 0) + "}";
+            }
+            else if (GenericStations.FirstOrDefault(station => station.Id == id) is { } generic)
+            {
+                body = "{\"ok\":true,\"status\":\"ok\",\"station\":" + GenericJson(generic, true, 0) + "}";
             }
             else
             {
@@ -257,3 +401,21 @@ public sealed class MockTankerkoenigServer : IDisposable
         context.Response.Close();
     }
 }
+
+internal sealed record MockStation(
+    string Id,
+    string Name,
+    string Brand,
+    string Street,
+    string HouseNumber,
+    string PostCode,
+    string Place,
+    double Latitude,
+    double Longitude,
+    decimal? E5,
+    decimal? E10,
+    decimal? Diesel,
+    bool WholeDay,
+    string TimesText,
+    string TimesStart,
+    string TimesEnd);
