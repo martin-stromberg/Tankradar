@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Tankradar.MAUI\Tankradar.MAUI.csproj" />
   </ItemGroup>
 

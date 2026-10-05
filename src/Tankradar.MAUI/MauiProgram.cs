@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
 
@@ -43,10 +44,12 @@ public static class MauiProgram
         });
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        AddPriceServices(builder.Services);
 
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();
         builder.Services.AddTransient<TankbookViewModel>();
+        builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
@@ -59,5 +62,43 @@ public static class MauiProgram
 #endif
 
         return builder.Build();
+    }
+
+    private static void AddPriceServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => PriceApiOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IDelay, TaskDelay>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider.GetRequiredService<PriceApiOptions>();
+            return new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+        });
+        services.AddSingleton(_ =>
+        {
+            // Keine automatischen Weiterleitungen: Der Schlüssel steht in der Anfrageadresse und darf nie an einen anderen Host gehen.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Tankatlas/0.1");
+            return client;
+        });
+#if WINDOWS
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new Platforms.Windows.CredentialLockerApiKeyStore()));
+#else
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new SecureStorageApiKeyStore()));
+#endif
+        services.AddSingleton<IApiKeyProvider>(provider => new ApiKeyProvider(
+            provider.GetRequiredService<IApiKeyStore>(),
+            ApiKeyProvider.ReadBuildTimeKey,
+            Environment.GetEnvironmentVariable,
+            provider.GetRequiredService<ILogger<ApiKeyProvider>>()));
+        services.AddSingleton<ITankerkoenigClient, TankerkoenigClient>();
+        services.AddSingleton<IPriceRepository, PriceRepository>();
+        services.AddSingleton<INetworkStatusSource, MauiNetworkStatusSource>();
+        services.AddSingleton<IConnectionMonitor, ConnectionMonitor>();
+        services.AddSingleton<IFuelPriceService, FuelPriceService>();
     }
 }

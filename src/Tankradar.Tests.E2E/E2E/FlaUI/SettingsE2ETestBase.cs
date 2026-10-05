@@ -17,6 +17,22 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
 
     /// <summary>
+    /// Startet die App mit Standardkonfiguration.
+    /// </summary>
+    protected SettingsE2ETestBase()
+    {
+    }
+
+    /// <summary>
+    /// Startet die App mit zusätzlichen Umgebungsvariablen (Testkonfiguration).
+    /// </summary>
+    /// <param name="additionalEnvironment">Die zusätzlichen Umgebungsvariablen.</param>
+    protected SettingsE2ETestBase(IReadOnlyDictionary<string, string> additionalEnvironment)
+        : base(additionalEnvironment)
+    {
+    }
+
+    /// <summary>
     /// Wechselt auf die Optionen-Seite und wartet, bis die Einstellungen angezeigt und geladen sind.
     /// </summary>
     protected void OpenSettings()

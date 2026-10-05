@@ -23,10 +23,12 @@ public class SettingsViewModel : BaseViewModel
     /// </summary>
     /// <param name="settingsService">Dienst zum Laden und Speichern der Einstellungen.</param>
     /// <param name="logger">Logger für Lade- und Speicherfehler.</param>
-    public SettingsViewModel(ISettingsService settingsService, ILogger<SettingsViewModel> logger)
+    /// <param name="dataSource">Die Karte „Datenquelle“ (Quellenangabe und Preisdienst-Prüfung); optional, damit die Einstellungen auch ohne Preisdienst nutzbar sind.</param>
+    public SettingsViewModel(ISettingsService settingsService, ILogger<SettingsViewModel> logger, DataSourceViewModel? dataSource = null)
     {
         _settingsService = settingsService;
         _logger = logger;
+        DataSource = dataSource;
         Title = "Optionen";
 
         var defaults = AppSettings.CreateDefault();
@@ -39,6 +41,16 @@ public class SettingsViewModel : BaseViewModel
         ApplySelection(SortOptions, defaults.ResultSortOrder);
         LastSaveTask = Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Die Karte „Datenquelle“; <see langword="null"/>, wenn kein Preisdienst eingebunden ist.
+    /// </summary>
+    public DataSourceViewModel? DataSource { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Karte „Datenquelle“ angezeigt wird.
+    /// </summary>
+    public bool HasDataSource => DataSource is not null;
 
     /// <summary>
     /// Die Spritsorten in der aktuellen Reihenfolge.
@@ -129,6 +141,7 @@ public class SettingsViewModel : BaseViewModel
     /// </summary>
     public override void OnAppearing()
     {
+        DataSource?.OnAppearing();
         _ = LoadAsync();
     }
 
