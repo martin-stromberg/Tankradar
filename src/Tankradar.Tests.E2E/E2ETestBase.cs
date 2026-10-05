@@ -205,7 +205,8 @@ public abstract class E2ETestBase : IDisposable
             // Best-effort: Der Prozess kann bereits beendet sein.
         }
 
-        Automation.Dispose();
+        // Bei einem vor der Initialisierung abgebrochenen Start kann die Automation fehlen; das Aufräumen darf die Startausnahme nicht verdecken.
+        ((IDisposable?)Automation)?.Dispose();
 
         try
         {

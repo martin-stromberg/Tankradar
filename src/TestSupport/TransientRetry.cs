@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace Tankradar.TestSupport;
@@ -14,12 +15,19 @@ public static class TransientRetry
     public const int UiaTimeoutHResult = -2146233083;
 
     /// <summary>
+    /// Win32-Fehlercode 1460 (ERROR_TIMEOUT); als HRESULT 0x800705B4, mit dem <c>UIA3Automation.FromHandle</c> einen Timeout als <see cref="Win32Exception"/> meldet.
+    /// </summary>
+    public const int Win32TimeoutErrorCode = 1460;
+
+    private const int Win32TimeoutHResult = unchecked((int)0x800705B4);
+
+    /// <summary>
     /// Standardzahl der Versuche.
     /// </summary>
     public const int DefaultMaxAttempts = 3;
 
     /// <summary>
-    /// Prüft, ob eine Ausnahme ein vorübergehender UIA-Timeout ist (<see cref="TimeoutException"/> oder <see cref="COMException"/> mit 0x80131505, auch als innere Ausnahme).
+    /// Prüft, ob eine Ausnahme ein vorübergehender UIA-Timeout ist (<see cref="TimeoutException"/> oder <see cref="COMException"/> mit 0x80131505 oder <see cref="Win32Exception"/> mit 0x800705B4, auch als innere Ausnahme).
     /// </summary>
     /// <param name="exception">Die Ausnahme.</param>
     /// <returns><see langword="true"/>, wenn ein erneuter Versuch sinnvoll ist.</returns>
@@ -27,7 +35,7 @@ public static class TransientRetry
     {
         for (var current = exception; current is not null; current = current.InnerException!)
         {
-            if (current is TimeoutException || (current is COMException com && com.HResult == UiaTimeoutHResult))
+            if (current is TimeoutException || (current is COMException com && com.HResult == UiaTimeoutHResult) || IsWin32Timeout(current))
             {
                 return true;
             }
@@ -39,6 +47,12 @@ public static class TransientRetry
         }
 
         return false;
+    }
+
+    private static bool IsWin32Timeout(Exception exception)
+    {
+        return exception is Win32Exception win32
+            && (win32.NativeErrorCode == Win32TimeoutErrorCode || win32.NativeErrorCode == Win32TimeoutHResult || win32.HResult == Win32TimeoutHResult);
     }
 
     /// <summary>
@@ -77,7 +91,7 @@ public static class TransientRetry
         }
 
         throw new InvalidOperationException(
-            $"{description}: Die UI-Automation hat auch nach {attempts} Versuchen nicht rechtzeitig geantwortet (UIA-Timeout, HRESULT 0x80131505). Letzter Fehler: {last!.Message}",
+            $"{description}: Die UI-Automation hat auch nach {attempts} Versuchen nicht rechtzeitig geantwortet (UIA-Timeout, HRESULT 0x80131505 bzw. 0x800705B4). Letzter Fehler: {last!.Message}",
             last);
     }
 
