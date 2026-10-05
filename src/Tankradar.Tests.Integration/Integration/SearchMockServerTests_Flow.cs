@@ -79,12 +79,12 @@ public class SearchMockServerTests_Flow : SearchMockServerTestBase
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
 
-        viewModel.RadiusText = "26";
+        viewModel.RadiusKm = 26;
         await viewModel.SearchAsync();
         Assert.Equal(0, Server.TotalRequests);
         Assert.Equal(SearchTexts.RadiusInvalid, viewModel.StatusMessage);
 
-        viewModel.RadiusText = "25";
+        viewModel.RadiusKm = 25;
         await viewModel.SearchAsync();
         Assert.Equal(1, Server.ListRequests);
         Assert.Equal(25, Server.LastListRadius);

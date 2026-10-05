@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Der Suchradius wird als Chip aus sinnvollen Stufen (2, 5, 10, 15, 25 km) gewählt und wirkt; die Eingabeprüfung vor dem Abruf
+/// E2E-Test: Der Suchradius wird als Chip aus sinnvollen Stufen (1, 2, 5, 10, 15, 25 km) gewählt und wirkt; die Eingabeprüfung vor dem Abruf
 /// ist durch Unit- und Integrationstests abgedeckt, da die Oberfläche nur gültige Stufen anbietet.
 /// </summary>
 public class SearchE2ETests_Radius : SearchE2ETestBase
@@ -22,6 +22,24 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
             WaitForStationNames("Delta Tankstelle", "Alpha Tankstelle", "Beta Tankstelle", "Gamma Tankstelle");
             Assert.Equal(25, Server.LastListRadius);
             Assert.False(Exists("Search.StatusMessage"));
+        });
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Radius von 1 km nur die nächste Tankstelle liefert und genau der Radius 1 gesendet wird.
+    /// </summary>
+    [Fact]
+    public void Radius1_ShowsOnlyNearestStation()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenSearch();
+            SetRadius("1");
+
+            Submit();
+
+            WaitForStationNames("Alpha Tankstelle");
+            Assert.Equal(1, Server.LastListRadius);
         });
     }
 

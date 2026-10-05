@@ -16,7 +16,7 @@ Tippen Sie in der unteren Menüleiste auf **Karte**.
 
 ### 2. Radius festlegen
 
-Unter **Suchradius** ist voreingestellt **5 km** gewählt. Tippen Sie bei Bedarf auf einen anderen Chip (**2**, **5**, **10**, **15** oder **25 km**).
+Unter **Suchradius** ist voreingestellt **5 km** gewählt. Tippen Sie bei Bedarf auf einen anderen Chip (**1**, **2**, **5**, **10**, **15** oder **25 km**).
 
 ### 3. Suchen
 

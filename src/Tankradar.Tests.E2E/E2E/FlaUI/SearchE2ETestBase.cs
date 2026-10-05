@@ -20,7 +20,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <summary>
     /// Die angebotenen Radiusstufen in Kilometern.
     /// </summary>
-    protected static readonly string[] RadiusSteps = ["2", "5", "10", "15", "25"];
+    protected static readonly string[] RadiusSteps = ["1", "2", "5", "10", "15", "25"];
 
     /// <summary>
     /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
@@ -88,7 +88,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
-    /// Wählt die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („2“, „5“, „10“, „15“, „25“).
+    /// Wählt die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („1“, „2“, „5“, „10“, „15“, „25“).
     /// </summary>
     /// <param name="text">Der Radius in Kilometern.</param>
     protected void SetRadius(string text)

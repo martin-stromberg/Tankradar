@@ -10,7 +10,7 @@ Der Designentwurf (`design-draft/stitch_smart_fuel_charge_tracker.zip`, Screen
 `suche_kartenansicht`) ist verbindlich. Die Suchseite („Karte“) setzt davon um: Radius, Spritsorte
 und Sortierung als Chips (Pill-Form, ausgewählt in Teal mit weißem Text, mindestens 44 px hoch),
 Ergebniskarten mit 16 px Rundung, Schattenebene 1, hervorgehobenem Preis (`price-hero`) und
-Adresszeile. Der Radius wird in den Stufen 2, 5, 10, 15 und 25 km gewählt (Standard 5 km).
+Adresszeile. Der Radius (1 bis 25 km, Standard 5 km) wird in den Stufen 1, 2, 5, 10, 15 und 25 km gewählt.
 
 ## Entscheidung
 
@@ -22,6 +22,10 @@ Folgende Teile des Entwurfs sind bewusst nicht oder abweichend umgesetzt:
   Kartenansicht bzw. zu späteren Schritten.
 - **Markenlogos, Trendindikator, Belegungsampel:** Die Quelle liefert keine Logos und keine
   Trenddaten; Strom und Belegung sind laut ADR 0001 nicht Teil von Version 1.0.
+- **Stufen-Chips statt freier Eingabe:** Gemäß Designentwurf wird der Radius über Chips mit den
+  Stufen 1, 2, 5, 10, 15 und 25 km gewählt, nicht über ein freies Zahlenfeld. Die Stufen decken den
+  zulässigen Bereich von 1 bis 25 km (Obergrenze der Preisquelle) sinnvoll ab und sind
+  fingerfreundlich bedienbar; Fehleingaben sind ausgeschlossen.
 - **Chips als Schaltflächen:** Die Chips sind `Button`-Elemente mit Auswahlzustand statt eines
   eigenen Segmentsteuerelements. Der Auswahlzustand wird zusätzlich als Hinweistext
   („Ausgewählt“) für Bedienhilfen bereitgestellt.

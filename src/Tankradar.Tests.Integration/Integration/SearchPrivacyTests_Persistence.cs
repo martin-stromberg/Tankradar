@@ -18,7 +18,7 @@ public class SearchPrivacyTests_Persistence : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
-        viewModel.RadiusText = "25";
+        viewModel.RadiusKm = 25;
         await viewModel.SearchAsync();
         Assert.Equal(4, viewModel.Stations.Count);
         await viewModel.LastSettingsTask;

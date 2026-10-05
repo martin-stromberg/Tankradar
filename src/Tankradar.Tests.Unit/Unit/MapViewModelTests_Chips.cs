@@ -20,13 +20,13 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
     }
 
     /// <summary>
-    /// Prüft, dass die Radiusstufen 2, 5, 10, 15 und 25 km angeboten werden und 5 km vorgewählt ist.
+    /// Prüft, dass die Radiusstufen 1, 2, 5, 10, 15 und 25 km angeboten werden und 5 km vorgewählt ist.
     /// </summary>
     [Fact]
     public void RadiusOptions_AreStepsWithinLimitsAndDefaultIsSelected()
     {
         Assert.Equal(SearchRadius.Steps, ViewModel.RadiusOptions.Select(option => option.RadiusKm));
-        Assert.Equal(["2 km", "5 km", "10 km", "15 km", "25 km"], ViewModel.RadiusOptions.Select(option => option.Label));
+        Assert.Equal(["1 km", "2 km", "5 km", "10 km", "15 km", "25 km"], ViewModel.RadiusOptions.Select(option => option.Label));
         Assert.Equal([5], ViewModel.RadiusOptions.Where(option => option.IsSelected).Select(option => option.RadiusKm));
         Assert.Equal(ChoiceTexts.Selected, ViewModel.RadiusOptions.Single(option => option.IsSelected).SelectionHint);
     }
@@ -43,7 +43,7 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
         ViewModel.RadiusOptions.Single(option => option.RadiusKm == 15).SelectCommand.Execute(null);
         await SearchAsync();
 
-        Assert.Equal("15", ViewModel.RadiusText);
+        Assert.Equal(15, ViewModel.RadiusKm);
         Assert.Equal([15], ViewModel.RadiusOptions.Where(option => option.IsSelected).Select(option => option.RadiusKm));
         Assert.Equal(15, Assert.Single(Prices.Queries).RadiusKm);
     }
@@ -52,14 +52,14 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
     /// Prüft, dass ein von den Stufen abweichender Radius keine Stufe markiert und ein ungültiger weiterhin vor dem Abruf abgewiesen wird.
     /// </summary>
     [Fact]
-    public async Task RadiusTextOutsideSteps_DeselectsChipsAndInvalidIsRejected()
+    public async Task RadiusOutsideSteps_DeselectsChipsAndInvalidIsRejected()
     {
         await AppearAsync();
 
-        ViewModel.RadiusText = "7";
+        ViewModel.RadiusKm = 7;
         Assert.DoesNotContain(ViewModel.RadiusOptions, option => option.IsSelected);
 
-        ViewModel.RadiusText = "26";
+        ViewModel.RadiusKm = 26;
         await SearchAsync();
 
         Assert.Equal(SearchTexts.RadiusInvalid, ViewModel.StatusMessage);
@@ -105,6 +105,44 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
         ViewModel.SortOptions.Single(option => option.Value == ResultSortOrder.Distance).IsSelected = true;
 
         Assert.Equal(MapViewModel.PageSize, ViewModel.Stations.Count);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Filterwechsel die Anzeige auf die erste Seite (25 Einträge) zurücksetzt.
+    /// </summary>
+    [Fact]
+    public async Task FilterChange_ResetsPaging()
+    {
+        Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, ManyStations(60));
+        await AppearAsync();
+        await SearchAsync();
+        ViewModel.ShowMoreCommand.Execute(null);
+        Assert.Equal(50, ViewModel.Stations.Count);
+
+        ViewModel.FuelFilterOptions.Single(option => option.AutomationKey == "SuperE5").IsSelected = true;
+
+        Assert.Equal(MapViewModel.PageSize, ViewModel.Stations.Count);
+        Assert.True(ViewModel.HasMore);
+        Assert.Equal("Weitere anzeigen (35 weitere)", ViewModel.ShowMoreText);
+    }
+
+    /// <summary>
+    /// Prüft, dass HasMore und ShowMoreText auch dann gemeldet werden, wenn sich die dargestellte Liste nicht ändert.
+    /// </summary>
+    [Fact]
+    public async Task SortChange_NotifiesShowMoreProperties()
+    {
+        Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, ManyStations(60));
+        await AppearAsync();
+        await SearchAsync();
+        var changed = new List<string?>();
+        ViewModel.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        ViewModel.SortOptions.Single(option => option.Value == ResultSortOrder.Distance).IsSelected = true;
+
+        Assert.Contains(nameof(MapViewModel.HasMore), changed);
+        Assert.Contains(nameof(MapViewModel.ShowMoreText), changed);
+        Assert.Contains(nameof(MapViewModel.TotalStationCount), changed);
     }
 
     /// <summary>

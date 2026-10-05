@@ -10,7 +10,7 @@ Im Bereich **Karte** finden Sie Tankstellen in Ihrer Nähe und sehen auf einen B
 
 ### Suche starten
 
-Unter **Suchradius** wählen Sie per Chip eine Stufe: **2**, **5**, **10**, **15** oder **25 km** (voreingestellt 5 km) und tippen auf **Suchen**. Während der Suche erscheint ein Ladeanzeiger und die Schaltfläche ist gesperrt. Eine neue Suche ersetzt eine noch laufende. Die Oberfläche bietet nur gültige Radien (1 bis 25 km) an; intern wird jeder Radius vor dem Abruf geprüft, ein ungültiger Wert löst keine Abfrage aus (Meldung „Bitte einen Radius von 1 bis 25 km eingeben.“).
+Unter **Suchradius** wählen Sie per Chip eine Stufe: **1**, **2**, **5**, **10**, **15** oder **25 km** (voreingestellt 5 km) und tippen auf **Suchen**. Während der Suche erscheint ein Ladeanzeiger und die Schaltfläche ist gesperrt. Eine neue Suche ersetzt eine noch laufende. Die Oberfläche bietet nur gültige Radien (1 bis 25 km) an; intern wird jeder Radius vor dem Abruf geprüft, ein ungültiger Wert löst keine Abfrage aus (Meldung „Bitte einen Radius von 1 bis 25 km eingeben.“).
 
 Die Suche läuft nur, wenn Sie sie auslösen; beim Öffnen des Bereichs wird weder der Standort abgefragt noch gesucht.
 
@@ -59,6 +59,6 @@ Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche.
 ## Einschränkungen
 
 - Die Ergebnisse erscheinen als Liste; eine Kartenansicht gibt es noch nicht.
-- Der Radius ist auf 25 km begrenzt (Vorgabe der Preisquelle) und wird in den Stufen 2, 5, 10, 15 und 25 km gewählt.
+- Der Radius ist auf 25 km begrenzt (Vorgabe der Preisquelle) und wird in den Stufen 1, 2, 5, 10, 15 und 25 km gewählt.
 - Abweichungen vom Designentwurf der Suche sind in [ADR 0002](../../adr/0002-search-page-design-deviations.md) dokumentiert.
 - Die Liste zeigt nur Preise der in den **Optionen** gewählten Spritsorten.

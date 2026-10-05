@@ -20,7 +20,7 @@ public class MapViewModelTests_Search : MapViewModelTestBase
     {
         await AppearAsync();
 
-        Assert.Equal("5", ViewModel.RadiusText);
+        Assert.Equal(5, ViewModel.RadiusKm);
         Assert.Empty(Location.Calls);
         Assert.Empty(Prices.Queries);
         Assert.False(ViewModel.ShowEmptyState);
@@ -31,16 +31,13 @@ public class MapViewModelTests_Search : MapViewModelTestBase
     /// </summary>
     /// <param name="radius">Die Eingabe.</param>
     [Theory]
-    [InlineData("0")]
-    [InlineData("26")]
-    [InlineData("-3")]
-    [InlineData("5.5")]
-    [InlineData("abc")]
-    [InlineData("")]
-    public async Task InvalidRadius_CallsNeitherLocationNorPrices(string radius)
+    [InlineData(0)]
+    [InlineData(26)]
+    [InlineData(-3)]
+    public async Task InvalidRadius_CallsNeitherLocationNorPrices(int radius)
     {
         await AppearAsync();
-        ViewModel.RadiusText = radius;
+        ViewModel.RadiusKm = radius;
 
         await SearchAsync();
 
@@ -59,7 +56,7 @@ public class MapViewModelTests_Search : MapViewModelTestBase
         Settings.Stored = Settings.Stored with { FuelTypes = SearchTestData.Only(FuelType.Diesel, FuelType.SuperE5) };
         Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, TwoStations());
         await AppearAsync();
-        ViewModel.RadiusText = "25";
+        ViewModel.RadiusKm = 25;
 
         await SearchAsync();
 
@@ -80,13 +77,13 @@ public class MapViewModelTests_Search : MapViewModelTestBase
     /// <param name="radius">Die Eingabe.</param>
     /// <param name="expected">Der erwartete gesendete Radius.</param>
     [Theory]
-    [InlineData("1", 1)]
-    [InlineData("5", 5)]
-    [InlineData("25", 25)]
-    public async Task ValidRadius_IsSentUnchangedAndNeverAbove25(string radius, int expected)
+    [InlineData(1, 1)]
+    [InlineData(5, 5)]
+    [InlineData(25, 25)]
+    public async Task ValidRadius_IsSentUnchangedAndNeverAbove25(int radius, int expected)
     {
         await AppearAsync();
-        ViewModel.RadiusText = radius;
+        ViewModel.RadiusKm = radius;
 
         await SearchAsync();
 

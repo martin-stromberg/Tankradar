@@ -37,7 +37,7 @@ public class MapViewModel : BaseViewModel
     private StationSearchResult? _lastResult;
     private CancellationTokenSource? _searchCancellation;
     private bool _subscribed;
-    private string _radiusText = SearchRadius.Default.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private int _radiusKm = SearchRadius.Default;
     private readonly List<RadiusOptionViewModel> _radiusOptions;
     private IReadOnlyList<StationListItem> _allStations = NoStations;
     private int _visibleCount = PageSize;
@@ -92,14 +92,14 @@ public class MapViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Die Eingabe des Suchradius in Kilometern (Standard 5).
+    /// Der gewählte Suchradius in Kilometern (Standard 5); die Oberfläche setzt ihn über die Radiusstufen (Chips).
     /// </summary>
-    public string RadiusText
+    public int RadiusKm
     {
-        get => _radiusText;
+        get => _radiusKm;
         set
         {
-            if (SetProperty(ref _radiusText, value))
+            if (SetProperty(ref _radiusKm, value))
             {
                 SyncRadiusSelection();
             }
@@ -146,9 +146,6 @@ public class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasResults));
                 OnPropertyChanged(nameof(ShowEmptyState));
-                OnPropertyChanged(nameof(TotalStationCount));
-                OnPropertyChanged(nameof(HasMore));
-                OnPropertyChanged(nameof(ShowMoreText));
             }
         }
     }
@@ -290,7 +287,7 @@ public class MapViewModel : BaseViewModel
     public async Task SearchAsync()
     {
         CancelSearch();
-        if (!SearchRadius.TryParse(RadiusText, out var radiusKm))
+        if (!SearchRadius.IsValid(_radiusKm))
         {
             IsBusy = false;
             StatusMessage = SearchTexts.RadiusInvalid;
@@ -303,7 +300,7 @@ public class MapViewModel : BaseViewModel
         try
         {
             StatusMessage = null;
-            await RunSearchAsync(radiusKm, cancellation.Token).ConfigureAwait(true);
+            await RunSearchAsync(_radiusKm, cancellation.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -372,20 +369,24 @@ public class MapViewModel : BaseViewModel
     private void PublishVisible()
     {
         Stations = _allStations.Count <= _visibleCount ? _allStations : _allStations.Take(_visibleCount).ToList();
+
+        // Unabhängig davon, ob sich die dargestellte Liste geändert hat: Gesamtzahl und Rest hängen auch von der gefilterten Gesamtliste ab.
+        OnPropertyChanged(nameof(TotalStationCount));
+        OnPropertyChanged(nameof(HasMore));
+        OnPropertyChanged(nameof(ShowMoreText));
     }
 
     private void SyncRadiusSelection()
     {
-        var parsed = SearchRadius.TryParse(_radiusText, out var radiusKm);
         foreach (var option in _radiusOptions)
         {
-            option.SetSelectedSilently(parsed && option.RadiusKm == radiusKm);
+            option.SetSelectedSilently(option.RadiusKm == _radiusKm);
         }
     }
 
     private void OnRadiusSelected(RadiusOptionViewModel selected)
     {
-        RadiusText = selected.RadiusKm.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        RadiusKm = selected.RadiusKm;
     }
 
     private async Task RunSearchAsync(int radiusKm, CancellationToken token)
