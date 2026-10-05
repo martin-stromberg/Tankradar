@@ -377,6 +377,7 @@ public class MapViewModel : BaseViewModel
         if (addressError != AddressInputError.None)
         {
             IsBusy = false;
+            ClearResult();
             StatusMessage = SearchTexts.GetAddressInputMessage(addressError);
             return;
         }
