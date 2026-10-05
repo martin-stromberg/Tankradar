@@ -18,6 +18,8 @@ public class DiagnosticsCaptureE2ETests : E2ETestBase
     {
         try
         {
+            // Erst auf eine gerenderte Seite warten, damit der Screenshot Inhalt zeigen kann.
+            NavigateToTab("Optionen", "SettingsPage.Headline");
             var exception = Assert.Throws<InvalidOperationException>(
                 () => RunWithDiagnostics(() => throw new InvalidOperationException("absichtlicher Fehlschlag"), "Beispieltest"));
             Assert.Equal("absichtlicher Fehlschlag", exception.Message);
@@ -25,6 +27,7 @@ public class DiagnosticsCaptureE2ETests : E2ETestBase
             var prefix = Path.Combine(_diagnosticsDirectory, GetType().Name + ".Beispieltest");
             var screenshot = new FileInfo(prefix + ".png");
             Assert.True(screenshot.Exists && screenshot.Length > 0, "Screenshot wurde nicht erzeugt.");
+            AssertScreenshotShowsWindowContent(screenshot.FullName);
             var tree = File.ReadAllText(prefix + ".uitree.txt");
             Assert.Contains("AutomationId=", tree);
             var error = File.ReadAllText(prefix + ".error.txt");
@@ -37,6 +40,23 @@ public class DiagnosticsCaptureE2ETests : E2ETestBase
                 Directory.Delete(_diagnosticsDirectory, recursive: true);
             }
         }
+    }
+
+    private static void AssertScreenshotShowsWindowContent(string path)
+    {
+        // Der Screenshot wird direkt vom App-Fenster aufgenommen (auch im Off-Screen-Betrieb): Er darf nicht leer/einfarbig sein.
+        using var image = new System.Drawing.Bitmap(path);
+        Assert.True(image.Width >= 300 && image.Height >= 300, $"Screenshot ist zu klein: {image.Width}x{image.Height}.");
+        var colors = new HashSet<int>();
+        for (var x = 0; x < image.Width; x += Math.Max(1, image.Width / 40))
+        {
+            for (var y = 0; y < image.Height; y += Math.Max(1, image.Height / 40))
+            {
+                colors.Add(image.GetPixel(x, y).ToArgb());
+            }
+        }
+
+        Assert.True(colors.Count > 2, "Der Screenshot zeigt keinen Fensterinhalt (einfarbig).");
     }
 
     /// <summary>

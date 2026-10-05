@@ -250,8 +250,8 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
             Longitude = longitude,
             DistanceKm = TryGetDouble(element, "dist", out var distance) ? distance : null,
             IsOpen = GetBool(element, "isOpen"),
-            WholeDay = detailed ? GetBool(element, "wholeDay") : null,
-            OpeningTimes = detailed ? ParseOpeningTimes(element) : [],
+            WholeDay = GetBool(element, "wholeDay"),
+            OpeningTimes = ParseOpeningTimes(element),
             Prices = prices,
             DetailsUpdatedUtc = detailed ? retrievedUtc : null,
         };

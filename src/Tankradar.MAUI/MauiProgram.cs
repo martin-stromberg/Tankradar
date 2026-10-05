@@ -1,7 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+#if WINDOWS
+using Microsoft.Maui.LifecycleEvents;
+#endif
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -34,6 +38,15 @@ public static class MauiProgram
                 fonts.AddFont("JetBrainsMono-SemiBold.ttf", "JetBrainsMonoSemibold");
             });
 
+#if WINDOWS
+        if (TestWindowMode.ShouldHideWindow(Environment.GetEnvironmentVariable))
+        {
+            // Testmodus mit Off-Screen-Betrieb: Fenster außerhalb des Bildschirms, ohne Vordergrundwechsel.
+            builder.ConfigureLifecycleEvents(events => events.AddWindows(windows =>
+                windows.OnWindowCreated(window => Platforms.Windows.OffscreenWindow.Apply(window))));
+        }
+#endif
+
         builder.Services.AddSingleton<AppConfiguration>();
         builder.Services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
         builder.Services.AddSingleton<IDatabaseFileProtector, DatabaseFileProtector>();
@@ -45,6 +58,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
+        builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
 
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();

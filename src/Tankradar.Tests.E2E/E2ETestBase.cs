@@ -20,10 +20,15 @@ public abstract class E2ETestBase : IDisposable
 
     private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\" + BuildConfiguration + @"\net10.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
 
+    /// <summary>
+    /// Name der Umgebungsvariable des Testlaufs, mit der der Off-Screen-Betrieb auf <c>foreground</c> (Vordergrundbetrieb) zurückgestellt werden kann.
+    /// </summary>
+    public const string WindowModeEnvironmentVariable = "TANKRADAR_E2E_WINDOW";
+
     private static readonly string DefaultDiagnosticsDirectory = E2EDiagnostics.ResolveDirectory();
 
     private readonly string _testDataDirectory;
-    private readonly IReadOnlyDictionary<string, string> _additionalEnvironment;
+    private IReadOnlyDictionary<string, string> _additionalEnvironment;
     private bool _disposed;
 
     /// <summary>
@@ -75,8 +80,8 @@ public abstract class E2ETestBase : IDisposable
 
     /// <summary>
     /// Wechselt auf den Reiter und wartet, bis die seitenspezifische Überschrift (AutomationId) sichtbar ist.
-    /// Bleibt der Seitenwechsel aus (z. B. weil der Klick verloren ging), wird der Reiter mit begrenzten Wiederholungen
-    /// erneut ausgewählt (abwechselnd per SelectionItemPattern und Klick).
+    /// Bleibt der Seitenwechsel aus, wird der Reiter mit begrenzten Wiederholungen erneut ausgewählt
+    /// (abwechselnd per SelectionItemPattern und InvokePattern; es werden keine Mausklicks verwendet).
     /// </summary>
     /// <param name="tabTitle">Titel des Reiters (z. B. Optionen).</param>
     /// <param name="pageAutomationId">AutomationId eines Elements, das nur auf der Zielseite existiert.</param>
@@ -94,13 +99,19 @@ public abstract class E2ETestBase : IDisposable
             try
             {
                 tab = FindTab(tabTitle) ?? tab;
+                // Ausschließlich UI-Automation-Muster, nie ein Mausklick: Das App-Fenster liegt im Off-Screen-Betrieb außerhalb
+                // des Bildschirms, und ein Klick würde den Mauszeiger des Anwenders bewegen.
                 if (attempt % 2 == 1 && tab.Patterns.SelectionItem.IsSupported)
                 {
                     tab.Patterns.SelectionItem.Pattern.Select();
                 }
-                else
+                else if (tab.Patterns.Invoke.IsSupported)
                 {
-                    tab.Click();
+                    tab.Patterns.Invoke.Pattern.Invoke();
+                }
+                else if (tab.Patterns.SelectionItem.IsSupported)
+                {
+                    tab.Patterns.SelectionItem.Pattern.Select();
                 }
             }
             catch (Exception)
@@ -194,7 +205,8 @@ public abstract class E2ETestBase : IDisposable
             // Best-effort: Der Prozess kann bereits beendet sein.
         }
 
-        Automation.Dispose();
+        // Bei einem vor der Initialisierung abgebrochenen Start kann die Automation fehlen; das Aufräumen darf die Startausnahme nicht verdecken.
+        ((IDisposable?)Automation)?.Dispose();
 
         try
         {
@@ -239,6 +251,17 @@ public abstract class E2ETestBase : IDisposable
         LaunchApplication();
     }
 
+    /// <summary>
+    /// Wie <see cref="RestartApplication()"/>, ersetzt aber die zusätzlichen Umgebungsvariablen der App für den Neustart (gleiches Testdatenverzeichnis).
+    /// </summary>
+    /// <param name="additionalEnvironment">Die Umgebungsvariablen der neu gestarteten App.</param>
+    protected void RestartApplication(IReadOnlyDictionary<string, string> additionalEnvironment)
+    {
+        ArgumentNullException.ThrowIfNull(additionalEnvironment);
+        _additionalEnvironment = additionalEnvironment;
+        RestartApplication();
+    }
+
     private static void WaitForProcessExit(int processId)
     {
         try
@@ -263,6 +286,8 @@ public abstract class E2ETestBase : IDisposable
             UseShellExecute = false,
         };
         startInfo.Environment[TestDataPaths.TestDataPathEnvironmentVariable] = _testDataDirectory;
+        startInfo.Environment[TestDataPaths.TestWindowEnvironmentVariable] = ResolveWindowMode();
+
         foreach (var (name, value) in _additionalEnvironment)
         {
             startInfo.Environment[name] = value;
@@ -286,6 +311,19 @@ public abstract class E2ETestBase : IDisposable
             Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Ermittelt die Fensterbetriebsart der App: Standard ist der Off-Screen-Betrieb; der Rückfall auf den Vordergrundbetrieb
+    /// erfolgt durch <c>TANKRADAR_E2E_WINDOW=foreground</c> in der Umgebung des Testlaufs.
+    /// </summary>
+    /// <returns>Der Wert für <c>TANKATLAS_TEST_WINDOW</c>.</returns>
+    private static string ResolveWindowMode()
+    {
+        var configured = Environment.GetEnvironmentVariable(WindowModeEnvironmentVariable);
+        return string.Equals(configured?.Trim(), TestDataPaths.TestWindowForeground, StringComparison.OrdinalIgnoreCase)
+            ? TestDataPaths.TestWindowForeground
+            : TestDataPaths.TestWindowOffscreen;
     }
 
     private static string ResolveAppPath()

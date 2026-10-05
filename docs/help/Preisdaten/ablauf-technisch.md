@@ -39,7 +39,7 @@ Tankstellendetails (`GetStationDetailAsync`) folgen demselben Muster; der Cache 
 ## Konfiguration und Testmodus
 
 - Produktiver Endpunkt: `https://creativecommons.tankerkoenig.de/json/`. HTTP ist unzulässig.
-- Nur wenn `TEST_DATA_PATH` gesetzt ist (Testmodus), überschreibt `TANKRADAR_PRICE_API_URL` den Endpunkt (HTTP nur für Loopback, kurze Wartezeiten) und `TANKRADAR_PRICE_API_KEY` den Schlüssel (nie gespeichert). Ohne `TANKRADAR_PRICE_API_URL` verweigert der Client im Testmodus den Abruf (`PriceFailure.EndpointNotConfigured`, kein Rückfall auf den produktiven Endpunkt). So starten E2E-Tests die App gegen den `MockTankerkoenigServer` (`src/TestSupport`) oder gegen einen unerreichbaren Port (Offline-Betrieb).
+- Nur wenn `TANKATLAS_TEST_DATA_PATH` gesetzt ist (Testmodus), überschreibt `TANKRADAR_PRICE_API_URL` den Endpunkt (HTTP nur für Loopback, kurze Wartezeiten) und `TANKRADAR_PRICE_API_KEY` den Schlüssel (nie gespeichert). Ohne `TANKRADAR_PRICE_API_URL` verweigert der Client im Testmodus den Abruf (`PriceFailure.EndpointNotConfigured`, kein Rückfall auf den produktiven Endpunkt). So starten E2E-Tests die App gegen den `MockTankerkoenigServer` (`src/TestSupport`) oder gegen einen unerreichbaren Port (Offline-Betrieb).
 - Kein Test spricht produktive Endpunkte an.
 
 ## E2E-Robustheit (UIA-Timeouts)

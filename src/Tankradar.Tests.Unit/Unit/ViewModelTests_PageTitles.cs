@@ -16,13 +16,29 @@ public class ViewModelTests_PageTitles : BaseTest
     /// <param name="expectedTitle">Der erwartete Seitentitel.</param>
     [Theory]
     [InlineData(typeof(FavoritesViewModel), "Favoriten")]
-    [InlineData(typeof(MapViewModel), "Karte")]
     [InlineData(typeof(TankbookViewModel), "Tankbuch")]
     public void Constructor_SetsExpectedTitle(Type viewModelType, string expectedTitle)
     {
         var viewModel = (BaseViewModel)Activator.CreateInstance(viewModelType)!;
 
         Assert.Equal(expectedTitle, viewModel.Title);
+    }
+
+    /// <summary>
+    /// Prüft den Seitentitel des <see cref="MapViewModel"/>, das Dienste für Einstellungen, Standort, Preise und Verbindung benötigt.
+    /// </summary>
+    [Fact]
+    public void MapViewModel_Constructor_SetsTitle()
+    {
+        var viewModel = new MapViewModel(
+            new FakeSettingsService(),
+            new FakeLocationService(),
+            new FakeFuelPriceService(),
+            new FakeConnectionMonitor(),
+            TimeProvider.System,
+            NullLogger<MapViewModel>.Instance);
+
+        Assert.Equal("Karte", viewModel.Title);
     }
 
     /// <summary>
@@ -42,14 +58,14 @@ public class ViewModelTests_PageTitles : BaseTest
     [Fact]
     public void OnAppearing_DoesNotChangeState()
     {
-        var viewModel = new MapViewModel();
+        var viewModel = new FavoritesViewModel();
         var raisedCount = 0;
         viewModel.PropertyChanged += (_, _) => raisedCount++;
 
         viewModel.OnAppearing();
 
         Assert.Equal(0, raisedCount);
-        Assert.Equal("Karte", viewModel.Title);
+        Assert.Equal("Favoriten", viewModel.Title);
         Assert.False(viewModel.IsBusy);
     }
 }

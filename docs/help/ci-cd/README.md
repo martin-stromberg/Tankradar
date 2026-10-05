@@ -14,7 +14,7 @@
 
 1. **Pull Request nach `staging`** — `PR CI for Staging` läuft: Formatprüfung, Sicherheitsprüfung der
    Abhängigkeiten, statische Analyse (Warnungen als Fehler, nur Windows-Ziel; die Apple-Ziele prüft der iOS-Build), Build, Unit- und
-   Integrationstests mit Mindest-Testabdeckung (70 %), FlaUI-E2E-Tests (Windows) und ein
+   Integrationstests mit Mindest-Testabdeckung (70 %), blockierende FlaUI-E2E-Tests (Windows) und ein
    unsignierter iOS-Build (Compile-Prüfung).
 2. **Merge nach `staging`** — `Pre-Release` wiederholt die Prüfungen, ermittelt die nächste Version
    und veröffentlicht ein GitHub-Pre-Release `vX.Y.Z-rc.N` mit der Windows-App. Zusätzlich wird iOS
@@ -50,10 +50,11 @@ führt [`scripts/local-ci.ps1`](lokaler-pruefung.md) dieselben Prüfungen lokal 
 
 ## Bekannte Einschränkungen
 
-- Die FlaUI-E2E-Tests laufen als *best-effort*: Ein Fehlschlag erscheint als Warnung und als
-  Test-Artefakt, blockiert aber weder PR noch Release (UI-Tests auf gehosteten Runnern sind
-  störanfällig). Sie zählen nicht zur Testabdeckung. Bei fehlgeschlagenen E2E-Tests erzeugt die Testbasis
-  Diagnosedaten (siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
+- Die FlaUI-E2E-Tests sind **blockierend** (bewusste Abweichung von der CI-Vorlage, dort best-effort): Eine
+  Auslieferung (PR nach `staging`, Pre-Release auf `staging`) erfolgt nur mit vollständig grünen Tests.
+  Sie zählen nicht zur Testabdeckung. Bei fehlgeschlagenen E2E-Tests erzeugt die Testbasis
+  Diagnosedaten (siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)). Details und Betriebsart
+  (Off-Screen): [E2E-Tests als Auslieferungs-Gate](workflows.md#e2e-tests-als-auslieferungs-gate).
 - Die Mindest-Testabdeckung (70 %) bezieht sich auf die per `coverlet.runsettings` eingegrenzte
   Logik (ohne generierten Code, Plattformcode und XAML-Code-Behind).
 - Die Workflows wurden syntaktisch geprüft (`scripts/validate-workflows.py`, `actionlint`); ein echter

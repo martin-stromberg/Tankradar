@@ -103,7 +103,8 @@ public sealed class FuelPriceService : IFuelPriceService
                 _searchCache[key] = _timeProvider.GetUtcNow().UtcDateTime;
             }
 
-            var sorted = stations.OrderBy(s => s.DistanceKm ?? double.MaxValue).ToList();
+            var detailed = await WithKnownDetailsAsync(stations, cancellationToken).ConfigureAwait(false);
+            var sorted = detailed.OrderBy(s => s.DistanceKm ?? double.MaxValue).ToList();
             return new StationSearchResult(FilterByFuelTypes(sorted, query.FuelTypes), PriceDataSource.Live, PriceFailure.None);
         }
         catch (PriceApiException ex)
@@ -163,6 +164,27 @@ public sealed class FuelPriceService : IFuelPriceService
         catch (PriceApiException ex)
         {
             return ex.Failure;
+        }
+    }
+
+    /// <summary>
+    /// Ergänzt die Tankstellen der Umkreissuche um Öffnungszeiten aus früheren Detailabfragen (die Umkreissuche der Quelle liefert sie nicht).
+    /// Ein Fehler beim Lesen des Caches lässt die Suche unberührt.
+    /// </summary>
+    /// <param name="stations">Die Tankstellen der Umkreissuche.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die Tankstellen, soweit bekannt mit Öffnungszeiten.</returns>
+    private async Task<IReadOnlyList<StationInfo>> WithKnownDetailsAsync(IReadOnlyList<StationInfo> stations, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var known = await _repository.GetKnownDetailsAsync(stations.Select(s => s.Id).ToList(), cancellationToken).ConfigureAwait(false);
+            return stations.Select(s => known.TryGetValue(s.Id, out var details) ? s.WithDetails(details) : s).ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Bekannte Tankstellendetails konnten nicht gelesen werden ({ExceptionType}).", ex.GetType().Name);
+            return stations;
         }
     }
 

@@ -8,7 +8,7 @@ public static class TestDataPaths
     /// <summary>
     /// Name der Umgebungsvariable, über die Tests ein isoliertes Testdatenverzeichnis vorgeben können.
     /// </summary>
-    public const string TestDataPathEnvironmentVariable = "TEST_DATA_PATH";
+    public const string TestDataPathEnvironmentVariable = "TANKATLAS_TEST_DATA_PATH";
 
     /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus die Adresse des Preisdienstes (Mock-Server) vorgibt.
@@ -19,4 +19,24 @@ public static class TestDataPaths
     /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Preisdienst vorgibt.
     /// </summary>
     public const string PriceApiKeyEnvironmentVariable = "TANKRADAR_PRICE_API_KEY";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus einen festen Standort im Format <c>breite,länge</c> (invariante Kultur) vorgibt.
+    /// </summary>
+    public const string TestLocationEnvironmentVariable = "TANKATLAS_TEST_LOCATION";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Fensterbetriebsart der App vorgibt (<see cref="TestWindowOffscreen"/> oder <see cref="TestWindowForeground"/>).
+    /// </summary>
+    public const string TestWindowEnvironmentVariable = "TANKATLAS_TEST_WINDOW";
+
+    /// <summary>
+    /// Wert von <see cref="TestWindowEnvironmentVariable"/>: Das Fenster startet außerhalb des sichtbaren Bereichs, ohne sich in den Vordergrund zu holen.
+    /// </summary>
+    public const string TestWindowOffscreen = "offscreen";
+
+    /// <summary>
+    /// Wert von <see cref="TestWindowEnvironmentVariable"/>: Das Fenster startet normal im Vordergrund (bisheriger Betrieb).
+    /// </summary>
+    public const string TestWindowForeground = "foreground";
 }

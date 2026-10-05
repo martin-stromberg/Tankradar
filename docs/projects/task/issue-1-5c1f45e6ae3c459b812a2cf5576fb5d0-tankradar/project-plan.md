@@ -40,6 +40,8 @@ Ablage startfähiger Windows-Zwischenstände aufgebaut.
 | Feature-Flags | Es gibt keinen eigenen Mechanismus für Feature-Flags. Die Routensuche ist fester Bestandteil von Version 1.0. Das Offline-Verhalten ergibt sich aus der tatsächlichen Verbindung und wird nicht per Schalter erzwungen. Den E2E-Testmodus steuert die ohnehin geplante Test-Konfiguration (isolierte Testdatenbank, Mock-Dienste statt produktiver Endpunkte). Strom- und Cloud-Schalter entfallen mit den zugehörigen Funktionen. | Entscheidung des Projektleiters vom 2026-09-28: Die Feature-Flags stehen nicht in der Originalanforderung (`issue.md`), sondern sind ein Übersetzungsartefakt. Ein zusätzlicher Schaltmechanismus hätte in 1.0 keinen fachlichen Nutzen. |
 | Windows-Auslieferung | Für Windows gibt es keinen Installer (weder MSIX noch Setup.exe). Als Windows-Stände genügen die startfähigen Zwischenstände unter `review-versions/` und die CI-Release-Artefakte: ein gezipptes Build, das nach dem Entpacken ohne Installation startet. | Entscheidung des Projektleiters vom 2026-09-28: Laut Anforderung ist Windows Entwicklungs- und Testplattform. Der Installer steht nicht in der Originalanforderung, sondern stammt aus der Übersetzung. |
 | App-Anzeigename | Der für Anwender sichtbare Name der App lautet „Tankatlas“ (iOS-Homescreen/`CFBundleDisplayName`, Fenstertitel, Texte in der App, Anwenderdokumentation). Bundle-ID (`de.martinstromberg.tankradar`), Projekt-, Namespace- und Repository-Namen bleiben unverändert. Umsetzung als eigener Schritt 3a; alle folgenden Schritte verwenden den neuen Namen. | Stakeholder-Entscheidung vom 2026-10-04. |
+| Suchradius | Der einstellbare Suchradius reicht von 1 bis 25 km (Standard 5 km); gemäß Designentwurf wird er über Chips mit den Stufen 1, 2, 5, 10, 15 und 25 km gewählt. 25 km ist die Obergrenze der Tankerkönig-Umkreissuche; mehrere zusammengeführte Abfragen für größere Radien werden nicht umgesetzt. | Entscheidung des Projektleiters vom 2026-10-05 (Empfehlung an den Stakeholder, bis auf Widerruf): Die Anforderung nennt „z. B. 5–50 km“ nur beispielhaft; mehrere Abfragen pro Suche würden das Kontingent und die Nutzungsbedingungen des Dienstes stärker belasten. |
+| Oberflächentests als Auslieferungs-Gate | Jede Auslieferung (Pre-Release/Release) erfolgt nur mit vollständig grünen Tests einschließlich der FlaUI-E2E-Tests: In der PR-CI nach `staging` sind die E2E-Tests blockierend (bewusste Abweichung von „best-effort“ der CI-Vorlage). Lokal sollen E2E-Läufe den Anwender möglichst nicht stören (nicht im pre-push-Hook standardmäßig; Fenster nach Möglichkeit außerhalb des sichtbaren Bereichs ohne Fokus) — aber nur, soweit die Zuverlässigkeit erhalten bleibt. | Stakeholder-Entscheidung vom 2026-10-05: „wir müssen aber zusehen, dass die tests am ende jeder auslieferung immer erfolgreich sind. wenn die einschränkungen das nicht mehr zuverlässig sicherstellen, dann belassen wir es wie es ist, ansonsten gerne wie vorgeschlagen einschränken“. |
 | Sprache | Die Oberfläche ist deutsch. Oberflächentexte werden zentral gepflegt, damit die Übersetzungsprüfung der Git-Hooks greift. | Zielgruppe und Designentwurf sind deutsch. |
 
 ## Entwicklungsschritte
@@ -271,6 +273,33 @@ Suchablauf mit Testdaten ab. Nach Abschluss wird ein startfähiger Windows-Zwisc
 **Abhängigkeiten:** 4, 5
 
 **Betroffene Bereiche:** Suche, Standort, Datenschutz, Ergebnisdarstellung
+
+### Schritt 6a: Oberflächentests als Auslieferungs-Gate, ohne den Anwender zu stören
+
+**Beschreibung:** Jede Auslieferung von Tankatlas (Pre-Release auf `staging`, Release auf `main`)
+soll nur mit vollständig grünen Tests erfolgen, einschließlich der FlaUI-Oberflächentests unter
+Windows. Bisher laufen die Oberflächentests in der CI nach der Vorlage nur als „best-effort“: Ein
+Fehlschlag erzeugt eine Warnung, verhindert aber weder Merge noch Release. Künftig sind sie in der
+PR-CI nach `staging` blockierend; dies wird als bewusste Abweichung von der CI-Vorlage dokumentiert.
+Die vorhandenen Diagnose-Artefakte und die begrenzte Wiederholung bei UI-Automation-Timeouts
+bleiben erhalten.
+
+Gleichzeitig sollen lokale Testläufe den Anwender bei seiner Arbeit möglichst nicht stören. Der
+`pre-push`-Hook führt die Oberflächentests standardmäßig nicht mehr aus (Unit- und
+Integrationstests weiterhin); per Umgebungsvariable lassen sie sich dort einschalten. Der lokale
+Prüflauf `scripts/local-ci.ps1` führt sie weiterhin aus. Im Testmodus startet die App ihr Fenster
+außerhalb des sichtbaren Bildschirmbereichs und ohne sich in den Vordergrund zu holen; die Tests
+bedienen die App dafür ausschließlich über UI-Automation-Muster (Auslösen, Auswählen, Werte setzen,
+Scrollen) statt über Mausklicks. Diagnose-Screenshots bei Fehlschlägen werden direkt vom
+App-Fenster aufgenommen. Diese Betriebsart wird nur übernommen, wenn sie nachweislich genauso
+stabil ist wie der bisherige Betrieb im Vordergrund (mindestens fünf vollständig grüne Läufe
+hintereinander, lokal und in der CI); andernfalls bleibt der bisherige Vordergrundbetrieb bestehen,
+und nur die übrigen Einschränkungen gelten. Die Entscheidung und ihr Nachweis werden in der
+Projektdokumentation festgehalten.
+
+**Abhängigkeiten:** 3, 6
+
+**Betroffene Bereiche:** E2E-Tests, CI, Git-Hooks, Entwicklungsprozess
 
 ### Schritt 7: Suche nach Adresse, Ort oder PLZ
 

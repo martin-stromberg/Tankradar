@@ -6,6 +6,10 @@ aus, damit kein Build parallel zu laufenden E2E-Tests stattfindet (Dateisperre a
 der App-EXE). Blockiert den Push, wenn Build oder Tests fehlschlagen oder das
 Gesamt-Zeitlimit (Standard: 10 Minuten) überschritten wird.
 
+Oberflächentests (E2E, FlaUI): Sie laufen im Pre-Push-Hook standardmäßig NICHT, damit der Anwender
+beim Pushen nicht gestört wird (Unit- und Integrationstests laufen weiterhin). Mit PRE_PUSH_E2E=1
+werden sie wieder mitgeführt. Der lokale Prüflauf scripts/local-ci.ps1 und die PR-CI führen sie aus.
+
 Notfall-Fallback: HOOK_SKIP_TESTS=1 überspringt die Testausführung (mit
 Warnung auf stderr). TEST_TIMEOUT_SECONDS überschreibt das Zeitlimit.
 
@@ -22,6 +26,31 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 DEFAULT_TIMEOUT_SECONDS = 10 * 60
+E2E_ENV_VARIABLE = 'PRE_PUSH_E2E'
+_IGNORED_DIRECTORIES = {'bin', 'obj', 'node_modules', '.git', 'TestResults'}
+
+
+def e2e_enabled():
+    return os.environ.get(E2E_ENV_VARIABLE, '').strip() == '1'
+
+
+def test_targets(root, solution):
+    """Liefert die Ziele für 'dotnet test': mit PRE_PUSH_E2E=1 die Solution, sonst alle Testprojekte ohne E2E.
+
+    Als Testprojekt gilt ein Projekt, dessen Dateiname 'Tests' enthält; ein Projekt mit 'E2E' im Namen ist ein
+    Oberflächentestprojekt. Findet sich kein Testprojekt, wird die Solution getestet.
+    """
+    if e2e_enabled():
+        return [solution]
+    projects = []
+    for path in sorted(root.rglob('*.csproj')):
+        relative_parts = path.relative_to(root).parts[:-1]
+        if any(part in _IGNORED_DIRECTORIES for part in relative_parts):
+            continue
+        name = path.stem.lower()
+        if 'tests' in name and 'e2e' not in name:
+            projects.append(path)
+    return projects or [solution]
 
 
 def timeout_seconds():
@@ -49,13 +78,16 @@ def main():
         return 0
 
     timeout = timeout_seconds()
-    print(f'Führe "dotnet build" und "dotnet test --no-build" für {solution.name} aus (Timeout gesamt: {timeout}s)...')
+    targets = test_targets(root, solution)
+    if e2e_enabled():
+        print(f'Hinweis: {E2E_ENV_VARIABLE}=1 - Oberflächentests (E2E) werden mit ausgeführt.')
+    else:
+        print(f'Hinweis: Oberflächentests (E2E) werden im Pre-Push-Hook übersprungen (mit {E2E_ENV_VARIABLE}=1 einschaltbar).')
+    print(f'Führe "dotnet build" und "dotnet test --no-build" für {", ".join(t.name for t in targets)} aus (Timeout gesamt: {timeout}s)...')
 
     start = time.monotonic()
-    commands = [
-        ['dotnet', 'build', str(solution), '--nologo', '--verbosity', 'quiet'],
-        ['dotnet', 'test', str(solution), '--no-build', '--nologo', '--verbosity', 'quiet'],
-    ]
+    commands = [['dotnet', 'build', str(solution), '--nologo', '--verbosity', 'quiet']]
+    commands += [['dotnet', 'test', str(target), '--no-build', '--nologo', '--verbosity', 'quiet'] for target in targets]
     result = None
     for command in commands:
         remaining = max(1, timeout - (time.monotonic() - start))

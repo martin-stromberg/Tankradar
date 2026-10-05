@@ -25,4 +25,4 @@
 
 ## Offline
 
-Ohne Verbindung zeigt Tankatlas die zuletzt gespeicherten Preise samt Alter („vor X Min.“). Sobald die Verbindung wieder besteht, werden veraltete Preise von den Ansichten aktualisiert (ab dem Schritt, in dem Suche und Favoriten die Preise anzeigen).
+Ohne Verbindung zeigt Tankatlas die zuletzt gespeicherten Preise samt Alter („vor X Min.“). Sobald die Verbindung wieder besteht, werden veraltete Preise von den Ansichten aktualisiert (die Umkreissuche zeigt sie mit Alter und Offline-Hinweis, siehe [Umkreissuche](../Suche/index.md)).

@@ -4,7 +4,7 @@
 
 ## Zweck
 
-Die Preisdaten sind die Grundlage für Suche, Detailansicht und Favoriten (folgende Entwicklungsschritte). In diesem Schritt entstehen der Abruf, der lokale Preis-Cache, der Offline-Betrieb und die Verbindungserkennung. Sichtbar ist davon im Bereich **Optionen** die Karte **Datenquelle**.
+Die Preisdaten sind die Grundlage für die [Umkreissuche](../Suche/index.md) sowie für Detailansicht und Favoriten (folgende Entwicklungsschritte). Sie umfassen den Abruf, den lokalen Preis-Cache, den Offline-Betrieb und die Verbindungserkennung. Sichtbar ist davon im Bereich **Optionen** die Karte **Datenquelle** und im Bereich **Karte** das Preisalter in der Ergebnisliste.
 
 ## Funktionsweise
 
