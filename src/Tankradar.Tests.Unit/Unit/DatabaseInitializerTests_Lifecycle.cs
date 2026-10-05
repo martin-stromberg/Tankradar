@@ -64,7 +64,7 @@ public class DatabaseInitializerTests_Lifecycle : BaseTest
 
         await _initializer.InitializeAsync();
 
-        Assert.Equal(2, appliedAtProtect);
+        Assert.Equal(3, appliedAtProtect);
         Assert.Equal(Path.Combine(Path.GetTempPath(), "tankatlas.db"), _protector.ProtectedPaths.Single());
     }
 

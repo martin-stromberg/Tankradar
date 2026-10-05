@@ -1,3 +1,19 @@
+## 2026-10-05 — Preis-API: Schlüsselabgleich und Testisolation (Tankradar Schritt 5, Nachbesserung, Version 0.1.6)
+
+- Ein neuer oder rotierter Build-Schlüssel setzt sich bei bestehenden Installationen durch: Weicht er vom gespeicherten ab, wird die sichere Ablage (Credential Locker bzw. Keychain) beim Start aktualisiert; ohne Build-Schlüssel gilt weiter der gespeicherte
+- Testmodus (Fail Secure): Ohne `TANKRADAR_PRICE_API_URL` verweigert die App den Preisabruf mit klarer Meldung statt den produktiven Endpunkt anzusprechen; der API-Schlüssel liegt im Testmodus in einer isolierten Ablage im Speicher, nie im echten Credential Locker bzw. in der Keychain
+
+## 2026-10-05 — Kraftstoffpreis-API und Preis-Cache (Tankradar Schritt 5, Version 0.1.5)
+
+- Abruf von Tankstellen im Umkreis (nach Spritsorten) und von Tankstellendetails über die Tankerkönig-API (Daten der MTS-K); ausschließlich HTTPS, Zeitlimit je Anfrage, bis zu drei Versuche mit zunehmender Wartezeit, Mindestabstand zwischen Anfragen und kurzzeitiger Cache gegen Mehrfachabrufe; Angaben, die die Quelle nicht liefert, werden nicht erfunden, „Automatentankstelle“ wird aus durchgehenden Öffnungszeiten abgeleitet
+- Lokaler Preis-Cache in der SQLite-Datenbank (Migration `AddPriceCache`, nur neue Tabellen `Stations` und `PriceEntries`; bestehende Daten bleiben erhalten): jeder abgerufene Preis mit Zeitstempel, ältere Stände bleiben erhalten; Aktualität nur aus dem Zeitstempel (ab 60 Minuten veraltet, „vor X Min.“, „Preis unbestätigt“)
+- Offline-Betrieb: Ohne Verbindung, bei nicht erreichbarem Dienst oder fehlendem/abgelehntem Schlüssel liefert die App die zuletzt bekannten Preise samt Alter statt eines Fehlers; Verbindungserkennung mit Ereignis „Verbindung wiederhergestellt“
+- API-Schlüssel nie im Quellcode: Build aus `TANKRADAR_FUEL_PRICE_API_KEY` (CI-Secret `FUEL_PRICE_API_KEY`) oder nicht versionierter `tankerkoenig.local.props`; zur Laufzeit in Keychain (iOS) bzw. Credential Locker (Windows)
+- Optionen: neue Karte „Datenquelle“ mit Quellenangabe „Daten: Tankerkönig / MTS-K“ (CC BY 4.0), Schlüsselstatus und Prüfung der Verbindung zum Preisdienst
+- Tests: Mock-Server für die Tankerkönig-API (`MockTankerkoenigServer`), Unit-, Integrations- und FlaUI-E2E-Tests (inkl. Start mit nicht erreichbarem Preisdienst); keine Tests gegen produktive Endpunkte
+- E2E-Testbasis: Aufbau der UI-Automation, Abfrage des Hauptfensters und Reitersuche werden bei vorübergehendem UIA-Timeout (`TimeoutException`, COMException 0x80131505) höchstens dreimal wiederholt und melden danach klar; andere Fehler bleiben sichtbar
+- Neue Anwenderdokumentation unter `docs/help/Preisdaten/`; Hinweis: Der Suchradius der Quelle ist auf 25 km begrenzt
+
 ## 2026-10-04 — Lokale Datenhaltung und Einstellungen (Tankradar Schritt 4, Version 0.1.3)
 
 - Neue lokale SQLite-Datenbank (`tankatlas.db`) über Entity Framework Core 10.0.10; Anlage beim ersten Start und Aktualisierung bei App-Updates per Migrationen ohne Datenverlust (`InitialCreate`, `AddFuelTypeSettings`); Pfad ausschließlich über `IAppDataPathProvider` (Testisolation über `TEST_DATA_PATH`)

@@ -153,6 +153,38 @@
                     </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasDataSource}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding DataSource}" x:DataType="vm:DataSourceViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding Attribution}"
+                           Style="{StaticResource body-lg}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Attribution" />
+                    <Label Text="{Binding License}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <Label Text="{Binding KeyStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.PriceService.KeyStatus" />
+                    <Button Text="{Binding CheckButtonText}"
+                            Command="{Binding CheckCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                            BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                            TextColor="White"
+                            AutomationId="Settings.PriceService.Check" />
+                    <Label Text="{Binding CheckStatus}"
+                           IsVisible="{Binding HasCheckStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.PriceService.Status" />
+                </VerticalStackLayout>
+            </Border>
         </VerticalStackLayout>
     </ScrollView>
 

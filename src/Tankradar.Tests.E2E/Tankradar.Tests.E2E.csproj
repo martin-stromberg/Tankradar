@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
+    <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
+    <Compile Include="..\TestSupport\MockTankerkoenigServer.cs" Link="TestSupport\MockTankerkoenigServer.cs" />
   </ItemGroup>
 
 </Project>
