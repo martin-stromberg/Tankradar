@@ -14,7 +14,7 @@
 | Code-Formatierung | pre-commit, pre-push (`--strict`) | blockierend | `dotnet format --verify-no-changes` | `format-code-style-check.py` |
 | Verbotene Muster / Secrets | pre-commit, pre-push (`--all --strict`) | blockierend | API-Schlüssel, Zertifikate, Signierungsdaten, DB-Dumps, Logdateien | `forbidden-patterns-check.py` |
 | Commit-Nachrichten-Format | pre-push | blockierend | Conventional-Commits-Format für gepushte Commits | `conventional-commits-check.py` |
-| Testausführung | pre-push | blockierend | `dotnet build` + `dotnet test --no-build` (Timeout 10 Min.) | `test-execution-check.py` |
+| Testausführung | pre-push | blockierend | `dotnet build` + `dotnet test --no-build` für Unit/Integration, E2E nur mit `PRE_PUSH_E2E=1` (Timeout 10 Min.) | `test-execution-check.py` |
 
 ## Branch-Schutz
 
@@ -184,9 +184,15 @@ Rebase (`git rebase -i`) korrigieren.
 ## test-execution-check.py
 
 Baut die Solution einmal (`dotnet build <Solution> --nologo --verbosity quiet`) und führt
-danach `dotnet test <Solution> --no-build --nologo --verbosity quiet` aus. So läuft kein Build
+danach `dotnet test <Projekt> --no-build --nologo --verbosity quiet` für jedes Testprojekt aus. So läuft kein Build
 parallel zu den E2E-Tests (die App-EXE wäre sonst gesperrt, MSB3027). Der Push wird blockiert,
 wenn Build oder Tests fehlschlagen oder ein Zeitlimit überschritten wird.
+
+- **Oberflächentests (E2E) laufen standardmäßig nicht:** Damit das Pushen den Anwender nicht stört, werden
+  Testprojekte mit `E2E` im Namen übersprungen (Unit- und Integrationstests laufen). Mit
+  `PRE_PUSH_E2E=1 git push ...` wird stattdessen die gesamte Solution getestet, einschließlich E2E. Die
+  E2E-Tests sichern die Auslieferung in der PR-CI nach `staging` (blockierend) und lokal über
+  `scripts/local-ci.ps1` ab.
 
 - **Timeout:** 10 Minuten gesamt für Build und Tests (Standard), überschreibbar über die Umgebungsvariable
   `TEST_TIMEOUT_SECONDS=<Sekunden>`.

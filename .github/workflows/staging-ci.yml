@@ -145,18 +145,6 @@ jobs:
           --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
           --logger "trx;LogFileName=test-results-integration.trx" --logger "console;verbosity=normal"
 
-      - name: Test E2E with FlaUI (best-effort)
-        id: e2e
-        continue-on-error: true
-        run: >
-          dotnet test src/Tankradar.Tests.E2E --configuration Release --no-build
-          --results-directory TestResults
-          --logger "trx;LogFileName=test-results-e2e.trx" --logger "console;verbosity=normal"
-
-      - name: Report E2E result
-        if: steps.e2e.outcome == 'failure'
-        run: echo "::warning::Die FlaUI-E2E-Tests sind fehlgeschlagen (best-effort, blockiert nicht). Siehe Artefakt test-results-staging."
-
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool --version 5.5.11
 
@@ -165,6 +153,20 @@ jobs:
 
       - name: Enforce coverage threshold
         run: node scripts/check-coverage.mjs coverage-report/Summary.txt "$COVERAGE_THRESHOLD"
+
+      - name: Test E2E with FlaUI (blocking)
+        # Blockierend (bewusste Abweichung von der CI-Vorlage, Abschnitt 4: dort best-effort): Eine Auslieferung erfolgt nur mit
+        # vollständig grünen Tests. Der Schritt steht nach der Coverage-Prüfung, damit deren Ergebnis auch bei einem E2E-Fehlschlag
+        # vorliegt; kein Coverage-Collector (die UI-Tests dürfen die Abdeckung nicht verwässern). Die App läuft im Testmodus
+        # außerhalb des sichtbaren Bildschirmbereichs (Off-Screen); Rückfall auf den Vordergrundbetrieb ohne Codeänderung über die
+        # Repository-Variable TANKRADAR_E2E_WINDOW=foreground. Diagnose-Artefakte und die begrenzte Wiederholung bei UI-Automation-
+        # Timeouts (TransientRetry) bleiben erhalten.
+        env:
+          TANKRADAR_E2E_WINDOW: ${{ vars.TANKRADAR_E2E_WINDOW || 'offscreen' }}
+        run: >
+          dotnet test src/Tankradar.Tests.E2E --configuration Release --no-build
+          --results-directory TestResults
+          --logger "trx;LogFileName=test-results-e2e.trx" --logger "console;verbosity=normal"
 
       - name: Upload coverage report
         if: always()
@@ -184,7 +186,7 @@ jobs:
 
       - name: Upload E2E diagnostics
         # Screenshot, UI-Automation-Baum und Fehlerbeschreibung fehlgeschlagener FlaUI-Tests (Vorlage 11.4).
-        # if: always(), damit auch bei best-effort-Läufen Diagnosematerial erhalten bleibt.
+        # if: always(), damit auch bei fehlgeschlagenen Läufen Diagnosematerial erhalten bleibt.
         if: always()
         uses: actions/upload-artifact@v7
         with:

@@ -12,13 +12,14 @@ Pipeline auf dem Entwicklungsrechner aus.
 - Node.js 22 oder neuer (Skripttests, Abdeckungsprüfung)
 - Python 3 mit PyYAML (Workflow-Validierung); optional `actionlint` im `PATH` für tiefergehende Prüfung
 - PowerShell 7 (`pwsh`) oder Windows PowerShell
-- Für die E2E-Tests eine interaktive Windows-Sitzung
+- Für die E2E-Tests eine angemeldete Windows-Sitzung (die App läuft im Testmodus außerhalb des sichtbaren Bildschirms und stört die Arbeit nicht)
 
 ## Aufruf
 
 ```powershell
 .\scripts\local-ci.ps1                                  # alles
 .\scripts\local-ci.ps1 -SkipE2E -SkipSecurityScan       # schneller bzw. offline
+.\scripts\local-ci.ps1 -E2EForeground                  # Rückfall: E2E-Tests mit sichtbarem Fenster im Vordergrund
 .\scripts\local-ci.ps1 -Package -PackageVersion 0.1.0   # zusätzlich Windows-Paket unter artifacts\
 ```
 
@@ -31,7 +32,7 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Sicherheitsprüfung der Abhängigkeiten (JSON-Auswertung über `scripts/check-vulnerabilities.mjs`, unabhängig von der Sprache des .NET SDK; gleiche Logik wie in der CI) | `Security scan` |
 | Statische Analyse (Windows-Job-Simulation: nur Windows-Ziel, Warnungen als Fehler) | `Static analysis` |
 | Unit- und Integrationstests mit Coverage, Mindestabdeckung 70 % | `Test …` / `Enforce coverage threshold` |
-| FlaUI-E2E-Tests (best-effort, Fehlschlag = Warnung) | `Test E2E with FlaUI (best-effort)` |
+| FlaUI-E2E-Tests (blockierend, Off-Screen-Betrieb) | `Test E2E with FlaUI (blocking)` |
 | Windows-Paket (`-Package`) | `Build and package` |
 | iOS-Compile-Prüfung (`net10.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
 

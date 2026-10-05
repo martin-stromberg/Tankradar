@@ -61,23 +61,59 @@ Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion) laufen auf `ubuntu-
   `msTools.Updater` nicht.
 - **Plattformen:** `windows-latest`/`macos-latest` statt `ubuntu-latest` für Build und Tests.
 - **Testprojekte:** Unit, Integration und E2E laufen getrennt; nur Unit und Integration fließen in die
-  Coverage ein, E2E ist best-effort (Vorlage: „best-effort test category“).
+  Coverage ein. E2E ist abweichend von der Vorlage („best-effort test category“) **blockierend**, siehe
+  [E2E-Tests als Auslieferungs-Gate](#e2e-tests-als-auslieferungs-gate).
 - **Restore:** `dotnet restore` läuft mit `-p:Configuration=Release`, weil die MacCatalyst-Laufzeiten
   konfigurationsabhängig sind; `dotnet list package` läuft deshalb mit `--no-restore`.
 
+## E2E-Tests als Auslieferungs-Gate
+
+**Abweichung von der CI-Vorlage:** Die Vorlage führt UI-Tests als *best-effort* (Fehlschlag nur Warnung).
+Tankatlas liefert nur mit vollständig grünen Tests aus. Deshalb ist der Schritt `Test E2E with FlaUI (blocking)`
+in `pr-staging-ci.yml` (PR nach `staging`) **und** in `staging-ci.yml` (vor Version, Pre-Release und iOS-Upload;
+`version` hängt per `needs` an `build-and-test`) blockierend: kein `continue-on-error`, ein Fehlschlag lässt den
+Job und damit PR-Merge bzw. Pre-Release scheitern. Der Schritt steht hinter der Coverage-Prüfung, damit deren
+Ergebnis auch bei einem E2E-Fehlschlag vorliegt; Diagnose-Artefakte (`if: always()`) und die begrenzte
+Wiederholung bei UI-Automation-Timeouts (`TransientRetry`) bleiben erhalten. Das Release auf `main` entsteht aus
+einem bereits geprüften `staging`-Stand.
+
+**Lokal stören die Tests den Anwender nicht:**
+
+- `pre-push` führt die E2E-Tests standardmäßig **nicht** mehr aus (Unit- und Integrationstests weiterhin);
+  `PRE_PUSH_E2E=1 git push ...` schaltet sie ein (siehe [`checks.md`](../git-hooks/checks.md#test-execution-checkpy)).
+- `scripts/local-ci.ps1` führt sie weiterhin aus (blockierend).
+- **Off-Screen-Betrieb:** Im Testmodus (`TANKATLAS_TEST_DATA_PATH`) startet die App ihr Fenster bei
+  `TANKATLAS_TEST_WINDOW=offscreen` außerhalb des Bildschirms (Position -32000/-32000), als nicht aktivierbares
+  Werkzeugfenster ohne Taskleisteneintrag und ohne sich in den Vordergrund zu holen
+  (`TestWindowMode`, `Platforms/Windows/OffscreenWindow.cs`). Außerhalb des Testmodus hat die Variable nie eine
+  Wirkung. Die Testbasis setzt sie standardmäßig; die Tests bedienen die App ausschließlich über
+  UI-Automation-Muster (Invoke, Toggle, SelectionItem), nie per Mausklick. Diagnose-Screenshots nimmt
+  `E2EDiagnostics` direkt vom App-Fenster auf (`PrintWindow`), sodass sie auch off-screen Inhalt zeigen.
+- **Rückfall auf den Vordergrundbetrieb ohne Codeänderung:** lokal `TANKRADAR_E2E_WINDOW=foreground` bzw.
+  `local-ci.ps1 -E2EForeground`; in der CI die Repository-Variable `TANKRADAR_E2E_WINDOW=foreground`.
+
+**Entscheidung und Nachweis (Schritt 6a):** Der Off-Screen-Betrieb wurde übernommen, weil er lokal nachweislich genauso stabil ist wie der Vordergrundbetrieb:
+sechs vollständig grüne Läufe hintereinander (je 33 von 33 E2E-Tests, 1 min 43 s bis 1 min 58 s) im Off-Screen-Betrieb
+auf dem Entwicklungsrechner (Windows 11), während der Anwender parallel arbeitete; zusätzlich ein grüner Lauf über
+`scripts/local-ci.ps1`. Eine Prüfung bestätigte, dass das Fenster bei (-32000, -32000) liegt und der Vordergrund
+unverändert bleibt. Der Nachweis in der CI steht noch aus und erfolgt im Pull Request (mindestens fünf grüne Läufe
+hintereinander auf den gehosteten Runnern). Ist der Off-Screen-Betrieb dort nicht genauso stabil, wird die
+Repository-Variable `TANKRADAR_E2E_WINDOW=foreground` gesetzt (bisheriger Vordergrundbetrieb); die übrigen Punkte
+(blockierende E2E in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben in jedem Fall bestehen.
+
 ## E2E-Diagnosedaten
 
-Die FlaUI-E2E-Tests sind best-effort; damit ein Fehlschlag trotzdem nachvollziehbar bleibt, erfasst die
+Zur Nachvollziehbarkeit eines Fehlschlags erfasst die
 Testbasis (`E2ETestBase.RunWithDiagnostics`, `E2EDiagnostics`) bei einem fehlgeschlagenen Test pro Test:
 
-- `<Testklasse>.<Test>.png` – Screenshot des App-Fensters (bei Startfehlern des gesamten Bildschirms),
+- `<Testklasse>.<Test>.png` – Screenshot, direkt vom App-Fenster aufgenommen (auch im Off-Screen-Betrieb; bei Startfehlern des gesamten Bildschirms),
 - `<Testklasse>.<Test>.uitree.txt` – Dump des UI-Automation-Baums (Typ, Name, AutomationId, Klasse, Position),
 - `<Testklasse>.<Test>.error.txt` – Fehlermeldung samt Stacktrace und Zustand des App-Prozesses.
 
 Die Dateien liegen im Verzeichnis `e2e-diagnostics/` im Repository-Root (überschreibbar über die
 Umgebungsvariable `TANKRADAR_E2E_DIAGNOSTICS_DIR`); es ist nicht versioniert. Beide CI-Workflows
 (`pr-staging-ci.yml`, `staging-ci.yml`) laden es im Schritt `Upload E2E diagnostics` mit `if: always()` als
-Artefakt `e2e-diagnostics-pr` bzw. `e2e-diagnostics-staging` hoch, also auch bei best-effort-Fehlschlägen.
+Artefakt `e2e-diagnostics-pr` bzw. `e2e-diagnostics-staging` hoch, also auch bei Fehlschlägen.
 Neue E2E-Tests kapseln ihren Testkörper dafür in `RunWithDiagnostics(...)`.
 
 ## Erkennung von Rückführungen (Back-Merge)

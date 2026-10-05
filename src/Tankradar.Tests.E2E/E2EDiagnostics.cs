@@ -1,3 +1,6 @@
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Text;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
@@ -77,7 +80,13 @@ public static class E2EDiagnostics
         var screenshotPath = Path.Combine(directory, baseName + ".png");
         TryWrite(created, screenshotPath, () =>
         {
-            using var image = window is not null ? FlaUI.Core.Capturing.Capture.Element(window) : FlaUI.Core.Capturing.Capture.Screen();
+            if (window is not null && TryCaptureWindow(window, screenshotPath))
+            {
+                return;
+            }
+
+            // Ohne Fenster (Startfehler) bzw. wenn die direkte Fensteraufnahme scheitert: Bildschirmaufnahme.
+            using var image = FlaUI.Core.Capturing.Capture.Screen();
             image.ToFile(screenshotPath);
         });
 
@@ -89,6 +98,74 @@ public static class E2EDiagnostics
 
         return created;
     }
+
+    /// <summary>
+    /// Nimmt das App-Fenster direkt auf (PrintWindow mit vollem Inhalt), unabhängig davon, wo es liegt; so entstehen auch im
+    /// Off-Screen-Betrieb (Fenster außerhalb des Bildschirms) brauchbare Screenshots.
+    /// </summary>
+    /// <param name="window">Das App-Fenster.</param>
+    /// <param name="path">Zieldatei (PNG).</param>
+    /// <returns><see langword="true"/>, wenn das Bild erzeugt wurde.</returns>
+    private static bool TryCaptureWindow(Window window, string path)
+    {
+        var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
+        if (handle == IntPtr.Zero || IsIconic(handle) || !GetWindowRect(handle, out var rect))
+        {
+            return false;
+        }
+
+        var width = rect.Right - rect.Left;
+        var height = rect.Bottom - rect.Top;
+        if (width < MinimumCaptureSize || height < MinimumCaptureSize)
+        {
+            // Zu klein (z. B. minimiert oder noch nicht aufgebaut): Fallback auf die Bildschirmaufnahme.
+            return false;
+        }
+
+        using var bitmap = new Bitmap(width, height);
+        using (var graphics = Graphics.FromImage(bitmap))
+        {
+            var deviceContext = graphics.GetHdc();
+            try
+            {
+                if (!PrintWindow(handle, deviceContext, PwRenderFullContent))
+                {
+                    return false;
+                }
+            }
+            finally
+            {
+                graphics.ReleaseHdc(deviceContext);
+            }
+        }
+
+        bitmap.Save(path, ImageFormat.Png);
+        return true;
+    }
+
+    private const uint PwRenderFullContent = 0x00000002;
+    private const int MinimumCaptureSize = 100;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint flags);
 
     /// <summary>
     /// Erzeugt eine textuelle Darstellung des UI-Automation-Baums ab dem übergebenen Element.
