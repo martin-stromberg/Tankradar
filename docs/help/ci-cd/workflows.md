@@ -77,6 +77,12 @@ Ergebnis auch bei einem E2E-Fehlschlag vorliegt; Diagnose-Artefakte (`if: always
 Wiederholung bei UI-Automation-Timeouts (`TransientRetry`) bleiben erhalten. Das Release auf `main` entsteht aus
 einem bereits geprüften `staging`-Stand.
 
+`TransientRetry` wiederholt (höchstens drei Versuche) nur UIA-Timeouts: `TimeoutException`, `COMException` 0x80131505
+und `Win32Exception` mit ERROR_TIMEOUT (1460 bzw. 0x800705B4, so aus `UIA3Automation.FromHandle` beim Abfragen des
+Hauptfensters auf dem Runner beobachtet). Alle anderen Fehler werden sofort und unverändert gemeldet. Das Aufräumen
+nach einem fehlgeschlagenen App-Start (`Dispose`/`Cleanup` der Testbasen) ist null-sicher, damit die ursprüngliche
+Startausnahme im Testergebnis sichtbar bleibt und nicht von einer `NullReferenceException` verdeckt wird.
+
 **Lokal stören die Tests den Anwender nicht:**
 
 - `pre-push` führt die E2E-Tests standardmäßig **nicht** mehr aus (Unit- und Integrationstests weiterhin);

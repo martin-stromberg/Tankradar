@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Tankradar.TestSupport;
 
@@ -142,5 +143,53 @@ public class TransientRetryTests_Behavior : BaseTest
         TransientRetry.Run(() => calls++, "Test", maxAttempts: 0, sleep: Sleep);
 
         Assert.Equal(1, calls);
+    }
+
+    /// <summary>
+    /// Prüft, dass der Windows-Timeout 0x800705B4 (ERROR_TIMEOUT, als Win32Exception aus UIA3Automation.FromHandle), in beiden Darstellungen, wiederholt wird.
+    /// </summary>
+    /// <param name="nativeErrorCode">Der Fehlercode der Win32Exception.</param>
+    [Theory]
+    [InlineData(1460)]
+    [InlineData(unchecked((int)0x800705B4))]
+    public void Run_Win32TimeoutException_IsRetried(int nativeErrorCode)
+    {
+        var calls = 0;
+
+        TransientRetry.Run(
+            () =>
+            {
+                if (++calls == 1)
+                {
+                    throw new Win32Exception(nativeErrorCode);
+                }
+            },
+            "Test",
+            sleep: Sleep);
+
+        Assert.Equal(2, calls);
+        Assert.True(TransientRetry.IsTransient(new InvalidOperationException("außen", new Win32Exception(nativeErrorCode))));
+    }
+
+    /// <summary>
+    /// Prüft, dass andere Win32-Fehler (z. B. Zugriff verweigert, E_FAIL) nicht wiederholt werden.
+    /// </summary>
+    /// <param name="nativeErrorCode">Der Fehlercode der Win32Exception.</param>
+    [Theory]
+    [InlineData(5)]
+    [InlineData(2)]
+    [InlineData(unchecked((int)0x80004005))]
+    public void Run_OtherWin32Exception_PropagatesImmediately(int nativeErrorCode)
+    {
+        var calls = 0;
+
+        Assert.Throws<Win32Exception>(() => TransientRetry.Run<int>(() =>
+        {
+            calls++;
+            throw new Win32Exception(nativeErrorCode);
+        }, "Test", sleep: Sleep));
+
+        Assert.Equal(1, calls);
+        Assert.Empty(_sleeps);
     }
 }

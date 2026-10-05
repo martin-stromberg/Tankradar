@@ -257,6 +257,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <inheritdoc />
     protected override void Cleanup()
     {
-        Server.Dispose();
+        // Bei einem fehlgeschlagenen Start ist der Server evtl. noch nicht zugewiesen (Basiskonstruktor abgebrochen).
+        ((IDisposable?)Server)?.Dispose();
     }
 }
