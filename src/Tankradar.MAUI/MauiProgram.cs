@@ -82,9 +82,13 @@ public static class MauiProgram
             return client;
         });
 #if WINDOWS
-        services.AddSingleton<IApiKeyStore, Platforms.Windows.CredentialLockerApiKeyStore>();
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new Platforms.Windows.CredentialLockerApiKeyStore()));
 #else
-        services.AddSingleton<IApiKeyStore, SecureStorageApiKeyStore>();
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new SecureStorageApiKeyStore()));
 #endif
         services.AddSingleton<IApiKeyProvider>(provider => new ApiKeyProvider(
             provider.GetRequiredService<IApiKeyStore>(),

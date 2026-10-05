@@ -36,8 +36,8 @@ public interface IApiKeyProvider
 }
 
 /// <summary>
-/// Ermittelt den API-Schlüssel: Im Testmodus aus einer Umgebungsvariable (nie gespeichert), sonst aus der sicheren Ablage;
-/// ist dort keiner, wird der beim Build mitgegebene Schlüssel einmalig in die sichere Ablage übernommen.
+/// Ermittelt den API-Schlüssel: Im Testmodus aus einer Umgebungsvariable (nie gespeichert), sonst der beim Build mitgegebene Schlüssel
+/// (maßgeblich; weicht er vom gespeicherten ab, wird die sichere Ablage aktualisiert), andernfalls der gespeicherte Schlüssel.
 /// </summary>
 public sealed class ApiKeyProvider : IApiKeyProvider
 {
@@ -86,38 +86,84 @@ public sealed class ApiKeyProvider : IApiKeyProvider
     public async Task<string?> GetApiKeyAsync()
     {
         var testMode = !string.IsNullOrWhiteSpace(_getEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable));
-        if (testMode && _getEnvironmentVariable(PriceApiOptions.ApiKeyEnvironmentVariable) is { Length: > 0 } testKey)
+        if (testMode)
         {
-            return testKey;
+            // Im Testmodus nie der echte Build-Schlüssel: nur der Test-Schlüssel aus der Umgebung.
+            return _getEnvironmentVariable(PriceApiOptions.ApiKeyEnvironmentVariable) is { Length: > 0 } testKey ? testKey.Trim() : null;
         }
 
+        string? stored = null;
         try
         {
-            if (await _store.GetAsync().ConfigureAwait(false) is { Length: > 0 } stored)
-            {
-                return stored;
-            }
+            stored = await _store.GetAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Die sichere Ablage konnte nicht gelesen werden.");
         }
 
-        var buildKey = _buildTimeKey();
+        var buildKey = _buildTimeKey()?.Trim();
         if (string.IsNullOrWhiteSpace(buildKey))
         {
-            return null;
+            return string.IsNullOrEmpty(stored) ? null : stored;
         }
 
-        try
+        // Der Build-Schlüssel ist maßgeblich: Weicht er vom gespeicherten ab (neu oder rotiert), wird die Ablage aktualisiert.
+        if (!string.Equals(stored, buildKey, StringComparison.Ordinal))
         {
-            await _store.SetAsync(buildKey).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Der API-Schlüssel konnte nicht in die sichere Ablage übernommen werden.");
+            try
+            {
+                await _store.SetAsync(buildKey).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Der API-Schlüssel konnte nicht in die sichere Ablage übernommen werden.");
+            }
         }
 
         return buildKey;
+    }
+}
+
+/// <summary>
+/// Ablage des API-Schlüssels im Arbeitsspeicher; wird im Testmodus statt der echten Ablage des Betriebssystems verwendet.
+/// </summary>
+public sealed class InMemoryApiKeyStore : IApiKeyStore
+{
+    private string? _value;
+
+    /// <inheritdoc />
+    public Task<string?> GetAsync()
+    {
+        return Task.FromResult(_value);
+    }
+
+    /// <inheritdoc />
+    public Task SetAsync(string apiKey)
+    {
+        _value = apiKey;
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Wählt die Ablage des API-Schlüssels: Im Testmodus (<c>TEST_DATA_PATH</c> gesetzt) isoliert im Speicher,
+/// sonst die echte Ablage des Betriebssystems (Credential Locker bzw. Keychain).
+/// </summary>
+public static class ApiKeyStoreSelector
+{
+    /// <summary>
+    /// Erstellt die passende Ablage; die echte Ablage wird im Testmodus nie erzeugt.
+    /// </summary>
+    /// <param name="getEnvironmentVariable">Liefert Umgebungsvariablen.</param>
+    /// <param name="createPlatformStore">Erzeugt die echte Ablage.</param>
+    /// <returns>Die Ablage.</returns>
+    public static IApiKeyStore Create(Func<string, string?> getEnvironmentVariable, Func<IApiKeyStore> createPlatformStore)
+    {
+        ArgumentNullException.ThrowIfNull(getEnvironmentVariable);
+        ArgumentNullException.ThrowIfNull(createPlatformStore);
+        return string.IsNullOrWhiteSpace(getEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable))
+            ? createPlatformStore()
+            : new InMemoryApiKeyStore();
     }
 }

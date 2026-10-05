@@ -68,6 +68,7 @@ public static class PriceTexts
             PriceFailure.ApiKeyMissing => "Es ist kein API-Schlüssel hinterlegt. Es werden die zuletzt bekannten Preise verwendet.",
             PriceFailure.Rejected => "Der Preisdienst hat die Anfrage abgelehnt. Bitte den API-Schlüssel prüfen.",
             PriceFailure.InvalidResponse => "Der Preisdienst hat eine unerwartete Antwort geliefert.",
+            PriceFailure.EndpointNotConfigured => "Testmodus ohne Preisdienst-Adresse (TANKRADAR_PRICE_API_URL): Der Abruf wird nicht durchgeführt.",
             _ => failure.ToString(),
         };
     }

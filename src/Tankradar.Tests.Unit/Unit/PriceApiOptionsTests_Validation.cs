@@ -97,4 +97,24 @@ public class PriceApiOptionsTests_Validation : BaseTest
             (TestDataPaths.TestDataPathEnvironmentVariable, "C:\\Temp\\test"),
             (PriceApiOptions.BaseUrlEnvironmentVariable, "http://example.test/json/"))));
     }
+
+    /// <summary>
+    /// Prüft, dass im Testmodus ohne Endpunkt der Abruf verweigert wird, statt auf den produktiven Dienst zurückzufallen.
+    /// </summary>
+    [Fact]
+    public void FromEnvironment_TestModeWithoutUrl_MarksEndpointNotConfigured()
+    {
+        var options = PriceApiOptions.FromEnvironment(Env((TestDataPaths.TestDataPathEnvironmentVariable, "testdata")));
+
+        Assert.True(options.EndpointNotConfigured);
+    }
+
+    /// <summary>
+    /// Prüft, dass außerhalb des Testmodus der produktive Endpunkt ohne Sperre gilt.
+    /// </summary>
+    [Fact]
+    public void FromEnvironment_NormalMode_IsConfigured()
+    {
+        Assert.False(PriceApiOptions.FromEnvironment(Env()).EndpointNotConfigured);
+    }
 }

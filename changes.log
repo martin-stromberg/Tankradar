@@ -1,3 +1,8 @@
+## 2026-10-05 — Preis-API: Schlüsselabgleich und Testisolation (Tankradar Schritt 5, Nachbesserung, Version 0.1.6)
+
+- Ein neuer oder rotierter Build-Schlüssel setzt sich bei bestehenden Installationen durch: Weicht er vom gespeicherten ab, wird die sichere Ablage (Credential Locker bzw. Keychain) beim Start aktualisiert; ohne Build-Schlüssel gilt weiter der gespeicherte
+- Testmodus (Fail Secure): Ohne `TANKRADAR_PRICE_API_URL` verweigert die App den Preisabruf mit klarer Meldung statt den produktiven Endpunkt anzusprechen; der API-Schlüssel liegt im Testmodus in einer isolierten Ablage im Speicher, nie im echten Credential Locker bzw. in der Keychain
+
 ## 2026-10-05 — Kraftstoffpreis-API und Preis-Cache (Tankradar Schritt 5, Version 0.1.5)
 
 - Abruf von Tankstellen im Umkreis (nach Spritsorten) und von Tankstellendetails über die Tankerkönig-API (Daten der MTS-K); ausschließlich HTTPS, Zeitlimit je Anfrage, bis zu drei Versuche mit zunehmender Wartezeit, Mindestabstand zwischen Anfragen und kurzzeitiger Cache gegen Mehrfachabrufe; Angaben, die die Quelle nicht liefert, werden nicht erfunden, „Automatentankstelle“ wird aus durchgehenden Öffnungszeiten abgeleitet

@@ -34,4 +34,9 @@ public enum PriceFailure
     /// Die Antwort des Preisdienstes war nicht auswertbar.
     /// </summary>
     InvalidResponse,
+
+    /// <summary>
+    /// Im Testmodus ist kein Endpunkt für den Preisdienst angegeben; der Abruf wird verweigert (kein Rückfall auf den produktiven Dienst).
+    /// </summary>
+    EndpointNotConfigured,
 }

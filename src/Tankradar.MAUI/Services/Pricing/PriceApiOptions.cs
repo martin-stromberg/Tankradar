@@ -32,6 +32,11 @@ public sealed class PriceApiOptions
     public Uri BaseUrl { get; init; } = DefaultUri;
 
     /// <summary>
+    /// Gibt an, dass der Abruf verweigert wird, weil im Testmodus kein Endpunkt angegeben ist (Fail Secure: kein Rückfall auf den produktiven Dienst).
+    /// </summary>
+    public bool EndpointNotConfigured { get; init; }
+
+    /// <summary>
     /// Zeitlimit je einzelner Anfrage.
     /// </summary>
     /// <returns>Der Wert.</returns>
@@ -97,7 +102,7 @@ public sealed class PriceApiOptions
 
     /// <summary>
     /// Ermittelt die Einstellungen aus der Umgebung. Der Endpunkt lässt sich nur überschreiben, wenn das Testverzeichnis
-    /// (<c>TEST_DATA_PATH</c>) gesetzt ist; dann gelten außerdem kurze Wartezeiten.
+    /// (<c>TEST_DATA_PATH</c>) gesetzt ist; dann gelten außerdem kurze Wartezeiten. Ohne Endpunkt im Testmodus wird der Abruf verweigert.
     /// </summary>
     /// <param name="getEnvironmentVariable">Liefert den Wert einer Umgebungsvariable oder <see langword="null"/>.</param>
     /// <returns>Die validierten Einstellungen.</returns>
@@ -121,7 +126,7 @@ public sealed class PriceApiOptions
         }
         else
         {
-            options = new PriceApiOptions();
+            options = new PriceApiOptions { EndpointNotConfigured = testMode };
         }
 
         options.Validate();

@@ -129,6 +129,13 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
 
     private async Task<string> GetAsync(string relativeQuery, string endpointName, CancellationToken cancellationToken)
     {
+        if (_options.EndpointNotConfigured)
+        {
+            throw new PriceApiException(
+                PriceFailure.EndpointNotConfigured,
+                $"Im Testmodus ist keine Adresse für den Preisdienst angegeben ({PriceApiOptions.BaseUrlEnvironmentVariable}); der Abruf wird verweigert.");
+        }
+
         var credential = await _apiKeyProvider.GetApiKeyAsync().ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(credential))
         {

@@ -23,7 +23,7 @@ Variante B, nicht versionierte Datei `tankerkoenig.local.props` im Repository-Ro
 </Project>
 ```
 
-Der Schlüssel gelangt beim Build als Assembly-Metadatum in die App. Beim ersten Start übernimmt die App ihn in die sichere Ablage des Betriebssystems (Windows: Credential Locker, iOS: Keychain) und liest ihn von dort. Wollen Sie einen anderen Schlüssel verwenden, bauen Sie neu und löschen den Eintrag „Tankatlas/PriceApi“ im Windows-Anmeldeinformationsverwaltung bzw. installieren die iOS-App neu.
+Der Schlüssel gelangt beim Build als Assembly-Metadatum in die App. Der beim Build mitgegebene Schlüssel ist maßgeblich: Beim Start vergleicht die App ihn mit dem Eintrag in der sicheren Ablage des Betriebssystems (Windows: Credential Locker „Tankatlas/PriceApi“, iOS: Keychain) und aktualisiert diesen, wenn er fehlt oder abweicht. Ein Update mit neuem oder rotiertem Schlüssel setzt sich dadurch automatisch durch; manuelles Löschen oder Neuinstallation ist nicht nötig. Wurde beim Build kein Schlüssel mitgegeben, nutzt die App weiter den gespeicherten.
 
 ## GitHub (CI und Releases)
 
@@ -33,7 +33,7 @@ Der Schlüssel gelangt beim Build als Assembly-Metadatum in die App. Beim ersten
 
 ## Tests
 
-Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Der Test-Mock akzeptiert einen festen Test-Schlüssel, der nur im Testmodus (`TEST_DATA_PATH` gesetzt) über `TANKRADAR_PRICE_API_KEY` an die App gegeben wird.
+Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testmodus liegt der Schlüssel nie im echten Credential Locker bzw. in der Keychain (isolierte Ablage im Speicher), und ohne `TANKRADAR_PRICE_API_URL` verweigert die App den Abruf mit einer Meldung, statt den produktiven Endpunkt anzusprechen. Der Test-Mock akzeptiert einen festen Test-Schlüssel, der nur im Testmodus (`TEST_DATA_PATH` gesetzt) über `TANKRADAR_PRICE_API_KEY` an die App gegeben wird.
 
 ## Hinweis zur Sicherheit des Build-Schlüssels
 

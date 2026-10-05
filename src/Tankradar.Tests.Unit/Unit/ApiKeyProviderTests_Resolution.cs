@@ -20,23 +20,52 @@ public class ApiKeyProviderTests_Resolution : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass ein gespeicherter Schlüssel Vorrang hat und der Build-Schlüssel nichts überschreibt.
+    /// Prüft, dass ein gespeicherter Schlüssel ohne Build-Schlüssel weiter genutzt wird.
     /// </summary>
     [Fact]
-    public async Task GetApiKeyAsync_StoredKey_IsUsed()
+    public async Task GetApiKeyAsync_StoredKeyWithoutBuildKey_IsUsed()
     {
         _store.Stored = "gespeichert";
-        _buildKey = "build";
 
         Assert.Equal("gespeichert", await CreateProvider().GetApiKeyAsync());
         Assert.Equal(0, _store.SetCount);
     }
 
     /// <summary>
-    /// Prüft, dass der Build-Schlüssel einmalig in die sichere Ablage übernommen wird.
+    /// Prüft, dass ein gleicher Build-Schlüssel nichts neu schreibt.
     /// </summary>
     [Fact]
-    public async Task GetApiKeyAsync_BuildKey_IsMovedIntoSecureStore()
+    public async Task GetApiKeyAsync_SameKey_IsNotRewritten()
+    {
+        _store.Stored = "build";
+        _buildKey = "build";
+
+        Assert.Equal("build", await CreateProvider().GetApiKeyAsync());
+        Assert.Equal(0, _store.SetCount);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein abweichender Build-Schlüssel maßgeblich ist und die Ablage aktualisiert.
+    /// </summary>
+    [Fact]
+    public async Task GetApiKeyAsync_DifferentBuildKey_ReplacesStoredKey()
+    {
+        _store.Stored = "alt";
+        _buildKey = "neu";
+        var provider = CreateProvider();
+
+        Assert.Equal("neu", await provider.GetApiKeyAsync());
+        Assert.Equal("neu", await provider.GetApiKeyAsync());
+
+        Assert.Equal("neu", _store.Stored);
+        Assert.Equal(1, _store.SetCount);
+    }
+
+    /// <summary>
+    /// Prüft, dass der Build-Schlüssel ohne Eintrag in die sichere Ablage übernommen wird.
+    /// </summary>
+    [Fact]
+    public async Task GetApiKeyAsync_NoEntry_BuildKeyIsMovedIntoSecureStore()
     {
         _buildKey = "build";
         var provider = CreateProvider();
@@ -45,6 +74,19 @@ public class ApiKeyProviderTests_Resolution : BaseTest
         Assert.Equal("build", await provider.GetApiKeyAsync());
 
         Assert.Equal("build", _store.Stored);
+        Assert.Equal(1, _store.SetCount);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein nicht lesbarer Eintrag durch den Build-Schlüssel ersetzt wird.
+    /// </summary>
+    [Fact]
+    public async Task GetApiKeyAsync_UnreadableStore_BuildKeyIsWritten()
+    {
+        _store.ThrowOnGet = true;
+        _buildKey = "build";
+
+        Assert.Equal("build", await CreateProvider().GetApiKeyAsync());
         Assert.Equal(1, _store.SetCount);
     }
 
@@ -103,5 +145,29 @@ public class ApiKeyProviderTests_Resolution : BaseTest
         var value = ApiKeyProvider.ReadBuildTimeKey();
 
         Assert.True(value is null || value.Length > 0);
+    }
+
+    /// <summary>
+    /// Prüft, dass im Testmodus nie der Build-Schlüssel verwendet wird.
+    /// </summary>
+    [Fact]
+    public async Task GetApiKeyAsync_TestModeWithoutEnvironmentKey_IgnoresBuildKey()
+    {
+        _environment[TestDataPaths.TestDataPathEnvironmentVariable] = "testdata";
+        _buildKey = "build";
+
+        Assert.Null(await CreateProvider().GetApiKeyAsync());
+        Assert.Equal(0, _store.SetCount);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Lesefehler ohne Build-Schlüssel zu <see langword="null"/> führt.
+    /// </summary>
+    [Fact]
+    public async Task GetApiKeyAsync_ReadFailureWithoutBuildKey_ReturnsNull()
+    {
+        _store.ThrowOnGet = true;
+
+        Assert.Null(await CreateProvider().GetApiKeyAsync());
     }
 }
