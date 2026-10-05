@@ -43,6 +43,6 @@ Die Einstellungen liegen in einer lokalen Datenbank auf Ihrem Gerät und werden 
 
 ## Einschränkungen
 
-- Die Suchergebnisse selbst (Liste, Karte) folgen in späteren Versionen; die gewählten Standardwerte werden dann verwendet.
-- Die Standortfreigabe des Geräts wird in dieser Version noch nicht abgefragt; die Einstellung „Standort und GPS“ wird nur gespeichert.
+- Die Umkreissuche zeigt Ergebnisse als Liste und nutzt die gewählten Spritsorten (in Ihrer Reihenfolge) und die Standardsortierung; die Standardansicht „Karte“ wirkt erst mit einer späteren Kartenansicht.
+- Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt; sonst fragt die Suche beim Tippen auf „Suchen“ nach der Standortfreigabe des Geräts.
 - Die Einstellungen gelten für die App auf diesem Gerät und werden nicht zwischen Geräten synchronisiert.

@@ -4,7 +4,7 @@ namespace Tankradar.MAUI.Services.Pricing;
 
 /// <summary>
 /// Einstellungen für den Zugriff auf die Preis-API: Adresse, Zeitlimit, Wiederholung, Drosselung und Cache-Dauer.
-/// Produktiv gilt ausschließlich HTTPS; ein abweichender Endpunkt ist nur im Testmodus (gesetztes <c>TEST_DATA_PATH</c>) möglich.
+/// Produktiv gilt ausschließlich HTTPS; ein abweichender Endpunkt ist nur im Testmodus (gesetztes <c>TANKATLAS_TEST_DATA_PATH</c>) möglich.
 /// </summary>
 public sealed class PriceApiOptions
 {
@@ -102,7 +102,7 @@ public sealed class PriceApiOptions
 
     /// <summary>
     /// Ermittelt die Einstellungen aus der Umgebung. Der Endpunkt lässt sich nur überschreiben, wenn das Testverzeichnis
-    /// (<c>TEST_DATA_PATH</c>) gesetzt ist; dann gelten außerdem kurze Wartezeiten. Ohne Endpunkt im Testmodus wird der Abruf verweigert.
+    /// (<c>TANKATLAS_TEST_DATA_PATH</c>) gesetzt ist; dann gelten außerdem kurze Wartezeiten. Ohne Endpunkt im Testmodus wird der Abruf verweigert.
     /// </summary>
     /// <param name="getEnvironmentVariable">Liefert den Wert einer Umgebungsvariable oder <see langword="null"/>.</param>
     /// <returns>Die validierten Einstellungen.</returns>

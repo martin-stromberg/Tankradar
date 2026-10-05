@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Karte" (Suche). Aktuell ohne Inhalt außer Platzhaltertext.
+/// Seite für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort mit Ergebnisliste. Meldet das Ausblenden der Seite an das <see cref="MapViewModel"/>.
 /// </summary>
 public partial class MapPage : TankradarContentPage
 {

@@ -11,7 +11,8 @@
     Die Versionsnummer im Format X.Y.Z (z. B. 0.1.0).
 
 .PARAMETER ChangelogFile
-    Optional. Entweder der Pfad zu einer Datei mit dem Changelog-Text oder der Changelog-Text selbst.
+    Pflicht. Entweder der Pfad zu einer Datei mit dem Changelog-Text oder der Changelog-Text selbst.
+    Ein Aufruf ohne (oder mit leerem) Changelog wird abgelehnt, bevor gebaut wird.
 
 .EXAMPLE
     .\scripts\create-review-version.ps1 -Version 0.1.0 -ChangelogFile "Initial foundation release"
@@ -30,6 +31,19 @@ $ErrorActionPreference = "Stop"
 
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
     Write-Error "Ungueltiges Versionsformat '$Version'. Erwartet wird das Format X.Y.Z (z. B. 0.1.0)."
+    exit 1
+}
+
+# Der Changelog ist Pflicht und wird vor dem Build geprueft (kein Zwischenstand ohne Beschreibung der Aenderungen).
+if ($ChangelogFile -and (Test-Path $ChangelogFile -PathType Leaf)) {
+    $changelogEntry = Get-Content -Path $ChangelogFile -Raw
+}
+else {
+    $changelogEntry = $ChangelogFile
+}
+
+if ([string]::IsNullOrWhiteSpace($changelogEntry)) {
+    Write-Error "Es wurde kein Changelog angegeben. Bitte -ChangelogFile mit einer kurzen Beschreibung der Aenderungen (Text oder Dateipfad) uebergeben."
     exit 1
 }
 
@@ -75,16 +89,6 @@ if (-not (Test-Path $publishDir)) {
 
 Write-Host "Kopiere Build-Ausgabe nach '$binDir' ..."
 Copy-Item -Path $publishDir -Destination $binDir -Recurse -Force
-
-if ($ChangelogFile -and (Test-Path $ChangelogFile -PathType Leaf)) {
-    $changelogEntry = Get-Content -Path $ChangelogFile -Raw
-}
-elseif ($ChangelogFile) {
-    $changelogEntry = $ChangelogFile
-}
-else {
-    $changelogEntry = "Keine Changelog-Beschreibung angegeben."
-}
 
 $changelogContent = "# Changelog - Tankatlas $Version ($dateStamp)`n`n$changelogEntry`n"
 Set-Content -Path $changelogPath -Value $changelogContent -Encoding UTF8

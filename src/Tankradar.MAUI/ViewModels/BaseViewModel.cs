@@ -51,6 +51,13 @@ public abstract class BaseViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Wird aufgerufen, wenn die zugehörige Seite nicht mehr sichtbar ist (z. B. zum Abmelden von Ereignissen). Wird von abgeleiteten ViewModels überschrieben.
+    /// </summary>
+    public virtual void OnDisappearing()
+    {
+    }
+
+    /// <summary>
     /// Setzt den Wert eines Felds und löst <see cref="PropertyChanged"/> aus, wenn sich der Wert geändert hat.
     /// </summary>
     /// <typeparam name="T">Der Typ des Felds und Werts.</typeparam>

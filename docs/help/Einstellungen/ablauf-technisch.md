@@ -10,7 +10,7 @@ Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.
 
 ### 1. App-Start und Datenbankinitialisierung
 
-1. `MauiProgram.CreateMauiApp()` registriert `IDatabaseFileProtector`, `IDatabaseInitializer`, `IDbContextFactory<TankradarDbContext>` (Pfad aus `IAppDataPathProvider.GetDataDirectory()` + `tankatlas.db`, dadurch greift die Testisolation über `TEST_DATA_PATH`) und `ISettingsService`.
+1. `MauiProgram.CreateMauiApp()` registriert `IDatabaseFileProtector`, `IDatabaseInitializer`, `IDbContextFactory<TankradarDbContext>` (Pfad aus `IAppDataPathProvider.GetDataDirectory()` + `tankatlas.db`, dadurch greift die Testisolation über `TANKATLAS_TEST_DATA_PATH`) und `ISettingsService`.
 2. Der `App`-Konstruktor stößt `IDatabaseInitializer.InitializeAsync()` ohne Warten an.
 3. `DatabaseInitializer` legt das Datenverzeichnis an und ruft `Database.MigrateAsync()` auf: Beim ersten Start wird die Datenbank angelegt, bei einem App-Update werden nur ausstehende Migrationen angewendet, vorhandene Daten bleiben erhalten.
 4. `IDatabaseFileProtector.Protect(...)` setzt unter iOS `NSFileProtectionCompleteUntilFirstUserAuthentication` auf Verzeichnis, `tankatlas.db`, `-wal` und `-shm` (`#if IOS`); auf anderen Plattformen geschieht nichts. Es gibt keine zusätzliche Verschlüsselung.
@@ -73,7 +73,7 @@ Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`,
 
 - Unit: `SettingsService`, `SettingsViewModel`, Enums
 - Integration: echte SQLite-Datei, Erststart, Migration älterer Schemastände, Neustart
-- E2E (FlaUI): Einstellungen ändern und App neu starten; `E2ETestBase` isoliert über `TEST_DATA_PATH`
+- E2E (FlaUI): Einstellungen ändern und App neu starten; `E2ETestBase` isoliert über `TANKATLAS_TEST_DATA_PATH`
 
 ## Hinweis zu iOS
 

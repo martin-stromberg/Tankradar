@@ -46,6 +46,11 @@ public class FuelPriceServiceTests_StorageFailure : BaseTest
             return Task.FromResult<StationInfo?>(null);
         }
 
+        public Task<IReadOnlyDictionary<string, StationInfo>> GetKnownDetailsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyDictionary<string, StationInfo>>(new Dictionary<string, StationInfo>());
+        }
+
         public Task<IReadOnlyList<StationInfo>> FindNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyList<StationInfo>>([]);

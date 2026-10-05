@@ -116,15 +116,15 @@ Beteiligte Komponenten:
 Unabhängig vom sichtbaren Navigations- und Theme-Ablauf stellt `MauiProgram.CreateMauiApp()` bereits einen zentralen Mechanismus bereit, über den künftige Datenzugriffe (ab Entwicklungsschritt 4) das App-Datenverzeichnis ermitteln. In diesem Schritt hat der Dienst noch keinen produktiven Aufrufer, wird aber vollständig bereitgestellt und per Unit-Test abgesichert:
 
 1. Ein Aufrufer lässt sich `IAppDataPathProvider` per Dependency Injection injizieren und ruft `GetDataDirectory()` auf.
-2. `AppDataPathProvider.GetDataDirectory()` liest die Umgebungsvariable `TestDataPaths.TestDataPathEnvironmentVariable` (Wert: `TEST_DATA_PATH`) über `Environment.GetEnvironmentVariable(...)`.
+2. `AppDataPathProvider.GetDataDirectory()` liest die Umgebungsvariable `TestDataPaths.TestDataPathEnvironmentVariable` (Wert: `TANKATLAS_TEST_DATA_PATH`) über `Environment.GetEnvironmentVariable(...)`.
 3. Ist der Wert gesetzt und nicht leer, wird genau dieser Pfad zurückgegeben.
 4. Andernfalls wird eine injizierte `Func<string>`-Factory für das Standardverzeichnis aufgerufen; im produktiven Konstruktor ist das `() => FileSystem.AppDataDirectory`.
 
-`E2ETestBase` setzt `TEST_DATA_PATH` bereits vor dem App-Start, sodass FlaUI-gesteuerte E2E-Testläufe automatisch ein isoliertes Testdatenverzeichnis erhalten und nie das Datenverzeichnis der Entwicklungs- oder Produktionsinstallation berühren.
+`E2ETestBase` setzt `TANKATLAS_TEST_DATA_PATH` bereits vor dem App-Start, sodass FlaUI-gesteuerte E2E-Testläufe automatisch ein isoliertes Testdatenverzeichnis erhalten und nie das Datenverzeichnis der Entwicklungs- oder Produktionsinstallation berühren.
 
 ```mermaid
 flowchart TD
-    A["GetDataDirectory() aufgerufen"] --> B{"TEST_DATA_PATH gesetzt und nicht leer?"}
+    A["GetDataDirectory() aufgerufen"] --> B{"TANKATLAS_TEST_DATA_PATH gesetzt und nicht leer?"}
     B -- Ja --> C["Wert der Umgebungsvariable zurückgeben"]
     B -- Nein --> D["_defaultDirectoryFactory() aufrufen"]
     D --> E["Produktiv: FileSystem.AppDataDirectory"]
@@ -133,7 +133,7 @@ flowchart TD
 Beteiligte Komponenten:
 - `IAppDataPathProvider` — Abstraktion (`GetDataDirectory()`), Namespace `Tankradar.MAUI.Services`
 - `AppDataPathProvider` — Implementierung mit zwei Konstruktoren (produktiver Parameterloser Konstruktor vs. testbare Überladung mit `Func<string> defaultDirectoryFactory`)
-- `TestDataPaths.TestDataPathEnvironmentVariable` (`src/TestSupport/TestDataPaths.cs`) — gemeinsame Konstante für den Variablennamen `TEST_DATA_PATH`, auch vom Integrationstestprojekt (`TestDataContext`) genutzt
+- `TestDataPaths.TestDataPathEnvironmentVariable` (`src/TestSupport/TestDataPaths.cs`) — gemeinsame Konstante für den Variablennamen `TANKATLAS_TEST_DATA_PATH`, auch vom Integrationstestprojekt (`TestDataContext`) genutzt
 - `MauiProgram.cs` — registriert `IAppDataPathProvider` → `AppDataPathProvider` als Singleton
 - `AppDataPathProviderTests_DataDirectoryResolution` (`Tankradar.Tests.Unit`) — deckt beide Verzweigungen ab (Variable gesetzt / nicht gesetzt)
 
@@ -174,7 +174,7 @@ Beteiligte Komponenten:
 
 ### AppDataPathProvider ohne gesetzte Umgebungsvariable
 
-Ist `TEST_DATA_PATH` nicht gesetzt (Normalfall außerhalb von E2E-Testläufen), liefert `AppDataPathProvider.GetDataDirectory()` deterministisch das Ergebnis der injizierten Standardverzeichnis-Factory (produktiv `FileSystem.AppDataDirectory`) zurück — es wird kein Fehler geworfen, keine leere Zeichenkette akzeptiert (auch bei nur aus Leerzeichen bestehendem Variablenwert greift der Fallback).
+Ist `TANKATLAS_TEST_DATA_PATH` nicht gesetzt (Normalfall außerhalb von E2E-Testläufen), liefert `AppDataPathProvider.GetDataDirectory()` deterministisch das Ergebnis der injizierten Standardverzeichnis-Factory (produktiv `FileSystem.AppDataDirectory`) zurück — es wird kein Fehler geworfen, keine leere Zeichenkette akzeptiert (auch bei nur aus Leerzeichen bestehendem Variablenwert greift der Fallback).
 
 Beteiligte Komponenten:
 - `AppDataPathProvider.GetDataDirectory()` — `string.IsNullOrWhiteSpace(...)`-Prüfung vor Verwendung des Umgebungsvariablen-Werts
