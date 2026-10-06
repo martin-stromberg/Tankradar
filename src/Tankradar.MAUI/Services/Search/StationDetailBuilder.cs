@@ -49,7 +49,8 @@ public static class StationDetailBuilder
                 price.Price,
                 SearchTexts.FormatPrice(price.Price),
                 PriceFreshness.FormatAge(price.RetrievedUtc, nowUtc),
-                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc)));
+                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc),
+                PriceFreshness.GetAge(price.RetrievedUtc, nowUtc)));
         }
 
         var hours = current.OpeningTimes.Select(FormatOpeningHours).Where(line => line.DisplayText.Length > 0).ToList();

@@ -13,10 +13,4 @@ public sealed class NullStationNavigator : IStationNavigator
     {
         return Task.CompletedTask;
     }
-
-    /// <inheritdoc />
-    public Task GoBackAsync()
-    {
-        return Task.CompletedTask;
-    }
 }

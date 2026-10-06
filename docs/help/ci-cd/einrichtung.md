@@ -55,7 +55,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 
 | Name | Inhalt | Pflicht |
 |---|---|---|
-| `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes | optional (ohne Schlüssel zeigt die App nur zuletzt bekannte Preise) |
+| `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes; nur für den iOS-Build (TestFlight) | optional (ohne Schlüssel zeigt die App nur zuletzt bekannte Preise) |
 | `ROUTING_API_KEY` | API-Schlüssel des Routing-Dienstes | optional, bis die App ihn nutzt |
 | `IOS_CODESIGN_KEY` | Name der Signierungsidentität, z. B. `Apple Distribution: Firma (TEAMID)` | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE` | Name des Provisioning-Profils (wie im Developer-Portal) | für signierten iOS-Build |
@@ -66,8 +66,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | `IOS_API_ISSUER_ID` | Issuer-ID des App-Store-Connect-API-Keys | für TestFlight-Upload |
 | `IOS_API_KEY_P8` | Inhalt der `.p8`-Datei des API-Keys (Klartext, mehrzeilig) | für TestFlight-Upload |
 
-Die Schlüssel `FUEL_PRICE_API_KEY`/`ROUTING_API_KEY` stehen den Build-Schritten als Umgebungsvariablen
-`TANKRADAR_FUEL_PRICE_API_KEY` und `TANKRADAR_ROUTING_API_KEY` zur Verfügung. Die App übernimmt `FUEL_PRICE_API_KEY` beim Build als Tankerkönig-Schlüssel (siehe [Preisdaten](../Preisdaten/index.md)); der Routing-Schlüssel wird noch nicht gelesen.
+Der Schlüssel `FUEL_PRICE_API_KEY` steht nur dem iOS-Build als Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY` zur Verfügung (das Repository ist öffentlich: das Windows-Paket wird ohne Schlüssel gebaut, die `.ipa` nicht als Artefakt hochgeladen). `ROUTING_API_KEY` steht den Build-Schritten als `TANKRADAR_ROUTING_API_KEY` zur Verfügung. Die App übernimmt den Schlüssel beim Build als Tankerkönig-Schlüssel (er gelangt nie ins Build-Log; empfohlen ist eine regelmäßige Rotation, da er in der iOS-App selbst zwangsläufig enthalten ist) (siehe [Preisdaten](../Preisdaten/index.md)); der Routing-Schlüssel wird noch nicht gelesen.
 
 Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("datei.p12"))`
 (auf dem Mac: `base64 -i datei.p12 | pbcopy`).
@@ -85,7 +84,7 @@ Verhalten der Pipeline:
 - `IOS_SIGNING_ENABLED` nicht `true` → iOS wird unsigniert gebaut, **kein Fehlschlag**.
 - `IOS_SIGNING_ENABLED=true`, aber ein Signierungs-Secret fehlt → Warnung mit den fehlenden Namen im Job-Protokoll,
   iOS wird unsigniert gebaut, kein Fehlschlag.
-- Vollständige Signierungs-Secrets → signierte `release-ios.ipa` als Workflow-Artefakt (14 Tage).
+- Vollständige Signierungs-Secrets → signierte `release-ios.ipa` (nur im Runner, **kein** Workflow-Artefakt: Sie enthält den Tankerkönig-Schlüssel und das Repository ist öffentlich).
 - Zusätzlich `IOS_API_KEY_ID`, `IOS_API_ISSUER_ID`, `IOS_API_KEY_P8` → Upload nach TestFlight per iTMSTransporter.
 
 Die Team-ID wird nicht separat konfiguriert; sie steckt in Zertifikat und Provisioning-Profil
@@ -107,8 +106,8 @@ Ein `workflow_run`-Trigger nutzt nur die Workflow-Datei auf dem Standardbranch. 
 - [ ] Erster PR nach `staging`: alle Statusprüfungen grün.
 - [ ] Erster Push auf `staging`: Pre-Release `v0.1.0-rc.1` mit `release-win-x64.zip` und `update.json`.
 - [ ] Erster Release auf `main`: `v0.1.0`.
-- [ ] Nach dem Setzen von `IOS_SIGNING_ENABLED=true` und der Secrets: ein Pre-Release-Lauf erzeugt
-      `ios-ipa-prerelease`; bei gesetztem API-Key erscheint der Build nach der Verarbeitung in TestFlight.
+- [ ] Nach dem Setzen von `IOS_SIGNING_ENABLED=true` und der Secrets: ein Pre-Release-Lauf erzeugt die
+      signierte `.ipa`; bei gesetztem API-Key erscheint der Build nach der Verarbeitung in TestFlight.
       Die Workload-Version (`ios-workload-version` in `.github/actions/package-ios`) muss zum Xcode des
       Runners passen (der App Store lehnt Builds aus Beta-Xcode ab).
 

@@ -70,7 +70,8 @@ public static class StationResultBuilder
                 price.Price,
                 SearchTexts.FormatPrice(price.Price),
                 PriceFreshness.FormatAge(price.RetrievedUtc, nowUtc),
-                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc)));
+                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc),
+                PriceFreshness.GetAge(price.RetrievedUtc, nowUtc)));
         }
 
         return new StationListItem(

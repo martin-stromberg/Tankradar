@@ -87,23 +87,8 @@
 		</PackageReference>
 	</ItemGroup>
 
-	<!-- Tankerkönig-API-Schlüssel: nie im Quellcode. Reihenfolge: Umgebungsvariable TANKRADAR_FUEL_PRICE_API_KEY, dann Umgebungsvariable
-	FUEL_PRICE_API_KEY (gleicher Name wie das GitHub-Secret), dann die nicht versionierte Datei tankerkoenig.local.props
-	(Eigenschaft TankerkoenigApiKey). Der Schlüssel wird als Assembly-Metadatum mitgegeben und nie ausgegeben. Zur Laufzeit
-	übernimmt die App ihn in Keychain bzw. Credential Locker. -->
-	<Import Project="$(MSBuildThisFileDirectory)..\..\tankerkoenig.local.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tankerkoenig.local.props')" />
-	<PropertyGroup>
-		<_TankerkoenigLocalKey>$(TankerkoenigApiKey)</_TankerkoenigLocalKey>
-		<TankerkoenigApiKey>$(TANKRADAR_FUEL_PRICE_API_KEY)</TankerkoenigApiKey>
-		<TankerkoenigApiKey Condition="'$(TankerkoenigApiKey)' == ''">$(FUEL_PRICE_API_KEY)</TankerkoenigApiKey>
-		<TankerkoenigApiKey Condition="'$(TankerkoenigApiKey)' == ''">$(_TankerkoenigLocalKey)</TankerkoenigApiKey>
-	</PropertyGroup>
-	<ItemGroup>
-		<AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-			<_Parameter1>TankerkoenigApiKey</_Parameter1>
-			<_Parameter2>$(TankerkoenigApiKey)</_Parameter2>
-		</AssemblyAttribute>
-	</ItemGroup>
+	<!-- Tankerkönig-API-Schlüssel: Übernahme ohne MSBuild-Eigenschaft, siehe MSBuild\TankerkoenigApiKey.targets (Schlüssel gelangt nie ins Build-Log). -->
+	<Import Project="MSBuild\TankerkoenigApiKey.targets" />
 
 	<ItemGroup>
 		<Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />

@@ -21,7 +21,6 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     private readonly IFuelPriceService _priceService;
     private readonly IConnectionMonitor _connection;
     private readonly TimeProvider _timeProvider;
-    private readonly IStationNavigator _navigator;
     private readonly ILogger<StationDetailViewModel> _logger;
     private StationListItem? _origin;
     private StationInfo? _station;
@@ -41,27 +40,30 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     /// <param name="priceService">Preisdienst für die Detailabfrage.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis, automatische Aktualisierung).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
-    /// <param name="navigator">Die Navigation zurück zur Ergebnisliste.</param>
     /// <param name="logger">Logger (protokolliert nie Koordinaten).</param>
     public StationDetailViewModel(
         ISettingsService settingsService,
         IFuelPriceService priceService,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
-        IStationNavigator navigator,
         ILogger<StationDetailViewModel> logger)
     {
         _settingsService = settingsService;
         _priceService = priceService;
         _connection = connection;
         _timeProvider = timeProvider;
-        _navigator = navigator;
         _logger = logger;
         Title = DetailTexts.PageTitle;
         _isOffline = !_connection.IsOnline;
         RefreshCommand = new Command(() => LastLoadTask = LoadAsync());
-        BackCommand = new Command(() => _ = GoBackAsync());
         LastLoadTask = Task.CompletedTask;
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(IsBusy))
+            {
+                OnPropertyChanged(nameof(CanRefresh));
+            }
+        };
     }
 
     /// <summary>
@@ -96,9 +98,9 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     public ICommand RefreshCommand { get; }
 
     /// <summary>
-    /// Befehl zur Rückkehr zur Ergebnisliste.
+    /// Gibt an, ob „Preise aktualisieren“ bedienbar ist: nicht während eines Abrufs und nur mit Verbindung (ohne Verbindung bleibt die Schaltfläche deaktiviert; der Offline-Hinweis erklärt, warum).
     /// </summary>
-    public ICommand BackCommand { get; }
+    public bool CanRefresh => !IsBusy && _connection.IsOnline;
 
     /// <summary>
     /// Der zuletzt gestartete Ladevorgang (für Tests und Abwarten).
@@ -285,18 +287,6 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         }
     }
 
-    private async Task GoBackAsync()
-    {
-        try
-        {
-            await _navigator.GoBackAsync().ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Die Rückkehr zur Ergebnisliste ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
-        }
-    }
-
     private void Apply(StationDetailResult result, AppSettings settings)
     {
         _lastResult = result;
@@ -347,7 +337,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     {
         // Nach Wiederverbindung werden nur veraltete Angaben (Offline-Stand oder Preise ab 60 Minuten) neu abgefragt.
         UpdateOfflineState();
-        var hasStalePrice = Detail is { } detail && detail.PriceLines.Any(line => line.IsStale);
+        var hasStalePrice = Detail is { HasStalePrice: true };
         if (_origin is not null && (_lastResult?.Source == PriceDataSource.OfflineFallback || hasStalePrice))
         {
             LastLoadTask = LoadAsync();
@@ -357,6 +347,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     private void UpdateOfflineState()
     {
         IsOffline = !_connection.IsOnline || _lastResult?.Source == PriceDataSource.OfflineFallback;
+        OnPropertyChanged(nameof(CanRefresh));
     }
 
     private bool IsCurrent(CancellationTokenSource cancellation)

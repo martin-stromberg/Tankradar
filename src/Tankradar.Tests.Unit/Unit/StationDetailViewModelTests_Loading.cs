@@ -130,15 +130,4 @@ public class StationDetailViewModelTests_Loading : StationDetailViewModelTestBas
         Assert.False(ViewModel.IsBusy);
         Assert.Equal("1,850 €", ViewModel.Detail!.PriceLines[0].PriceText);
     }
-
-    /// <summary>
-    /// Prüft, dass „Zurück“ die Navigation auslöst.
-    /// </summary>
-    [Fact]
-    public void BackCommand_NavigatesBack()
-    {
-        ViewModel.BackCommand.Execute(null);
-
-        Assert.Equal(1, Navigator.BackCount);
-    }
 }

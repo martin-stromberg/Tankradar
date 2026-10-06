@@ -56,18 +56,4 @@ public class StationDetailViewModelTests_Errors : StationDetailViewModelTestBase
         Assert.Equal(SearchTexts.GetFailureMessage(PriceFailure.Rejected, true), ViewModel.StatusMessage);
         Assert.True(ViewModel.HasDetail);
     }
-
-    /// <summary>
-    /// Prüft, dass eine fehlgeschlagene Rückkehr nicht unbeobachtet bleibt und die Ansicht bedienbar bleibt.
-    /// </summary>
-    [Fact]
-    public void BackCommand_NavigationFails_DoesNotThrow()
-    {
-        Navigator.BackException = new InvalidOperationException("kaputt");
-
-        ViewModel.BackCommand.Execute(null);
-
-        Assert.Equal(1, Navigator.BackCount);
-        Assert.Contains("InvalidOperationException", Logger.AllText, StringComparison.Ordinal);
-    }
 }

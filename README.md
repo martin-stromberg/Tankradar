@@ -138,7 +138,7 @@ Die App ruft Preise über die Tankerkönig-API ab (Quellenangabe „Daten: Tanke
 sichtbar in den Optionen) und speichert jeden Preis mit Zeitstempel lokal (Offline-Betrieb, Alter „vor X Min.“,
 ab 60 Minuten veraltet). Der API-Schlüssel steht nie im Quellcode: lokal über die Umgebungsvariable
 `TANKRADAR_FUEL_PRICE_API_KEY`, dann `FUEL_PRICE_API_KEY`, dann die nicht versionierte Datei `tankerkoenig.local.props`, in der CI über das
-Secret `FUEL_PRICE_API_KEY`; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
+Secret `FUEL_PRICE_API_KEY` (nur für den iOS-Build; das öffentlich herunterladbare Windows-Paket wird ohne Schlüssel gebaut); der Schlüssel gelangt nie in das MSBuild-Log; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
 Schlüssel baut und testet alles (Tests nutzen einen lokalen Mock-Server, nie produktive Endpunkte).
 Details: [`docs/help/Preisdaten/`](docs/help/Preisdaten/index.md).
 

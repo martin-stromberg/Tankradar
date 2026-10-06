@@ -32,7 +32,7 @@ public class StationDetailBuilderTests_MissingData : BaseTest
         Assert.False(item.HasDistance);
         Assert.False(item.HasOpeningStatus);
         Assert.False(item.HasPrices);
-        Assert.False(item.HasHints);
+        Assert.False(item.HasUnconfirmedPrice);
         Assert.False(item.HasOpeningHours);
         Assert.Empty(item.OpeningHoursAgeText);
     }

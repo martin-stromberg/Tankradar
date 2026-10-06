@@ -84,7 +84,7 @@ public class StationDetailBuilderTests_Content : BaseTest
         var item = StationDetailBuilder.Build(Station(Now.AddMinutes(-59), (FuelType.Diesel, 1.699m)), SearchTestData.AllFuels, null, Now);
 
         Assert.False(item.HasUnconfirmedPrice);
-        Assert.False(item.HasHints);
+        Assert.False(item.HasUnconfirmedPrice);
     }
 
     /// <summary>
@@ -104,6 +104,7 @@ public class StationDetailBuilderTests_Content : BaseTest
         var item = StationDetailBuilder.Build(station, SearchTestData.AllFuels, null, Now);
 
         Assert.True(item.IsAutomatedStation);
-        Assert.True(item.HasHints);
+        Assert.True(item.HasInfoBox && item.HasOpeningStatusOrAutomat);
+        Assert.False(item.HasUnconfirmedPrice);
     }
 }

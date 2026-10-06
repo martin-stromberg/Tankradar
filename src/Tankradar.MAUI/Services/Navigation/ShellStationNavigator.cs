@@ -24,10 +24,4 @@ public sealed class ShellStationNavigator : IStationNavigator
         var parameters = new Dictionary<string, object> { [StationParameter] = station };
         return Shell.Current.GoToAsync(DetailRoute, parameters);
     }
-
-    /// <inheritdoc />
-    public Task GoBackAsync()
-    {
-        return Shell.Current.GoToAsync("..");
-    }
 }

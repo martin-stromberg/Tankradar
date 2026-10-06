@@ -16,11 +16,6 @@ public static class DetailTexts
     public const string OpenDetails = "Details";
 
     /// <summary>
-    /// Beschriftung der Schaltfläche zurück zur Ergebnisliste.
-    /// </summary>
-    public const string Back = "Zurück";
-
-    /// <summary>
     /// Überschrift der Preise.
     /// </summary>
     public const string PricesHeading = "Kraftstoffe";
@@ -49,6 +44,31 @@ public static class DetailTexts
     /// Hinweis, dass die zuletzt bekannten Daten angezeigt werden.
     /// </summary>
     public const string LastKnownNote = "Es werden die zuletzt bekannten Daten angezeigt.";
+
+    /// <summary>
+    /// Einheit des Kraftstoffpreises.
+    /// </summary>
+    public const string PriceUnit = "€/L";
+
+    /// <summary>
+    /// Chip bei frischen Preisen (alle unter 60 Minuten alt).
+    /// </summary>
+    public const string LivePrices = "Live-Preise";
+
+    /// <summary>
+    /// Chip für Tankstellen, die rund um die Uhr als Automat betrieben werden.
+    /// </summary>
+    public const string Automated247 = "Automat 24/7";
+
+    /// <summary>
+    /// Formatiert die Preisaktualität bei veralteten Preisen („Preise: vor 135 Min.“).
+    /// </summary>
+    /// <param name="ageText">Die Altersangabe des ältesten Preises („vor 135 Min.“).</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatPriceAge(string ageText)
+    {
+        return $"Preise: {ageText}";
+    }
 
     /// <summary>
     /// Formatiert die Altersangabe der Öffnungszeiten („Stand: vor 5 Min.“).

@@ -23,7 +23,7 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     /// </summary>
     protected StationDetailViewModelTestBase()
     {
-        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, Clock, Navigator, Logger);
+        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, Clock, Logger);
     }
 
     /// <summary>
@@ -43,12 +43,6 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeConnectionMonitor Connection { get; } = new();
-
-    /// <summary>
-    /// Die Navigation.
-    /// </summary>
-    /// <returns>Der Wert.</returns>
-    protected FakeStationNavigator Navigator { get; } = new();
 
     /// <summary>
     /// Die Uhr.

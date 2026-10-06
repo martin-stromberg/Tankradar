@@ -1,3 +1,5 @@
+using Tankradar.MAUI.Resources.Texts;
+
 namespace Tankradar.MAUI.Models.Search;
 
 /// <summary>
@@ -64,9 +66,47 @@ public sealed record StationDetailItem(
     public bool HasPrices => PriceLines.Count > 0;
 
     /// <summary>
-    /// Gibt an, ob mindestens ein Hinweis angezeigt wird.
+    /// Gibt an, ob die Zeile mit Öffnungsstatus und Chip „Automat 24/7“ angezeigt wird.
     /// </summary>
-    public bool HasHints => HasUnconfirmedPrice || IsAutomatedStation;
+    public bool HasOpeningStatusOrAutomat => HasOpeningStatus || IsAutomatedStation;
+
+    /// <summary>
+    /// Gibt an, ob die Info-Box (Entfernung, Öffnungsstatus, Automat 24/7) angezeigt wird.
+    /// </summary>
+    public bool HasInfoBox => HasDistance || HasOpeningStatus || IsAutomatedStation;
+
+    /// <summary>
+    /// Gibt an, ob mindestens ein Preis veraltet ist (ab 60 Minuten) und die Aktualität deshalb als Altersangabe statt „Live-Preise“ erscheint.
+    /// </summary>
+    public bool HasStalePrice
+    {
+        get
+        {
+            foreach (var line in PriceLines)
+            {
+                if (line.IsStale)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob der Chip „Live-Preise“ gilt (mindestens ein Preis, keiner veraltet).
+    /// </summary>
+    public bool HasLivePrices => HasPrices && !HasStalePrice;
+
+    /// <summary>
+    /// Die Preisaktualität: „Live-Preise“, wenn alle Preise frisch sind, sonst die Altersangabe des ältesten Preises („Preise: vor 135 Min.“); leer ohne Preise.
+    /// </summary>
+    public string PriceStatusText => !HasPrices
+        ? string.Empty
+        : HasStalePrice
+            ? DetailTexts.FormatPriceAge(PriceLines.MaxBy(line => line.Age)!.AgeText)
+            : DetailTexts.LivePrices;
 
     /// <summary>
     /// Gibt an, ob Öffnungszeiten angezeigt werden.

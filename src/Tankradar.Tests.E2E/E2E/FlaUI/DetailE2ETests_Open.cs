@@ -29,11 +29,13 @@ public class DetailE2ETests_Open : SearchE2ETestBase
             WaitUntil(() => Exists("Detail.OpeningHours"), "Die Öffnungszeiten erscheinen nicht.");
             Assert.Equal("Hauptstraße 1, 10115 Berlin", WaitForAutomationId("Detail.Address").Name);
             Assert.EndsWith(" km", WaitForAutomationId("Detail.Distance").Name, StringComparison.Ordinal);
-            Assert.Equal("1,859 €", WaitForAutomationId("Detail.Price.SuperE5").Name);
-            Assert.Equal("1,799 €", WaitForAutomationId("Detail.Price.SuperE10").Name);
-            Assert.Equal("1,699 €", WaitForAutomationId("Detail.Price.Diesel").Name);
+            Assert.Equal("1,859 Euro pro Liter", WaitForAutomationId("Detail.Price.SuperE5").Name);
+            Assert.Equal("1,799 Euro pro Liter", WaitForAutomationId("Detail.Price.SuperE10").Name);
+            Assert.Equal("1,699 Euro pro Liter", WaitForAutomationId("Detail.Price.Diesel").Name);
             Assert.Matches(new Regex(@"^vor \d+ Min\.$"), WaitForAutomationId("Detail.Age.SuperE5").Name);
-            Assert.True(Exists("Detail.Hint.Automated"));
+            Assert.Equal("Automat 24/7", WaitForAutomationId("Detail.Hint.Automated").Name);
+            Assert.Equal("Live-Preise", WaitForAutomationId("Detail.PriceStatus").Name);
+            Assert.False(Exists("Detail.Back"));
             Assert.Equal("Mo-So: 00:00 – 24:00 Uhr", WaitForAutomationId("Detail.OpeningHours").Name);
             Assert.Matches(new Regex(@"^Stand: vor \d+ Min\.$"), WaitForAutomationId("Detail.OpeningHoursAge").Name);
             Assert.False(Exists("Detail.OfflineBanner"));
@@ -42,7 +44,7 @@ public class DetailE2ETests_Open : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass Angaben, die die Quelle nicht liefert (kein Diesel-Preis bei Beta), weggelassen werden, und dass „Zurück“ zur Ergebnisliste führt.
+    /// Prüft, dass Angaben, die die Quelle nicht liefert (kein Diesel-Preis bei Beta), weggelassen werden, und dass der Zurück-Pfeil der Kopfleiste zur Ergebnisliste führt.
     /// </summary>
     [Fact]
     public void OpenDetail_MissingSourceData_IsOmittedAndBackReturnsToList()
@@ -56,7 +58,8 @@ public class DetailE2ETests_Open : SearchE2ETestBase
             Assert.False(Exists("Detail.Hint.Automated"));
             Assert.Equal("Mo-Fr: 06:00 – 22:00 Uhr", WaitForAutomationId("Detail.OpeningHours").Name);
 
-            WaitForAutomationId("Detail.Back").Patterns.Invoke.Pattern.Invoke();
+            // Die Rückkehr bietet die Kopfleiste der Shell (Zurück-Pfeil); die Seite hat keine eigene Schaltfläche.
+            WaitForAutomationId("NavigationViewBackButton").Patterns.Invoke.Pattern.Invoke();
 
             WaitForAutomationId("MapPage.Headline");
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
