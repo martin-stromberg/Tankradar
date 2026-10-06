@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Favoriten" (Startseite). Aktuell ohne Inhalt außer Platzhaltertext.
+/// Seite für den Bereich „Favoriten“: Liste der Favoritengruppen mit Anlegen einer neuen Gruppe; Antippen einer Gruppe öffnet die Gruppenansicht.
 /// </summary>
 public partial class FavoritesPage : TankradarContentPage
 {

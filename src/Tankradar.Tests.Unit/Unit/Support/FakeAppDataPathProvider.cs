@@ -23,4 +23,10 @@ public class FakeAppDataPathProvider : IAppDataPathProvider
     {
         return _directory;
     }
+
+    /// <inheritdoc />
+    public string GetCacheDirectory()
+    {
+        return Path.Combine(_directory, "cache");
+    }
 }

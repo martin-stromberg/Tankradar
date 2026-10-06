@@ -15,7 +15,6 @@ public class ViewModelTests_PageTitles : BaseTest
     /// <param name="viewModelType">Der Typ des zu prüfenden ViewModels.</param>
     /// <param name="expectedTitle">Der erwartete Seitentitel.</param>
     [Theory]
-    [InlineData(typeof(FavoritesViewModel), "Favoriten")]
     [InlineData(typeof(TankbookViewModel), "Tankbuch")]
     public void Constructor_SetsExpectedTitle(Type viewModelType, string expectedTitle)
     {
@@ -55,19 +54,15 @@ public class ViewModelTests_PageTitles : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass <see cref="BaseViewModel.OnAppearing"/> den Zustand des ViewModels nicht verändert.
+    /// Prüft die Seitentitel der Favoriten-ViewModels, die den Favoritendienst benötigen.
     /// </summary>
     [Fact]
-    public void OnAppearing_DoesNotChangeState()
+    public void FavoritesViewModels_Constructor_SetTitles()
     {
-        var viewModel = new FavoritesViewModel();
-        var raisedCount = 0;
-        viewModel.PropertyChanged += (_, _) => raisedCount++;
+        using var favorites = new FavoritesFixture();
+        var navigator = new FakeFavoriteGroupNavigator();
 
-        viewModel.OnAppearing();
-
-        Assert.Equal(0, raisedCount);
-        Assert.Equal("Favoriten", viewModel.Title);
-        Assert.False(viewModel.IsBusy);
+        Assert.Equal("Favoriten", new FavoritesViewModel(favorites.Service, navigator, NullLogger<FavoritesViewModel>.Instance).Title);
+        Assert.Equal("Favoritengruppe", new FavoriteGroupViewModel(favorites.Service, navigator, NullLogger<FavoriteGroupViewModel>.Instance).Title);
     }
 }

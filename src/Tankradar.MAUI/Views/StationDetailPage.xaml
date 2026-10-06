@@ -5,6 +5,7 @@
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
              xmlns:search="clr-namespace:Tankradar.MAUI.Models.Search"
+             xmlns:fav="clr-namespace:Tankradar.MAUI.Models.Favorites"
              xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
              x:DataType="vm:StationDetailViewModel"
              x:Class="Tankradar.MAUI.Views.StationDetailPage"
@@ -44,6 +45,21 @@
                     <Setter Property="TextColor" Value="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" />
                 </Trigger>
             </Style.Triggers>
+        </Style>
+        <!-- Auswahlschaltflächen der Karte "Favoritengruppen" (Umriss; ausgewählt: gefüllt) -->
+        <Style x:Key="FavoriteChoiceButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <Style x:Key="FavoriteSecondaryButton" TargetType="Button" BasedOn="{StaticResource FavoriteChoiceButton}">
+            <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
         </Style>
         <!-- Symbole der Info-Box (Material Symbols near_me und schedule, Apache-2.0) als Vektorpfade -->
         <x:String x:Key="IconNearMe">M21 3 3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z</x:String>
@@ -258,6 +274,140 @@
                                    Style="{StaticResource body-sm}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                    AutomationId="Detail.OpeningHoursAge" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Karte "Favoritengruppen" (Designentwurf tankstellen_details_favoriten): zugeordnete Gruppen, Hinzufügen und Entfernen direkt in der Karte -->
+                    <Border Style="{StaticResource DetailCard}"
+                            BindingContext="{Binding Favorites}"
+                            x:DataType="vm:StationFavoritesViewModel">
+                        <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                            <Label Text="{x:Static texts:FavoritesTexts.DetailHeading}"
+                                   Style="{StaticResource headline-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+
+                            <Label Text="{x:Static texts:FavoritesTexts.NotAssigned}"
+                                   IsVisible="{Binding HasNoAssignedGroups}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                   AutomationId="Detail.Favorites.None" />
+
+                            <VerticalStackLayout IsVisible="{Binding HasAssignedGroups}" Spacing="4">
+                                <Label Text="{x:Static texts:FavoritesTexts.AssignedTo}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                            BindableLayout.ItemsSource="{Binding AssignedGroups}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="fav:FavoriteGroup">
+                                            <Border Style="{StaticResource DetailChip}"
+                                                    Margin="0,0,8,4"
+                                                    Padding="12,6"
+                                                    BackgroundColor="{AppThemeBinding Light=#190F766E, Dark=#33006C49}">
+                                                <Label Text="{Binding Name}"
+                                                       Style="{StaticResource body-md}"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                                       AutomationId="Detail.Favorites.Group" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </FlexLayout>
+                            </VerticalStackLayout>
+
+                            <Label Text="{Binding StatusMessage}"
+                                   IsVisible="{Binding HasStatusMessage}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{StaticResource ColorErrorRed}"
+                                   AutomationId="Detail.Favorites.Status" />
+
+                            <Button Text="{x:Static texts:FavoritesTexts.AddToFavorites}"
+                                    Command="{Binding ToggleAddCommand}"
+                                    Style="{StaticResource DetailActionButton}"
+                                    AutomationId="Detail.Favorites.Add" />
+
+                            <!-- Auswahl einer bestehenden Gruppe oder Anlegen einer neuen -->
+                            <VerticalStackLayout IsVisible="{Binding IsAddOpen}" Spacing="{StaticResource space-sm}">
+                                <Label Text="{x:Static texts:FavoritesTexts.ChooseGroup}"
+                                       IsVisible="{Binding HasAddOptions}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding AddOptions}"
+                                                     IsVisible="{Binding HasAddOptions}"
+                                                     Spacing="{StaticResource space-xs}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:GroupOptionViewModel">
+                                            <Button Text="{Binding Name}"
+                                                    Command="{Binding InvokeCommand}"
+                                                    Style="{StaticResource FavoriteChoiceButton}"
+                                                    AutomationId="Detail.Favorites.Pick" />
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                                <Label Text="{x:Static texts:FavoritesTexts.AllGroupsAssigned}"
+                                       IsVisible="{Binding HasNoAddOptions}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="Detail.Favorites.AllAssigned" />
+                                <Label Text="{x:Static texts:FavoritesTexts.OrNewGroup}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                                <Entry Text="{Binding NewGroupName}"
+                                       Placeholder="{x:Static texts:FavoritesTexts.NameLabel}"
+                                       MaxLength="40"
+                                       ReturnCommand="{Binding CreateAndAddCommand}"
+                                       SemanticProperties.Description="{x:Static texts:FavoritesTexts.NameLabel}"
+                                       AutomationId="Detail.Favorites.NewName" />
+                                <Button Text="{x:Static texts:FavoritesTexts.CreateAndAdd}"
+                                        Command="{Binding CreateAndAddCommand}"
+                                        IsEnabled="{Binding CanCreate}"
+                                        Style="{StaticResource DetailActionButton}"
+                                        AutomationId="Detail.Favorites.NewCreate" />
+                                <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                                        Command="{Binding CancelCommand}"
+                                        Style="{StaticResource FavoriteChoiceButton}"
+                                        AutomationId="Detail.Favorites.Cancel" />
+                            </VerticalStackLayout>
+
+                            <Button Text="{x:Static texts:FavoritesTexts.RemoveFromFavorites}"
+                                    Command="{Binding RemoveCommand}"
+                                    IsVisible="{Binding HasAssignedGroups}"
+                                    Style="{StaticResource FavoriteSecondaryButton}"
+                                    AutomationId="Detail.Favorites.Remove" />
+
+                            <!-- Bei mehreren Gruppen: Auswahl, aus welchen die Tankstelle entfernt wird -->
+                            <VerticalStackLayout IsVisible="{Binding IsRemoveOpen}" Spacing="{StaticResource space-sm}">
+                                <Label Text="{x:Static texts:FavoritesTexts.ChooseRemove}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding RemoveOptions}" Spacing="{StaticResource space-xs}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:GroupOptionViewModel">
+                                            <Button Text="{Binding Name}"
+                                                    Command="{Binding InvokeCommand}"
+                                                    Style="{StaticResource FavoriteChoiceButton}"
+                                                    SemanticProperties.Hint="{Binding SelectionHint}"
+                                                    AutomationId="Detail.Favorites.RemoveChoice">
+                                                <Button.Triggers>
+                                                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                                        <Setter Property="TextColor" Value="White" />
+                                                    </DataTrigger>
+                                                </Button.Triggers>
+                                            </Button>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                                <Button Text="{x:Static texts:FavoritesTexts.ConfirmRemove}"
+                                        Command="{Binding ConfirmRemoveCommand}"
+                                        IsEnabled="{Binding CanConfirmRemove}"
+                                        Style="{StaticResource DetailActionButton}"
+                                        AutomationId="Detail.Favorites.RemoveConfirm" />
+                                <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                                        Command="{Binding CancelCommand}"
+                                        Style="{StaticResource FavoriteChoiceButton}"
+                                        AutomationId="Detail.Favorites.CancelRemove" />
+                            </VerticalStackLayout>
                         </VerticalStackLayout>
                     </Border>
                 </VerticalStackLayout>

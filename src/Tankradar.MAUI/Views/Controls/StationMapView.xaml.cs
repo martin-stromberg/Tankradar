@@ -83,7 +83,13 @@ public partial class StationMapView : ContentView
     {
         InitializeComponent();
         Surface.SizeChanged += (_, _) => OnSurfaceSizeChanged();
+        Surface.HandlerChanged += (_, _) => AttachPointerInput();
     }
+
+    /// <summary>
+    /// Bindet unter Windows das Ziehen mit der Maus und das Mausrad an die Karte (die Gestenerkenner reagieren dort nur auf Berührung und Stift). Auf anderen Plattformen ohne Wirkung.
+    /// </summary>
+    partial void AttachPointerInput();
 
     /// <summary>
     /// Die Markierungen der Tankstellen.
@@ -423,6 +429,27 @@ public partial class StationMapView : ContentView
             // Der Ausschnitt wandert in die Richtung, die Karte also entgegengesetzt.
             _viewport = viewport.PanByPixels(-fractionX * viewport.Width, -fractionY * viewport.Height);
             Render();
+        }
+    }
+
+    private void PanByPixels(double deltaX, double deltaY)
+    {
+        if (_viewport is { } viewport)
+        {
+            _viewport = viewport.PanByPixels(deltaX, deltaY);
+            Render();
+        }
+    }
+
+    private async void OnAttributionClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            await Launcher.Default.OpenAsync(new Uri(MapTexts.AttributionUrl));
+        }
+        catch (Exception ex) when (ex is FeatureNotSupportedException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            // Ohne Browser bleibt die Quellenangabe als Text sichtbar; mehr ist nicht zu tun.
         }
     }
 

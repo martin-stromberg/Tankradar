@@ -5,6 +5,7 @@ using Microsoft.Maui.LifecycleEvents;
 #endif
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Favorites;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
@@ -61,6 +62,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
+        builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
         AddGeocodingServices(builder.Services);
         AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
@@ -72,7 +74,10 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
+        builder.Services.AddTransient<StationFavoritesViewModel>();
+        builder.Services.AddTransient<FavoriteGroupViewModel>();
         builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
+        builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
@@ -80,6 +85,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<StationDetailPage>();
+        builder.Services.AddTransient<FavoriteGroupPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -90,7 +96,7 @@ public static class MauiProgram
 
     private static void AddGeocodingServices(IServiceCollection services)
     {
-        services.AddSingleton(_ => GeocodingOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton(_ => GeocodingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
         services.AddSingleton<IGeocodingService>(provider =>
         {
             var options = provider.GetRequiredService<GeocodingOptions>();
@@ -109,7 +115,7 @@ public static class MauiProgram
 
     private static void AddMapServices(IServiceCollection services)
     {
-        services.AddSingleton(_ => TileServerOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton(_ => TileServerOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
         services.AddSingleton<ITileSource>(provider =>
         {
             var options = provider.GetRequiredService<TileServerOptions>();
@@ -120,7 +126,7 @@ public static class MauiProgram
             return new HttpTileSource(
                 client,
                 options,
-                () => Path.Combine(paths.GetDataDirectory(), "tiles"),
+                () => Path.Combine(paths.GetCacheDirectory(), "tiles"),
                 provider.GetRequiredService<TimeProvider>(),
                 provider.GetRequiredService<ILogger<HttpTileSource>>());
         });
@@ -140,7 +146,7 @@ public static class MauiProgram
         {
             // Keine automatischen Weiterleitungen: Der Schlüssel steht in der Anfrageadresse und darf nie an einen anderen Host gehen.
             var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Tankatlas/0.1");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(AppIdentity.BuildUserAgent(AppIdentity.GetAppVersion()));
             return client;
         });
 #if WINDOWS

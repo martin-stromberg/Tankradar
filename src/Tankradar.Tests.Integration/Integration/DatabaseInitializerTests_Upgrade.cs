@@ -34,7 +34,7 @@ public class DatabaseInitializerTests_Upgrade : IDisposable
         await _database.CreateInitializer(upgradeFactory).InitializeAsync();
 
         await using var context = upgradeFactory.CreateDbContext();
-        Assert.Equal(3, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(4, (await context.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.Empty(context.FuelTypeSettings);
         var settings = await new SettingsService(upgradeFactory, _database.CreateInitializer(upgradeFactory)).LoadAsync();
@@ -58,7 +58,7 @@ public class DatabaseInitializerTests_Upgrade : IDisposable
         await _database.CreateInitializer(secondFactory).InitializeAsync();
 
         await using var context = secondFactory.CreateDbContext();
-        Assert.Equal(3, (await context.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(4, (await context.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Equal("Always", context.UserSettings.Single().GpsUsage);
         Assert.Equal(3, context.FuelTypeSettings.Count());
     }
