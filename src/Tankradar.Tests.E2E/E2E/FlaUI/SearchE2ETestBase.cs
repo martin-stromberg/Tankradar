@@ -136,8 +136,20 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <returns><see langword="true"/>, wenn der Chip ausgewählt ist.</returns>
     protected bool IsChipSelected(string automationId)
     {
-        var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
-        return element is not null && element.Properties.HelpText.ValueOrDefault == "Ausgewählt";
+        return IsSelectedChip(FindByAutomationId(automationId));
+    }
+
+    private static bool IsSelectedChip(AutomationElement? element)
+    {
+        try
+        {
+            return element is not null && element.Properties.HelpText.ValueOrDefault == "Ausgewählt";
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or global::FlaUI.Core.Exceptions.ElementNotAvailableException)
+        {
+            // Das Element wurde neu aufgebaut oder ist nicht mehr verfügbar (UIA-Timeouts gehen über die Suche mit Wiederholung).
+            return false;
+        }
     }
 
     /// <summary>
@@ -146,8 +158,11 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="automationId">Die AutomationId des Chips.</param>
     protected void SelectChip(string automationId)
     {
-        WaitForAutomationId(automationId).Patterns.Invoke.Pattern.Invoke();
-        WaitUntil(() => IsChipSelected(automationId), $"Der Chip '{automationId}' wurde nicht ausgewählt.");
+        var chip = WaitForAutomationId(automationId);
+        chip.Patterns.Invoke.Pattern.Invoke();
+
+        // Zuerst am bereits gefundenen Element prüfen (kein Durchsuchen des ganzen UI-Baums); erst danach, falls das Element neu aufgebaut wurde, per Suche.
+        WaitUntil(() => IsSelectedChip(chip) || IsChipSelected(automationId), $"Der Chip '{automationId}' wurde nicht ausgewählt.");
     }
 
     /// <summary>

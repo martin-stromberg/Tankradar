@@ -144,6 +144,18 @@ public static class MapTexts
     }
 
     /// <summary>
+    /// Formatiert den Zähler, wenn wegen der Obergrenze nicht alle Markierungen im Ausschnitt dargestellt werden („120 von 300 Stationen sichtbar, 100 dargestellt – für alle hineinzoomen“).
+    /// </summary>
+    /// <param name="visible">Die Anzahl der Tankstellen im Ausschnitt.</param>
+    /// <param name="total">Die Gesamtzahl der Tankstellen des Ergebnisses.</param>
+    /// <param name="shown">Die Anzahl der dargestellten Markierungen.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatStationCountLimited(int visible, int total, int shown)
+    {
+        return $"{FormatStationCount(visible, total)}, {shown.ToString(German)} dargestellt – für alle hineinzoomen";
+    }
+
+    /// <summary>
     /// Formatiert die Zoomstufe („Zoom 14“).
     /// </summary>
     /// <param name="zoom">Die Zoomstufe.</param>
