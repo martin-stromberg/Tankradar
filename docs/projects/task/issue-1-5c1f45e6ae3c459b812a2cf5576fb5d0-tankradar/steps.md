@@ -15,7 +15,7 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 5 | Anbindung der Kraftstoffpreis-API und Preis-Cache | 4 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-5-preis-api` | Fertig |
 | 6 | Umkreissuche nach aktuellem Standort mit Ergebnisliste | 4, 5 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-6-umkreissuche` | Fertig |
 | 6a | Oberflächentests als Auslieferungs-Gate | 3, 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-6a-e2e-gate` | Fertig |
-| 7 | Suche nach Adresse, Ort oder PLZ | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-7-adresssuche` | In Arbeit |
+| 7 | Suche nach Adresse, Ort oder PLZ | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-7-adresssuche` | Fertig |
 | 8 | Tankstellen-Detailansicht | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-8-detailansicht` | Offen |
 | 9 | Kartenansicht der Suchergebnisse | 6, 7, 8 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-9-kartenansicht` | Offen |
 | 10 | Favoritengruppen und Zuordnung von Tankstellen | 8 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-10-favoriten` | Offen |
