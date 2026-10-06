@@ -12,6 +12,9 @@ namespace Tankradar.MAUI.Models.Search;
 /// <param name="IsAutomatedStation">Gibt an, ob der Hinweis „Automatentankstelle“ gilt.</param>
 /// <param name="OpeningStatusText">Der Öffnungsstatus als Text; leer, wenn die Quelle ihn nicht liefert.</param>
 /// <param name="AddressText">Die Adresszeile; leer, wenn die Quelle keine Adresse liefert.</param>
+/// <param name="Latitude">Der Breitengrad der Tankstelle; <see langword="null"/>, wenn die Quelle keine gültige Position liefert (die Tankstelle erscheint dann nicht auf der Karte).</param>
+/// <param name="Longitude">Der Längengrad der Tankstelle; <see langword="null"/>, wenn die Quelle keine gültige Position liefert.</param>
+/// <param name="IsOpen">Gibt an, ob die Tankstelle laut Quelle geöffnet ist; <see langword="null"/>, wenn unbekannt.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationListItem(
     string Id,
@@ -22,8 +25,16 @@ public sealed record StationListItem(
     bool HasUnconfirmedPrice,
     bool IsAutomatedStation,
     string OpeningStatusText,
-    string AddressText = "")
+    string AddressText = "",
+    double? Latitude = null,
+    double? Longitude = null,
+    bool? IsOpen = null)
 {
+    /// <summary>
+    /// Gibt an, ob eine gültige Position vorliegt (Voraussetzung für die Markierung auf der Karte).
+    /// </summary>
+    public bool HasPosition => Latitude is not null && Longitude is not null;
+
     /// <summary>
     /// Gibt an, ob eine Adresse vorliegt.
     /// </summary>

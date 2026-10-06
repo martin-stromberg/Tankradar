@@ -54,7 +54,7 @@ scripts/
   create-review-version.ps1          Erzeugt startfähige Windows-Zwischenstände
   local-ci.ps1                       Lokaler Prüflauf (gleichwertig zur CI-Pipeline)
   package-windows.ps1                Windows-Release-Paket (ZIP + update.json)
-  *.mjs, validate-workflows.py       Hilfsskripte der CI/CD-Pipeline (+ Tests)
+  *.mjs, validate-workflows.py       Hilfsskripte der CI/CD-Pipeline (+ Tests, u. a. test_validate_workflows.py)
 .github/
   workflows/, actions/               CI/CD-Pipeline (GitHub Actions)
 coverlet.runsettings                 Coverage-Einstellungen für CI und lokalen Prüflauf
@@ -164,6 +164,13 @@ wird die Auflösung verweigert.
 
 Ohne Testmodus meldet die Suche unter Windows ohne Standortdienst, dass der Standort nicht ermittelt werden
 kann; es gibt keinen stillen Ersatzstandort.
+
+Die Suchergebnisse lassen sich alternativ auf einer Karte darstellen (Auswahl „Liste“/„Karte“, Vorbelegung aus der
+Standardansicht der Optionen): eigene Kartenkomponente auf Basis von OpenStreetMap-Kacheln (Quellenangabe
+„© OpenStreetMap-Mitwirkende“, Zoomen, Verschieben, Preismarkierungen in Grün/Teal/Rot/Grau, markierte
+Suchposition, Tippen öffnet die Details). Kacheln werden mit identifizierender Kennung abgerufen und zwischengespeichert;
+im Testmodus gibt `TANKRADAR_TILE_URL` die Adresse eines Mock-Kachelservers (`MockTileServer`) vor, ohne Adresse
+werden keine Kacheln abgerufen. Entscheidungen: [ADR 0005](docs/adr/0005-map-view-decisions.md).
 
 Details: [`docs/help/Suche/`](docs/help/Suche/index.md).
 

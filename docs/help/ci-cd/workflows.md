@@ -37,7 +37,7 @@ in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`valida
 | `scripts/resolve-release-version.mjs` | Entscheidet im Release-Workflow: neues Release, vorhandenes Release reparieren oder nichts tun. Pre-Releases werden nie repariert. |
 | `scripts/check-coverage.mjs` | Prüft die Zeilenabdeckung gegen die Schwelle. |
 | `scripts/package-windows.ps1` | Windows-Publish, ZIP und `update.json` (auch lokal nutzbar). |
-| `scripts/validate-workflows.py` | Syntaktische und strukturelle Prüfung der Workflows. |
+| `scripts/validate-workflows.py` | Syntaktische und strukturelle Prüfung der Workflows; verbietet außerdem .ipa-Veröffentlichungen, auch über Verzeichnis-/Muster-Uploads (`actions/upload-artifact`) und `gh release create/upload` mit Verzeichnissen, Mustern oder Variablen als Asset (Tests: `scripts/test_validate_workflows.py`). |
 | `scripts/local-ci.ps1` | [Lokaler Prüflauf](lokaler-pruefung.md). |
 | `scripts/iOS-Deployment.ps1` | [iOS-Build, Simulator, Gerät und TestFlight-Upload](ios-deployment.md) (lokal, mit Mac). |
 | `scripts/test-ios-deployment.ps1` | Prüfung des iOS-Skripts ohne Mac (Syntax, Hilfe, Abbruchverhalten, Hilfsfunktionen). |

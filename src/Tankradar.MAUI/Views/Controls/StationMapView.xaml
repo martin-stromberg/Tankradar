@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             x:Class="Tankradar.MAUI.Views.Controls.StationMapView">
+
+    <ContentView.Resources>
+        <!-- Schwebende Bedienelemente der Karte (Designentwurf: Zoom und Zentrieren oben rechts, Zähler oben links); mindestens 44 px groß -->
+        <Style x:Key="MapControlButton" TargetType="Button">
+            <Setter Property="WidthRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="HeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <Style x:Key="MapBadge" TargetType="Border">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F2FFFFFF, Dark=#F2283044}" />
+        </Style>
+    </ContentView.Resources>
+
+    <Border StrokeShape="RoundRectangle 16"
+            StrokeThickness="1"
+            Stroke="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}"
+            Padding="0">
+        <Grid x:Name="Surface"
+              BackgroundColor="{AppThemeBinding Light=#E8EDF5, Dark=#1E293B}"
+              IsClippedToBounds="True">
+            <Grid.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+                <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
+            </Grid.GestureRecognizers>
+
+            <AbsoluteLayout x:Name="TileLayer" InputTransparent="True" />
+            <AbsoluteLayout x:Name="MarkerLayer" />
+
+            <!-- Zähler und Zoomstufe (Designentwurf: Zähler-Chip oben links) -->
+            <Border Style="{StaticResource MapBadge}"
+                    HorizontalOptions="Start"
+                    VerticalOptions="Start"
+                    Margin="8"
+                    InputTransparent="True">
+                <VerticalStackLayout>
+                    <Label x:Name="CountLabel"
+                           FontFamily="InterSemibold"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                           AutomationId="Map.StationCount" />
+                    <Label x:Name="ZoomLabel"
+                           FontFamily="InterRegular"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Map.Zoom" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Zoom und Ausschnitt zurücksetzen -->
+            <VerticalStackLayout HorizontalOptions="End" VerticalOptions="Start" Margin="8" Spacing="8">
+                <Button Text="+"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnZoomInClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.ZoomIn}"
+                        AutomationId="Map.ZoomIn" />
+                <Button Text="−"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnZoomOutClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.ZoomOut}"
+                        AutomationId="Map.ZoomOut" />
+                <Button Text="◎"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnRecenterClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.Recenter}"
+                        AutomationId="Map.Recenter" />
+            </VerticalStackLayout>
+
+            <!-- Verschieben per Schaltfläche (für Bedienung ohne Wischgeste, z. B. Tastatur und Sprachausgabe) -->
+            <HorizontalStackLayout HorizontalOptions="Start" VerticalOptions="End" Margin="8,8,8,34" Spacing="8">
+                <Button Text="◀"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnPanWestClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.PanWest}"
+                        AutomationId="Map.Pan.West" />
+                <Button Text="▲"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnPanNorthClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.PanNorth}"
+                        AutomationId="Map.Pan.North" />
+                <Button Text="▼"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnPanSouthClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.PanSouth}"
+                        AutomationId="Map.Pan.South" />
+                <Button Text="▶"
+                        Style="{StaticResource MapControlButton}"
+                        Clicked="OnPanEastClicked"
+                        SemanticProperties.Description="{x:Static texts:MapTexts.PanEast}"
+                        AutomationId="Map.Pan.East" />
+            </HorizontalStackLayout>
+
+            <!-- Quellenangabe (Nutzungsbedingung von OpenStreetMap: dauerhaft sichtbar) -->
+            <Border Style="{StaticResource MapBadge}"
+                    Padding="8,2"
+                    HorizontalOptions="End"
+                    VerticalOptions="End"
+                    Margin="8,8,8,8"
+                    InputTransparent="True">
+                <Label Text="{x:Static texts:MapTexts.Attribution}"
+                       FontFamily="InterRegular"
+                       FontSize="11"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                       AutomationId="Map.Attribution" />
+            </Border>
+        </Grid>
+    </Border>
+</ContentView>

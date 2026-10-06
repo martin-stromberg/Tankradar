@@ -47,3 +47,11 @@ Ein GPS ist dafür nicht nötig; es funktioniert auch bei **Standort und GPS** =
 ## Ergebnis
 
 Eine Liste der Tankstellen im gewählten Umkreis. Erscheint „Offline: keine Verbindung zum Preisdienst.“, sind es die zuletzt bekannten Preise; tippen Sie später erneut auf **Suchen**.
+
+## Ergebnisse auf der Karte ansehen
+
+1. Suche wie gewohnt starten (Standort oder Adresse).
+2. Unter **Ansicht** auf **Karte** tippen. Die Tankstellen erscheinen als farbige Preismarkierungen, die Suchposition ist markiert, unten rechts steht „© OpenStreetMap-Mitwirkende“.
+3. Mit **+**/**−** zoomen, mit Wischgeste oder den Pfeilen verschieben, mit **◎** den Ausschnitt zurücksetzen.
+4. Auf eine Markierung tippen, um die Details der Tankstelle zu öffnen; mit dem Zurück-Pfeil kommen Sie zur Karte zurück.
+5. Mit **Liste** wechseln Sie ohne neue Suche zurück. Möchten Sie immer mit der Karte starten, wählen Sie in den **Optionen** die Standardansicht **Karte**.

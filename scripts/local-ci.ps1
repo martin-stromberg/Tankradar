@@ -6,7 +6,7 @@
     des Billing-Limits des privaten Repositories nicht läuft, und als schnelle Vorab-Prüfung vor einem PR.
 
     Geprüft wird (Reihenfolge wie in der Pipeline):
-        1. Pipeline-Skripte: Node-Tests (npm test), Workflow-Validierung (validate-workflows.py) und
+        1. Pipeline-Skripte: Node-Tests (npm test), Workflow-Validierung (validate-workflows.py samt Tests; erkennt u. a. .ipa-Uploads) und
                               Pruefung von scripts/iOS-Deployment.ps1 (Syntax, Hilfe, sauberer Abbruch ohne Mac)
         2. Restore
         3. Formatprüfung      dotnet format --verify-no-changes --severity error
@@ -109,7 +109,12 @@ foreach ($dir in @($testResults, $coverageReport, $e2eDiagnostics)) {
 }
 
 Invoke-Step "Pipeline-Skripte: Node-Tests" { npm test }
-Invoke-Step "Pipeline-Skripte: Workflow-Validierung" { python scripts/validate-workflows.py }
+Invoke-Step "Pipeline-Skripte: Workflow-Validierung" {
+    python scripts/validate-workflows.py
+    if ($LASTEXITCODE -ne 0) { throw "Workflow-Validierung fehlgeschlagen." }
+    python scripts/test_validate_workflows.py
+    if ($LASTEXITCODE -ne 0) { throw "Tests der Workflow-Validierung fehlgeschlagen." }
+}
 # Das Pruefskript muss unabhaengig von geerbten Include*Target-Variablen gruen sein: einmal ohne, einmal mit den
 # Variablen der Windows-Jobs (inkl. Android) in einem Kindprozess.
 Invoke-Step "iOS-Deployment-Skript (Syntax, Hilfe, Abbruch ohne Mac)" {

@@ -27,6 +27,7 @@
     <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
     <Compile Include="..\TestSupport\MockTankerkoenigServer.cs" Link="TestSupport\MockTankerkoenigServer.cs" />
     <Compile Include="..\TestSupport\MockNominatimServer.cs" Link="TestSupport\MockNominatimServer.cs" />
+    <Compile Include="..\TestSupport\MockTileServer.cs" Link="TestSupport\MockTileServer.cs" />
   </ItemGroup>
 
 </Project>

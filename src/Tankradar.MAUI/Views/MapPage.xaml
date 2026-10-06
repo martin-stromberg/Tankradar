@@ -5,6 +5,8 @@
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
              xmlns:search="clr-namespace:Tankradar.MAUI.Models.Search"
+             xmlns:controls="clr-namespace:Tankradar.MAUI.Views.Controls"
+             xmlns:palette="clr-namespace:Tankradar.MAUI.Resources"
              x:DataType="vm:MapViewModel"
              x:Class="Tankradar.MAUI.Views.MapPage"
              Title="Karte"
@@ -72,6 +74,28 @@
                 </Button.Triggers>
             </Button>
         </DataTemplate>
+        <DataTemplate x:Key="ViewChipTemplate" x:DataType="vm:IChoiceOption">
+            <Button Text="{Binding Label}"
+                    Command="{Binding SelectCommand}"
+                    Style="{StaticResource SearchChipButton}"
+                    SemanticProperties.Hint="{Binding SelectionHint}"
+                    AutomationId="{Binding AutomationKey, StringFormat='Search.View.{0}'}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </DataTemplate>
+        <Style x:Key="LegendDot" TargetType="Border">
+            <Setter Property="WidthRequest" Value="14" />
+            <Setter Property="HeightRequest" Value="14" />
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 7" />
+            <Setter Property="VerticalOptions" Value="Center" />
+        </Style>
         <DataTemplate x:Key="FilterChipTemplate" x:DataType="vm:IChoiceOption">
             <Button Text="{Binding Label}"
                     Command="{Binding SelectCommand}"
@@ -128,6 +152,17 @@
                    Style="{StaticResource headline-lg}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                    AutomationId="MapPage.Headline" />
+
+            <Border Style="{StaticResource SearchCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{x:Static texts:MapTexts.ViewHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding ViewOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource ViewChipTemplate}" />
+                </VerticalStackLayout>
+            </Border>
 
             <Border Style="{StaticResource SearchCard}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
@@ -229,7 +264,54 @@
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                    AutomationId="Search.EmptyState" />
 
+            <!-- Kartenansicht (alternativ zur Liste) -->
+            <Label Text="{Binding MapHintText}"
+                   IsVisible="{Binding ShowMapHint}"
+                   Style="{StaticResource body-lg}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Search.Map.Hint" />
+
+            <controls:StationMapView x:Name="ResultMap"
+                                     IsVisible="{Binding ShowMap}"
+                                     HeightRequest="440"
+                                     Markers="{Binding MapMarkers}"
+                                     Origin="{Binding Origin}"
+                                     ResultVersion="{Binding MapResultVersion}"
+                                     MarkerCommand="{Binding OpenStationCommand}"
+                                     AutomationId="Search.Map" />
+
+            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" Margin="{StaticResource space-xs}"
+                        IsVisible="{Binding ShowMap}">
+                <Label Text="{x:Static texts:MapTexts.LegendHeading}"
+                       Style="{StaticResource body-sm}"
+                       Margin="0,0,12,0"
+                       VerticalOptions="Center"
+                       AutomationId="Map.Legend"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Cheapest}" />
+                    <Label Text="{x:Static texts:MapTexts.LevelCheapest}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Normal}" />
+                    <Label Text="{x:Static texts:MapTexts.LevelNormal}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Expensive}" />
+                    <Label Text="{x:Static texts:MapTexts.LevelExpensive}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Closed}" />
+                    <Label Text="{x:Static texts:MapTexts.LevelClosed}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                </HorizontalStackLayout>
+            </FlexLayout>
+
             <VerticalStackLayout BindableLayout.ItemsSource="{Binding Stations}"
+                                 IsVisible="{Binding IsListView}"
                                  Spacing="{StaticResource space-sm}"
                                  AutomationId="Search.Results">
                 <BindableLayout.ItemTemplate>
@@ -329,7 +411,7 @@
 
             <Button Text="{Binding ShowMoreText}"
                     Command="{Binding ShowMoreCommand}"
-                    IsVisible="{Binding HasMore}"
+                    IsVisible="{Binding ShowMoreVisible}"
                     MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
                     CornerRadius="22"
                     BackgroundColor="{StaticResource ColorPrimaryTeal}"

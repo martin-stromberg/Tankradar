@@ -49,6 +49,24 @@ public static class StationResultBuilder
         return Sort(items, sortOrder, sortFuel);
     }
 
+    /// <summary>
+    /// Ermittelt die maßgebliche Spritsorte für Sortierung und Karte: die gefilterte Sorte, ohne (gültigen) Filter die zuerst gewählte Sorte der Einstellungen.
+    /// </summary>
+    /// <param name="fuelTypes">Die Spritsorten der Einstellungen in ihrer Reihenfolge.</param>
+    /// <param name="filter">Die Sorte, nach der gefiltert wird; <see langword="null"/> für „Alle“.</param>
+    /// <returns>Die Sorte; <see langword="null"/>, wenn keine Sorte ausgewählt ist.</returns>
+    public static FuelType? ResolveFuelType(IReadOnlyList<FuelTypeSelection> fuelTypes, FuelType? filter)
+    {
+        ArgumentNullException.ThrowIfNull(fuelTypes);
+        var selected = fuelTypes.Where(selection => selection.IsSelected && Enum.IsDefined(selection.FuelType)).Select(selection => selection.FuelType).ToList();
+        if (filter is { } requested && selected.Contains(requested))
+        {
+            return requested;
+        }
+
+        return selected.Count > 0 ? selected[0] : null;
+    }
+
     private static StationListItem CreateItem(StationInfo source, IReadOnlyList<FuelType> selected, DateTime nowUtc)
     {
         // Hinweise aus Öffnungszeiten (z. B. „Automatentankstelle“) nur aus Detailangaben, die nicht älter als die Altersgrenze sind.
@@ -83,7 +101,16 @@ public static class StationResultBuilder
             StationHints.HasUnconfirmedPrice(shownPrices, nowUtc),
             StationHints.IsAutomatedStation(station.WholeDay, station.OpeningTimes),
             station.IsOpen is { } isOpen ? (isOpen ? SearchTexts.Open : SearchTexts.Closed) : string.Empty,
-            SearchTexts.FormatAddress(station.Street, station.HouseNumber, station.PostCode, station.Place));
+            SearchTexts.FormatAddress(station.Street, station.HouseNumber, station.PostCode, station.Place),
+            HasValidPosition(station) ? station.Latitude : null,
+            HasValidPosition(station) ? station.Longitude : null,
+            station.IsOpen);
+    }
+
+    private static bool HasValidPosition(StationInfo station)
+    {
+        // (0, 0) ist der Standardwert fehlender Angaben und liegt nie in Deutschland.
+        return GeoPosition.TryCreate(station.Latitude, station.Longitude, out _) && !(station.Latitude == 0 && station.Longitude == 0);
     }
 
     private static IReadOnlyList<StationListItem> Sort(List<StationListItem> items, ResultSortOrder sortOrder, FuelType sortFuel)

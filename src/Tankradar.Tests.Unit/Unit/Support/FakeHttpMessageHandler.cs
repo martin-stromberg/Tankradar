@@ -37,6 +37,21 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
     }
 
     /// <summary>
+    /// Hängt eine Antwort mit Statuscode und Binärinhalt an.
+    /// </summary>
+    /// <param name="status">Der Statuscode.</param>
+    /// <param name="body">Der Inhalt.</param>
+    /// <returns>Der Handler für verkettete Aufrufe.</returns>
+    public FakeHttpMessageHandler RespondWithBytes(HttpStatusCode status, byte[] body)
+    {
+        _steps.Add(_ => Task.FromResult(new HttpResponseMessage(status)
+        {
+            Content = new ByteArrayContent(body),
+        }));
+        return this;
+    }
+
+    /// <summary>
     /// Hängt einen Schritt an, der eine Ausnahme auslöst.
     /// </summary>
     /// <param name="exception">Die Ausnahme.</param>
