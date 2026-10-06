@@ -188,4 +188,48 @@ public class HttpTileSourceTests_Fetch : BaseTest
         Assert.Null(await source.GetTileAsync(new TileKey(30, 0, 0)));
         Assert.Empty(_handler.Requests);
     }
+
+    /// <summary>
+    /// Prüft, dass höchstens zwei Abrufe gleichzeitig laufen (Nutzungsrichtlinie der OpenStreetMap-Kachelserver), auch bei vielen gleichzeitigen Anfragen.
+    /// </summary>
+    [Fact]
+    public async Task GetTile_ManyConcurrentRequests_NeverMoreThanTwoInFlight()
+    {
+        var counting = new ConcurrencyHandler(Png);
+        using var source = new HttpTileSource(new HttpClient(counting), new TileServerOptions(), () => _directory, _clock, _logger);
+
+        var tasks = Enumerable.Range(0, 8).Select(index => source.GetTileAsync(new TileKey(10, index, 0))).ToArray();
+        await Task.WhenAll(tasks);
+
+        Assert.All(tasks, task => Assert.NotNull(task.Result));
+        Assert.Equal(2, counting.MaxInFlight);
+    }
+
+    private sealed class ConcurrencyHandler : HttpMessageHandler
+    {
+        private readonly byte[] _body;
+        private int _inFlight;
+        private int _max;
+
+        public ConcurrencyHandler(byte[] body)
+        {
+            _body = body;
+        }
+
+        public int MaxInFlight => _max;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var now = Interlocked.Increment(ref _inFlight);
+            int seen;
+            while (now > (seen = Volatile.Read(ref _max)))
+            {
+                Interlocked.CompareExchange(ref _max, now, seen);
+            }
+
+            await Task.Delay(50, cancellationToken);
+            Interlocked.Decrement(ref _inFlight);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(_body) };
+        }
+    }
 }

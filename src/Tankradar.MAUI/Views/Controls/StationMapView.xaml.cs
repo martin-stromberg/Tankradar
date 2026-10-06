@@ -267,15 +267,38 @@ public partial class StationMapView : ContentView
         {
             // Kurze Verzögerung: Kacheln, die beim schnellen Verschieben oder Zoomen sofort wieder verschwinden, werden gar nicht erst abgerufen.
             await Task.Delay(TileDelay, cancellation.Token).ConfigureAwait(true);
-            var data = await source.GetTileAsync(key, cancellation.Token).ConfigureAwait(true);
-            if (data is not null && !cancellation.IsCancellationRequested)
+            var token = cancellation.Token;
+
+            // Datei- und Netzzugriffe der Kachelquelle laufen nicht auf dem UI-Thread (kein Ruckeln beim Verschieben).
+            var data = await Task.Run(() => source.GetTileAsync(key, token), token).ConfigureAwait(true);
+            if (cancellation.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (data is not null)
             {
                 image.Source = ImageSource.FromStream(() => new MemoryStream(data));
+            }
+            else if (_tiles.TryGetValue(key, out var current) && ReferenceEquals(current, image))
+            {
+                // Nicht verfügbar: Die Kachel wird beim nächsten Aufbau erneut angefragt (die Quelle hält das Wartefenster nach Fehlern ein).
+                TileLayer.Remove(image);
+                _tiles.Remove(key);
             }
         }
         catch (OperationCanceledException)
         {
             // Die Kachel ist nicht mehr sichtbar.
+        }
+        finally
+        {
+            if (_tileLoads.TryGetValue(key, out var registered) && ReferenceEquals(registered, cancellation))
+            {
+                _tileLoads.Remove(key);
+            }
+
+            cancellation.Dispose();
         }
     }
 
@@ -287,7 +310,7 @@ public partial class StationMapView : ContentView
         foreach (var marker in markers)
         {
             var (x, y) = viewport.ToScreen(marker.Latitude, marker.Longitude);
-            var inside = x >= 0 && x <= viewport.Width && y >= 0 && y <= viewport.Height;
+            var inside = viewport.Contains(marker.Latitude, marker.Longitude);
             if (!inside)
             {
                 continue;
@@ -348,7 +371,7 @@ public partial class StationMapView : ContentView
         }
 
         var (x, y) = viewport.ToScreen(origin.Latitude, origin.Longitude);
-        var inside = x >= 0 && x <= viewport.Width && y >= 0 && y <= viewport.Height;
+        var inside = viewport.Contains(origin.Latitude, origin.Longitude);
         if (!inside)
         {
             if (_originMarker is not null)

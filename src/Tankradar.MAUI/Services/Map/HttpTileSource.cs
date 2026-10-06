@@ -189,6 +189,11 @@ public sealed class HttpTileSource : ITileSource, IDisposable
     {
         lock (_gate)
         {
+            foreach (var expired in _failures.Where(entry => entry.Value <= now).Select(entry => entry.Key).ToList())
+            {
+                _failures.Remove(expired);
+            }
+
             _failures[key] = now + _options.FailureBackoff;
         }
     }
@@ -272,7 +277,13 @@ public sealed class HttpTileSource : ITileSource, IDisposable
                 return;
             }
 
-            var files = new DirectoryInfo(root).EnumerateFiles("*.png", SearchOption.AllDirectories).OrderBy(file => file.LastWriteTimeUtc).ToList();
+            var directory = new DirectoryInfo(root);
+            foreach (var leftover in directory.EnumerateFiles("*.tmp", SearchOption.AllDirectories).Where(file => file.LastWriteTimeUtc < DateTime.UtcNow.AddHours(-1)))
+            {
+                leftover.Delete();
+            }
+
+            var files = directory.EnumerateFiles("*.png", SearchOption.AllDirectories).OrderBy(file => file.LastWriteTimeUtc).ToList();
             var total = files.Sum(file => file.Length);
             foreach (var file in files)
             {
