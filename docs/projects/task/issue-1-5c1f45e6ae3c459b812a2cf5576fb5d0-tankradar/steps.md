@@ -17,7 +17,7 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 6a | Oberflächentests als Auslieferungs-Gate | 3, 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-6a-e2e-gate` | Fertig |
 | 7 | Suche nach Adresse, Ort oder PLZ | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-7-adresssuche` | Fertig |
 | 8 | Tankstellen-Detailansicht | 6 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-8-detailansicht` | Fertig |
-| 9 | Kartenansicht der Suchergebnisse | 6, 7, 8 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-9-kartenansicht` | Offen |
+| 9 | Kartenansicht der Suchergebnisse | 6, 7, 8 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-9-kartenansicht` | In Arbeit |
 | 10 | Favoritengruppen und Zuordnung von Tankstellen | 8 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-10-favoriten` | Offen |
 | 11 | Startseite mit Favoritengruppen und Bereich „In der Nähe" | 5, 6, 10 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-11-startseite` | Offen |
 | 12 | Fahrzeugverwaltung im Tankbuch | 4 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-12-fahrzeuge` | Offen |
