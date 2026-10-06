@@ -40,6 +40,18 @@ Folgende Teile des Entwurfs sind bewusst nicht oder abweichend umgesetzt:
   Quellenangabe „Daten: Tankerkönig / MTS-K“ (CC BY 4.0) und die Öffnungszeiten-Karte mit Stand der
   Angabe (die Daten liefert die Quelle, der Entwurf zeigt sie nicht).
 - **Offline-Hinweis:** Auf Detail- und Suchseite steht er fest oberhalb des scrollenden Inhalts.
+- **Logo und Avatar in der Kopfleiste (nachgetragen in Schritt 9):** Der Entwurf zeigt links in der
+  Kopfleiste das App-Logo samt GPS-Chip und rechts Benachrichtigungen und einen Profil-Avatar. Die App
+  nutzt die Kopfleiste der Shell mit dem Seitentitel und dem Zurück-Pfeil; das Logo ist als App-Symbol
+  vorhanden, aber nicht in der Kopfleiste eingebunden. Benachrichtigungen und Profil gibt es in Version 1.0
+  nicht (kein Benutzerkonto, keine Push-Funktion), ein Avatar wäre ein Platzhalter ohne Funktion und
+  entfällt daher.
+- **„Geöffnet“ ohne „bis HH:MM“ (nachgetragen in Schritt 9):** Der Entwurf zeigt im Öffnungsstatus
+  z. B. „Geöffnet bis 22:00“. Die App zeigt „Geöffnet“ bzw. „Geschlossen“ aus dem Statusfeld der Quelle.
+  Die Schlusszeit ließe sich nur aus den Öffnungszeiten der Detailabfrage ableiten, die die
+  Umkreissuche nicht mitliefert, die nur begrenzt aktuell sind (Altersgrenze der Detailangaben) und die
+  Sonderregelungen (Feiertage, Überschreibungen) nicht vollständig abbilden. Eine daraus berechnete Zeit
+  wäre unzuverlässig; sie entfällt, die vollständigen Öffnungszeiten stehen in der Öffnungszeiten-Karte.
 
 ## Folgen
 

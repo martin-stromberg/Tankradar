@@ -95,3 +95,19 @@ Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche.
 - Der Radius ist auf 25 km begrenzt (Vorgabe der Preisquelle) und wird in den Stufen 1, 2, 5, 10, 15 und 25 km gewählt.
 - Abweichungen vom Designentwurf der Suche sind in [ADR 0002](../../adr/0002-search-page-design-deviations.md) dokumentiert.
 - Die Liste zeigt nur Preise der in den **Optionen** gewählten Spritsorten.
+
+### Kartenansicht
+
+Unter **Ansicht** wechseln Sie zwischen **Liste** und **Karte**. Voreingestellt ist die **Standardansicht** aus den Optionen; Ihre Wahl in der Suche gilt, solange die App läuft und Sie die Standardansicht nicht ändern. Der Wechsel löst keine neue Suche aus und fragt keinen Standort ab. Solange noch nicht gesucht wurde, zeigt die Kartenansicht den Hinweis „Noch keine Ergebnisse“.
+
+Die Karte besteht aus Kacheln von OpenStreetMap und sieht unter iOS und Windows gleich aus. Unten rechts steht immer die Quellenangabe **© OpenStreetMap-Mitwirkende**. Nach einer Suche passt die Karte den Ausschnitt so an, dass alle Tankstellen und die Suchposition sichtbar sind.
+
+- **Zoomen:** Schaltflächen **Vergrößern** (+) und **Verkleinern** (−) oder Kneifgeste; Zoomstufen 4 bis 18, die aktuelle Stufe steht oben links („Zoom 14“).
+- **Verschieben:** Wischgeste oder die Pfeil-Schaltflächen links unten (**Ausschnitt nach Norden/Süden/Osten/Westen verschieben**), damit die Karte auch ohne Wischgeste (Tastatur, Sprachausgabe) bedienbar ist. **Ausschnitt zurücksetzen** (◎) passt den Ausschnitt wieder auf alle Ergebnisse ein.
+- **Zähler:** „3 von 12 Stationen sichtbar“ zeigt, wie viele Markierungen im aktuellen Ausschnitt liegen.
+- **Suchposition:** Bei der Standortsuche ist **Mein Standort** markiert, bei der Adresssuche die **Gesuchte Position**. Der Standort wird nur gemäß der Einstellung zur Standortnutzung abgefragt, nur im Arbeitsspeicher gehalten und bei der nächsten Suche verworfen.
+- **Markierungen:** Jede Tankstelle erscheint mit ihrem Preis (Preis der gefilterten Spritsorte, ohne Filter der zuerst gewählten Sorte). Die Farbe zeigt das Preisniveau innerhalb der aktuellen Ergebnismenge: **Grün** günstigster Preis, **Rot** oberes Drittel der Spanne zwischen niedrigstem und höchstem Preis, **Teal** alle übrigen, **Grau** geschlossen. Bei gleichen Preisen oder nur einer Tankstelle gibt es kein Rot; geschlossene Tankstellen zählen nicht zur Preisspanne. Eine Legende unter der Karte erklärt die Farben; Bedienhilfen nennen das Preisniveau zusätzlich als Text. Tankstellen, die die gefilterte Sorte nicht führen, erscheinen bei „Alle“ ohne Preis (mit dem Anfangsbuchstaben).
+- **Details:** Tippen auf eine Markierung öffnet die [Tankstellen-Detailansicht](../Tankstellendetails/index.md); der Zurück-Pfeil führt zur Karte zurück.
+- **Filter und Sortierung** gelten für Liste und Karte gemeinsam; die Karte zeigt immer die gesamte gefilterte Ergebnismenge (nicht nur die ersten Listeneinträge).
+
+Datenschutz: Beim Laden der Kacheln erfährt der Kachelserver von OpenStreetMap Ihre IP-Adresse und den betrachteten Kartenausschnitt, nicht aber die genaue Suchposition. Die Kacheln werden bis zu sieben Tage auf dem Gerät zwischengespeichert (höchstens 100 MB); ohne Verbindung zeigt die Karte bereits geladene Kacheln, sonst einen leeren Hintergrund, die Markierungen bleiben benutzbar. Begründung und Abweichungen vom Designentwurf: [ADR 0005](../../adr/0005-map-view-decisions.md).

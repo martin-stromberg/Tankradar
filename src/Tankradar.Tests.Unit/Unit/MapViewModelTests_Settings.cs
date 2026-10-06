@@ -44,10 +44,10 @@ public class MapViewModelTests_Settings : MapViewModelTestBase
     }
 
     /// <summary>
-    /// Prüft, dass die Standardansicht „Karte“ vor Schritt 9 ebenfalls als Liste angezeigt wird.
+    /// Prüft, dass bei Standardansicht „Karte“ die Tankstellen der Liste weiterhin aufbereitet werden (Wechsel auf die Liste ohne neue Suche).
     /// </summary>
     [Fact]
-    public async Task ResultViewMap_StillShowsList()
+    public async Task ResultViewMap_StillPreparesListStations()
     {
         Settings.Stored = Settings.Stored with { ResultView = ResultView.Map };
         Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, TwoStations());

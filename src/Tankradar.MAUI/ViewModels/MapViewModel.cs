@@ -1,12 +1,14 @@
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models;
+using Tankradar.MAUI.Models.Map;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.Services.Search;
@@ -14,8 +16,9 @@ using Tankradar.MAUI.Services.Search;
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse mit filterbarer und sortierbarer Ergebnisliste.
-/// Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert; die Adresseingabe wird nicht gespeichert.
+/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse mit filterbarer und sortierbarer Ergebnisliste
+/// und alternativer Kartenansicht der Ergebnisse. Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert
+/// (die Karte hält die Suchposition ausschließlich im Arbeitsspeicher bis zur nächsten Suche); die Adresseingabe wird nicht gespeichert.
 /// </summary>
 public class MapViewModel : BaseViewModel
 {
@@ -25,6 +28,7 @@ public class MapViewModel : BaseViewModel
     public const int PageSize = 25;
 
     private static readonly IReadOnlyList<StationListItem> NoStations = [];
+    private static readonly IReadOnlyList<MapMarker> NoMarkers = [];
 
     private readonly ISettingsService _settingsService;
     private readonly ILocationService _locationService;
@@ -38,6 +42,12 @@ public class MapViewModel : BaseViewModel
     private AppSettings? _settings;
     private Task<AppSettings?>? _settingsLoad;
     private ResultSortOrder? _loadedDefaultSort;
+    private ResultView? _loadedDefaultView;
+    private ResultView _resultView = ResultView.List;
+    private readonly List<ChoiceOptionViewModel<ResultView>> _viewOptions;
+    private IReadOnlyList<MapMarker> _mapMarkers = NoMarkers;
+    private MapOrigin? _origin;
+    private int _mapResultVersion;
     private StationSearchResult? _lastResult;
     private CancellationTokenSource? _searchCancellation;
     private bool _subscribed;
@@ -104,6 +114,14 @@ public class MapViewModel : BaseViewModel
         SyncModeSelection();
         ClearAddressCommand = new Command(ClearAddress);
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
+        _viewOptions = [];
+        foreach (var value in Enum.GetValues<ResultView>())
+        {
+            _viewOptions.Add(new ChoiceOptionViewModel<ResultView>(value, SettingsTexts.GetLabel(value), OnViewSelected));
+        }
+
+        ViewOptions = _viewOptions;
+        SyncViewSelection();
         _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
@@ -236,6 +254,7 @@ public class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasResults));
                 OnPropertyChanged(nameof(ShowEmptyState));
+                OnPropertyChanged(nameof(ShowMapHint));
             }
         }
     }
@@ -247,6 +266,87 @@ public class MapViewModel : BaseViewModel
     {
         get => _fuelFilterOptions;
         private set => SetProperty(ref _fuelFilterOptions, value);
+    }
+
+    /// <summary>
+    /// Die wählbaren Ansichten der Ergebnisse („Liste“, „Karte“); vorgewählt ist die Standardansicht aus den Einstellungen.
+    /// </summary>
+    public IReadOnlyList<ChoiceOptionViewModel<ResultView>> ViewOptions { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Ergebnisse als Liste dargestellt werden.
+    /// </summary>
+    public bool IsListView => _resultView == ResultView.List;
+
+    /// <summary>
+    /// Gibt an, ob die Ergebnisse auf der Karte dargestellt werden.
+    /// </summary>
+    public bool IsMapView => _resultView == ResultView.Map;
+
+    /// <summary>
+    /// Gibt an, ob die Schaltfläche „Weitere anzeigen“ erscheint (nur in der Listenansicht, wenn weitere Tankstellen vorhanden sind).
+    /// </summary>
+    public bool ShowMoreVisible => IsListView && HasMore;
+
+    /// <summary>
+    /// Gibt an, ob die Karte mit Inhalt gezeigt wird (Kartenansicht gewählt und Ergebnis oder Suchposition vorhanden).
+    /// </summary>
+    public bool ShowMap => IsMapView && HasMapContent;
+
+    /// <summary>
+    /// Gibt an, ob in der Kartenansicht der Hinweis „Noch keine Ergebnisse“ erscheint.
+    /// </summary>
+    public bool ShowMapHint => IsMapView && !HasMapContent && !ShowEmptyState && !HasStatusMessage;
+
+    /// <summary>
+    /// Der Hinweis der Kartenansicht ohne Ergebnisse.
+    /// </summary>
+    public string MapHintText => MapTexts.NoResults;
+
+    /// <summary>
+    /// Gibt an, ob Markierungen oder eine Suchposition für die Karte vorliegen.
+    /// </summary>
+    public bool HasMapContent => _mapMarkers.Count > 0 || _origin is not null;
+
+    /// <summary>
+    /// Die Markierungen der Karte: alle Tankstellen der aktuellen (gefilterten) Ergebnismenge mit Preis und Preisniveau; wird bei jeder Änderung vollständig ersetzt.
+    /// </summary>
+    public IReadOnlyList<MapMarker> MapMarkers
+    {
+        get => _mapMarkers;
+        private set
+        {
+            if (SetProperty(ref _mapMarkers, value))
+            {
+                OnMapContentChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Die markierte Suchposition (eigener Standort bzw. gesuchte Position); <see langword="null"/> ohne Ergebnis. Sie wird nur im Arbeitsspeicher gehalten,
+    /// nie gespeichert oder protokolliert, und bei jeder neuen Suche, jedem Wechsel der Suchart und jedem Fehlschlag verworfen.
+    /// </summary>
+    public MapOrigin? Origin
+    {
+        get => _origin;
+        private set
+        {
+            if (SetProperty(ref _origin, value))
+            {
+                OnMapContentChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Zähler der Ergebnisse für die Karte: ändert sich bei jeder neuen Suche bzw. beim Verwerfen des Ergebnisses (nicht bei Filter oder Sortierung),
+    /// damit die Karte nur dann den Ausschnitt neu einpasst.
+    /// </summary>
+    public int MapResultVersion
+    {
+        get => _mapResultVersion;
+        private set => SetProperty(ref _mapResultVersion, value);
     }
 
     /// <summary>
@@ -281,6 +381,7 @@ public class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasStatusMessage));
                 OnPropertyChanged(nameof(ShowEmptyState));
+                OnPropertyChanged(nameof(ShowMapHint));
             }
         }
     }
@@ -480,6 +581,7 @@ public class MapViewModel : BaseViewModel
         if (_lastResult is null || _settings is null)
         {
             _allStations = NoStations;
+            MapMarkers = NoMarkers;
             PublishVisible();
             return;
         }
@@ -492,6 +594,9 @@ public class MapViewModel : BaseViewModel
             filter,
             sort,
             _timeProvider.GetUtcNow().UtcDateTime);
+
+        // Die Karte zeigt die gesamte Ergebnismenge (nicht nur die dargestellte Listenseite); maßgeblich ist die gefilterte, sonst die zuerst gewählte Sorte.
+        MapMarkers = MapMarkerBuilder.Build(_allStations, StationResultBuilder.ResolveFuelType(_settings.FuelTypes, filter));
         PublishVisible();
     }
 
@@ -502,6 +607,7 @@ public class MapViewModel : BaseViewModel
         // Unabhängig davon, ob sich die dargestellte Liste geändert hat: Gesamtzahl und Rest hängen auch von der gefilterten Gesamtliste ab.
         OnPropertyChanged(nameof(TotalStationCount));
         OnPropertyChanged(nameof(HasMore));
+        OnPropertyChanged(nameof(ShowMoreVisible));
         OnPropertyChanged(nameof(ShowMoreText));
     }
 
@@ -540,9 +646,10 @@ public class MapViewModel : BaseViewModel
 
         var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
         var query = new StationSearchQuery(position.Latitude, position.Longitude, radiusKm, fuelTypes);
+        var origin = new MapOrigin(_searchMode == SearchMode.Address ? MapOriginKind.SearchedPlace : MapOriginKind.CurrentLocation, position.Latitude, position.Longitude);
         var result = await _priceService.SearchNearbyAsync(query, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
-        ApplyResult(result);
+        ApplyResult(result, origin);
     }
 
     private async Task<GeoPosition?> ResolveCurrentLocationAsync(AppSettings settings, CancellationToken token)
@@ -607,15 +714,48 @@ public class MapViewModel : BaseViewModel
         }
     }
 
+    private void OnViewSelected(ChoiceOptionViewModel<ResultView> selected)
+    {
+        SelectView(selected.Value);
+    }
+
+    private void SelectView(ResultView view)
+    {
+        _resultView = view;
+        SyncViewSelection();
+        OnPropertyChanged(nameof(IsListView));
+        OnPropertyChanged(nameof(IsMapView));
+        OnPropertyChanged(nameof(ShowMoreVisible));
+        OnPropertyChanged(nameof(ShowMap));
+        OnPropertyChanged(nameof(ShowMapHint));
+    }
+
+    private void SyncViewSelection()
+    {
+        foreach (var option in _viewOptions)
+        {
+            option.SetSelectedSilently(option.Value == _resultView);
+        }
+    }
+
+    private void OnMapContentChanged()
+    {
+        OnPropertyChanged(nameof(HasMapContent));
+        OnPropertyChanged(nameof(ShowMap));
+        OnPropertyChanged(nameof(ShowMapHint));
+    }
+
     private void ClearAddress()
     {
         AddressText = string.Empty;
         StatusMessage = null;
     }
 
-    private void ApplyResult(StationSearchResult result)
+    private void ApplyResult(StationSearchResult result, MapOrigin origin)
     {
         _lastResult = result;
+        Origin = origin;
+        MapResultVersion++;
         ApplyFilterAndSort();
         StatusMessage = NullIfEmpty(SearchTexts.GetFailureMessage(result.Failure, result.Stations.Count > 0));
         SourceNote = result.Source == PriceDataSource.OfflineFallback && result.Stations.Count > 0 ? SearchTexts.OfflineFallbackNote : null;
@@ -666,6 +806,13 @@ public class MapViewModel : BaseViewModel
             {
                 _loadedDefaultSort = settings.ResultSortOrder;
                 SelectSort(settings.ResultSortOrder);
+            }
+
+            if (_loadedDefaultView != settings.ResultView)
+            {
+                // Die Standardansicht gilt beim Laden und wenn sie in den Optionen geändert wurde; eine Wahl während der Sitzung bleibt sonst bestehen.
+                _loadedDefaultView = settings.ResultView;
+                SelectView(settings.ResultView);
             }
 
             var previousFilter = FuelFilterOptions.FirstOrDefault(option => option.IsSelected)?.FuelType;
@@ -742,6 +889,9 @@ public class MapViewModel : BaseViewModel
         ResolvedPlace = null;
         _allStations = NoStations;
         _visibleCount = PageSize;
+        Origin = null;
+        MapMarkers = NoMarkers;
+        MapResultVersion++;
         Stations = NoStations;
         UpdateOfflineState();
         OnPropertyChanged(nameof(ShowEmptyState));
