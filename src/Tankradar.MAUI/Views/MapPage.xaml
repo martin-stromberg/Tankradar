@@ -104,20 +104,25 @@
         </DataTemplate>
     </views:TankradarContentPage.Resources>
 
-    <ScrollView>
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Offline-Hinweis fest oben (scrollt nicht mit), einheitlich mit der Detailansicht -->
+        <Border Grid.Row="0"
+                Margin="{StaticResource space-md}"
+                Style="{StaticResource SearchChip}"
+                Padding="{StaticResource space-md}"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                IsVisible="{Binding IsOffline}">
+            <Label Text="{Binding OfflineMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorTextPrimaryLight}"
+                   AutomationId="Search.OfflineBanner" />
+        </Border>
+
+    <ScrollView Grid.Row="1">
         <VerticalStackLayout Padding="{StaticResource space-md}"
                              Spacing="{StaticResource space-md}">
-
-            <Border Style="{StaticResource SearchChip}"
-                    Padding="{StaticResource space-md}"
-                    StrokeShape="RoundRectangle 12"
-                    BackgroundColor="{StaticResource ColorTertiaryAmber}"
-                    IsVisible="{Binding IsOffline}">
-                <Label Text="{Binding OfflineMessage}"
-                       Style="{StaticResource body-md}"
-                       TextColor="{StaticResource ColorTextPrimaryLight}"
-                       AutomationId="Search.OfflineBanner" />
-            </Border>
 
             <Label Text="Karte"
                    Style="{StaticResource headline-lg}"
@@ -230,6 +235,9 @@
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="search:StationListItem">
                         <Border Style="{StaticResource SearchCard}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnStationTapped" />
+                            </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
                                     <Label Grid.Column="0"
@@ -306,6 +314,13 @@
                                                AutomationId="Search.Hint.Automated" />
                                     </Border>
                                 </HorizontalStackLayout>
+                                <Button Text="{x:Static texts:DetailTexts.OpenDetails}"
+                                        Clicked="OnStationTapped"
+                                        HorizontalOptions="End"
+                                        Style="{StaticResource SearchChipButton}"
+                                        Margin="0"
+                                        SemanticProperties.Hint="{x:Static texts:DetailTexts.OpenDetails}"
+                                        AutomationId="Search.Station.Open" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
@@ -322,5 +337,6 @@
                     AutomationId="Search.ShowMore" />
         </VerticalStackLayout>
     </ScrollView>
+    </Grid>
 
 </views:TankradarContentPage>

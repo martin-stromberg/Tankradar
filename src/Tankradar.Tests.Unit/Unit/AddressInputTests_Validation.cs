@@ -92,6 +92,38 @@ public class AddressInputTests_Validation : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass typografische Apostrophe und Striche der iOS-Tastatur akzeptiert und zu ASCII normalisiert werden.
+    /// </summary>
+    /// <param name="input">Die Eingabe mit typografischem Zeichen.</param>
+    /// <param name="expected">Die erwartete normalisierte Eingabe.</param>
+    [Theory]
+    [InlineData("Up’n Kamp", "Up'n Kamp")]
+    [InlineData("Up‘n Kamp", "Up'n Kamp")]
+    [InlineData("Upʼn Kamp", "Up'n Kamp")]
+    [InlineData("Köln – Ehrenfeld", "Köln - Ehrenfeld")]
+    [InlineData("Baden—Baden", "Baden-Baden")]
+    [InlineData("Nord‑Ost", "Nord-Ost")]
+    [InlineData("Nord−Ost", "Nord-Ost")]
+    public void Validate_TypographicCharacters_AreNormalized(string input, string expected)
+    {
+        Assert.Equal(AddressInputError.None, AddressInput.Validate(input, out var normalized));
+
+        Assert.Equal(expected, normalized);
+    }
+
+    /// <summary>
+    /// Prüft, dass typografische Anführungszeichen weiterhin abgelehnt werden.
+    /// </summary>
+    /// <param name="input">Die Eingabe.</param>
+    [Theory]
+    [InlineData("Berlin“x”")]
+    [InlineData("Berlin…")]
+    public void Validate_TypographicQuotes_AreStillRejected(string input)
+    {
+        Assert.Equal(AddressInputError.InvalidCharacters, AddressInput.Validate(input, out _));
+    }
+
+    /// <summary>
     /// Prüft, dass jeder Fehlergrund über eine Beispieleingabe erreichbar ist.
     /// </summary>
     [Fact]

@@ -4,6 +4,7 @@ using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.TestSupport;
@@ -149,6 +150,7 @@ public abstract class SearchMockServerTestBase : IDisposable
             service,
             Connection,
             Clock,
+            new NullStationNavigator(),
             new RecordingLogger<MapViewModel>(_logSink));
     }
 

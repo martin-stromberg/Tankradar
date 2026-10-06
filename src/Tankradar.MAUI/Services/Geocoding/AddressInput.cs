@@ -51,7 +51,7 @@ public static class AddressInput
     private const string AllowedPunctuation = ".,-'/()&+#:";
 
     /// <summary>
-    /// Normalisiert die Eingabe (Zeilenumbrüche und Mehrfach-Leerzeichen werden zu einem Leerzeichen, Ränder entfernt) und prüft sie.
+    /// Normalisiert die Eingabe (typografische Apostrophe ’ ‘ ʼ werden zu ', Gedanken- und Spiegelstriche – — ‐ ‑ − zu -; Zeilenumbrüche und Mehrfach-Leerzeichen werden zu einem Leerzeichen, Ränder entfernt) und prüft sie.
     /// Erlaubt sind Buchstaben, Ziffern, Leerzeichen und gängige Satzzeichen (Punkt, Komma, Bindestrich, Apostroph, Schrägstrich, Klammern, &amp;, +, #, Doppelpunkt).
     /// </summary>
     /// <param name="input">Die Eingabe des Anwenders.</param>
@@ -75,7 +75,9 @@ public static class AddressInput
                 continue;
             }
 
-            if (!char.IsLetterOrDigit(character) && !AllowedPunctuation.Contains(character))
+            // Typografische Zeichen der iOS-Tastatur (’ – —) werden vor der Prüfung auf ihre ASCII-Entsprechung abgebildet.
+            var mapped = NormalizeTypographic(character);
+            if (!char.IsLetterOrDigit(mapped) && !AllowedPunctuation.Contains(mapped))
             {
                 return AddressInputError.InvalidCharacters;
             }
@@ -86,7 +88,7 @@ public static class AddressInput
                 pendingSpace = false;
             }
 
-            builder.Append(character);
+            builder.Append(mapped);
         }
 
         var text = builder.ToString();
@@ -107,5 +109,15 @@ public static class AddressInput
 
         normalized = text;
         return AddressInputError.None;
+    }
+
+    private static char NormalizeTypographic(char character)
+    {
+        return character switch
+        {
+            '’' or '‘' or 'ʼ' => '\'',
+            '–' or '—' or '‐' or '‑' or '−' => '-',
+            _ => character,
+        };
     }
 }

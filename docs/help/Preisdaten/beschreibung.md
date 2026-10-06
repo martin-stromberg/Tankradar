@@ -35,7 +35,7 @@ Das Alter wird immer als „vor X Min.“ angegeben.
 
 ### Datenschutz und Sicherheit
 
-- Die Kommunikation läuft ausschließlich über HTTPS, mit Zeitlimit (10 Sekunden je Anfrage), bis zu drei Versuchen mit zunehmender Wartezeit (1 s, 2 s) und einem Mindestabstand von einer Sekunde zwischen Anfragen.
+- Die Kommunikation läuft ausschließlich über HTTPS, mit Zeitlimit (10 Sekunden je Anfrage), bis zu drei Versuchen mit zunehmender Wartezeit (1 s, 2 s) und einem Mindestabstand von einer Sekunde zwischen Anfragen an den Preisdienst. Öffnungszeiten und davon abgeleitete Hinweise („Automatentankstelle“) aus einer früheren Detailabfrage gelten höchstens 24 Stunden; danach werden sie ausgeblendet und von der Detailansicht neu abgefragt.
 - Standortdaten des Anwenders werden nur für die Anfrage verwendet und nie gespeichert; gespeichert werden Tankstellen und Preise.
 - Der API-Schlüssel steht nie im Quellcode, liegt zur Laufzeit in der Keychain (iOS) bzw. im Credential Locker (Windows) und wird nie angezeigt oder protokolliert.
 

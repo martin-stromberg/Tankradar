@@ -77,7 +77,7 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass zwei kurz hintereinander abgesendete Suchen höchstens eine Anfrage je Sekunde an Nominatim ergeben.
+    /// Prüft, dass zwei kurz hintereinander abgesendete Suchen höchstens eine Anfrage je Sekunde an Nominatim ergeben (Abstand am Mock mindestens 1000 ms, keine Toleranz darunter).
     /// </summary>
     [Fact]
     public void TwoQuickSearches_RespectOneRequestPerSecond()
@@ -97,7 +97,7 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
 
             var times = Geocoding.RequestTimes;
             Assert.Equal(2, times.Count);
-            Assert.True(times[1] - times[0] >= TimeSpan.FromMilliseconds(950), $"Abstand nur {(times[1] - times[0]).TotalMilliseconds} ms.");
+            Assert.True(times[1] - times[0] >= TimeSpan.FromMilliseconds(1000), $"Abstand nur {(times[1] - times[0]).TotalMilliseconds} ms.");
         });
     }
 }

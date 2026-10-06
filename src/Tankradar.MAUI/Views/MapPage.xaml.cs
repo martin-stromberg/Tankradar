@@ -1,3 +1,4 @@
+using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.ViewModels;
 
 namespace Tankradar.MAUI.Views;
@@ -15,5 +16,14 @@ public partial class MapPage : TankradarContentPage
     {
         InitializeComponent();
         BindingContext = viewModel;
+    }
+
+    private void OnStationTapped(object? sender, EventArgs e)
+    {
+        // Karte und Schaltfläche der Ergebniszeile tragen die Tankstelle als Bindungskontext.
+        if (sender is BindableObject { BindingContext: StationListItem station } && BindingContext is MapViewModel viewModel)
+        {
+            viewModel.OpenStationCommand.Execute(station);
+        }
     }
 }

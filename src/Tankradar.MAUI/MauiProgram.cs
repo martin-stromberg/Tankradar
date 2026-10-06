@@ -7,6 +7,7 @@ using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -68,12 +69,15 @@ public static class MauiProgram
         builder.Services.AddTransient<MapViewModel>();
         builder.Services.AddTransient<TankbookViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddTransient<StationDetailViewModel>();
+        builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
         builder.Services.AddTransient<MapPage>();
         builder.Services.AddTransient<TankbookPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<StationDetailPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

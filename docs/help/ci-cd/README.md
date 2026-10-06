@@ -31,9 +31,9 @@
 
 | Artefakt | Inhalt |
 |---|---|
-| `release-win-x64.zip` | Windows-App, self-contained (.NET-Laufzeit enthalten). Nach dem Entpacken `Tankradar.MAUI.exe` starten — keine Installation. Ein Installer (MSIX/Setup) wird bewusst nicht erstellt. |
+| `release-win-x64.zip` | Windows-App, self-contained (.NET-Laufzeit enthalten), ohne Tankerkönig-Schlüssel. Nach dem Entpacken `Tankradar.MAUI.exe` starten — keine Installation. Ein Installer (MSIX/Setup) wird bewusst nicht erstellt. |
 | `update.json` | Manifest mit Version, Download-URL, SHA-256 und Größe des ZIPs. |
-| iOS-`.ipa` | Nur als Workflow-Artefakt (14 Tage), nur bei `IOS_SIGNING_ENABLED=true` und vollständiger Signierung. Mit den API-Key-Secrets wird sie zusätzlich nach TestFlight hochgeladen. Sonst wird iOS unsigniert (Simulator-Build) gebaut; dieser Build dient als Compile-Prüfung und erzeugt kein Release-Asset. Lokal: [`scripts/iOS-Deployment.ps1`](ios-deployment.md). |
+| iOS-`.ipa` | Entsteht nur bei `IOS_SIGNING_ENABLED=true` und vollständiger Signierung und wird **nicht** als Workflow-Artefakt veröffentlicht (sie enthält den Tankerkönig-Schlüssel, das Repository ist öffentlich). Mit den API-Key-Secrets wird sie nach TestFlight hochgeladen. Sonst wird iOS unsigniert (Simulator-Build) gebaut; dieser Build dient als Compile-Prüfung und erzeugt kein Release-Asset. Lokal: [`scripts/iOS-Deployment.ps1`](ios-deployment.md). |
 
 ## Geheimnisse und Konfiguration
 

@@ -1,4 +1,5 @@
 using System.Net;
+using Tankradar.MAUI.Services.Geocoding;
 
 namespace Tankradar.Tests.Unit.Unit;
 
@@ -20,7 +21,7 @@ public class NominatimGeocodingServiceTests_Throttle : NominatimGeocodingService
         Clock.Advance(TimeSpan.FromMilliseconds(250));
         await service.ResolveAsync("Hamburg");
 
-        Assert.Equal([TimeSpan.FromMilliseconds(750)], Delay.Delays);
+        Assert.Equal([TimeSpan.FromMilliseconds(850)], Delay.Delays);
         Assert.Equal(2, Handler.Requests.Count);
     }
 
@@ -34,10 +35,27 @@ public class NominatimGeocodingServiceTests_Throttle : NominatimGeocodingService
         var service = CreateService();
 
         await service.ResolveAsync("Frankfurt");
-        Clock.Advance(TimeSpan.FromSeconds(1));
+        Clock.Advance(GeocodingOptions.DefaultMinRequestInterval);
         await service.ResolveAsync("Hamburg");
 
         Assert.Empty(Delay.Delays);
+    }
+
+    /// <summary>
+    /// Prüft den Sicherheitsabstand: Der Standard-Mindestabstand liegt über der Sekunde der Nutzungsrichtlinie, und eine Anfrage nach genau einer Sekunde wartet noch.
+    /// </summary>
+    [Fact]
+    public async Task Resolve_RequestExactlyOneSecondApart_StillWaitsForSafetyMargin()
+    {
+        Handler.RespondWith(HttpStatusCode.OK, FoundBody);
+        var service = CreateService();
+
+        await service.ResolveAsync("Frankfurt");
+        Clock.Advance(TimeSpan.FromSeconds(1));
+        await service.ResolveAsync("Hamburg");
+
+        Assert.True(GeocodingOptions.DefaultMinRequestInterval >= TimeSpan.FromMilliseconds(1100));
+        Assert.Equal([TimeSpan.FromMilliseconds(100)], Delay.Delays);
     }
 
     /// <summary>
@@ -51,7 +69,7 @@ public class NominatimGeocodingServiceTests_Throttle : NominatimGeocodingService
 
         await service.ResolveAsync("Frankfurt");
         await service.ResolveAsync("a");
-        Clock.Advance(TimeSpan.FromSeconds(1));
+        Clock.Advance(GeocodingOptions.DefaultMinRequestInterval);
         await service.ResolveAsync("Hamburg");
 
         Assert.Empty(Delay.Delays);
@@ -71,6 +89,6 @@ public class NominatimGeocodingServiceTests_Throttle : NominatimGeocodingService
 
         Assert.Equal(3, Handler.Requests.Count);
         Assert.Equal(2, Delay.Delays.Count);
-        Assert.All(Delay.Delays, delay => Assert.Equal(TimeSpan.FromSeconds(1), delay));
+        Assert.All(Delay.Delays, delay => Assert.Equal(GeocodingOptions.DefaultMinRequestInterval, delay));
     }
 }

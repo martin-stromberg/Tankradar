@@ -7,6 +7,7 @@ using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.Services.Search;
 
@@ -31,6 +32,7 @@ public class MapViewModel : BaseViewModel
     private readonly IFuelPriceService _priceService;
     private readonly IConnectionMonitor _connection;
     private readonly TimeProvider _timeProvider;
+    private readonly IStationNavigator _navigator;
     private readonly ILogger<MapViewModel> _logger;
     private readonly List<ChoiceOptionViewModel<ResultSortOrder>> _sortOptions;
     private AppSettings? _settings;
@@ -39,6 +41,7 @@ public class MapViewModel : BaseViewModel
     private StationSearchResult? _lastResult;
     private CancellationTokenSource? _searchCancellation;
     private bool _subscribed;
+    private bool _isOpeningStation;
     private int _radiusKm = SearchRadius.Default;
     private SearchMode _searchMode = SearchMode.CurrentLocation;
     private string _addressText = string.Empty;
@@ -62,6 +65,7 @@ public class MapViewModel : BaseViewModel
     /// <param name="priceService">Preisdienst für die Umkreissuche.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
+    /// <param name="navigator">Die Navigation zur Detailansicht einer Tankstelle.</param>
     /// <param name="logger">Logger (protokolliert nie Koordinaten).</param>
     public MapViewModel(
         ISettingsService settingsService,
@@ -70,6 +74,7 @@ public class MapViewModel : BaseViewModel
         IFuelPriceService priceService,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
+        IStationNavigator navigator,
         ILogger<MapViewModel> logger)
     {
         _settingsService = settingsService;
@@ -78,6 +83,7 @@ public class MapViewModel : BaseViewModel
         _priceService = priceService;
         _connection = connection;
         _timeProvider = timeProvider;
+        _navigator = navigator;
         _logger = logger;
         Title = "Karte";
 
@@ -102,6 +108,7 @@ public class MapViewModel : BaseViewModel
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
         ShowMoreCommand = new Command(ShowMore);
+        OpenStationCommand = new Command<StationListItem>(OpenStation);
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
         LastSearchTask = Task.CompletedTask;
@@ -193,6 +200,11 @@ public class MapViewModel : BaseViewModel
     /// Befehl zum Anzeigen weiterer Tankstellen der Ergebnisliste.
     /// </summary>
     public ICommand ShowMoreCommand { get; }
+
+    /// <summary>
+    /// Befehl zum Öffnen der Detailansicht einer Tankstelle aus der Ergebnisliste (Parameter: die Tankstelle).
+    /// </summary>
+    public ICommand OpenStationCommand { get; }
 
     /// <summary>
     /// Die Gesamtzahl der Tankstellen des aktuellen Ergebnisses nach Filter (angezeigt werden davon höchstens die ersten Seiten).
@@ -427,6 +439,35 @@ public class MapViewModel : BaseViewModel
     {
         _visibleCount += PageSize;
         PublishVisible();
+    }
+
+    private void OpenStation(StationListItem? station)
+    {
+        // Karte und Schaltfläche der Zeile können dasselbe Antippen melden; geöffnet wird nur einmal.
+        if (station is null || _isOpeningStation)
+        {
+            return;
+        }
+
+        _isOpeningStation = true;
+        _ = OpenStationAsync(station);
+    }
+
+    private async Task OpenStationAsync(StationListItem station)
+    {
+        try
+        {
+            await _navigator.OpenDetailAsync(station).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Die Detailansicht konnte nicht geöffnet werden ({ExceptionType}).", ex.GetType().Name);
+            StatusMessage = DetailTexts.NotAvailable;
+        }
+        finally
+        {
+            _isOpeningStation = false;
+        }
     }
 
     private void ApplyFilterAndSort(bool resetPaging)

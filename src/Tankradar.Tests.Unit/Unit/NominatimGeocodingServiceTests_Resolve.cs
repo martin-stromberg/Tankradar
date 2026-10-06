@@ -46,6 +46,21 @@ public class NominatimGeocodingServiceTests_Resolve : NominatimGeocodingServiceT
     }
 
     /// <summary>
+    /// Prüft, dass typografische Zeichen der iOS-Tastatur (Apostroph, Gedankenstrich) normalisiert in der Anfrage stehen und die Eingabe nicht abgelehnt wird.
+    /// </summary>
+    [Fact]
+    public async Task Resolve_TypographicCharacters_AreSentNormalized()
+    {
+        Handler.RespondWith(HttpStatusCode.OK, FoundBody);
+
+        var result = await CreateService().ResolveAsync("Up’n Kamp 5 – Hamburg");
+
+        Assert.Equal(GeocodingStatus.Found, result.Status);
+        var uri = Assert.Single(Handler.Requests);
+        Assert.Equal("Up'n Kamp 5 - Hamburg", System.Web.HttpUtility.ParseQueryString(uri.Query)["q"]);
+    }
+
+    /// <summary>
     /// Prüft, dass die Anfrage die Kennung der App trägt (Nutzungsrichtlinie).
     /// </summary>
     [Fact]

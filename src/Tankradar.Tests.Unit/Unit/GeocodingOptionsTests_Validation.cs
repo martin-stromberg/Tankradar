@@ -27,7 +27,7 @@ public class GeocodingOptionsTests_Validation : BaseTest
 
         Assert.Equal(Uri.UriSchemeHttps, options.BaseUrl.Scheme);
         Assert.Equal("nominatim.openstreetmap.org", options.BaseUrl.Host);
-        Assert.Equal(TimeSpan.FromSeconds(1), options.MinRequestInterval);
+        Assert.Equal(GeocodingOptions.DefaultMinRequestInterval, options.MinRequestInterval);
         Assert.Contains("Tankatlas", options.UserAgent, StringComparison.Ordinal);
         Assert.Contains(AppConfiguration.DefaultBundleId, options.UserAgent, StringComparison.Ordinal);
     }
@@ -88,7 +88,7 @@ public class GeocodingOptionsTests_Validation : BaseTest
 
         Assert.Equal("http://127.0.0.1:9/", options.BaseUrl.ToString());
         Assert.True(options.AllowLoopbackHttp);
-        Assert.Equal(TimeSpan.FromSeconds(1), options.MinRequestInterval);
+        Assert.Equal(GeocodingOptions.DefaultMinRequestInterval, options.MinRequestInterval);
     }
 
     /// <summary>
