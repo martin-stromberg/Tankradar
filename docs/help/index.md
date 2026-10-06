@@ -6,7 +6,7 @@
 
 - [Navigation und Design-System](Navigation/index.md) — Die vier Hauptbereiche von Tankatlas und wie Sie zwischen ihnen navigieren. Die App passt sich automatisch an Ihre bevorzugte Darstellung (Hell-/Dunkelmodus) an.
 - [Einstellungen (Optionen)](Einstellungen/index.md) — Spritsorten auswählen und ordnen, Standortnutzung, Standardansicht und Standardsortierung festlegen. Änderungen werden sofort lokal gespeichert und überstehen Neustart und App-Updates.
-- [Umkreissuche](Suche/index.md) — Tankstellen im Umkreis des aktuellen Standorts im Bereich „Karte“ suchen (Radius 1 bis 25 km, Standard 5 km), Ergebnisliste mit Entfernung, Preisen und Preisalter, Filter nach Spritsorte, Sortierung, Hinweise bei fehlendem Standort und Offline-Betrieb; Abnahme unter Windows ohne GPS über den Testmodus.
+- [Umkreissuche](Suche/index.md) — Tankstellen im Umkreis des aktuellen Standorts oder rund um eine eingegebene Adresse, einen Ort oder eine PLZ (Auflösung über OpenStreetMap-Nominatim, kein GPS nötig) im Bereich „Karte“ suchen (Radius 1 bis 25 km, Standard 5 km), Ergebnisliste mit Entfernung, Preisen und Preisalter, Filter nach Spritsorte, Sortierung, Hinweise bei fehlendem Standort und Offline-Betrieb; Abnahme unter Windows ohne GPS über den Testmodus.
 - [Kraftstoffpreise und Preis-Cache](Preisdaten/index.md) — Abruf der Preise über die Tankerkönig-API (Daten: Tankerkönig / MTS-K), lokaler Preis-Cache mit Zeitstempel, Preisalter „vor X Min.“ (ab 60 Minuten veraltet), Offline-Betrieb mit zuletzt bekannten Preisen, Verbindungserkennung und Hinterlegen des API-Schlüssels lokal bzw. als GitHub-Secret.
 
 ## Lokale Entwicklung

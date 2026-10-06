@@ -1,6 +1,7 @@
 using System.Globalization;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Search;
+using Tankradar.MAUI.Services.Geocoding;
 
 namespace Tankradar.MAUI.Resources.Texts;
 
@@ -10,6 +11,86 @@ namespace Tankradar.MAUI.Resources.Texts;
 public static class SearchTexts
 {
     private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-DE");
+
+    /// <summary>
+    /// Überschrift der Karte „Suchart“.
+    /// </summary>
+    public const string ModeHeading = "Suchen nach";
+
+    /// <summary>
+    /// Beschriftung der Suchart „Aktueller Standort“.
+    /// </summary>
+    public const string ModeCurrentLocation = "Aktueller Standort";
+
+    /// <summary>
+    /// Beschriftung der Suchart „Adresse“.
+    /// </summary>
+    public const string ModeAddress = "Adresse, Ort oder PLZ";
+
+    /// <summary>
+    /// Platzhalter des Adressfelds.
+    /// </summary>
+    public const string AddressPlaceholder = "Adresse, PLZ oder Ort, z. B. Frankfurt oder 60311";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Löschen der Adresseingabe.
+    /// </summary>
+    public const string AddressClear = "Eingabe löschen";
+
+    /// <summary>
+    /// Quellenangabe für die Geodaten (Nutzungsbedingung von OpenStreetMap).
+    /// </summary>
+    public const string OsmAttribution = "Geodaten © OpenStreetMap-Mitwirkende";
+
+    /// <summary>
+    /// Hinweis bei leerer Adresseingabe.
+    /// </summary>
+    public const string AddressEmpty = "Bitte eine Adresse, einen Ort oder eine Postleitzahl eingeben.";
+
+    /// <summary>
+    /// Hinweis bei zu kurzer Adresseingabe.
+    /// </summary>
+    public const string AddressTooShort = "Die Eingabe ist zu kurz. Bitte mindestens 3 Zeichen eingeben.";
+
+    /// <summary>
+    /// Hinweis bei zu langer Adresseingabe.
+    /// </summary>
+    public const string AddressTooLong = "Die Eingabe ist zu lang. Bitte höchstens 120 Zeichen eingeben.";
+
+    /// <summary>
+    /// Hinweis bei unzulässigen Zeichen in der Adresseingabe.
+    /// </summary>
+    public const string AddressInvalidCharacters = "Die Eingabe enthält ungültige Zeichen. Erlaubt sind Buchstaben, Ziffern und gängige Satzzeichen.";
+
+    /// <summary>
+    /// Hinweis, wenn zur Eingabe kein Ort gefunden wurde.
+    /// </summary>
+    public const string AddressNotFound = "Zu dieser Eingabe wurde in Deutschland kein Ort gefunden. Bitte die Schreibweise prüfen oder genauer angeben.";
+
+    /// <summary>
+    /// Hinweis, wenn die Adresse wegen fehlender Verbindung nicht aufgelöst werden kann.
+    /// </summary>
+    public const string AddressOffline = "Keine Netzverbindung: Die Adresse kann nicht in einen Ort umgewandelt werden.";
+
+    /// <summary>
+    /// Hinweis, wenn der Ortssuchdienst nicht erreichbar ist.
+    /// </summary>
+    public const string GeocodingUnavailable = "Der Ortssuchdienst von OpenStreetMap ist nicht erreichbar. Bitte versuche es später erneut.";
+
+    /// <summary>
+    /// Hinweis, wenn der Ortssuchdienst die Anfrage abgelehnt hat.
+    /// </summary>
+    public const string GeocodingRejected = "Der Ortssuchdienst hat die Anfrage abgelehnt. Bitte versuche es später erneut.";
+
+    /// <summary>
+    /// Hinweis, wenn die Antwort des Ortssuchdienstes nicht auswertbar war.
+    /// </summary>
+    public const string GeocodingInvalidResponse = "Der Ortssuchdienst hat eine unerwartete Antwort geliefert.";
+
+    /// <summary>
+    /// Hinweis, wenn der Ortssuchdienst im Testmodus nicht eingerichtet ist.
+    /// </summary>
+    public const string GeocodingNotConfigured = "Der Ortssuchdienst ist im Testmodus nicht eingerichtet.";
 
     /// <summary>
     /// Überschrift der Karte „Suchradius“.
@@ -124,6 +205,67 @@ public static class SearchTexts
         var line1 = string.Join(' ', new[] { street, houseNumber }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
         var line2 = string.Join(' ', new[] { postCode, place }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part!.Trim()));
         return string.Join(", ", new[] { line1, line2 }.Where(part => part.Length > 0));
+    }
+
+    /// <summary>
+    /// Liefert die Beschriftung einer Suchart.
+    /// </summary>
+    /// <param name="mode">Die Suchart.</param>
+    /// <returns>Der Text.</returns>
+    public static string GetModeLabel(SearchMode mode)
+    {
+        return mode switch
+        {
+            SearchMode.Address => ModeAddress,
+            _ => ModeCurrentLocation,
+        };
+    }
+
+    /// <summary>
+    /// Formatiert den Hinweis auf den aufgelösten Ort („Suche rund um: Berlin, Deutschland“).
+    /// </summary>
+    /// <param name="placeName">Der Name des Ortes.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatResolvedPlace(string placeName)
+    {
+        return "Suche rund um: " + placeName;
+    }
+
+    /// <summary>
+    /// Liefert den Hinweistext zu einer ungültigen Adresseingabe.
+    /// </summary>
+    /// <param name="error">Der Grund.</param>
+    /// <returns>Der Text; leer bei <see cref="AddressInputError.None"/>.</returns>
+    public static string GetAddressInputMessage(AddressInputError error)
+    {
+        return error switch
+        {
+            AddressInputError.None => string.Empty,
+            AddressInputError.Empty => AddressEmpty,
+            AddressInputError.TooShort => AddressTooShort,
+            AddressInputError.TooLong => AddressTooLong,
+            _ => AddressInvalidCharacters,
+        };
+    }
+
+    /// <summary>
+    /// Liefert die Meldung zu einer nicht erfolgreichen Adressauflösung.
+    /// </summary>
+    /// <param name="status">Der Ausgang der Auflösung.</param>
+    /// <param name="isOnline">Gibt an, ob eine Netzverbindung besteht (bei fehlender Verbindung wird der Offline-Hinweis gewählt).</param>
+    /// <returns>Der Text; leer bei <see cref="GeocodingStatus.Found"/>.</returns>
+    public static string GetGeocodingMessage(GeocodingStatus status, bool isOnline)
+    {
+        return status switch
+        {
+            GeocodingStatus.Found => string.Empty,
+            GeocodingStatus.NotFound => AddressNotFound,
+            GeocodingStatus.InvalidInput => AddressEmpty,
+            GeocodingStatus.Unavailable => isOnline ? GeocodingUnavailable : AddressOffline,
+            GeocodingStatus.Rejected => GeocodingRejected,
+            GeocodingStatus.InvalidResponse => GeocodingInvalidResponse,
+            _ => GeocodingNotConfigured,
+        };
     }
 
     /// <summary>
