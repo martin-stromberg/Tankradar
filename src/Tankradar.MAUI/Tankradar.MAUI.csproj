@@ -87,12 +87,16 @@
 		</PackageReference>
 	</ItemGroup>
 
-	<!-- Tankerkönig-API-Schlüssel: nie im Quellcode. Er kommt aus der Umgebungsvariable TANKRADAR_FUEL_PRICE_API_KEY (in der CI aus dem Secret FUEL_PRICE_API_KEY)
-	oder aus der nicht versionierten Datei tankerkoenig.local.props (Eigenschaft TankerkoenigApiKey) und wird als Assembly-Metadatum
-	mitgegeben. Zur Laufzeit übernimmt die App ihn in Keychain bzw. Credential Locker. -->
+	<!-- Tankerkönig-API-Schlüssel: nie im Quellcode. Reihenfolge: Umgebungsvariable TANKRADAR_FUEL_PRICE_API_KEY, dann Umgebungsvariable
+	FUEL_PRICE_API_KEY (gleicher Name wie das GitHub-Secret), dann die nicht versionierte Datei tankerkoenig.local.props
+	(Eigenschaft TankerkoenigApiKey). Der Schlüssel wird als Assembly-Metadatum mitgegeben und nie ausgegeben. Zur Laufzeit
+	übernimmt die App ihn in Keychain bzw. Credential Locker. -->
 	<Import Project="$(MSBuildThisFileDirectory)..\..\tankerkoenig.local.props" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tankerkoenig.local.props')" />
 	<PropertyGroup>
-		<TankerkoenigApiKey Condition="'$(TankerkoenigApiKey)' == ''">$(TANKRADAR_FUEL_PRICE_API_KEY)</TankerkoenigApiKey>
+		<_TankerkoenigLocalKey>$(TankerkoenigApiKey)</_TankerkoenigLocalKey>
+		<TankerkoenigApiKey>$(TANKRADAR_FUEL_PRICE_API_KEY)</TankerkoenigApiKey>
+		<TankerkoenigApiKey Condition="'$(TankerkoenigApiKey)' == ''">$(FUEL_PRICE_API_KEY)</TankerkoenigApiKey>
+		<TankerkoenigApiKey Condition="'$(TankerkoenigApiKey)' == ''">$(_TankerkoenigLocalKey)</TankerkoenigApiKey>
 	</PropertyGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">

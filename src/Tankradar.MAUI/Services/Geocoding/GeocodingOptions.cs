@@ -40,10 +40,17 @@ public sealed class GeocodingOptions
     public TimeSpan RequestTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Mindestabstand zwischen zwei Anfragen (Nutzungsrichtlinie: höchstens eine Anfrage je Sekunde).
+    /// Mindestabstand zwischen zwei Anfragen. Die Nutzungsrichtlinie erlaubt höchstens eine Anfrage je Sekunde, gemessen beim Dienst; der Standard
+    /// enthält einen Sicherheitsabstand von 100 ms, damit Netzwerk- und Scheduling-Schwankungen den Abstand beim Empfänger nicht unter eine Sekunde drücken.
     /// </summary>
     /// <returns>Der Wert.</returns>
-    public TimeSpan MinRequestInterval { get; init; } = TimeSpan.FromSeconds(1);
+    public TimeSpan MinRequestInterval { get; init; } = DefaultMinRequestInterval;
+
+    /// <summary>
+    /// Der Standard-Mindestabstand zwischen zwei Anfragen (1,1 Sekunden).
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public static readonly TimeSpan DefaultMinRequestInterval = TimeSpan.FromMilliseconds(1100);
 
     /// <summary>
     /// Die Kennung der App im Anfragekopf (<c>User-Agent</c>).

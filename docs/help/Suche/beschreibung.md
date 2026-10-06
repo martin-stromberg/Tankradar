@@ -26,7 +26,7 @@ Tankatlas wandelt die Eingabe über den Dienst **OpenStreetMap-Nominatim** in ei
 
 Quellenangabe: Im Adressmodus steht im Suchbereich „Geodaten © OpenStreetMap-Mitwirkende“.
 
-**Eingabeprüfung (vor jeder Anfrage):** Leerraum am Rand wird entfernt, mehrfacher Leerraum zusammengefasst. Zulässig sind 3 bis 120 Zeichen aus Buchstaben, Ziffern, Leerzeichen und den Satzzeichen `. , - ' / ( ) & + # :`.
+**Eingabeprüfung (vor jeder Anfrage):** Leerraum am Rand wird entfernt, mehrfacher Leerraum zusammengefasst. Zulässig sind 3 bis 120 Zeichen aus Buchstaben, Ziffern, Leerzeichen und den Satzzeichen `. , - ' / ( ) & + # :`. Typografische Zeichen, die die iOS-Tastatur setzt (Apostrophe ’ ‘ und Striche – —, z. B. „Up’n Kamp“), werden vor der Prüfung zu ' bzw. - vereinheitlicht und nicht abgelehnt. Zwischen zwei Anfragen an den Ortssuchdienst liegen mindestens 1,1 Sekunden (Nutzungsrichtlinie: höchstens eine je Sekunde, mit Sicherheitsabstand).
 
 | Situation | Meldung |
 |-----------|---------|

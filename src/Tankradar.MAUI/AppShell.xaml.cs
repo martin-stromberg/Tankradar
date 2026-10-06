@@ -1,3 +1,6 @@
+using Tankradar.MAUI.Services.Navigation;
+using Tankradar.MAUI.Views;
+
 namespace Tankradar.MAUI;
 
 /// <summary>
@@ -11,6 +14,7 @@ public partial class AppShell : Shell
     public AppShell()
     {
         InitializeComponent();
+        Routing.RegisterRoute(ShellStationNavigator.DetailRoute, typeof(StationDetailPage));
         Navigated += OnNavigated;
     }
 

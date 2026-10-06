@@ -168,7 +168,8 @@ public sealed class FuelPriceService : IFuelPriceService
     }
 
     /// <summary>
-    /// Ergänzt die Tankstellen der Umkreissuche um Öffnungszeiten aus früheren Detailabfragen (die Umkreissuche der Quelle liefert sie nicht).
+    /// Ergänzt die Tankstellen der Umkreissuche um Öffnungszeiten aus früheren Detailabfragen (die Umkreissuche der Quelle liefert sie nicht),
+    /// sofern diese nicht älter als <see cref="DetailFreshness.MaxAge"/> sind.
     /// Ein Fehler beim Lesen des Caches lässt die Suche unberührt.
     /// </summary>
     /// <param name="stations">Die Tankstellen der Umkreissuche.</param>
@@ -179,7 +180,12 @@ public sealed class FuelPriceService : IFuelPriceService
         try
         {
             var known = await _repository.GetKnownDetailsAsync(stations.Select(s => s.Id).ToList(), cancellationToken).ConfigureAwait(false);
-            return stations.Select(s => known.TryGetValue(s.Id, out var details) ? s.WithDetails(details) : s).ToList();
+            var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+            // Nur Detailangaben bis zur Altersgrenze werden übernommen; ältere bleiben ausgeblendet, bis die Detailansicht sie neu abgefragt hat.
+            return stations
+                .Select(s => known.TryGetValue(s.Id, out var details) && DetailFreshness.IsUsable(details.DetailsUpdatedUtc, now) ? s.WithDetails(details) : s)
+                .ToList();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

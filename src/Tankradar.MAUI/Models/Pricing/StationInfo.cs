@@ -110,6 +110,37 @@ public sealed class StationInfo
     }
 
     /// <summary>
+    /// Liefert die Tankstelle ohne Detailangaben (Öffnungszeiten, durchgehende Öffnung), wenn diese älter als <see cref="DetailFreshness.MaxAge"/> oder ohne bekannten Zeitpunkt sind.
+    /// Sind sie noch verwendbar oder gar nicht vorhanden, wird dieselbe Instanz geliefert.
+    /// </summary>
+    /// <param name="nowUtc">Aktueller Zeitpunkt in UTC.</param>
+    /// <returns>Die Tankstelle mit verwendbaren Detailangaben.</returns>
+    public StationInfo WithoutStaleDetails(DateTime nowUtc)
+    {
+        var hasDetails = WholeDay is not null || OpeningTimes.Count > 0 || DetailsUpdatedUtc is not null;
+        if (!hasDetails || DetailFreshness.IsUsable(DetailsUpdatedUtc, nowUtc))
+        {
+            return this;
+        }
+
+        return new StationInfo
+        {
+            Id = Id,
+            Name = Name,
+            Brand = Brand,
+            Street = Street,
+            HouseNumber = HouseNumber,
+            PostCode = PostCode,
+            Place = Place,
+            Latitude = Latitude,
+            Longitude = Longitude,
+            DistanceKm = DistanceKm,
+            IsOpen = IsOpen,
+            Prices = Prices,
+        };
+    }
+
+    /// <summary>
     /// Liefert eine Kopie mit anderen Preisen.
     /// </summary>
     /// <param name="prices">Die neuen Preise.</param>

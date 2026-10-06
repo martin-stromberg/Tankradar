@@ -66,6 +66,7 @@ public static class StationFactory
             Longitude = CenterLongitude,
             DistanceKm = distanceKm,
             WholeDay = wholeDay,
+            DetailsUpdatedUtc = wholeDay is null ? null : retrievedUtc,
             IsOpen = isOpen,
             Prices = prices.Select(p => new FuelPrice(p.Item1, p.Item2, retrievedUtc)).ToList(),
         };

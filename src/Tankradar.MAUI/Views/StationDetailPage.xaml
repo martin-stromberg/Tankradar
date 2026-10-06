@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:search="clr-namespace:Tankradar.MAUI.Models.Search"
+             x:DataType="vm:StationDetailViewModel"
+             x:Class="Tankradar.MAUI.Views.StationDetailPage"
+             Title="{x:Static texts:DetailTexts.PageTitle}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <!-- Karten: Design-Tokens rounded-lg (16 px) und Schattenebene 1 -->
+        <Style x:Key="DetailCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+            <Setter Property="Shadow">
+                <Setter.Value>
+                    <Shadow Brush="Black" Offset="0,1" Radius="3" Opacity="0.04" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DetailChip" TargetType="Border">
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 9999" />
+        </Style>
+        <Style x:Key="DetailActionButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}"
+                             Spacing="{StaticResource space-md}">
+
+            <Border Style="{StaticResource DetailChip}"
+                    Padding="{StaticResource space-md}"
+                    StrokeShape="RoundRectangle 12"
+                    BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                    IsVisible="{Binding IsOffline}">
+                <Label Text="{Binding OfflineMessage}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{StaticResource ColorTextPrimaryLight}"
+                       AutomationId="Detail.OfflineBanner" />
+            </Border>
+
+            <Button Text="{x:Static texts:DetailTexts.Back}"
+                    Command="{Binding BackCommand}"
+                    HorizontalOptions="Start"
+                    Style="{StaticResource DetailActionButton}"
+                    SemanticProperties.Description="{x:Static texts:DetailTexts.Back}"
+                    AutomationId="Detail.Back" />
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="Detail.StatusMessage" />
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{StaticResource ColorPrimaryTeal}" />
+
+            <VerticalStackLayout IsVisible="{Binding HasDetail}" Spacing="{StaticResource space-md}">
+
+                <Border Style="{StaticResource DetailCard}" BindingContext="{Binding Detail}" x:DataType="search:StationDetailItem">
+                    <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                        <Label Text="{Binding BrandText}"
+                               IsVisible="{Binding HasBrand}"
+                               Style="{StaticResource body-sm}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="Detail.Brand" />
+                        <Label Text="{Binding Name}"
+                               Style="{StaticResource headline-lg}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="Detail.Name" />
+                        <Label Text="{Binding AddressText}"
+                               IsVisible="{Binding HasAddress}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="Detail.Address" />
+                        <Label Text="{Binding DistanceText}"
+                               IsVisible="{Binding HasDistance}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="Detail.Distance" />
+                        <Label Text="{Binding OpeningStatusText}"
+                               IsVisible="{Binding HasOpeningStatus}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="Detail.Opening" />
+                        <HorizontalStackLayout Spacing="{StaticResource space-sm}" IsVisible="{Binding HasHints}">
+                            <Border Style="{StaticResource DetailChip}"
+                                    BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                                    IsVisible="{Binding HasUnconfirmedPrice}">
+                                <Label Text="{x:Static texts:PriceTexts.PriceUnconfirmed}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{StaticResource ColorTextPrimaryLight}"
+                                       AutomationId="Detail.Hint.Unconfirmed" />
+                            </Border>
+                            <Border Style="{StaticResource DetailChip}"
+                                    BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                                    IsVisible="{Binding IsAutomatedStation}">
+                                <Label Text="{x:Static texts:PriceTexts.AutomatedStation}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="White"
+                                       AutomationId="Detail.Hint.Automated" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{x:Static texts:DetailTexts.PricesHeading}"
+                       Style="{StaticResource headline-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+
+                <Label Text="{x:Static texts:DetailTexts.NoPrices}"
+                       IsVisible="{Binding ShowNoPrices}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="Detail.NoPrices" />
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Detail.PriceLines}"
+                                     Spacing="{StaticResource space-sm}"
+                                     AutomationId="Detail.Prices">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="search:StationPriceLine">
+                            <Border Style="{StaticResource DetailCard}">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="{StaticResource space-sm}">
+                                    <Label Grid.Column="0" Grid.Row="0"
+                                           Text="{Binding FuelLabel}"
+                                           Style="{StaticResource headline-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           VerticalOptions="Center"
+                                           AutomationId="{Binding FuelType, StringFormat='Detail.Fuel.{0}'}" />
+                                    <Label Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+                                           Text="{Binding PriceText}"
+                                           Style="{StaticResource price-hero}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                           VerticalOptions="Center"
+                                           AutomationId="{Binding FuelType, StringFormat='Detail.Price.{0}'}" />
+                                    <Label Grid.Column="0" Grid.Row="1"
+                                           Text="{Binding AgeText}"
+                                           Style="{StaticResource body-sm}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding FuelType, StringFormat='Detail.Age.{0}'}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsStale}" Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource ColorTertiaryAmber}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <Border Style="{StaticResource DetailCard}"
+                        BindingContext="{Binding Detail}"
+                        x:DataType="search:StationDetailItem"
+                        IsVisible="{Binding HasOpeningHours}">
+                    <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                        <Label Text="{x:Static texts:DetailTexts.OpeningHoursHeading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding OpeningHours}" Spacing="{StaticResource space-xs}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="search:OpeningHoursLine">
+                                    <Label Text="{Binding DisplayText}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="Detail.OpeningHours" />
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Label Text="{Binding OpeningHoursAgeText}"
+                               Style="{StaticResource body-sm}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="Detail.OpeningHoursAge" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <Label Text="{Binding SourceNote}"
+                   IsVisible="{Binding HasSourceNote}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Detail.SourceNote" />
+
+            <Button Text="{x:Static texts:DetailTexts.Refresh}"
+                    Command="{Binding RefreshCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    Style="{StaticResource DetailActionButton}"
+                    AutomationId="Detail.Refresh" />
+
+            <Label Text="{x:Static texts:PriceTexts.Attribution}"
+                   Style="{StaticResource body-sm}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Detail.Attribution" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</views:TankradarContentPage>

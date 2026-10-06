@@ -102,10 +102,13 @@ Startausnahme im Testergebnis sichtbar bleibt und nicht von einer `NullReference
 sechs vollständig grüne Läufe hintereinander (je 33 von 33 E2E-Tests, 1 min 43 s bis 1 min 58 s) im Off-Screen-Betrieb
 auf dem Entwicklungsrechner (Windows 11), während der Anwender parallel arbeitete; zusätzlich ein grüner Lauf über
 `scripts/local-ci.ps1`. Eine Prüfung bestätigte, dass das Fenster bei (-32000, -32000) liegt und der Vordergrund
-unverändert bleibt. Der Nachweis in der CI steht noch aus und erfolgt im Pull Request (mindestens fünf grüne Läufe
-hintereinander auf den gehosteten Runnern). Ist der Off-Screen-Betrieb dort nicht genauso stabil, wird die
-Repository-Variable `TANKRADAR_E2E_WINDOW=foreground` gesetzt (bisheriger Vordergrundbetrieb); die übrigen Punkte
-(blockierende E2E in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben in jedem Fall bestehen.
+unverändert bleibt.
+
+**Stand in der CI:** Die CI-Oberflächentests laufen per Repository-Variable `TANKRADAR_E2E_WINDOW=foreground`
+im Vordergrund. Der Off-Screen-Betrieb war auf den GitHub-Runnern nicht zuverlässig: Im Staging-Lauf trat ein
+UI-Automation-Timeout (`0x800705B4`) auf, obwohl zuvor fünf von fünf PR-Läufe grün waren. Lokal bleibt Off-Screen der
+Standard (`local-ci.ps1 -E2EForeground` schaltet lokal auf den Vordergrund um). Die übrigen Punkte (blockierende E2E
+in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben bestehen.
 
 ## E2E-Diagnosedaten
 

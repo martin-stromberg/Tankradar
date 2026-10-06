@@ -6,12 +6,20 @@ Einen echten Tankerkönig-Schlüssel beantragen Sie selbst unter <https://creati
 
 ## Lokal (Entwicklungsrechner)
 
-Variante A, Umgebungsvariable vor dem Build:
+Der lokale Build sucht den Schlüssel in dieser Reihenfolge; die erste Quelle mit einem Wert gewinnt:
+
+1. Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY`
+2. Umgebungsvariable `FUEL_PRICE_API_KEY` (gleicher Name wie das GitHub-Secret)
+3. Datei `tankerkoenig.local.props` (Variante B)
+
+Variante A, Umgebungsvariable vor dem Build (eine der beiden Namen genügt):
 
 ```powershell
-$env:TANKRADAR_FUEL_PRICE_API_KEY = "<Ihr Schlüssel>"
+$env:FUEL_PRICE_API_KEY = "<Ihr Schlüssel>"
 dotnet build src/Tankradar.MAUI -f net10.0-windows10.0.19041.0
 ```
+
+Der Schlüssel erscheint dabei weder im Repository noch in Logs oder Build-Ausgaben.
 
 Variante B, nicht versionierte Datei `tankerkoenig.local.props` im Repository-Root (steht in der `.gitignore`):
 

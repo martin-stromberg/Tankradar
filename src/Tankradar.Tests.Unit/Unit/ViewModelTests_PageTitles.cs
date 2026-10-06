@@ -37,6 +37,7 @@ public class ViewModelTests_PageTitles : BaseTest
             new FakeFuelPriceService(),
             new FakeConnectionMonitor(),
             TimeProvider.System,
+            new FakeStationNavigator(),
             NullLogger<MapViewModel>.Instance);
 
         Assert.Equal("Karte", viewModel.Title);

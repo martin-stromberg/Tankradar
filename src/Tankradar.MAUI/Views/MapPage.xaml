@@ -230,6 +230,9 @@
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="search:StationListItem">
                         <Border Style="{StaticResource SearchCard}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnStationTapped" />
+                            </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
                                     <Label Grid.Column="0"
@@ -306,6 +309,13 @@
                                                AutomationId="Search.Hint.Automated" />
                                     </Border>
                                 </HorizontalStackLayout>
+                                <Button Text="{x:Static texts:DetailTexts.OpenDetails}"
+                                        Clicked="OnStationTapped"
+                                        HorizontalOptions="End"
+                                        Style="{StaticResource SearchChipButton}"
+                                        Margin="0"
+                                        SemanticProperties.Hint="{x:Static texts:DetailTexts.OpenDetails}"
+                                        AutomationId="Search.Station.Open" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
