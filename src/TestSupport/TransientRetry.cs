@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Tankradar.TestSupport;
@@ -65,17 +66,36 @@ public static class TransientRetry
     /// <param name="maxAttempts">Höchstzahl der Versuche (mindestens 1).</param>
     /// <param name="pause">Pause zwischen den Versuchen; ohne Angabe 2 Sekunden.</param>
     /// <param name="sleep">Ersatz für das Warten (für Tests); ohne Angabe <see cref="Thread.Sleep(TimeSpan)"/>.</param>
+    /// <param name="backoffFactor">Faktor, mit dem die Pause je Versuch wächst (1 = konstant).</param>
+    /// <param name="maxPause">Obergrenze einer einzelnen Pause; ohne Angabe unbegrenzt.</param>
+    /// <param name="totalLimit">Gesamtzeitlimit; eine Pause, die es überschreiten würde, beendet die Wiederholungen. Ohne Angabe unbegrenzt.</param>
+    /// <param name="elapsed">Ersatz für die seit dem Beginn vergangene Zeit (für Tests).</param>
     /// <returns>Das Ergebnis des ersten erfolgreichen Versuchs.</returns>
-    public static T Run<T>(Func<T> action, string description, int maxAttempts = DefaultMaxAttempts, TimeSpan? pause = null, Action<TimeSpan>? sleep = null)
+    public static T Run<T>(
+        Func<T> action,
+        string description,
+        int maxAttempts = DefaultMaxAttempts,
+        TimeSpan? pause = null,
+        Action<TimeSpan>? sleep = null,
+        double backoffFactor = 1.0,
+        TimeSpan? maxPause = null,
+        TimeSpan? totalLimit = null,
+        Func<TimeSpan>? elapsed = null)
     {
         ArgumentNullException.ThrowIfNull(action);
         var attempts = Math.Max(1, maxAttempts);
         var wait = pause ?? TimeSpan.FromSeconds(2);
         var doSleep = sleep ?? Thread.Sleep;
         Exception? last = null;
+        var watch = Stopwatch.StartNew();
+        var getElapsed = elapsed ?? (() => watch.Elapsed);
+        var waited = TimeSpan.Zero;
+        var made = 0;
+        var limitHit = false;
 
         for (var attempt = 1; attempt <= attempts; attempt++)
         {
+            made = attempt;
             try
             {
                 return action();
@@ -85,18 +105,28 @@ public static class TransientRetry
                 last = ex;
                 if (attempt < attempts)
                 {
-                    doSleep(wait);
+                    var next = maxPause is { } cap && wait > cap ? cap : wait;
+                    if (totalLimit is { } limit && getElapsed() + next > limit)
+                    {
+                        limitHit = true;
+                        break;
+                    }
+
+                    doSleep(next);
+                    waited += next;
+                    wait = TimeSpan.FromTicks((long)Math.Min(wait.Ticks * Math.Max(1.0, backoffFactor), TimeSpan.FromHours(1).Ticks));
                 }
             }
         }
 
+        var limitHint = limitHit ? $" (Gesamtzeitlimit {totalLimit!.Value.TotalSeconds:0.#} s erreicht)" : string.Empty;
         throw new InvalidOperationException(
-            $"{description}: Die UI-Automation hat auch nach {attempts} Versuchen nicht rechtzeitig geantwortet (UIA-Timeout, HRESULT 0x80131505 bzw. 0x800705B4). Letzter Fehler: {last!.Message}",
+            $"{description}: Die UI-Automation hat auch nach {made} Versuchen und {waited.TotalSeconds:0.#} s Wartezeit{limitHint} nicht rechtzeitig geantwortet (UIA-Timeout, HRESULT 0x80131505 bzw. 0x800705B4). Letzter Fehler: {last!.Message}",
             last);
     }
 
     /// <summary>
-    /// Wie <see cref="Run{T}(Func{T}, string, int, TimeSpan?, Action{TimeSpan}?)"/> für Aktionen ohne Ergebnis.
+    /// Wie die Variante mit Ergebnis, für Aktionen ohne Ergebnis.
     /// </summary>
     /// <param name="action">Die Aktion.</param>
     /// <param name="description">Beschreibung der Aktion für die Fehlermeldung.</param>

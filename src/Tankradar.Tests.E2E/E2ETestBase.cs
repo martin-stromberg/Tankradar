@@ -50,7 +50,7 @@ public abstract class E2ETestBase : IDisposable
         _testDataDirectory = Path.Combine(Path.GetTempPath(), "Tankradar.Tests.E2E", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDataDirectory);
 
-        Automation = TransientRetry.Run(() => new UIA3Automation(), "Aufbau der UI-Automation");
+        Automation = CreateAutomation();
 
         LaunchApplication();
     }
@@ -174,7 +174,7 @@ public abstract class E2ETestBase : IDisposable
     /// <summary>
     /// Die UI-Automation-Engine, mit der die gestartete App bedient wird.
     /// </summary>
-    protected UIA3Automation Automation { get; }
+    protected UIA3Automation Automation { get; private set; }
 
     /// <summary>
     /// Der gestartete App-Prozess.
@@ -293,16 +293,18 @@ public abstract class E2ETestBase : IDisposable
             startInfo.Environment[name] = value;
         }
 
-        Application = Application.Launch(startInfo);
+        var uiaTimeout = E2EStartupPolicy.ResolveUiaTimeout(Environment.GetEnvironmentVariable);
         try
         {
-            // Ein UIA-Timeout beim Aufbau der Automation bzw. der ersten Fensterabfrage (beobachtet auf dem GitHub-Windows-Runner)
-            // wird begrenzt wiederholt; ein fehlendes Fenster oder andere Fehler bleiben sofort sichtbar.
-            MainWindow = TransientRetry.Run(
-                () => Application.GetMainWindow(Automation, TimeSpan.FromSeconds(30))
-                    ?? throw new InvalidOperationException("Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von 30 Sekunden gefunden."),
-                "Abfrage des Hauptfensters der Tankatlas-App");
-            TransientRetry.Run(() => MainWindow.Title, "Erste Abfrage des Hauptfensters");
+            // Auf langsamen Runnern (GitHub-Windows) dauert der UIA-Verbindungsaufbau zum frisch gestarteten Fenster länger als die
+            // FlaUI-Standard-Timeouts. Deshalb: großzügigere UIA-Timeouts, Warten auf Hauptfenster-Handle und Eingabebereitschaft,
+            // Wiederholungen mit wachsendem Abstand und Gesamtzeitlimit, und höchstens ein Neustart der App samt neuer Automation-Instanz.
+            // Nur UIA-Timeouts werden so behandelt; ein fehlendes Fenster oder andere Fehler bleiben sofort sichtbar.
+            E2EStartupPolicy.StartWithRestart(
+                () => StartAndConnect(startInfo, uiaTimeout),
+                DiscardFailedStart,
+                MaxStarts,
+                "Start der Tankatlas-App");
         }
         catch (Exception ex)
         {
@@ -311,6 +313,64 @@ public abstract class E2ETestBase : IDisposable
             Dispose();
             throw;
         }
+    }
+
+    private const int MaxStarts = 2;
+
+    private static UIA3Automation CreateAutomation()
+    {
+        var timeout = E2EStartupPolicy.ResolveUiaTimeout(Environment.GetEnvironmentVariable);
+        return TransientRetry.Run(
+            () => new UIA3Automation { ConnectionTimeout = timeout, TransactionTimeout = timeout },
+            "Aufbau der UI-Automation");
+    }
+
+    private bool StartAndConnect(ProcessStartInfo startInfo, TimeSpan uiaTimeout)
+    {
+        Application = Application.Launch(startInfo);
+        using (var process = Process.GetProcessById(Application.ProcessId))
+        {
+            // Ein Überschreiten ist nicht fatal: Die Verbindung wird danach regulär mit Wiederholungen versucht.
+            E2EStartupPolicy.WaitUntilReady(process, uiaTimeout);
+        }
+
+        var windowTimeout = uiaTimeout > TimeSpan.FromSeconds(30) ? uiaTimeout : TimeSpan.FromSeconds(30);
+        MainWindow = TransientRetry.Run(
+            () => Application.GetMainWindow(Automation, windowTimeout)
+                ?? throw new InvalidOperationException($"Das Hauptfenster der Tankatlas-App wurde nicht innerhalb von {windowTimeout.TotalSeconds:0} Sekunden gefunden."),
+            "Abfrage des Hauptfensters der Tankatlas-App",
+            maxAttempts: 4,
+            pause: TimeSpan.FromSeconds(2),
+            backoffFactor: 2.0,
+            maxPause: TimeSpan.FromSeconds(15),
+            totalLimit: TimeSpan.FromSeconds(Math.Max(60, uiaTimeout.TotalSeconds * 2)));
+        TransientRetry.Run(
+            () => MainWindow.Title,
+            "Erste Abfrage des Hauptfensters",
+            maxAttempts: 4,
+            pause: TimeSpan.FromSeconds(2),
+            backoffFactor: 2.0,
+            maxPause: TimeSpan.FromSeconds(15));
+        return true;
+    }
+
+    private void DiscardFailedStart()
+    {
+        // Halb gestartete App beenden (nur den eigenen, zuvor gestarteten Prozess) und eine frische Automation-Instanz aufbauen.
+        var processId = Application.ProcessId;
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit(TimeSpan.FromSeconds(10));
+        }
+        catch (Exception)
+        {
+            // Best-effort: Der Prozess kann bereits beendet sein.
+        }
+
+        ((IDisposable)Automation).Dispose();
+        Automation = CreateAutomation();
     }
 
     /// <summary>
