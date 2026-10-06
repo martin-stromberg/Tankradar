@@ -10,7 +10,10 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Entwicklungsschritt 6 umgesetzt: Umkreissuche am aktuellen Standort (Radius als Chip-Auswahl 1/2/5/10/15/25 km, Standard 5 km)
+Entwicklungsschritt 8 umgesetzt: Tankstellen-Detailansicht aus der Ergebnisliste (Adresse, Entfernung, Preise mit Alter,
+Hinweise, Öffnungszeiten mit Stand und Altersgrenze von 24 Stunden, Offline-Betrieb mit automatischer Aktualisierung nach
+Wiederverbindung; Details unter [`docs/help/Tankstellendetails/`](docs/help/Tankstellendetails/index.md)). Zuvor Schritt 7:
+Suche nach Adresse, Ort oder PLZ. Schritt 6: Umkreissuche am aktuellen Standort (Radius als Chip-Auswahl 1/2/5/10/15/25 km, Standard 5 km)
 mit Ergebnisliste, Filter nach Spritsorte und Sortierung. Zuvor abgeschlossen: Preisdaten über die
 Tankerkönig-API (Schritt 5) sowie lokale Datenhaltung (SQLite, EF Core) und Einstellungen (Optionen,
 Schritt 4). Enthalten sind außerdem Projektgrundgerüst, MVVM-Infrastruktur, Hauptnavigation mit vier
@@ -134,8 +137,8 @@ Plattform-Datenverzeichnis (`FileSystem.AppDataDirectory`).
 Die App ruft Preise über die Tankerkönig-API ab (Quellenangabe „Daten: Tankerkönig / MTS-K“, CC BY 4.0,
 sichtbar in den Optionen) und speichert jeden Preis mit Zeitstempel lokal (Offline-Betrieb, Alter „vor X Min.“,
 ab 60 Minuten veraltet). Der API-Schlüssel steht nie im Quellcode: lokal über die Umgebungsvariable
-`TANKRADAR_FUEL_PRICE_API_KEY` oder die nicht versionierte Datei `tankerkoenig.local.props`, in der CI über das
-Secret `FUEL_PRICE_API_KEY`; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
+`TANKRADAR_FUEL_PRICE_API_KEY`, dann `FUEL_PRICE_API_KEY`, dann die nicht versionierte Datei `tankerkoenig.local.props`, in der CI über das
+Secret `FUEL_PRICE_API_KEY` (nur für den iOS-Build; das öffentlich herunterladbare Windows-Paket wird ohne Schlüssel gebaut); der Schlüssel gelangt nie in das MSBuild-Log; zur Laufzeit liegt er in Keychain (iOS) bzw. Credential Locker (Windows). Ohne
 Schlüssel baut und testet alles (Tests nutzen einen lokalen Mock-Server, nie produktive Endpunkte).
 Details: [`docs/help/Preisdaten/`](docs/help/Preisdaten/index.md).
 
@@ -151,6 +154,13 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
+
+Neben der Standortsuche bietet „Karte“ die Suche nach Adresse, Ort oder Postleitzahl (Suchart „Adresse, Ort oder
+PLZ“): Die Eingabe wird erst beim ausdrücklichen Absenden geprüft und über OpenStreetMap-Nominatim in eine
+Position umgewandelt (höchstens eine Anfrage je Sekunde, identifizierende Kennung, Quellenangabe
+„Geodaten © OpenStreetMap-Mitwirkende“); Adresse und Position werden nicht gespeichert, GPS ist nicht nötig. Im Testmodus
+gibt `TANKRADAR_GEOCODING_URL` die Adresse eines Mock-Dienstes (`MockNominatimServer`) vor; ohne Adresse
+wird die Auflösung verweigert.
 
 Ohne Testmodus meldet die Suche unter Windows ohne Standortdienst, dass der Standort nicht ermittelt werden
 kann; es gibt keinen stillen Ersatzstandort.

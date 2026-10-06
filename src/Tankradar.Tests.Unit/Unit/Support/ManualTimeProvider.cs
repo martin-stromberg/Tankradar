@@ -33,6 +33,15 @@ public sealed class ManualTimeProvider : TimeProvider
     }
 
     /// <inheritdoc />
+    public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+    /// <inheritdoc />
+    public override long GetTimestamp()
+    {
+        return Now.UtcTicks;
+    }
+
+    /// <inheritdoc />
     public override DateTimeOffset GetUtcNow()
     {
         return Now;

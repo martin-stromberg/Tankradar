@@ -33,9 +33,11 @@ public class ViewModelTests_PageTitles : BaseTest
         var viewModel = new MapViewModel(
             new FakeSettingsService(),
             new FakeLocationService(),
+            new FakeGeocodingService(),
             new FakeFuelPriceService(),
             new FakeConnectionMonitor(),
             TimeProvider.System,
+            new FakeStationNavigator(),
             NullLogger<MapViewModel>.Instance);
 
         Assert.Equal("Karte", viewModel.Title);

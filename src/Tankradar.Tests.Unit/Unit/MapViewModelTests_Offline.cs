@@ -15,7 +15,7 @@ public class MapViewModelTests_Offline : MapViewModelTestBase
     public async Task NoConnection_ShowsBanner()
     {
         Connection.IsOnline = false;
-        var offlineViewModel = new MAUI.ViewModels.MapViewModel(Settings, Location, Prices, Connection, Clock, Logger);
+        var offlineViewModel = new MAUI.ViewModels.MapViewModel(Settings, Location, Geocoding, Prices, Connection, Clock, Navigator, Logger);
 
         offlineViewModel.OnAppearing();
         await offlineViewModel.LastSettingsTask;

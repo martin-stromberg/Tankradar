@@ -5,15 +5,17 @@ using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.Services.Search;
 
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort mit filterbarer und sortierbarer Ergebnisliste.
-/// Der Standort wird nur auf Anforderung der Suche abgefragt und nie gespeichert oder protokolliert.
+/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse mit filterbarer und sortierbarer Ergebnisliste.
+/// Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert; die Adresseingabe wird nicht gespeichert.
 /// </summary>
 public class MapViewModel : BaseViewModel
 {
@@ -26,9 +28,11 @@ public class MapViewModel : BaseViewModel
 
     private readonly ISettingsService _settingsService;
     private readonly ILocationService _locationService;
+    private readonly IGeocodingService _geocodingService;
     private readonly IFuelPriceService _priceService;
     private readonly IConnectionMonitor _connection;
     private readonly TimeProvider _timeProvider;
+    private readonly IStationNavigator _navigator;
     private readonly ILogger<MapViewModel> _logger;
     private readonly List<ChoiceOptionViewModel<ResultSortOrder>> _sortOptions;
     private AppSettings? _settings;
@@ -37,7 +41,12 @@ public class MapViewModel : BaseViewModel
     private StationSearchResult? _lastResult;
     private CancellationTokenSource? _searchCancellation;
     private bool _subscribed;
+    private bool _isOpeningStation;
     private int _radiusKm = SearchRadius.Default;
+    private SearchMode _searchMode = SearchMode.CurrentLocation;
+    private string _addressText = string.Empty;
+    private string? _resolvedPlace;
+    private readonly List<ChoiceOptionViewModel<SearchMode>> _modeOptions;
     private readonly List<RadiusOptionViewModel> _radiusOptions;
     private IReadOnlyList<StationListItem> _allStations = NoStations;
     private int _visibleCount = PageSize;
@@ -52,23 +61,29 @@ public class MapViewModel : BaseViewModel
     /// </summary>
     /// <param name="settingsService">Dienst zum Laden der Einstellungen.</param>
     /// <param name="locationService">Dienst zur Standortermittlung.</param>
+    /// <param name="geocodingService">Dienst zur Umwandlung einer Adresse in eine Position.</param>
     /// <param name="priceService">Preisdienst für die Umkreissuche.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
+    /// <param name="navigator">Die Navigation zur Detailansicht einer Tankstelle.</param>
     /// <param name="logger">Logger (protokolliert nie Koordinaten).</param>
     public MapViewModel(
         ISettingsService settingsService,
         ILocationService locationService,
+        IGeocodingService geocodingService,
         IFuelPriceService priceService,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
+        IStationNavigator navigator,
         ILogger<MapViewModel> logger)
     {
         _settingsService = settingsService;
         _locationService = locationService;
+        _geocodingService = geocodingService;
         _priceService = priceService;
         _connection = connection;
         _timeProvider = timeProvider;
+        _navigator = navigator;
         _logger = logger;
         Title = "Karte";
 
@@ -79,17 +94,87 @@ public class MapViewModel : BaseViewModel
         }
 
         SortOptions = _sortOptions;
+        _modeOptions = [];
+        foreach (var value in Enum.GetValues<SearchMode>())
+        {
+            _modeOptions.Add(new ChoiceOptionViewModel<SearchMode>(value, SearchTexts.GetModeLabel(value), OnModeSelected));
+        }
+
+        ModeOptions = _modeOptions;
+        SyncModeSelection();
+        ClearAddressCommand = new Command(ClearAddress);
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
         _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
         ShowMoreCommand = new Command(ShowMore);
+        OpenStationCommand = new Command<StationListItem>(OpenStation);
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
         LastSearchTask = Task.CompletedTask;
         LastSettingsTask = Task.CompletedTask;
         _isOffline = !_connection.IsOnline;
     }
+
+    /// <summary>
+    /// Die wählbaren Sucharten („Aktueller Standort“, „Adresse, Ort oder PLZ“).
+    /// </summary>
+    public IReadOnlyList<ChoiceOptionViewModel<SearchMode>> ModeOptions { get; }
+
+    /// <summary>
+    /// Gibt an, ob rund um eine eingegebene Adresse gesucht wird (Eingabefeld und Quellenangabe sichtbar).
+    /// </summary>
+    public bool IsAddressMode => _searchMode == SearchMode.Address;
+
+    /// <summary>
+    /// Die Eingabe im Adressfeld; sie wird nur im Arbeitsspeicher gehalten und nie gespeichert.
+    /// </summary>
+    public string AddressText
+    {
+        get => _addressText;
+        set
+        {
+            if (SetProperty(ref _addressText, value ?? string.Empty))
+            {
+                OnPropertyChanged(nameof(HasAddressText));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob das Adressfeld Text enthält (Schaltfläche zum Löschen sichtbar).
+    /// </summary>
+    public bool HasAddressText => _addressText.Length > 0;
+
+    /// <summary>
+    /// Befehl zum Löschen der Adresseingabe.
+    /// </summary>
+    public ICommand ClearAddressCommand { get; }
+
+    /// <summary>
+    /// Die Quellenangabe für die Geodaten (im Adressmodus anzuzeigen).
+    /// </summary>
+    public string AttributionText => SearchTexts.OsmAttribution;
+
+    /// <summary>
+    /// Der Hinweis auf den Ort, rund um den gesucht wurde („Suche rund um: …“); <see langword="null"/>, wenn nicht nach Adresse gesucht wurde.
+    /// </summary>
+    public string? ResolvedPlace
+    {
+        get => _resolvedPlace;
+        private set
+        {
+            if (SetProperty(ref _resolvedPlace, value))
+            {
+                OnPropertyChanged(nameof(HasResolvedPlace));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob ein <see cref="ResolvedPlace"/> anliegt.
+    /// </summary>
+    public bool HasResolvedPlace => ResolvedPlace is { Length: > 0 };
 
     /// <summary>
     /// Der gewählte Suchradius in Kilometern (Standard 5); die Oberfläche setzt ihn über die Radiusstufen (Chips).
@@ -115,6 +200,11 @@ public class MapViewModel : BaseViewModel
     /// Befehl zum Anzeigen weiterer Tankstellen der Ergebnisliste.
     /// </summary>
     public ICommand ShowMoreCommand { get; }
+
+    /// <summary>
+    /// Befehl zum Öffnen der Detailansicht einer Tankstelle aus der Ergebnisliste (Parameter: die Tankstelle).
+    /// </summary>
+    public ICommand OpenStationCommand { get; }
 
     /// <summary>
     /// Die Gesamtzahl der Tankstellen des aktuellen Ergebnisses nach Filter (angezeigt werden davon höchstens die ersten Seiten).
@@ -294,6 +384,16 @@ public class MapViewModel : BaseViewModel
             return;
         }
 
+        // Die Eingabe wird geprüft, bevor irgendetwas an den externen Dienst geht.
+        var addressError = _searchMode == SearchMode.Address ? AddressInput.Validate(_addressText, out _) : AddressInputError.None;
+        if (addressError != AddressInputError.None)
+        {
+            IsBusy = false;
+            ClearResult();
+            StatusMessage = SearchTexts.GetAddressInputMessage(addressError);
+            return;
+        }
+
         var cancellation = new CancellationTokenSource();
         _searchCancellation = cancellation;
         IsBusy = true;
@@ -339,6 +439,35 @@ public class MapViewModel : BaseViewModel
     {
         _visibleCount += PageSize;
         PublishVisible();
+    }
+
+    private void OpenStation(StationListItem? station)
+    {
+        // Karte und Schaltfläche der Zeile können dasselbe Antippen melden; geöffnet wird nur einmal.
+        if (station is null || _isOpeningStation)
+        {
+            return;
+        }
+
+        _isOpeningStation = true;
+        _ = OpenStationAsync(station);
+    }
+
+    private async Task OpenStationAsync(StationListItem station)
+    {
+        try
+        {
+            await _navigator.OpenDetailAsync(station).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Die Detailansicht konnte nicht geöffnet werden ({ExceptionType}).", ex.GetType().Name);
+            StatusMessage = DetailTexts.NotAvailable;
+        }
+        finally
+        {
+            _isOpeningStation = false;
+        }
     }
 
     private void ApplyFilterAndSort(bool resetPaging)
@@ -400,20 +529,88 @@ public class MapViewModel : BaseViewModel
             return;
         }
 
+        var position = _searchMode == SearchMode.Address
+            ? await ResolveAddressAsync(token).ConfigureAwait(true)
+            : await ResolveCurrentLocationAsync(settings, token).ConfigureAwait(true);
+        token.ThrowIfCancellationRequested();
+        if (position is null)
+        {
+            return;
+        }
+
+        var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
+        var query = new StationSearchQuery(position.Latitude, position.Longitude, radiusKm, fuelTypes);
+        var result = await _priceService.SearchNearbyAsync(query, token).ConfigureAwait(true);
+        token.ThrowIfCancellationRequested();
+        ApplyResult(result);
+    }
+
+    private async Task<GeoPosition?> ResolveCurrentLocationAsync(AppSettings settings, CancellationToken token)
+    {
         var location = await _locationService.GetCurrentLocationAsync(settings.GpsUsage, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
         if (location.Status != LocationStatus.Available || location.Position is null)
         {
             ClearResult();
             StatusMessage = SearchTexts.GetLocationMessage(location.Status == LocationStatus.Available ? LocationStatus.Unavailable : location.Status);
+            return null;
+        }
+
+        return location.Position;
+    }
+
+    private async Task<GeoPosition?> ResolveAddressAsync(CancellationToken token)
+    {
+        if (!_connection.IsOnline)
+        {
+            ClearResult();
+            StatusMessage = SearchTexts.AddressOffline;
+            return null;
+        }
+
+        var result = await _geocodingService.ResolveAsync(_addressText, token).ConfigureAwait(true);
+        token.ThrowIfCancellationRequested();
+        if (result.Status != GeocodingStatus.Found || result.Position is null)
+        {
+            ClearResult();
+            StatusMessage = SearchTexts.GetGeocodingMessage(result.Status == GeocodingStatus.Found ? GeocodingStatus.InvalidResponse : result.Status, _connection.IsOnline);
+            return null;
+        }
+
+        // Nur der Anzeigename des Ortes wird für die Oberfläche gehalten; die Position verlässt diese Methode nur als Rückgabewert.
+        AddressInput.Validate(_addressText, out var normalized);
+        ResolvedPlace = SearchTexts.FormatResolvedPlace(result.PlaceName ?? normalized);
+        return result.Position;
+    }
+
+    private void OnModeSelected(ChoiceOptionViewModel<SearchMode> selected)
+    {
+        if (_searchMode == selected.Value)
+        {
             return;
         }
 
-        var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
-        var query = new StationSearchQuery(location.Position.Latitude, location.Position.Longitude, radiusKm, fuelTypes);
-        var result = await _priceService.SearchNearbyAsync(query, token).ConfigureAwait(true);
-        token.ThrowIfCancellationRequested();
-        ApplyResult(result);
+        CancelSearch();
+        IsBusy = false;
+        _searchMode = selected.Value;
+        SyncModeSelection();
+        OnPropertyChanged(nameof(IsAddressMode));
+        ClearResult();
+        StatusMessage = null;
+    }
+
+    private void SyncModeSelection()
+    {
+        foreach (var option in _modeOptions)
+        {
+            option.SetSelectedSilently(option.Value == _searchMode);
+        }
+    }
+
+    private void ClearAddress()
+    {
+        AddressText = string.Empty;
+        StatusMessage = null;
     }
 
     private void ApplyResult(StationSearchResult result)
@@ -542,6 +739,7 @@ public class MapViewModel : BaseViewModel
     {
         _lastResult = null;
         SourceNote = null;
+        ResolvedPlace = null;
         _allStations = NoStations;
         _visibleCount = PageSize;
         Stations = NoStations;

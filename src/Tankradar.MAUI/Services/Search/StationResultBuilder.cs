@@ -49,8 +49,10 @@ public static class StationResultBuilder
         return Sort(items, sortOrder, sortFuel);
     }
 
-    private static StationListItem CreateItem(StationInfo station, IReadOnlyList<FuelType> selected, DateTime nowUtc)
+    private static StationListItem CreateItem(StationInfo source, IReadOnlyList<FuelType> selected, DateTime nowUtc)
     {
+        // Hinweise aus Öffnungszeiten (z. B. „Automatentankstelle“) nur aus Detailangaben, die nicht älter als die Altersgrenze sind.
+        var station = source.WithoutStaleDetails(nowUtc);
         var shownPrices = new List<FuelPrice>();
         var lines = new List<StationPriceLine>();
         foreach (var fuel in selected)
@@ -68,7 +70,8 @@ public static class StationResultBuilder
                 price.Price,
                 SearchTexts.FormatPrice(price.Price),
                 PriceFreshness.FormatAge(price.RetrievedUtc, nowUtc),
-                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc)));
+                PriceFreshness.IsStale(price.RetrievedUtc, nowUtc),
+                PriceFreshness.GetAge(price.RetrievedUtc, nowUtc)));
         }
 
         return new StationListItem(

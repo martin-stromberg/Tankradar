@@ -35,7 +35,7 @@ public sealed class RequestThrottle
     private readonly TimeSpan _minInterval;
     private readonly IDelay _delay;
     private readonly TimeProvider _timeProvider;
-    private DateTimeOffset? _lastRequest;
+    private long? _lastRequest;
 
     /// <summary>
     /// Erstellt die Drosselung.
@@ -62,14 +62,15 @@ public sealed class RequestThrottle
         {
             if (_lastRequest is { } last)
             {
-                var remaining = last + _minInterval - _timeProvider.GetUtcNow();
+                // Monotone Uhr: Änderungen der Systemzeit dürfen den Abstand nicht verkürzen.
+                var remaining = _minInterval - _timeProvider.GetElapsedTime(last);
                 if (remaining > TimeSpan.Zero)
                 {
                     await _delay.DelayAsync(remaining, cancellationToken).ConfigureAwait(false);
                 }
             }
 
-            _lastRequest = _timeProvider.GetUtcNow();
+            _lastRequest = _timeProvider.GetTimestamp();
         }
         finally
         {

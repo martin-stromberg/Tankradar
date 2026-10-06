@@ -86,7 +86,6 @@ jobs:
         with:
           release-version: ${{ steps.version.outputs.version }}
           release-tag: ${{ steps.version.outputs.tag }}
-          fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
           routing-api-key: ${{ secrets.ROUTING_API_KEY }}
 
       - name: Create GitHub release
@@ -149,12 +148,3 @@ jobs:
           xcode-version: ${{ vars.IOS_XCODE_VERSION }}
           fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
           routing-api-key: ${{ secrets.ROUTING_API_KEY }}
-
-      - name: Upload signed IPA
-        if: steps.ios.outputs.signed == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: ios-ipa-release
-          path: release-ios.ipa
-          if-no-files-found: error
-          retention-days: 14

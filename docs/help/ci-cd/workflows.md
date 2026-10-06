@@ -25,8 +25,8 @@ in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`valida
 | Baustein | Zweck |
 |---|---|
 | `.github/actions/security-scan` | `dotnet list package --vulnerable --include-transitive --format json`, ausgewertet sprachunabhängig über `scripts/check-vulnerabilities.mjs` (derselbe Code wie im lokalen Prüflauf; Bericht `vulnerable-packages.json`); lässt den Schritt bei Funden **fehlschlagen**. Von `static checks` und vom wöchentlichen Scan genutzt. |
-| `.github/actions/build-and-package` | Veröffentlicht die Windows-App und erzeugt ZIP und `update.json` (ruft `scripts/package-windows.ps1`). |
-| `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`10.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa`, optional TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Sonst unsignierter Simulator-Build als Compile-Prüfung (kein Fehlschlag). Blendet die übrigen Zielframeworks per Eigenschaft aus (`IncludeAndroidTarget=false`, `IncludeMacCatalystTarget=false`), weil der Restore alle Zielframeworks der `.csproj` auswertet und bei fehlender Workload mit `NETSDK1147` scheitern würde; die Windows-Jobs blenden umgekehrt die Apple-Ziele aus (`IncludeIosTarget=false`, `IncludeMacCatalystTarget=false`). Der lokale Prüflauf (`scripts/local-ci.ps1`) simuliert die Windows-Jobs mit diesen `false`-Werten, stellt die Variablen danach wieder her und prüft iOS in einem eigenen Schritt „iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus; ohne iOS-Workload übersprungen). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
+| `.github/actions/build-and-package` | Veröffentlicht die Windows-App und erzeugt ZIP und `update.json` (ruft `scripts/package-windows.ps1`). Das Paket ist öffentlich herunterladbar und wird deshalb **ohne Tankerkönig-Schlüssel** gebaut: kein Schlüssel-Input, die Schlüsselquellen werden explizit geleert. `scripts/validate-workflows.py` prüft das. |
+| `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`10.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa` (nur im Runner; sie wird **nicht** als Workflow-Artefakt hochgeladen, weil sie den Tankerkönig-Schlüssel enthält und das Repository öffentlich ist), optional TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Sonst unsignierter Simulator-Build als Compile-Prüfung (kein Fehlschlag). Blendet die übrigen Zielframeworks per Eigenschaft aus (`IncludeAndroidTarget=false`, `IncludeMacCatalystTarget=false`), weil der Restore alle Zielframeworks der `.csproj` auswertet und bei fehlender Workload mit `NETSDK1147` scheitern würde; die Windows-Jobs blenden umgekehrt die Apple-Ziele aus (`IncludeIosTarget=false`, `IncludeMacCatalystTarget=false`). Der lokale Prüflauf (`scripts/local-ci.ps1`) simuliert die Windows-Jobs mit diesen `false`-Werten, stellt die Variablen danach wieder her und prüft iOS in einem eigenen Schritt „iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus; ohne iOS-Workload übersprungen). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
 
 ## Skripte
 
@@ -102,10 +102,38 @@ Startausnahme im Testergebnis sichtbar bleibt und nicht von einer `NullReference
 sechs vollständig grüne Läufe hintereinander (je 33 von 33 E2E-Tests, 1 min 43 s bis 1 min 58 s) im Off-Screen-Betrieb
 auf dem Entwicklungsrechner (Windows 11), während der Anwender parallel arbeitete; zusätzlich ein grüner Lauf über
 `scripts/local-ci.ps1`. Eine Prüfung bestätigte, dass das Fenster bei (-32000, -32000) liegt und der Vordergrund
-unverändert bleibt. Der Nachweis in der CI steht noch aus und erfolgt im Pull Request (mindestens fünf grüne Läufe
-hintereinander auf den gehosteten Runnern). Ist der Off-Screen-Betrieb dort nicht genauso stabil, wird die
-Repository-Variable `TANKRADAR_E2E_WINDOW=foreground` gesetzt (bisheriger Vordergrundbetrieb); die übrigen Punkte
-(blockierende E2E in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben in jedem Fall bestehen.
+unverändert bleibt.
+
+**Stand in der CI:** Die CI-Oberflächentests laufen per Repository-Variable `TANKRADAR_E2E_WINDOW=foreground`
+im Vordergrund. Der Off-Screen-Betrieb war auf den GitHub-Runnern nicht zuverlässig: Im Staging-Lauf trat ein
+UI-Automation-Timeout (`0x800705B4`) auf, obwohl zuvor fünf von fünf PR-Läufe grün waren. Lokal bleibt Off-Screen der
+Standard (`local-ci.ps1 -E2EForeground` schaltet lokal auf den Vordergrund um). Die übrigen Punkte (blockierende E2E
+in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben bestehen.
+
+## Robuster App-Start der E2E-Tests (UIA-Timeouts)
+
+Auf den GitHub-Windows-Runnern scheiterten einzelne FlaUI-Tests im Konstruktor mit
+`Win32Exception 0x800705B4` (`UIA3Automation.FromHandle`, Timeout), obwohl lokal alles grün war (PR #5, Run
+37424919256: 5 von 44 Tests; im Fenstermodus `foreground`). Dasselbe Fehlerbild gab es zuvor im Off-Screen-Betrieb:
+**Der Fenstermodus war nicht die Ursache.** Ursache ist der langsame UIA-Verbindungsaufbau zum frisch gestarteten
+WinUI-Fenster, der die FlaUI-Standard-Timeouts und die bisherigen drei kurzen Wiederholungen überschritt.
+
+Die Testbasis (`E2ETestBase`, `E2EStartupPolicy`, `TransientRetry` in `src/TestSupport`) behandelt das jetzt so:
+
+- **Großzügigere UIA-Timeouts:** `ConnectionTimeout` und `TransactionTimeout` der `UIA3Automation` sind lokal 15 s,
+  in der CI (`GITHUB_ACTIONS=true` bzw. `CI=true`) 60 s. Überschreibbar mit `TANKRADAR_E2E_UIA_TIMEOUT_SECONDS`
+  (1 bis 600; ungültige Werte werden ignoriert).
+- **Warten auf Bereitschaft:** Vor der ersten UIA-Abfrage wartet der Test (höchstens bis zum UIA-Timeout), bis der Prozess
+  ein Hauptfenster-Handle hat und auf Eingaben wartet (`Process.WaitForInputIdle`).
+- **Backoff statt kurzer Pausen:** Die Abfrage des Hauptfensters wird bei UIA-Timeouts bis zu viermal wiederholt, mit
+  Pausen 2 s, 4 s, 8 s (höchstens 15 s je Pause) und einem Gesamtzeitlimit (mindestens 60 s, sonst das Doppelte des UIA-Timeouts).
+- **Ein begrenzter Neustart:** Scheitert der Start danach weiterhin an einem UIA-Timeout, wird der eigene (halb gestartete)
+  App-Prozess beendet, eine neue Automation-Instanz erzeugt und die App genau einmal neu gestartet (höchstens zwei Starts).
+- **Keine verdeckten Fehler:** Nur UIA-Timeouts (`TimeoutException`, `0x80131505`, `0x800705B4`) lösen Wiederholungen oder
+  einen Neustart aus; ein fehlendes Fenster, Assertions und andere Fehler bleiben sofort sichtbar. Die Meldung nennt Zahl der
+  Versuche bzw. Starts und die Wartezeit; die Diagnosedaten (siehe unten) werden wie bisher erfasst.
+
+Abgesichert ist die Logik durch Unit-Tests (`E2EStartupPolicyTests_Backoff`, `TransientRetryTests_Behavior`) ohne echte App.
 
 ## E2E-Diagnosedaten
 

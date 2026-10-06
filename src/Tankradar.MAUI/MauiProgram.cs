@@ -5,7 +5,9 @@ using Microsoft.Maui.LifecycleEvents;
 #endif
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -58,6 +60,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
+        AddGeocodingServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
@@ -66,18 +69,40 @@ public static class MauiProgram
         builder.Services.AddTransient<MapViewModel>();
         builder.Services.AddTransient<TankbookViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddTransient<StationDetailViewModel>();
+        builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
         builder.Services.AddTransient<MapPage>();
         builder.Services.AddTransient<TankbookPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<StationDetailPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
 
         return builder.Build();
+    }
+
+    private static void AddGeocodingServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => GeocodingOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton<IGeocodingService>(provider =>
+        {
+            var options = provider.GetRequiredService<GeocodingOptions>();
+
+            // Eigener HTTP-Client und eigene Drosselung: Die Nutzungsrichtlinie von Nominatim (höchstens eine Anfrage je Sekunde)
+            // gilt unabhängig vom Preisdienst; keine automatischen Weiterleitungen, begrenzte Antwortgröße.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                MaxResponseContentBufferSize = 256 * 1024,
+            };
+            var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+            return new NominatimGeocodingService(client, options, throttle, provider.GetRequiredService<ILogger<NominatimGeocodingService>>());
+        });
     }
 
     private static void AddPriceServices(IServiceCollection services)

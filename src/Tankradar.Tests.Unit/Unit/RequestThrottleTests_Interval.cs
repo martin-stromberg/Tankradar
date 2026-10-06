@@ -12,6 +12,42 @@ public class RequestThrottleTests_Interval : BaseTest
     private readonly ManualTimeProvider _clock = new();
 
     /// <summary>
+    /// Prüft, dass ein Sprung der Systemzeit (Wanduhr) den Mindestabstand nicht verändert; maßgeblich ist die monotone Uhr.
+    /// </summary>
+    [Fact]
+    public async Task WaitAsync_WallClockJump_DoesNotChangeInterval()
+    {
+        var clock = new SplitClock();
+        var throttle = new RequestThrottle(TimeSpan.FromSeconds(1), _delay, clock);
+
+        await throttle.WaitAsync(CancellationToken.None);
+        clock.Monotonic += TimeSpan.FromMilliseconds(400).Ticks;
+        clock.Wall = clock.Wall.AddHours(5);
+        await throttle.WaitAsync(CancellationToken.None);
+
+        Assert.Equal([TimeSpan.FromMilliseconds(600)], _delay.Delays);
+    }
+
+    private sealed class SplitClock : TimeProvider
+    {
+        public long Monotonic { get; set; }
+
+        public DateTimeOffset Wall { get; set; } = new(2026, 10, 5, 12, 0, 0, TimeSpan.Zero);
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp()
+        {
+            return Monotonic;
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return Wall;
+        }
+    }
+
+    /// <summary>
     /// Prüft, dass die erste Anfrage sofort und die zweite erst nach dem Mindestabstand erfolgt.
     /// </summary>
     [Fact]

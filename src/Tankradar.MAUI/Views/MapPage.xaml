@@ -57,6 +57,21 @@
                 </Button.Triggers>
             </Button>
         </DataTemplate>
+        <DataTemplate x:Key="ModeChipTemplate" x:DataType="vm:IChoiceOption">
+            <Button Text="{Binding Label}"
+                    Command="{Binding SelectCommand}"
+                    Style="{StaticResource SearchChipButton}"
+                    SemanticProperties.Hint="{Binding SelectionHint}"
+                    AutomationId="{Binding AutomationKey, StringFormat='Search.Mode.{0}'}">
+                <Button.Triggers>
+                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
+        </DataTemplate>
         <DataTemplate x:Key="FilterChipTemplate" x:DataType="vm:IChoiceOption">
             <Button Text="{Binding Label}"
                     Command="{Binding SelectCommand}"
@@ -89,20 +104,25 @@
         </DataTemplate>
     </views:TankradarContentPage.Resources>
 
-    <ScrollView>
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Offline-Hinweis fest oben (scrollt nicht mit), einheitlich mit der Detailansicht -->
+        <Border Grid.Row="0"
+                Margin="{StaticResource space-md}"
+                Style="{StaticResource SearchChip}"
+                Padding="{StaticResource space-md}"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                IsVisible="{Binding IsOffline}">
+            <Label Text="{Binding OfflineMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorTextPrimaryLight}"
+                   AutomationId="Search.OfflineBanner" />
+        </Border>
+
+    <ScrollView Grid.Row="1">
         <VerticalStackLayout Padding="{StaticResource space-md}"
                              Spacing="{StaticResource space-md}">
-
-            <Border Style="{StaticResource SearchChip}"
-                    Padding="{StaticResource space-md}"
-                    StrokeShape="RoundRectangle 12"
-                    BackgroundColor="{StaticResource ColorTertiaryAmber}"
-                    IsVisible="{Binding IsOffline}">
-                <Label Text="{Binding OfflineMessage}"
-                       Style="{StaticResource body-md}"
-                       TextColor="{StaticResource ColorTextPrimaryLight}"
-                       AutomationId="Search.OfflineBanner" />
-            </Border>
 
             <Label Text="Karte"
                    Style="{StaticResource headline-lg}"
@@ -111,6 +131,38 @@
 
             <Border Style="{StaticResource SearchCard}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{x:Static texts:SearchTexts.ModeHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding ModeOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource ModeChipTemplate}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}"
+                          IsVisible="{Binding IsAddressMode}">
+                        <Entry Grid.Column="0"
+                               Text="{Binding AddressText}"
+                               Placeholder="{x:Static texts:SearchTexts.AddressPlaceholder}"
+                               MaxLength="200"
+                               ReturnType="Search"
+                               ReturnCommand="{Binding SearchCommand}"
+                               IsTextPredictionEnabled="False"
+                               IsSpellCheckEnabled="False"
+                               MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                               SemanticProperties.Description="{x:Static texts:SearchTexts.AddressPlaceholder}"
+                               AutomationId="Search.Address.Input" />
+                        <Button Grid.Column="1"
+                                Text="{x:Static texts:SearchTexts.AddressClear}"
+                                Command="{Binding ClearAddressCommand}"
+                                IsVisible="{Binding HasAddressText}"
+                                Style="{StaticResource SearchChipButton}"
+                                Margin="0"
+                                AutomationId="Search.Address.Clear" />
+                    </Grid>
+                    <Label Text="{Binding AttributionText}"
+                           IsVisible="{Binding IsAddressMode}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Search.Attribution" />
                     <Label Text="{x:Static texts:SearchTexts.RadiusHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
@@ -159,6 +211,12 @@
                 </VerticalStackLayout>
             </Border>
 
+            <Label Text="{Binding ResolvedPlace}"
+                   IsVisible="{Binding HasResolvedPlace}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Search.ResolvedPlace" />
+
             <Label Text="{Binding SourceNote}"
                    IsVisible="{Binding HasSourceNote}"
                    Style="{StaticResource body-md}"
@@ -177,6 +235,9 @@
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="search:StationListItem">
                         <Border Style="{StaticResource SearchCard}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnStationTapped" />
+                            </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
                                     <Label Grid.Column="0"
@@ -253,6 +314,13 @@
                                                AutomationId="Search.Hint.Automated" />
                                     </Border>
                                 </HorizontalStackLayout>
+                                <Button Text="{x:Static texts:DetailTexts.OpenDetails}"
+                                        Clicked="OnStationTapped"
+                                        HorizontalOptions="End"
+                                        Style="{StaticResource SearchChipButton}"
+                                        Margin="0"
+                                        SemanticProperties.Hint="{x:Static texts:DetailTexts.OpenDetails}"
+                                        AutomationId="Search.Station.Open" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
@@ -269,5 +337,6 @@
                     AutomationId="Search.ShowMore" />
         </VerticalStackLayout>
     </ScrollView>
+    </Grid>
 
 </views:TankradarContentPage>

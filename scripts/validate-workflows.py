@@ -55,6 +55,20 @@ def check_run_steps(steps, label, errors):
                 errors.append(f'{label}: lokale Action fehlt: {uses}')
 
 
+def check_key_policy(label, steps, errors):
+    """Der Repository ist öffentlich: Weder erhält ein Windows-Paketschritt den Tankerkönig-Schlüssel, noch wird eine .ipa als Artefakt hochgeladen."""
+    for step in steps or []:
+        uses = str(step.get('uses', ''))
+        with_block = step.get('with') or {}
+        name = step.get('name', '?')
+        if uses.startswith('./.github/actions/build-and-package'):
+            for key, value in with_block.items():
+                if re.search(r'fuel|price|api[-_]?key', f'{key} {value}', re.IGNORECASE) and 'routing' not in str(key).lower():
+                    errors.append(f'{label}: Windows-Paketschritt "{name}" darf keinen Schlüssel erhalten ({key})')
+        if uses.startswith('actions/upload-artifact') and re.search(r'\.ipa|ios-ipa', f'{with_block.get("path", "")} {with_block.get("name", "")}', re.IGNORECASE):
+            errors.append(f'{label}: Schritt "{name}" lädt eine .ipa als Workflow-Artefakt hoch (nur der TestFlight-Upload ist erlaubt)')
+
+
 def check_workflow(path, errors):
     label = path.relative_to(ROOT).as_posix()
     workflow = load(path)
@@ -76,6 +90,7 @@ def check_workflow(path, errors):
             if need not in jobs:
                 errors.append(f'{job_label}: needs verweist auf unbekannten Job "{need}"')
         check_run_steps(job.get('steps'), job_label, errors)
+        check_key_policy(job_label, job.get('steps'), errors)
     return workflow
 
 
@@ -90,6 +105,15 @@ def check_action(path, errors):
         if 'run' in step and 'shell' not in step:
             errors.append(f'{label}: run-Schritt "{step.get("name", "?")}" ohne shell')
     check_run_steps(runs.get('steps'), label, errors)
+    if path.parent.name == 'build-and-package':
+        for name in (action.get('inputs') or {}):
+            if re.search(r'fuel|price', str(name), re.IGNORECASE):
+                errors.append(f'{label}: die Windows-Paket-Action darf keinen Schlüssel-Input haben ({name})')
+        for step in runs.get('steps', []):
+            for key, value in (step.get('env') or {}).items():
+                if re.search(r'FUEL_PRICE', str(key)) and str(value).strip() not in ('', "''"):
+                    errors.append(f'{label}: Schritt "{step.get("name", "?")}" setzt {key} nicht leer')
+    check_key_policy(label, runs.get('steps'), errors)
 
 
 def main():

@@ -2,7 +2,9 @@ using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.TestSupport;
@@ -32,6 +34,12 @@ public abstract class SearchMockServerTestBase : IDisposable
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected MockTankerkoenigServer Server { get; private set; } = new();
+
+    /// <summary>
+    /// Der Mock-Server des Geokodierungsdienstes (Nominatim).
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected MockNominatimServer Nominatim { get; } = new();
 
     /// <summary>
     /// Die Testdatenbank.
@@ -111,20 +119,38 @@ public abstract class SearchMockServerTestBase : IDisposable
     }
 
     /// <summary>
+    /// Erstellt den Geokodierungsdienst gegen den Nominatim-Mock mit dem Mindestabstand der Nutzungsrichtlinie (oder einer anderen Adresse).
+    /// </summary>
+    /// <param name="baseUrl">Die Adresse oder <see langword="null"/> für den Mock-Server.</param>
+    /// <returns>Der Dienst.</returns>
+    protected NominatimGeocodingService CreateGeocoding(Uri? baseUrl = null)
+    {
+        var options = new GeocodingOptions { BaseUrl = baseUrl ?? Nominatim.BaseUrl, AllowLoopbackHttp = true, RequestTimeout = TimeSpan.FromSeconds(3) };
+        return new NominatimGeocodingService(
+            new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan },
+            options,
+            new RequestThrottle(options.MinRequestInterval, new TaskDelay(), TimeProvider.System),
+            new RecordingLogger<NominatimGeocodingService>(_logSink));
+    }
+
+    /// <summary>
     /// Erstellt das ViewModel der Suche mit dem übergebenen Preisdienst und festem Teststandort.
     /// </summary>
     /// <param name="service">Der Preisdienst.</param>
     /// <returns>Das ViewModel.</returns>
-    protected MapViewModel CreateViewModel(FuelPriceService service)
+    /// <param name="geocoding">Der Geokodierungsdienst oder <see langword="null"/> für den Dienst gegen den Nominatim-Mock.</param>
+    protected MapViewModel CreateViewModel(FuelPriceService service, IGeocodingService? geocoding = null)
     {
         var factory = Database.CreateFactory();
         var settings = new SettingsService(factory, Database.CreateInitializer(factory));
         return new MapViewModel(
             settings,
             new TestLocationService(new GeoPosition(SearchLatitude, SearchLongitude)),
+            geocoding ?? CreateGeocoding(),
             service,
             Connection,
             Clock,
+            new NullStationNavigator(),
             new RecordingLogger<MapViewModel>(_logSink));
     }
 
@@ -143,6 +169,7 @@ public abstract class SearchMockServerTestBase : IDisposable
     public void Dispose()
     {
         Server.Dispose();
+        Nominatim.Dispose();
         Database.Dispose();
         GC.SuppressFinalize(this);
     }
