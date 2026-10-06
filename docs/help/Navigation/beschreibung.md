@@ -11,10 +11,10 @@ Tankatlas ist eine App für Ihre Tankstellen-Verwaltung mit vier Hauptbereichen,
 Die App zeigt immer einen der vier Hauptbereiche:
 
 ### Favoriten
-Der Startbildschirm. Hier sehen Sie später Ihre favorisierten Tankstellen, übersichtlich in Gruppen angeordnet. Aktuell wird die Seite vorbereitet.
+Der Startbildschirm. Hier verwalten Sie Ihre Favoritengruppen (siehe [Favoritengruppen](../Favoriten/index.md)); die Startseite mit Preisen der favorisierten Tankstellen folgt in einer späteren Version.
 
 ### Karte
-Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Eine Kartenansicht gibt es noch nicht.
+Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Alternativ zur Liste gibt es eine Kartenansicht.
 
 ### Tankbuch
 Hier führen Sie ein Verzeichnis Ihrer Tankvorgänge — welches Auto, wann, wo und wie viel Kraftstoff. Aktuell wird die Seite vorbereitet.
@@ -35,7 +35,7 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 **Sie möchten eine Tankstelle zu Ihren Favoriten hinzufügen:**
 1. Tippen Sie auf **Karte** in der unteren Menüleiste.
 2. Suchen Sie nach einer Tankstelle auf der Karte.
-3. Tippen Sie auf die Tankstelle und wählen Sie „Zu Favoriten hinzufügen" (verfügbar in späteren Versionen).
+3. Öffnen Sie die Details der Tankstelle und tippen Sie in der Karte „Favoritengruppen“ auf „Zu Favoriten hinzufügen“.
 
 **Sie wechseln zum Dunkelmodus:**
 1. Öffnen Sie die Einstellungen Ihres Geräts (nicht innerhalb von Tankatlas).
@@ -44,6 +44,6 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 
 ## Einschränkungen
 
-- Favoriten und Tankbuch sind aktuell in Vorbereitung und zeigen Platzhalter-Text; Optionen und Karte (Umkreissuche) sind bereits funktional.
+- Das Tankbuch ist aktuell in Vorbereitung und zeigt Platzhalter-Text; Favoriten (Gruppenverwaltung), Optionen und Karte (Umkreissuche) sind bereits funktional.
 - Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
-- Favoriten und Tankbuch erhalten ihre Funktionen und Inhalte in späteren Versionen.
+- Das Tankbuch und die Startseite mit Preisen erhalten ihre Inhalte in späteren Versionen.

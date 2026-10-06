@@ -10,7 +10,7 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Entwicklungsschritt 8 umgesetzt: Tankstellen-Detailansicht aus der Ergebnisliste (Adresse, Entfernung, Preise mit Alter,
+Entwicklungsschritt 10 umgesetzt: Favoritengruppen (Zuordnung von Tankstellen in der Detailansicht, Mehrfachzuordnung, Gruppen anlegen/umbenennen/beschreiben/nach Rückfrage löschen, Notiz und Priorität je Tankstelle, lokal und offline; Details unter [`docs/help/Favoriten/`](docs/help/Favoriten/index.md), [ADR 0006](docs/adr/0006-favorite-groups.md)) sowie Kachel-Cache nach HTTP-Caching-Angaben (Cache im Cache-Verzeichnis, Kennung mit App-Version, Quellenlink, Mausbedienung der Karte unter Windows). Zuvor Schritt 8: Tankstellen-Detailansicht aus der Ergebnisliste (Adresse, Entfernung, Preise mit Alter,
 Hinweise, Öffnungszeiten mit Stand und Altersgrenze von 24 Stunden, Offline-Betrieb mit automatischer Aktualisierung nach
 Wiederverbindung; Details unter [`docs/help/Tankstellendetails/`](docs/help/Tankstellendetails/index.md)). Zuvor Schritt 7:
 Suche nach Adresse, Ort oder PLZ. Schritt 6: Umkreissuche am aktuellen Standort (Radius als Chip-Auswahl 1/2/5/10/15/25 km, Standard 5 km)
@@ -168,7 +168,7 @@ kann; es gibt keinen stillen Ersatzstandort.
 Die Suchergebnisse lassen sich alternativ auf einer Karte darstellen (Auswahl „Liste“/„Karte“, Vorbelegung aus der
 Standardansicht der Optionen): eigene Kartenkomponente auf Basis von OpenStreetMap-Kacheln (Quellenangabe
 „© OpenStreetMap-Mitwirkende“, Zoomen, Verschieben, Preismarkierungen in Grün/Teal/Rot/Grau, markierte
-Suchposition, Tippen öffnet die Details). Kacheln werden mit identifizierender Kennung abgerufen und zwischengespeichert;
+Suchposition, Tippen öffnet die Details). Kacheln werden mit identifizierender Kennung (App-Version, Projekt-URL) abgerufen und nach den HTTP-Caching-Angaben des Servers im Cache-Verzeichnis zwischengespeichert (Rückfall 7 Tage);
 im Testmodus gibt `TANKRADAR_TILE_URL` die Adresse eines Mock-Kachelservers (`MockTileServer`) vor, ohne Adresse
 werden keine Kacheln abgerufen. Entscheidungen: [ADR 0005](docs/adr/0005-map-view-decisions.md).
 
