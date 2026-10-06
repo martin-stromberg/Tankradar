@@ -135,6 +135,14 @@ Die Testbasis (`E2ETestBase`, `E2EStartupPolicy`, `TransientRetry` in `src/TestS
 
 Abgesichert ist die Logik durch Unit-Tests (`E2EStartupPolicyTests_Backoff`, `TransientRetryTests_Behavior`) ohne echte App.
 
+### UIA-Timeouts bei Baumsuchen (große Ergebnismengen)
+
+Auf langsamen Windows-Runnern scheiterte `SearchE2ETests_LargeResult` einmal mit `COMException 0x80131505` in einer `FindFirstDescendant`-Suche
+(PR-Lauf mit identischem Code grün). Gegenmaßnahmen: Die Karte baut Markierungen nur sichtbar, nur im Ausschnitt und höchstens 100 auf
+(siehe [ADR 0005](../../adr/0005-map-view-decisions.md)); die E2E-Basis (`SettingsE2ETestBase.WaitUntil`/`FindByAutomationId`, `SearchE2ETestBase.SelectChip`)
+wiederholt einen einzelnen UIA-Timeout begrenzt über `TransientRetry` (andere Fehler bleiben sichtbar) und prüft die Chip-Auswahl zuerst am bereits
+gefundenen Element statt per Suche im ganzen Baum. Lokal sank die Laufzeit des Tests von 12 s auf 7 s (einschließlich App-Start).
+
 ## E2E-Diagnosedaten
 
 Zur Nachvollziehbarkeit eines Fehlschlags erfasst die
