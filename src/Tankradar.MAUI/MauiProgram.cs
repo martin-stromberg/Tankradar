@@ -7,6 +7,7 @@ using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
@@ -61,6 +62,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
         AddGeocodingServices(builder.Services);
+        AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
@@ -102,6 +104,25 @@ public static class MauiProgram
             };
             var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
             return new NominatimGeocodingService(client, options, throttle, provider.GetRequiredService<ILogger<NominatimGeocodingService>>());
+        });
+    }
+
+    private static void AddMapServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => TileServerOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton<ITileSource>(provider =>
+        {
+            var options = provider.GetRequiredService<TileServerOptions>();
+
+            // Eigener HTTP-Client: keine automatischen Weiterleitungen, begrenzte Wartezeit; die Kennung wird je Anfrage gesetzt.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+            var paths = provider.GetRequiredService<IAppDataPathProvider>();
+            return new HttpTileSource(
+                client,
+                options,
+                () => Path.Combine(paths.GetDataDirectory(), "tiles"),
+                provider.GetRequiredService<TimeProvider>(),
+                provider.GetRequiredService<ILogger<HttpTileSource>>());
         });
     }
 

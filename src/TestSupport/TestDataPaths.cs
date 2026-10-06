@@ -21,6 +21,11 @@ public static class TestDataPaths
     public const string GeocodingUrlEnvironmentVariable = "TANKRADAR_GEOCODING_URL";
 
     /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Basisadresse des Kachelservers (Mock-Server) vorgibt; die App hängt <c>{z}/{x}/{y}.png</c> an.
+    /// </summary>
+    public const string TileUrlEnvironmentVariable = "TANKRADAR_TILE_URL";
+
+    /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Preisdienst vorgibt.
     /// </summary>
     public const string PriceApiKeyEnvironmentVariable = "TANKRADAR_PRICE_API_KEY";

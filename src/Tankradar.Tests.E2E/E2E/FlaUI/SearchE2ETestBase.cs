@@ -26,15 +26,16 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
     /// </summary>
     protected SearchE2ETestBase()
-        : this(new MockTankerkoenigServer(), new MockNominatimServer())
+        : this(new MockTankerkoenigServer(), new MockNominatimServer(), new MockTileServer())
     {
     }
 
-    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding)
-        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl))
+    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding, MockTileServer tiles)
+        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl, tiles.BaseUrl))
     {
         Server = server;
         Geocoding = geocoding;
+        Tiles = tiles;
     }
 
     /// <summary>
@@ -48,14 +49,20 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     protected MockNominatimServer Geocoding { get; }
 
     /// <summary>
+    /// Der Mock-Server der Kartenkacheln (die App ruft im Test nie einen produktiven Kachelserver ab).
+    /// </summary>
+    protected MockTileServer Tiles { get; }
+
+    /// <summary>
     /// Erstellt die Umgebungsvariablen der App für den Testmodus (Preisdienst-Adresse, Schlüssel und optional der Teststandort).
     /// </summary>
     /// <param name="baseUrl">Die Adresse des Preisdienstes.</param>
     /// <param name="location">Der Teststandort oder <see langword="null"/>, wenn keiner gesetzt werden soll.</param>
     /// <param name="apiKey">Der Test-Schlüssel.</param>
     /// <param name="geocodingUrl">Die Adresse des Ortssuchdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Adressauflösung).</param>
+    /// <param name="tileUrl">Die Basisadresse des Kachelservers oder <see langword="null"/>, wenn keine gesetzt werden soll (die App ruft dann keine Kacheln ab).</param>
     /// <returns>Die Umgebungsvariablen.</returns>
-    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null)
+    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null, Uri? tileUrl = null)
     {
         var environment = new Dictionary<string, string>
         {
@@ -70,6 +77,11 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         if (geocodingUrl is not null)
         {
             environment[TestDataPaths.GeocodingUrlEnvironmentVariable] = geocodingUrl.ToString();
+        }
+
+        if (tileUrl is not null)
+        {
+            environment[TestDataPaths.TileUrlEnvironmentVariable] = tileUrl.ToString();
         }
 
         return environment;
@@ -326,5 +338,6 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         // Bei einem fehlgeschlagenen Start sind Server/Geocoding evtl. noch nicht zugewiesen (Basiskonstruktor abgebrochen).
         ((IDisposable?)Server)?.Dispose();
         ((IDisposable?)Geocoding)?.Dispose();
+        ((IDisposable?)Tiles)?.Dispose();
     }
 }
