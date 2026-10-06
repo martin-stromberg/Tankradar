@@ -42,6 +42,16 @@ public class TankradarDbContext : DbContext
     public DbSet<PriceEntryEntity> PriceEntries { get; set; } = null!;
 
     /// <summary>
+    /// Die Tabelle der Favoritengruppen.
+    /// </summary>
+    public DbSet<FavoriteGroupEntity> FavoriteGroups { get; set; } = null!;
+
+    /// <summary>
+    /// Die Tabelle der Zuordnungen von Tankstellen zu Favoritengruppen.
+    /// </summary>
+    public DbSet<FavoriteEntryEntity> FavoriteEntries { get; set; } = null!;
+
+    /// <summary>
     /// Ermittelt den vollständigen Pfad der Datenbankdatei.
     /// </summary>
     /// <param name="dataDirectory">Das App-Datenverzeichnis.</param>
@@ -93,6 +103,32 @@ public class TankradarDbContext : DbContext
                 .HasForeignKey(e => e.StationId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.StationId, e.FuelTypeKey, e.RetrievedUtc });
+        });
+
+        modelBuilder.Entity<FavoriteGroupEntity>(entity =>
+        {
+            entity.ToTable("FavoriteGroups");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().UseCollation("NOCASE");
+            entity.HasIndex(e => e.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<FavoriteEntryEntity>(entity =>
+        {
+            entity.ToTable("FavoriteEntries");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StationId).IsRequired();
+            entity.Property(e => e.Priority).IsRequired();
+            entity.HasOne(e => e.Group)
+                .WithMany(g => g.Entries)
+                .HasForeignKey(e => e.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Station)
+                .WithMany()
+                .HasForeignKey(e => e.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.GroupId, e.StationId }).IsUnique();
+            entity.HasIndex(e => e.StationId);
         });
     }
 }

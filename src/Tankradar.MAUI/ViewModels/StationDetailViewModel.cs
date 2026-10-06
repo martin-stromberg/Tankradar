@@ -41,13 +41,16 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis, automatische Aktualisierung).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
     /// <param name="logger">Logger (protokolliert nie Koordinaten).</param>
+    /// <param name="favorites">Die Favoritengruppen der Tankstelle (Karte „Favoritengruppen“).</param>
     public StationDetailViewModel(
         ISettingsService settingsService,
         IFuelPriceService priceService,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
-        ILogger<StationDetailViewModel> logger)
+        ILogger<StationDetailViewModel> logger,
+        StationFavoritesViewModel favorites)
     {
+        Favorites = favorites;
         _settingsService = settingsService;
         _priceService = priceService;
         _connection = connection;
@@ -65,6 +68,11 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             }
         };
     }
+
+    /// <summary>
+    /// Die Favoritengruppen der Tankstelle (Zuordnen und Entfernen).
+    /// </summary>
+    public StationFavoritesViewModel Favorites { get; }
 
     /// <summary>
     /// Die aufbereiteten Angaben der Tankstelle; <see langword="null"/>, solange nichts vorliegt.
@@ -190,6 +198,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         _origin = origin;
         _station = null;
         _lastResult = null;
+        _ = Favorites.SetStationAsync(origin.Id);
         Detail = new StationDetailItem(
             origin.Id,
             origin.Name,
@@ -217,6 +226,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         }
 
         UpdateOfflineState();
+        Favorites.OnAppearing();
         LastLoadTask = LoadAsync();
     }
 

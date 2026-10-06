@@ -11,15 +11,13 @@ namespace Tankradar.MAUI.Services.Map;
 /// </summary>
 public sealed class TileServerOptions
 {
+    private static readonly string UnknownVersionUserAgent = AppIdentity.BuildUserAgent(null);
+
     /// <summary>
     /// Die produktive Adressvorlage der Kachelserver von OpenStreetMap (<c>{z}</c> Zoomstufe, <c>{x}</c> Spalte, <c>{y}</c> Zeile).
     /// </summary>
     public const string DefaultUrlTemplate = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
-    /// <summary>
-    /// Die Kennung, mit der sich die App gegenüber dem Kachelserver ausweist (Produktname, Version, App-Kennung).
-    /// </summary>
-    public const string DefaultUserAgent = "Tankatlas/0.1 " + AppConfiguration.DefaultBundleId;
 
     /// <summary>
     /// Die Adressvorlage der Kacheln.
@@ -33,10 +31,10 @@ public sealed class TileServerOptions
     public bool EndpointNotConfigured { get; init; }
 
     /// <summary>
-    /// Die Kennung der App im Anfragekopf (<c>User-Agent</c>).
+    /// Die Kennung der App im Anfragekopf (<c>User-Agent</c>): Produktname, tatsächliche App-Version, Projekt-URL und App-Kennung (siehe <see cref="AppIdentity.BuildUserAgent"/>).
     /// </summary>
     /// <returns>Der Wert.</returns>
-    public string UserAgent { get; init; } = DefaultUserAgent;
+    public string UserAgent { get; init; } = UnknownVersionUserAgent;
 
     /// <summary>
     /// Zeitlimit je Anfrage.
@@ -50,7 +48,8 @@ public sealed class TileServerOptions
     public int MaxConcurrentRequests { get; init; } = 2;
 
     /// <summary>
-    /// So lange gilt eine zwischengespeicherte Kachel als aktuell (die Nutzungsrichtlinie fordert mindestens sieben Tage); danach wird neu abgerufen,
+    /// Rückfall für die Gültigkeitsdauer einer zwischengespeicherten Kachel (die Nutzungsrichtlinie nennt mindestens sieben Tage), wenn der Server keine
+    /// Angabe über <c>Cache-Control</c> oder <c>Expires</c> liefert. Liefert der Server Angaben, gelten diese; danach wird bedingt (<c>ETag</c>/<c>Last-Modified</c>) neu abgerufen,
     /// bei einem Fehler aber die veraltete Kachel weiterverwendet.
     /// </summary>
     /// <returns>Der Wert.</returns>
@@ -129,8 +128,9 @@ public sealed class TileServerOptions
     /// (<c>TANKATLAS_TEST_DATA_PATH</c>) gesetzt ist; ohne Endpunkt im Testmodus werden keine Kacheln abgerufen.
     /// </summary>
     /// <param name="getEnvironmentVariable">Liefert den Wert einer Umgebungsvariable oder <see langword="null"/>.</param>
+    /// <param name="appVersion">Die tatsächliche App-Version für die Kennung im Anfragekopf; <see langword="null"/> führt zu <see cref="AppIdentity.UnknownVersion"/>.</param>
     /// <returns>Die validierten Einstellungen.</returns>
-    public static TileServerOptions FromEnvironment(Func<string, string?> getEnvironmentVariable)
+    public static TileServerOptions FromEnvironment(Func<string, string?> getEnvironmentVariable, string? appVersion = null)
     {
         ArgumentNullException.ThrowIfNull(getEnvironmentVariable);
 
@@ -145,11 +145,12 @@ public sealed class TileServerOptions
                 UrlTemplate = (baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/") + "{z}/{x}/{y}.png",
                 AllowLoopbackHttp = true,
                 RequestTimeout = TimeSpan.FromSeconds(3),
+                UserAgent = AppIdentity.BuildUserAgent(appVersion),
             };
         }
         else
         {
-            options = new TileServerOptions { EndpointNotConfigured = testMode };
+            options = new TileServerOptions { EndpointNotConfigured = testMode, UserAgent = AppIdentity.BuildUserAgent(appVersion) };
         }
 
         options.Validate();

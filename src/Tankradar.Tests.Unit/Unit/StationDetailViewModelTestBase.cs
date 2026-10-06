@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Search;
@@ -23,8 +24,20 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     /// </summary>
     protected StationDetailViewModelTestBase()
     {
-        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, Clock, Logger);
+        Favorites = new StationFavoritesViewModel(FavoritesDb.CreateService(), NullLogger<StationFavoritesViewModel>.Instance);
+        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, Clock, Logger, Favorites);
     }
+
+    /// <summary>
+    /// Die Favoritendatenbank mit den Teststationen.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FavoritesFixture FavoritesDb { get; } = new();
+
+    /// <summary>
+    /// Das ViewModel der Karte „Favoritengruppen“.
+    /// </summary>
+    protected StationFavoritesViewModel Favorites { get; }
 
     /// <summary>
     /// Die Einstellungen.
@@ -60,6 +73,17 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     /// Das zu testende ViewModel.
     /// </summary>
     protected StationDetailViewModel ViewModel { get; }
+
+    /// <inheritdoc />
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            FavoritesDb.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
 
     /// <summary>
     /// Die aktuelle Uhrzeit der Testuhr in UTC.

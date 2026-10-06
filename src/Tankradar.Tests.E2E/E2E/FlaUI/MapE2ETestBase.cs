@@ -57,7 +57,15 @@ public abstract class MapE2ETestBase : SearchE2ETestBase
     /// <returns>Der Text; leer, wenn die Karte nicht angezeigt wird.</returns>
     protected string ReadMapCount()
     {
-        return MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Map.StationCount"))?.Name ?? string.Empty;
+        try
+        {
+            return MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Map.StationCount"))?.Name ?? string.Empty;
+        }
+        catch (global::FlaUI.Core.Exceptions.PropertyNotSupportedException)
+        {
+            // Das Element wird gerade neu aufgebaut; der nächste Abruf liefert den Text.
+            return string.Empty;
+        }
     }
 
     /// <summary>

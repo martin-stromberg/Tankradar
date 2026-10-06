@@ -2,23 +2,127 @@
 <views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:DataType="vm:FavoritesViewModel"
              x:Class="Tankradar.MAUI.Views.FavoritesPage"
              Title="Favoriten"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
-    <VerticalStackLayout Padding="{StaticResource space-md}"
-                          Spacing="{StaticResource space-sm}"
-                          VerticalOptions="Center">
-        <Label Text="Favoriten"
-               Style="{StaticResource headline-lg}"
-               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center"
-               AutomationId="FavoritesPage.Headline" />
-        <Label Text="Hier erscheinen bald deine favorisierten Tankstellen in Gruppen."
-               Style="{StaticResource body-md}"
-               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-               HorizontalOptions="Center"
-               HorizontalTextAlignment="Center" />
-    </VerticalStackLayout>
+    <views:TankradarContentPage.Resources>
+        <Style x:Key="GroupCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+        </Style>
+        <Style x:Key="FavoritesButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+            <Style.Triggers>
+                <Trigger TargetType="Button" Property="IsEnabled" Value="False">
+                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#CBD5E1, Dark=#334155}" />
+                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#475569, Dark=#CBD5E1}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="FavoritesOutlineButton" TargetType="Button" BasedOn="{StaticResource FavoritesButton}">
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
+            <Label Text="Favoriten"
+                   Style="{StaticResource headline-lg}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   AutomationId="FavoritesPage.Headline" />
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="Favorites.Status" />
+
+            <Label Text="{x:Static texts:FavoritesTexts.NoGroups}"
+                   IsVisible="{Binding ShowEmptyHint}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Favorites.Empty" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Groups}"
+                                 IsVisible="{Binding HasGroups}"
+                                 Spacing="{StaticResource space-sm}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FavoriteGroupItemViewModel">
+                        <Border Style="{StaticResource GroupCard}">
+                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                <Label Text="{Binding Name}"
+                                       Style="{StaticResource headline-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       AutomationId="Favorites.Group.Name" />
+                                <Label Text="{Binding Description}"
+                                       IsVisible="{Binding HasDescription}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="Favorites.Group.Description" />
+                                <Label Text="{Binding CountText}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                       AutomationId="Favorites.Group.Count" />
+                                <Button Text="{x:Static texts:FavoritesTexts.OpenGroup}"
+                                        Command="{Binding OpenCommand}"
+                                        Style="{StaticResource FavoritesOutlineButton}"
+                                        SemanticProperties.Description="{Binding Name}"
+                                        SemanticProperties.Hint="{x:Static texts:FavoritesTexts.OpenGroupHint}"
+                                        AutomationId="Favorites.Group.Open" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Button Text="{x:Static texts:FavoritesTexts.NewGroup}"
+                    Command="{Binding ShowCreateCommand}"
+                    IsVisible="{Binding IsNotCreating}"
+                    Style="{StaticResource FavoritesButton}"
+                    AutomationId="Favorites.NewGroup" />
+
+            <Border Style="{StaticResource GroupCard}" IsVisible="{Binding IsCreating}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{x:Static texts:FavoritesTexts.NewGroup}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Entry Text="{Binding NewName}"
+                           Placeholder="{x:Static texts:FavoritesTexts.NameLabel}"
+                           MaxLength="40"
+                           SemanticProperties.Description="{x:Static texts:FavoritesTexts.NameLabel}"
+                           AutomationId="Favorites.NewName" />
+                    <Entry Text="{Binding NewDescription}"
+                           Placeholder="{x:Static texts:FavoritesTexts.DescriptionLabel}"
+                           MaxLength="200"
+                           SemanticProperties.Description="{x:Static texts:FavoritesTexts.DescriptionLabel}"
+                           AutomationId="Favorites.NewDescription" />
+                    <Button Text="{x:Static texts:FavoritesTexts.Create}"
+                            Command="{Binding CreateCommand}"
+                            Style="{StaticResource FavoritesButton}"
+                            AutomationId="Favorites.NewCreate" />
+                    <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                            Command="{Binding CancelCreateCommand}"
+                            Style="{StaticResource FavoritesOutlineButton}"
+                            AutomationId="Favorites.NewCancel" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
 
 </views:TankradarContentPage>

@@ -93,7 +93,7 @@ public class HttpTileSourceTests_Fetch : BaseTest
             await first.GetTileAsync(Key);
         }
 
-        File.SetLastWriteTimeUtc(Path.Combine(_directory, "12", "2200", "1343.png"), _clock.UtcNow.AddDays(-8));
+        _clock.Advance(TimeSpan.FromDays(8));
         _handler.RespondWith(HttpStatusCode.ServiceUnavailable, string.Empty);
         using var restarted = CreateSource();
 

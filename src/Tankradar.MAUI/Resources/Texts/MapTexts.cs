@@ -16,6 +16,16 @@ public static class MapTexts
     public const string Attribution = "© OpenStreetMap-Mitwirkende";
 
     /// <summary>
+    /// Adresse der Urheber- und Lizenzhinweise von OpenStreetMap, auf die die Quellenangabe verweist.
+    /// </summary>
+    public const string AttributionUrl = "https://www.openstreetmap.org/copyright";
+
+    /// <summary>
+    /// Hinweis der Quellenangabe für Bedienhilfen (die Angabe ist ein Link).
+    /// </summary>
+    public const string AttributionHint = "Öffnet die Urheber- und Lizenzhinweise von OpenStreetMap im Browser";
+
+    /// <summary>
     /// Überschrift der Umschaltung zwischen Liste und Karte.
     /// </summary>
     public const string ViewHeading = "Ansicht";

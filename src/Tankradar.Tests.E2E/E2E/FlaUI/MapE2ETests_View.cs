@@ -79,7 +79,7 @@ public class MapE2ETests_View : MapE2ETestBase
             Assert.True(Exists("Map.Legend"));
             WaitUntil(() => Tiles.Requests > 0, "Es wurden keine Kacheln vom Mock-Kachelserver abgerufen.");
             Assert.All(Tiles.Paths, path => Assert.Matches(new Regex(@"^/\d{1,2}/\d+/\d+\.png$"), path));
-            Assert.All(Tiles.UserAgents, agent => Assert.Contains("Tankatlas", agent, StringComparison.Ordinal));
+            Assert.All(Tiles.UserAgents, agent => Assert.Matches(new Regex(@"^Tankatlas/(?!0\.0\.0 )\d+(\.\d+){1,3} \(\+https://github\.com/martin-stromberg/Tankradar; [\w.]+\)$"), agent));
             Assert.Equal(1, Server.ListRequests);
         });
     }

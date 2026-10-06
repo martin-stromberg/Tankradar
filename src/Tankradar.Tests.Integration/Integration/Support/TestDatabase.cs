@@ -89,6 +89,11 @@ public sealed class TestDatabase : IDisposable
         {
             return _directory;
         }
+
+        public string GetCacheDirectory()
+        {
+            return Path.Combine(_directory, "cache");
+        }
     }
 
     private sealed class NoOpProtector : IDatabaseFileProtector

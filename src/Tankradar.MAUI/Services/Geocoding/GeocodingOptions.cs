@@ -8,17 +8,12 @@ namespace Tankradar.MAUI.Services.Geocoding;
 /// </summary>
 public sealed class GeocodingOptions
 {
+    private static readonly string UnknownVersionUserAgent = AppIdentity.BuildUserAgent(null);
+
     /// <summary>
     /// Produktive Basisadresse von Nominatim.
     /// </summary>
     public const string DefaultBaseUrl = "https://nominatim.openstreetmap.org/";
-
-    /// <summary>
-    /// Die Kennung, mit der sich die App gegenüber Nominatim ausweist (Produktname, Version, App-Kennung).
-    /// </summary>
-    public const string DefaultUserAgent = ProductToken + " " + AppConfiguration.DefaultBundleId;
-
-    private const string ProductToken = "Tankatlas/0.1";
 
     private static readonly Uri DefaultUri = new Uri(DefaultBaseUrl);
 
@@ -56,7 +51,7 @@ public sealed class GeocodingOptions
     /// Die Kennung der App im Anfragekopf (<c>User-Agent</c>).
     /// </summary>
     /// <returns>Der Wert.</returns>
-    public string UserAgent { get; init; } = DefaultUserAgent;
+    public string UserAgent { get; init; } = UnknownVersionUserAgent;
 
     /// <summary>
     /// Gibt an, ob unverschlüsseltes HTTP zu einer Loopback-Adresse zugelassen ist (nur Testmodus).
@@ -92,8 +87,9 @@ public sealed class GeocodingOptions
     /// (<c>TANKATLAS_TEST_DATA_PATH</c>) gesetzt ist; ohne Endpunkt im Testmodus wird die Auflösung verweigert.
     /// </summary>
     /// <param name="getEnvironmentVariable">Liefert den Wert einer Umgebungsvariable oder <see langword="null"/>.</param>
+    /// <param name="appVersion">Die tatsächliche App-Version für die Kennung im Anfragekopf; <see langword="null"/> führt zu <see cref="AppIdentity.UnknownVersion"/>.</param>
     /// <returns>Die validierten Einstellungen.</returns>
-    public static GeocodingOptions FromEnvironment(Func<string, string?> getEnvironmentVariable)
+    public static GeocodingOptions FromEnvironment(Func<string, string?> getEnvironmentVariable, string? appVersion = null)
     {
         ArgumentNullException.ThrowIfNull(getEnvironmentVariable);
 
@@ -102,11 +98,11 @@ public sealed class GeocodingOptions
         GeocodingOptions options;
         if (testMode && !string.IsNullOrWhiteSpace(overrideUrl) && Uri.TryCreate(EnsureTrailingSlash(overrideUrl), UriKind.Absolute, out var uri))
         {
-            options = new GeocodingOptions { BaseUrl = uri, AllowLoopbackHttp = true, RequestTimeout = TimeSpan.FromSeconds(3) };
+            options = new GeocodingOptions { BaseUrl = uri, AllowLoopbackHttp = true, RequestTimeout = TimeSpan.FromSeconds(3), UserAgent = AppIdentity.BuildUserAgent(appVersion) };
         }
         else
         {
-            options = new GeocodingOptions { EndpointNotConfigured = testMode };
+            options = new GeocodingOptions { EndpointNotConfigured = testMode, UserAgent = AppIdentity.BuildUserAgent(appVersion) };
         }
 
         options.Validate();

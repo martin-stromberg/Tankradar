@@ -17,6 +17,64 @@ namespace Tankradar.MAUI.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
+            modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteEntryEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("AddedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("GroupId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StationId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StationId");
+
+                    b.HasIndex("GroupId", "StationId")
+                        .IsUnique();
+
+                    b.ToTable("FavoriteEntries", (string)null);
+                });
+
+            modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteGroupEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("FavoriteGroups", (string)null);
+                });
+
             modelBuilder.Entity("Tankradar.MAUI.Data.FuelTypeSettingEntity", b =>
                 {
                     b.Property<string>("FuelTypeKey")
@@ -128,6 +186,25 @@ namespace Tankradar.MAUI.Data.Migrations
                     b.ToTable("UserSettings", (string)null);
                 });
 
+            modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteEntryEntity", b =>
+                {
+                    b.HasOne("Tankradar.MAUI.Data.FavoriteGroupEntity", "Group")
+                        .WithMany("Entries")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Tankradar.MAUI.Data.StationEntity", "Station")
+                        .WithMany()
+                        .HasForeignKey("StationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Station");
+                });
+
             modelBuilder.Entity("Tankradar.MAUI.Data.PriceEntryEntity", b =>
                 {
                     b.HasOne("Tankradar.MAUI.Data.StationEntity", "Station")
@@ -137,6 +214,11 @@ namespace Tankradar.MAUI.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Station");
+                });
+
+            modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteGroupEntity", b =>
+                {
+                    b.Navigation("Entries");
                 });
 
             modelBuilder.Entity("Tankradar.MAUI.Data.StationEntity", b =>
