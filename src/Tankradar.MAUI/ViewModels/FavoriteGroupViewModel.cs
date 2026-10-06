@@ -25,6 +25,7 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
     private string _editDescription = string.Empty;
     private string? _statusMessage;
     private bool _loaded;
+    private int _loadVersion;
 
     /// <summary>
     /// Erstellt das ViewModel mit dem Seitentitel „Favoritengruppe“.
@@ -257,11 +258,12 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
             return;
         }
 
+        var version = Interlocked.Increment(ref _loadVersion);
         try
         {
             var group = await _service.GetGroupAsync(groupId).ConfigureAwait(true);
             var entries = group is null ? [] : await _service.GetEntriesAsync(groupId).ConfigureAwait(true);
-            if (_groupId != groupId)
+            if (_groupId != groupId || version != _loadVersion)
             {
                 return;
             }
@@ -335,11 +337,12 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
 
     private async Task DeleteAsync()
     {
-        if (_groupId is not { } groupId)
+        if (_groupId is not { } groupId || IsBusy)
         {
             return;
         }
 
+        IsBusy = true;
         try
         {
             var result = await _service.DeleteGroupAsync(groupId).ConfigureAwait(true);
@@ -357,6 +360,10 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
         {
             _logger.LogWarning("Die Favoritengruppe konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
             StatusMessage = FavoritesTexts.SaveFailed;
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

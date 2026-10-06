@@ -89,7 +89,11 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         {
             case DownloadKind.Downloaded:
                 Remember(key, outcome.Data!, outcome.Freshness.ExpiresUtc);
-                if (!outcome.Freshness.NoStore)
+                if (outcome.Freshness.NoStore)
+                {
+                    DeleteFromDisk(key);
+                }
+                else
                 {
                     WriteToDisk(key, outcome.Data!, outcome.Metadata!);
                 }
@@ -98,7 +102,11 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             case DownloadKind.NotModified when stored is not null:
                 // Der Server bestätigt die gespeicherte Kachel: nur die Gültigkeit wird verlängert.
                 Remember(key, stored.Data, outcome.Freshness.ExpiresUtc);
-                if (!outcome.Freshness.NoStore)
+                if (outcome.Freshness.NoStore)
+                {
+                    DeleteFromDisk(key);
+                }
+                else
                 {
                     var confirmed = outcome.Metadata!;
                     WriteMetadata(key, confirmed with
@@ -233,7 +241,14 @@ public sealed class HttpTileSource : ITileSource, IDisposable
 
     private TileFreshness EvaluateFreshness(HttpResponseMessage response, DateTimeOffset now)
     {
-        return TileCachePolicy.Evaluate(response.Headers.CacheControl, response.Content.Headers.Expires, response.Headers.Date, now, _options.CacheLifetime);
+        // Ein vorhandenes, aber ungültiges oder „0“-wertiges Expires gilt nach RFC 9111 als bereits abgelaufen (nicht als fehlende Angabe).
+        var expires = response.Content.Headers.Expires;
+        if (expires is null && response.Content.Headers.NonValidated.Contains("Expires"))
+        {
+            expires = DateTimeOffset.UnixEpoch;
+        }
+
+        return TileCachePolicy.Evaluate(response.Headers.CacheControl, expires, response.Headers.Date, now, _options.CacheLifetime);
     }
 
     private bool TryGetFreshMemory(TileKey key, DateTimeOffset now, out byte[]? data)
@@ -366,6 +381,19 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogDebug("Eine Kachel konnte nicht gespeichert werden ({ExceptionType}).", ex.GetType().Name);
+        }
+    }
+
+    private void DeleteFromDisk(TileKey key)
+    {
+        try
+        {
+            File.Delete(PathOf(key));
+            File.Delete(MetadataPathOf(key));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogDebug("Eine nicht zu speichernde Kachel konnte nicht vom Gerät entfernt werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
 

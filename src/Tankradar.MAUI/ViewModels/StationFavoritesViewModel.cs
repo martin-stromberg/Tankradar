@@ -302,7 +302,7 @@ public class StationFavoritesViewModel : BaseViewModel
 
     private async Task RemoveFromAsync(IReadOnlyCollection<long> groupIds)
     {
-        if (_stationId is not { } stationId)
+        if (_stationId is not { } stationId || IsBusy)
         {
             return;
         }
@@ -312,7 +312,9 @@ public class StationFavoritesViewModel : BaseViewModel
         {
             var result = await _service.RemoveStationAsync(stationId, groupIds).ConfigureAwait(true);
             ClosePanels();
-            StatusMessage = NullIfEmpty(FavoritesTexts.GetResultMessage(result));
+
+            // „Nicht (mehr) zugeordnet“ ist das gewünschte Ergebnis (z. B. nach einer Änderung in einer anderen Ansicht), kein Fehler.
+            StatusMessage = result == FavoriteResult.NotMember ? null : NullIfEmpty(FavoritesTexts.GetResultMessage(result));
             await ReloadAsync().ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -365,7 +367,7 @@ public class StationFavoritesViewModel : BaseViewModel
 
     private async Task AddToAsync(GroupOptionViewModel option)
     {
-        if (_stationId is not { } stationId)
+        if (_stationId is not { } stationId || IsBusy)
         {
             return;
         }

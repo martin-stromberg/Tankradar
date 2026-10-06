@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Favorites;
@@ -11,6 +12,8 @@ namespace Tankradar.MAUI.Services.Favorites;
 /// </summary>
 public sealed class FavoritesService : IFavoritesService
 {
+    private const int SqliteUniqueConstraintFailed = 2067;
+
     private static readonly StringComparer GermanOrder = StringComparer.Create(CultureInfo.GetCultureInfo("de-DE"), ignoreCase: true);
 
     private readonly IDbContextFactory<TankradarDbContext> _contextFactory;
@@ -282,9 +285,9 @@ public sealed class FavoritesService : IFavoritesService
         {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException) when (!cancellationToken.IsCancellationRequested)
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed })
         {
-            // Mehrdeutig, wer die Änderung verhindert hat (z. B. gleichzeitiges Anlegen desselben Namens); der Aufrufer meldet einen Konflikt.
+            // Gleichzeitiges Anlegen desselben Namens oder derselben Zuordnung aus einer anderen Ansicht; andere Fehler (gesperrte Datenbank, voller Datenträger) werden weitergereicht und als Speicherfehler gemeldet.
             return FavoriteResult.DuplicateName;
         }
 

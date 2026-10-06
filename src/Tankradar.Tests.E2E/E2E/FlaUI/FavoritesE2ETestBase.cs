@@ -54,7 +54,7 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
         WaitUntil(
             () =>
             {
-                var texts = ReadTexts(automationId);
+                var texts = SafeTexts(automationId);
                 last = string.Join(" | ", texts);
                 return texts.SequenceEqual(expected);
             },
@@ -101,7 +101,7 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
     /// <param name="name">Der Name der Gruppe.</param>
     protected void OpenGroup(string name)
     {
-        var index = ReadTexts("Favorites.Group.Name").ToList().IndexOf(name);
+        var index = SafeTexts("Favorites.Group.Name").ToList().IndexOf(name);
         Assert.True(index >= 0, $"Die Gruppe '{name}' steht nicht in der Liste.");
         FindAllOrdered("Favorites.Group.Open")[index].Patterns.Invoke.Pattern.Invoke();
         WaitForText("FavoriteGroup.Name", name);
@@ -114,10 +114,35 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
     /// <returns>Die Namen der ausgewählten Elemente.</returns>
     protected IReadOnlyList<string> SelectedNames(string automationId)
     {
-        return FindAllOrdered(automationId)
-            .Where(element => element.Properties.HelpText.ValueOrDefault == "Ausgewählt")
-            .Select(element => element.Name)
-            .ToList();
+        try
+        {
+            return FindAllOrdered(automationId)
+                .Where(element => element.Properties.HelpText.ValueOrDefault == "Ausgewählt")
+                .Select(element => element.Name)
+                .ToList();
+        }
+        catch (global::FlaUI.Core.Exceptions.PropertyNotSupportedException)
+        {
+            // Die Elemente werden gerade neu aufgebaut; der nächste Abruf liefert sie.
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Liefert die Namen aller Elemente mit der AutomationId; ein Element, das während des Lesens neu aufgebaut wird, führt zu einer leeren Liste (der nächste Abruf der Wartefunktion liest erneut).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Die Namen in Dokumentreihenfolge.</returns>
+    protected IReadOnlyList<string> SafeTexts(string automationId)
+    {
+        try
+        {
+            return ReadTexts(automationId);
+        }
+        catch (global::FlaUI.Core.Exceptions.PropertyNotSupportedException)
+        {
+            return [];
+        }
     }
 
     /// <summary>
@@ -127,8 +152,8 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
     /// <param name="name">Der Name der gesuchten Schaltfläche.</param>
     protected void PressNamed(string automationId, string name)
     {
-        var element = FindAllOrdered(automationId).FirstOrDefault(candidate => candidate.Name == name);
-        Assert.True(element is not null, $"Keine Schaltfläche '{name}' mit der AutomationId '{automationId}'.");
-        element.Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => SafeTexts(automationId).Contains(name), $"Keine Schaltfläche '{name}' mit der AutomationId '{automationId}'.");
+        var index = SafeTexts(automationId).ToList().IndexOf(name);
+        FindAllOrdered(automationId)[index].Patterns.Invoke.Pattern.Invoke();
     }
 }

@@ -14,7 +14,7 @@ public partial class StationMapView
     private readonly MapPointerTracker _pointer = new();
     private UIElement? _pointerTarget;
 
-    partial void AttachPointerInput()
+    partial void DetachPointerInput()
     {
         if (_pointerTarget is not null)
         {
@@ -26,6 +26,13 @@ public partial class StationMapView
             _pointerTarget.PointerWheelChanged -= OnPointerWheelChanged;
             _pointerTarget = null;
         }
+
+        _pointer.Release();
+    }
+
+    partial void AttachPointerInput()
+    {
+        DetachPointerInput();
 
         if (Surface.Handler?.PlatformView is UIElement target)
         {

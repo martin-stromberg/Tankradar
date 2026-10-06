@@ -20,13 +20,22 @@ public static class FavoritesChangeSubscription
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(onChanged);
 
+        // Das Ereignis kommt von einem Threadpool-Thread; die Reaktion läuft im Kontext, in dem sich die Ansicht angemeldet hat (UI-Thread der App).
+        var context = SynchronizationContext.Current;
         var weak = new WeakReference<T>(owner);
         EventHandler? handler = null;
         handler = (_, _) =>
         {
             if (weak.TryGetTarget(out var target))
             {
-                onChanged(target);
+                if (context is not null && SynchronizationContext.Current != context)
+                {
+                    context.Post(_ => onChanged(target), null);
+                }
+                else
+                {
+                    onChanged(target);
+                }
             }
             else
             {

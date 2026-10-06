@@ -123,6 +123,7 @@ public static class MauiProgram
             // Eigener HTTP-Client: keine automatischen Weiterleitungen, begrenzte Wartezeit; die Kennung wird je Anfrage gesetzt.
             var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
             var paths = provider.GetRequiredService<IAppDataPathProvider>();
+            LegacyTileCache.DeleteInBackground(Path.Combine(paths.GetDataDirectory(), "tiles"), Path.Combine(paths.GetCacheDirectory(), "tiles"));
             return new HttpTileSource(
                 client,
                 options,
