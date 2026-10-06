@@ -18,7 +18,9 @@ Zurück-Pfeil der Kopfleiste der Shell sowie einen fest oben stehenden Offline-H
 
 Folgende Teile des Entwurfs sind bewusst nicht oder abweichend umgesetzt:
 
-- **Favoriten (Stern, Favoritengruppen):** gehören zu Entwicklungsschritt 10.
+- **Favoriten (Stern, Favoritengruppen):** umgesetzt in Entwicklungsschritt 10 als Karte „Favoritengruppen“ am
+  Ende der Detailansicht; Abweichungen vom Entwurf (u. a. kein Stern in der Kopfkarte) siehe
+  [ADR 0006](0006-favorite-groups.md).
 - **„Im Tankbuch erfassen“:** gehört zu Entwicklungsschritt 13.
 - **„Navigation“ / Route und „Anfahrt ca. X Min.“:** gehören zu Entwicklungsschritt 17 (Routing); die
   Fahrzeit entfällt bis dahin, die Info-Box zeigt nur die Entfernung aus der Suche.

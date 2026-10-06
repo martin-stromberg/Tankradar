@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:fav="clr-namespace:Tankradar.MAUI.Models.Favorites"
+             x:DataType="vm:FavoriteGroupViewModel"
+             x:Class="Tankradar.MAUI.Views.FavoriteGroupPage"
+             Title="{x:Static texts:FavoritesTexts.GroupPageTitle}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <Style x:Key="GroupCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+        </Style>
+        <Style x:Key="GroupButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+        <Style x:Key="GroupOutlineButton" TargetType="Button" BasedOn="{StaticResource GroupButton}">
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <Style x:Key="GroupDangerButton" TargetType="Button" BasedOn="{StaticResource GroupButton}">
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorErrorRed}" />
+        </Style>
+        <Style x:Key="PriorityChip" TargetType="Button" BasedOn="{StaticResource GroupOutlineButton}">
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+        </Style>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="FavoriteGroup.Status" />
+
+            <VerticalStackLayout IsVisible="{Binding HasGroup}" Spacing="{StaticResource space-md}">
+
+                <!-- Kopf: Name, Beschreibung und Aktionen -->
+                <Border Style="{StaticResource GroupCard}">
+                    <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                        <VerticalStackLayout IsVisible="{Binding IsNotEditing}" Spacing="{StaticResource space-xs}">
+                            <Label Text="{Binding Name}"
+                                   Style="{StaticResource headline-lg}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   AutomationId="FavoriteGroup.Name" />
+                            <Label Text="{Binding Description}"
+                                   IsVisible="{Binding HasDescription}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                   AutomationId="FavoriteGroup.Description" />
+                            <Button Text="{x:Static texts:FavoritesTexts.EditGroup}"
+                                    Command="{Binding EditCommand}"
+                                    Style="{StaticResource GroupOutlineButton}"
+                                    AutomationId="FavoriteGroup.Edit" />
+                            <Button Text="{x:Static texts:FavoritesTexts.DeleteGroup}"
+                                    Command="{Binding DeleteCommand}"
+                                    Style="{StaticResource GroupOutlineButton}"
+                                    TextColor="{StaticResource ColorErrorRed}"
+                                    AutomationId="FavoriteGroup.Delete" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="{StaticResource space-sm}">
+                            <Entry Text="{Binding EditName}"
+                                   Placeholder="{x:Static texts:FavoritesTexts.NameLabel}"
+                                   MaxLength="40"
+                                   SemanticProperties.Description="{x:Static texts:FavoritesTexts.NameLabel}"
+                                   AutomationId="FavoriteGroup.EditName" />
+                            <Entry Text="{Binding EditDescription}"
+                                   Placeholder="{x:Static texts:FavoritesTexts.DescriptionLabel}"
+                                   MaxLength="200"
+                                   SemanticProperties.Description="{x:Static texts:FavoritesTexts.DescriptionLabel}"
+                                   AutomationId="FavoriteGroup.EditDescription" />
+                            <Button Text="{x:Static texts:FavoritesTexts.Save}"
+                                    Command="{Binding SaveEditCommand}"
+                                    Style="{StaticResource GroupButton}"
+                                    AutomationId="FavoriteGroup.EditSave" />
+                            <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                                    Command="{Binding CancelEditCommand}"
+                                    Style="{StaticResource GroupOutlineButton}"
+                                    AutomationId="FavoriteGroup.EditCancel" />
+                        </VerticalStackLayout>
+
+                        <!-- Rückfrage vor dem Löschen -->
+                        <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
+                            <Label Text="{Binding DeleteQuestion}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   AutomationId="FavoriteGroup.DeleteQuestion" />
+                            <Button Text="{x:Static texts:FavoritesTexts.ConfirmDelete}"
+                                    Command="{Binding ConfirmDeleteCommand}"
+                                    Style="{StaticResource GroupDangerButton}"
+                                    AutomationId="FavoriteGroup.DeleteConfirm" />
+                            <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                                    Command="{Binding CancelDeleteCommand}"
+                                    Style="{StaticResource GroupOutlineButton}"
+                                    AutomationId="FavoriteGroup.DeleteCancel" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="{x:Static texts:FavoritesTexts.GroupEmpty}"
+                       IsVisible="{Binding ShowEmptyHint}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="FavoriteGroup.Empty" />
+
+                <!-- Tankstellen der Gruppe, nach Priorität geordnet -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Entries}"
+                                     IsVisible="{Binding HasEntries}"
+                                     Spacing="{StaticResource space-sm}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FavoriteEntryItemViewModel">
+                            <Border Style="{StaticResource GroupCard}">
+                                <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                    <Label Text="{Binding StationName}"
+                                           Style="{StaticResource headline-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="FavoriteGroup.Entry.Name" />
+                                    <Label Text="{Binding AddressText}"
+                                           IsVisible="{Binding HasAddress}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="FavoriteGroup.Entry.Address" />
+                                    <Label Text="{Binding PriorityText}"
+                                           Style="{StaticResource body-sm}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                           AutomationId="FavoriteGroup.Entry.Priority" />
+                                    <Label Text="{Binding Note}"
+                                           IsVisible="{Binding HasNote}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="FavoriteGroup.Entry.Note" />
+                                    <Button Text="{x:Static texts:FavoritesTexts.EditEntry}"
+                                            Command="{Binding EditCommand}"
+                                            Style="{StaticResource GroupOutlineButton}"
+                                            SemanticProperties.Description="{Binding StationName}"
+                                            AutomationId="FavoriteGroup.Entry.Edit" />
+
+                                    <VerticalStackLayout IsVisible="{Binding IsEditing}" Spacing="{StaticResource space-sm}">
+                                        <Entry Text="{Binding EditNote}"
+                                               Placeholder="{x:Static texts:FavoritesTexts.NoteLabel}"
+                                               MaxLength="500"
+                                               SemanticProperties.Description="{x:Static texts:FavoritesTexts.NoteLabel}"
+                                               AutomationId="FavoriteGroup.Entry.NoteInput" />
+                                        <Label Text="{x:Static texts:FavoritesTexts.PriorityLabel}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                                    BindableLayout.ItemsSource="{Binding PriorityOptions}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:IChoiceOption">
+                                                    <Button Text="{Binding Label}"
+                                                            Command="{Binding SelectCommand}"
+                                                            Style="{StaticResource PriorityChip}"
+                                                            SemanticProperties.Hint="{Binding SelectionHint}"
+                                                            AutomationId="{Binding AutomationKey, StringFormat='FavoriteGroup.Entry.Priority.{0}'}">
+                                                        <Button.Triggers>
+                                                            <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                                                <Setter Property="TextColor" Value="White" />
+                                                            </DataTrigger>
+                                                        </Button.Triggers>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
+                                        <Button Text="{x:Static texts:FavoritesTexts.Save}"
+                                                Command="{Binding SaveCommand}"
+                                                Style="{StaticResource GroupButton}"
+                                                AutomationId="FavoriteGroup.Entry.Save" />
+                                        <Button Text="{x:Static texts:FavoritesTexts.Cancel}"
+                                                Command="{Binding CancelCommand}"
+                                                Style="{StaticResource GroupOutlineButton}"
+                                                AutomationId="FavoriteGroup.Entry.Cancel" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</views:TankradarContentPage>

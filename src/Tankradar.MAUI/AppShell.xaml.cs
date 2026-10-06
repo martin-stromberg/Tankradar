@@ -15,6 +15,7 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
         Routing.RegisterRoute(ShellStationNavigator.DetailRoute, typeof(StationDetailPage));
+        Routing.RegisterRoute(ShellFavoriteGroupNavigator.GroupRoute, typeof(FavoriteGroupPage));
         Navigated += OnNavigated;
     }
 

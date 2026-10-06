@@ -20,9 +20,12 @@ public sealed class MockTileServer : IDisposable
     private readonly object _gate = new();
     private readonly List<string> _paths = [];
     private readonly List<string> _userAgents = [];
+    private readonly List<string> _ifNoneMatch = [];
     private readonly Queue<int> _queuedStatuses = new();
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _loop;
+    private string? _cacheControl;
+    private string? _etag;
     private int _disposed;
 
     /// <summary>
@@ -85,6 +88,35 @@ public sealed class MockTileServer : IDisposable
             {
                 return _userAgents.ToArray();
             }
+        }
+    }
+
+    /// <summary>
+    /// Die Werte der Kopfzeile <c>If-None-Match</c> aller empfangenen Kachelanfragen (leer, wenn keine gesetzt war).
+    /// </summary>
+    public IReadOnlyList<string> IfNoneMatch
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _ifNoneMatch.ToArray();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Legt fest, mit welchen Caching-Angaben die Kacheln ausgeliefert werden: <c>Cache-Control</c> und <c>ETag</c>. Mit <c>ETag</c> beantwortet der Server bedingte
+    /// Anfragen (<c>If-None-Match</c>) mit <c>304</c>.
+    /// </summary>
+    /// <param name="cacheControl">Der Wert von <c>Cache-Control</c> oder <see langword="null"/> für keine Angabe.</param>
+    /// <param name="etag">Der Wert von <c>ETag</c> (mit Anführungszeichen) oder <see langword="null"/> für keine Angabe.</param>
+    public void ConfigureCaching(string? cacheControl, string? etag)
+    {
+        lock (_gate)
+        {
+            _cacheControl = cacheControl;
+            _etag = etag;
         }
     }
 
@@ -165,13 +197,19 @@ public sealed class MockTileServer : IDisposable
         var path = context.Request.Url?.AbsolutePath ?? string.Empty;
         var userAgent = context.Request.UserAgent ?? string.Empty;
         int? forcedStatus = null;
+        string? cacheControl;
+        string? etag;
+        var ifNoneMatch = context.Request.Headers["If-None-Match"] ?? string.Empty;
         var isTile = TilePath.IsMatch(path);
         lock (_gate)
         {
+            cacheControl = _cacheControl;
+            etag = _etag;
             if (isTile)
             {
                 _paths.Add(path);
                 _userAgents.Add(userAgent);
+                _ifNoneMatch.Add(ifNoneMatch);
                 if (_queuedStatuses.Count > 0)
                 {
                     forcedStatus = _queuedStatuses.Dequeue();
@@ -199,6 +237,22 @@ public sealed class MockTileServer : IDisposable
             context.Response.StatusCode = status;
             context.Response.Close();
             return;
+        }
+
+        if (cacheControl is not null)
+        {
+            context.Response.Headers["Cache-Control"] = cacheControl;
+        }
+
+        if (etag is not null)
+        {
+            context.Response.Headers["ETag"] = etag;
+            if (ifNoneMatch == etag)
+            {
+                context.Response.StatusCode = 304;
+                context.Response.Close();
+                return;
+            }
         }
 
         context.Response.StatusCode = 200;

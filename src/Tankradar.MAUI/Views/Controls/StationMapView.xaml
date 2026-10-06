@@ -104,18 +104,24 @@
                         AutomationId="Map.Pan.East" />
             </HorizontalStackLayout>
 
-            <!-- Quellenangabe (Nutzungsbedingung von OpenStreetMap: dauerhaft sichtbar) -->
+            <!-- Quellenangabe (Nutzungsbedingung von OpenStreetMap: dauerhaft sichtbar) als Link auf die Urheber- und Lizenzhinweise -->
             <Border Style="{StaticResource MapBadge}"
-                    Padding="8,2"
+                    Padding="4,0"
                     HorizontalOptions="End"
                     VerticalOptions="End"
-                    Margin="8,8,8,8"
-                    InputTransparent="True">
-                <Label Text="{x:Static texts:MapTexts.Attribution}"
-                       FontFamily="InterRegular"
-                       FontSize="11"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                       AutomationId="Map.Attribution" />
+                    Margin="8,8,8,8">
+                <Button Text="{x:Static texts:MapTexts.Attribution}"
+                        Clicked="OnAttributionClicked"
+                        BackgroundColor="Transparent"
+                        BorderWidth="0"
+                        Padding="4,0"
+                        MinimumHeightRequest="28"
+                        HeightRequest="28"
+                        FontFamily="InterRegular"
+                        FontSize="11"
+                        TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                        SemanticProperties.Hint="{x:Static texts:MapTexts.AttributionHint}"
+                        AutomationId="Map.Attribution" />
             </Border>
         </Grid>
     </Border>

@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Map;
 
@@ -6,8 +9,10 @@ namespace Tankradar.MAUI.Services.Map;
 
 /// <summary>
 /// Ruft Kartenkacheln per HTTP ab und hält sie im Arbeitsspeicher und auf dem Gerät vor. Die Klasse hält die Nutzungsrichtlinie der OpenStreetMap-Kachelserver ein:
-/// identifizierende Kennung, höchstens zwei parallele Abrufe, mindestens sieben Tage Zwischenspeicherung, keine Wiederholung nach Fehlern innerhalb des Wartefensters,
-/// keine Weiterleitungen und keine Vorabrufe. Koordinaten oder Kachelnummern werden nie protokolliert.
+/// identifizierende Kennung, höchstens zwei parallele Abrufe, keine Wiederholung nach Fehlern innerhalb des Wartefensters, keine Weiterleitungen und keine Vorabrufe.
+/// Die Gültigkeit einer Kachel richtet sich nach den HTTP-Caching-Angaben des Servers (<c>Cache-Control</c>, <c>Expires</c>); fehlen sie, gelten sieben Tage.
+/// Abgelaufene Kacheln werden bedingt (<c>If-None-Match</c> bzw. <c>If-Modified-Since</c>) neu angefragt; ein <c>304</c> verlängert die Gültigkeit ohne erneute Übertragung.
+/// Koordinaten oder Kachelnummern werden nie protokolliert.
 /// </summary>
 public sealed class HttpTileSource : ITileSource, IDisposable
 {
@@ -23,7 +28,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
     private readonly ILogger<HttpTileSource> _logger;
     private readonly SemaphoreSlim _slots;
     private readonly object _gate = new();
-    private readonly Dictionary<TileKey, byte[]> _memory = [];
+    private readonly Dictionary<TileKey, MemoryEntry> _memory = [];
     private readonly Queue<TileKey> _memoryOrder = new();
     private readonly Dictionary<TileKey, DateTimeOffset> _failures = [];
     private int _writes;
@@ -46,6 +51,13 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         _slots = new SemaphoreSlim(options.MaxConcurrentRequests, options.MaxConcurrentRequests);
     }
 
+    private enum DownloadKind
+    {
+        Failed,
+        Downloaded,
+        NotModified,
+    }
+
     /// <inheritdoc />
     public async Task<byte[]?> GetTileAsync(TileKey key, CancellationToken cancellationToken = default)
     {
@@ -55,34 +67,60 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         }
 
         var now = _timeProvider.GetUtcNow();
-        if (TryGetMemory(key, out var cached))
+        if (TryGetFreshMemory(key, now, out var cached))
         {
-            // Der Arbeitsspeicher gilt nur für diese Sitzung; Alter gegenüber der Datei wird dort geprüft, daher genügt der Treffer.
             return cached;
         }
 
-        var stale = ReadFromDisk(key, now, out var fresh);
-        if (fresh is not null)
+        var stored = ReadFromDisk(key, now);
+        if (stored is { IsFresh: true })
         {
-            Remember(key, fresh);
-            return fresh;
+            Remember(key, stored.Data, stored.ExpiresUtc);
+            return stored.Data;
         }
 
         if (IsInBackoff(key, now))
         {
-            return stale;
+            return stored?.Data;
         }
 
-        var downloaded = await DownloadAsync(key, cancellationToken).ConfigureAwait(false);
-        if (downloaded is null)
+        var outcome = await DownloadAsync(key, stored, now, cancellationToken).ConfigureAwait(false);
+        switch (outcome.Kind)
         {
-            RememberFailure(key, now);
-            return stale;
-        }
+            case DownloadKind.Downloaded:
+                Remember(key, outcome.Data!, outcome.Freshness.ExpiresUtc);
+                if (outcome.Freshness.NoStore)
+                {
+                    DeleteFromDisk(key);
+                }
+                else
+                {
+                    WriteToDisk(key, outcome.Data!, outcome.Metadata!);
+                }
 
-        Remember(key, downloaded);
-        WriteToDisk(key, downloaded);
-        return downloaded;
+                return outcome.Data;
+            case DownloadKind.NotModified when stored is not null:
+                // Der Server bestätigt die gespeicherte Kachel: nur die Gültigkeit wird verlängert.
+                Remember(key, stored.Data, outcome.Freshness.ExpiresUtc);
+                if (outcome.Freshness.NoStore)
+                {
+                    DeleteFromDisk(key);
+                }
+                else
+                {
+                    var confirmed = outcome.Metadata!;
+                    WriteMetadata(key, confirmed with
+                    {
+                        ETag = confirmed.ETag ?? stored.Metadata?.ETag,
+                        LastModified = confirmed.LastModified ?? stored.Metadata?.LastModified,
+                    });
+                }
+
+                return stored.Data;
+            default:
+                RememberFailure(key, now);
+                return stored?.Data;
+        }
     }
 
     /// <inheritdoc />
@@ -107,7 +145,30 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         return data.Length > PngSignature.Length && data.AsSpan(0, PngSignature.Length).SequenceEqual(PngSignature);
     }
 
-    private async Task<byte[]?> DownloadAsync(TileKey key, CancellationToken cancellationToken)
+    private static void AddValidators(HttpRequestMessage request, TileMetadata? metadata)
+    {
+        if (metadata is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(metadata.ETag) && EntityTagHeaderValue.TryParse(metadata.ETag, out var etag))
+        {
+            request.Headers.IfNoneMatch.Add(etag);
+        }
+
+        if (metadata.LastModified is { } lastModified)
+        {
+            request.Headers.IfModifiedSince = lastModified;
+        }
+    }
+
+    private static TileMetadata CreateMetadata(HttpResponseMessage response, TileFreshness freshness)
+    {
+        return new TileMetadata(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, freshness.ExpiresUtc);
+    }
+
+    private async Task<DownloadOutcome> DownloadAsync(TileKey key, StoredTile? stored, DateTimeOffset now, CancellationToken cancellationToken)
     {
         await _slots.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -116,16 +177,28 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             timeout.CancelAfter(_options.RequestTimeout);
             using var request = new HttpRequestMessage(HttpMethod.Get, _options.CreateUri(key));
             request.Headers.UserAgent.ParseAdd(_options.UserAgent);
+            AddValidators(request, stored?.Metadata);
             using var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
+            if (response.StatusCode == HttpStatusCode.NotModified)
+            {
+                if (stored is null)
+                {
+                    return DownloadOutcome.Failed;
+                }
+
+                var confirmedFreshness = EvaluateFreshness(response, now);
+                return new DownloadOutcome(DownloadKind.NotModified, null, confirmedFreshness, CreateMetadata(response, confirmedFreshness));
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogDebug("Eine Kachel konnte nicht abgerufen werden (Status {Status}).", (int)response.StatusCode);
-                return null;
+                return DownloadOutcome.Failed;
             }
 
             if (response.Content.Headers.ContentLength is { } length && length > _options.MaxTileBytes)
             {
-                return null;
+                return DownloadOutcome.Failed;
             }
 
             await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token).ConfigureAwait(false);
@@ -137,22 +210,28 @@ public sealed class HttpTileSource : ITileSource, IDisposable
                 buffer.Write(chunk, 0, read);
                 if (buffer.Length > _options.MaxTileBytes)
                 {
-                    return null;
+                    return DownloadOutcome.Failed;
                 }
             }
 
             var data = buffer.ToArray();
-            return LooksLikePng(data) ? data : null;
+            if (!LooksLikePng(data))
+            {
+                return DownloadOutcome.Failed;
+            }
+
+            var freshness = EvaluateFreshness(response, now);
+            return new DownloadOutcome(DownloadKind.Downloaded, data, freshness, CreateMetadata(response, freshness));
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             _logger.LogDebug("Der Abruf einer Kachel hat das Zeitlimit überschritten.");
-            return null;
+            return DownloadOutcome.Failed;
         }
         catch (HttpRequestException ex)
         {
             _logger.LogDebug("Eine Kachel konnte nicht abgerufen werden ({ExceptionType}).", ex.GetType().Name);
-            return null;
+            return DownloadOutcome.Failed;
         }
         finally
         {
@@ -160,25 +239,46 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         }
     }
 
-    private bool TryGetMemory(TileKey key, out byte[]? data)
+    private TileFreshness EvaluateFreshness(HttpResponseMessage response, DateTimeOffset now)
+    {
+        // Ein vorhandenes, aber ungültiges oder „0“-wertiges Expires gilt nach RFC 9111 als bereits abgelaufen (nicht als fehlende Angabe).
+        var expires = response.Content.Headers.Expires;
+        if (expires is null && response.Content.Headers.NonValidated.Contains("Expires"))
+        {
+            expires = DateTimeOffset.UnixEpoch;
+        }
+
+        return TileCachePolicy.Evaluate(response.Headers.CacheControl, expires, response.Headers.Date, now, _options.CacheLifetime);
+    }
+
+    private bool TryGetFreshMemory(TileKey key, DateTimeOffset now, out byte[]? data)
     {
         lock (_gate)
         {
-            return _memory.TryGetValue(key, out data);
+            if (_memory.TryGetValue(key, out var entry) && now < entry.ExpiresUtc)
+            {
+                data = entry.Data;
+                return true;
+            }
+
+            data = null;
+            return false;
         }
     }
 
-    private void Remember(TileKey key, byte[] data)
+    private void Remember(TileKey key, byte[] data, DateTimeOffset expiresUtc)
     {
         lock (_gate)
         {
-            if (_memory.TryAdd(key, data))
+            if (!_memory.ContainsKey(key))
             {
                 _memoryOrder.Enqueue(key);
-                while (_memory.Count > MemoryCapacity && _memoryOrder.TryDequeue(out var oldest))
-                {
-                    _memory.Remove(oldest);
-                }
+            }
+
+            _memory[key] = new MemoryEntry(data, expiresUtc);
+            while (_memory.Count > MemoryCapacity && _memoryOrder.TryDequeue(out var oldest))
+            {
+                _memory.Remove(oldest);
             }
 
             _failures.Remove(key);
@@ -215,9 +315,13 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             key.Y.ToString(CultureInfo.InvariantCulture) + ".png");
     }
 
-    private byte[]? ReadFromDisk(TileKey key, DateTimeOffset now, out byte[]? fresh)
+    private string MetadataPathOf(TileKey key)
     {
-        fresh = null;
+        return PathOf(key) + ".meta";
+    }
+
+    private StoredTile? ReadFromDisk(TileKey key, DateTimeOffset now)
+    {
         try
         {
             var path = PathOf(key);
@@ -232,13 +336,11 @@ public sealed class HttpTileSource : ITileSource, IDisposable
                 return null;
             }
 
-            var age = now - new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
-            if (age < _options.CacheLifetime)
-            {
-                fresh = data;
-            }
+            var metadata = ReadMetadata(key);
 
-            return data;
+            // Kacheln ohne Angaben (aus einer früheren Version) gelten ab ihrer Dateizeit für die Rückfallfrist.
+            var expires = metadata?.ExpiresUtc ?? new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero) + _options.CacheLifetime;
+            return new StoredTile(data, metadata, expires, now < expires);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -247,7 +349,21 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         }
     }
 
-    private void WriteToDisk(TileKey key, byte[] data)
+    private TileMetadata? ReadMetadata(TileKey key)
+    {
+        try
+        {
+            var path = MetadataPathOf(key);
+            return File.Exists(path) ? JsonSerializer.Deserialize<TileMetadata>(File.ReadAllText(path)) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            // Unlesbare Angaben: die Kachel wird wie eine ohne Angaben behandelt (Rückfallfrist, keine bedingte Anfrage).
+            return null;
+        }
+    }
+
+    private void WriteToDisk(TileKey key, byte[] data, TileMetadata metadata)
     {
         try
         {
@@ -256,6 +372,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
             File.WriteAllBytes(temp, data);
             File.Move(temp, path, overwrite: true);
+            WriteMetadata(key, metadata);
             if (Interlocked.Increment(ref _writes) % PruneEveryWrites == 0)
             {
                 Prune();
@@ -264,6 +381,35 @@ public sealed class HttpTileSource : ITileSource, IDisposable
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogDebug("Eine Kachel konnte nicht gespeichert werden ({ExceptionType}).", ex.GetType().Name);
+        }
+    }
+
+    private void DeleteFromDisk(TileKey key)
+    {
+        try
+        {
+            File.Delete(PathOf(key));
+            File.Delete(MetadataPathOf(key));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogDebug("Eine nicht zu speichernde Kachel konnte nicht vom Gerät entfernt werden ({ExceptionType}).", ex.GetType().Name);
+        }
+    }
+
+    private void WriteMetadata(TileKey key, TileMetadata metadata)
+    {
+        try
+        {
+            var path = MetadataPathOf(key);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(metadata));
+            File.Move(temp, path, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogDebug("Die Zwischenspeicher-Angaben einer Kachel konnten nicht gespeichert werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
 
@@ -294,6 +440,11 @@ public sealed class HttpTileSource : ITileSource, IDisposable
 
                 total -= file.Length;
                 file.Delete();
+                var metadataFile = file.FullName + ".meta";
+                if (File.Exists(metadataFile))
+                {
+                    File.Delete(metadataFile);
+                }
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -301,4 +452,22 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             _logger.LogDebug("Der Kachelspeicher konnte nicht aufgeräumt werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
+
+    private sealed record MemoryEntry(byte[] Data, DateTimeOffset ExpiresUtc);
+
+    private sealed record StoredTile(byte[] Data, TileMetadata? Metadata, DateTimeOffset ExpiresUtc, bool IsFresh);
+
+    private sealed record DownloadOutcome(DownloadKind Kind, byte[]? Data, TileFreshness Freshness, TileMetadata? Metadata)
+    {
+        public static DownloadOutcome Failed { get; } = new(DownloadKind.Failed, null, default, null);
+    }
 }
+
+/// <summary>
+/// Zwischenspeicher-Angaben einer Kachel auf dem Gerät: Validatoren für bedingte Anfragen und der Zeitpunkt, bis zu dem die Kachel ohne Rückfrage gilt.
+/// </summary>
+/// <param name="ETag">Der <c>ETag</c> des Servers oder <see langword="null"/>.</param>
+/// <param name="LastModified">Die Angabe <c>Last-Modified</c> des Servers oder <see langword="null"/>.</param>
+/// <param name="ExpiresUtc">Der Zeitpunkt, bis zu dem die Kachel ohne Rückfrage gilt.</param>
+/// <returns>Der Wert.</returns>
+public sealed record TileMetadata(string? ETag, DateTimeOffset? LastModified, DateTimeOffset ExpiresUtc);

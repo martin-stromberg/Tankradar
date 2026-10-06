@@ -73,4 +73,36 @@ public class AppDataPathProviderTests_DataDirectoryResolution : BaseTest
             Environment.SetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable, null);
         }
     }
+
+    /// <summary>
+    /// Prüft, dass der Zwischenspeicher (Kacheln) ohne Testverzeichnis in das Cache-Verzeichnis der Plattform fällt (unter iOS außerhalb der Datensicherung), nicht in das Datenverzeichnis.
+    /// </summary>
+    [Fact]
+    public void GetCacheDirectory_WithoutTestDataPath_ReturnsCacheDirectoryNotDataDirectory()
+    {
+        Environment.SetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable, null);
+        var provider = new AppDataPathProvider(() => @"C:\Data", () => @"C:\Cache");
+
+        Assert.Equal(@"C:\Cache", provider.GetCacheDirectory());
+        Assert.Equal(@"C:\Data", provider.GetDataDirectory());
+    }
+
+    /// <summary>
+    /// Prüft, dass im Testmodus auch der Zwischenspeicher im isolierten Testverzeichnis liegt.
+    /// </summary>
+    [Fact]
+    public void GetCacheDirectory_WithTestDataPath_ReturnsTestDirectory()
+    {
+        Environment.SetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable, @"C:\FakeTestDataPath");
+        try
+        {
+            var provider = new AppDataPathProvider(() => @"C:\Data", () => @"C:\Cache");
+
+            Assert.Equal(@"C:\FakeTestDataPath", provider.GetCacheDirectory());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable, null);
+        }
+    }
 }

@@ -4,7 +4,7 @@
 
 ## Zweck
 
-Die Detailansicht zeigt zu einer Tankstelle aus der Ergebnisliste alles, was die Datenquelle Tankerkönig / MTS-K liefert, in Anlehnung an den Designentwurf „Tankstellendetails“. Abweichungen vom Entwurf und die Teile, die zu späteren Schritten gehören (Favoritengruppen, Tankbuch, Navigation), sind in [ADR 0004](../../adr/0004-station-detail-design-deviations.md) festgehalten.
+Die Detailansicht zeigt zu einer Tankstelle aus der Ergebnisliste alles, was die Datenquelle Tankerkönig / MTS-K liefert, in Anlehnung an den Designentwurf „Tankstellendetails“. Abweichungen vom Entwurf und die Teile, die zu späteren Schritten gehören (Tankbuch, Navigation), sind in [ADR 0004](../../adr/0004-station-detail-design-deviations.md) festgehalten.
 
 ## Angezeigte Angaben
 
@@ -12,6 +12,7 @@ Die Detailansicht zeigt zu einer Tankstelle aus der Ergebnisliste alles, was die
 - **Info-Box mit Symbolen:** Entfernung (aus der Suche), Öffnungsstatus („Geöffnet“ oder „Geschlossen“) und der Chip **Automat 24/7** (durchgehend geöffnet; nur wenn die Angaben vorliegen).
 - **Kraftstoffe:** je in den Einstellungen aktivierter Sorte eine Karte mit Preis (dritte Nachkommastelle hochgestellt, Einheit „€/L“) und Alter „vor X Min.“; ab 60 Minuten ist das Alter amberfarben markiert. Die Reihenfolge entspricht den Einstellungen.
 - **Öffnungszeiten:** je Abschnitt eine Zeile („Mo-Fr: 06:00 – 22:00 Uhr“) mit dem Stand der Angabe („Stand: vor 3 Std.“).
+- **Favoritengruppen:** zugeordnete Gruppen als Chips, **Zu Favoriten hinzufügen** und **Aus Favoriten entfernen** (siehe [Favoritengruppen](../Favoriten/index.md)).
 - **Zahlungsmöglichkeiten:** Tankerkönig liefert keine Zahlungsangaben; der Bereich erscheint daher nicht. Strompreise und Ladeinformationen gehören nicht zu Version 1.0.
 
 Angaben, die die Quelle nicht liefert, werden weggelassen (keine leeren Felder, keine Platzhalter).
