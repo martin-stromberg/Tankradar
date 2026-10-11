@@ -2,23 +2,278 @@
 <views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:DataType="vm:TankbookViewModel"
              x:Class="Tankradar.MAUI.Views.TankbookPage"
-             Title="Tankbuch"
+             Title="{x:Static texts:TankbookTexts.PageTitle}"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
-    <VerticalStackLayout Padding="{StaticResource space-md}"
-                          Spacing="{StaticResource space-sm}"
-                          VerticalOptions="Center">
-        <Label Text="Tankbuch"
-               Style="{StaticResource headline-lg}"
-               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-               HorizontalOptions="Center"
-               AutomationId="TankbookPage.Headline" />
-        <Label Text="Hier erfasst du bald deine Fahrzeuge und Tankvorgänge."
-               Style="{StaticResource body-md}"
-               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-               HorizontalOptions="Center"
-               HorizontalTextAlignment="Center" />
-    </VerticalStackLayout>
+    <views:TankradarContentPage.Resources>
+        <Style x:Key="TankbookCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+        </Style>
+        <Style x:Key="TankbookButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+        <Style x:Key="TankbookOutlineButton" TargetType="Button" BasedOn="{StaticResource TankbookButton}">
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <Style x:Key="TankbookDangerButton" TargetType="Button" BasedOn="{StaticResource TankbookButton}">
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorErrorRed}" />
+        </Style>
+        <Style x:Key="FuelKindChip" TargetType="Button" BasedOn="{StaticResource TankbookOutlineButton}">
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+        </Style>
+        <Style x:Key="UnitFieldBorder" TargetType="Border">
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="Label">
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        <Style x:Key="FieldError" TargetType="Label" BasedOn="{StaticResource body-sm}">
+            <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
+        </Style>
+        <Style x:Key="UnitLabel" TargetType="Label" BasedOn="{StaticResource body-md}">
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+        </Style>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
+
+            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                <Label Text="{x:Static texts:TankbookTexts.PageTitle}"
+                       Style="{StaticResource headline-lg}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                       SemanticProperties.HeadingLevel="Level1"
+                       AutomationId="TankbookPage.Headline" />
+                <Label Text="{x:Static texts:TankbookTexts.Intro}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+            </VerticalStackLayout>
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="Tankbook.Status" />
+
+            <!-- Formular zum Anlegen und Bearbeiten (Bereich in der Seite, kein Dialog) -->
+            <Border Style="{StaticResource TankbookCard}" IsVisible="{Binding IsFormOpen}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding FormTitle}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Tankbook.Form.Title" />
+
+                    <!-- Name -->
+                    <Label Text="{x:Static texts:TankbookTexts.NameLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasNameError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference NameEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Entry x:Name="NameEntry"
+                               Text="{Binding FormName}"
+                               MaxLength="40"
+                               SemanticProperties.Description="{x:Static texts:TankbookTexts.NameLabel}"
+                               AutomationId="Tankbook.Form.Name" />
+                    </Border>
+                    <Label Text="{Binding NameError}"
+                           IsVisible="{Binding HasNameError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="Tankbook.Form.NameError" />
+
+                    <!-- Kraftstoffart als feste Auswahl -->
+                    <Label Text="{x:Static texts:TankbookTexts.FuelKindLabel}" Style="{StaticResource FieldLabel}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding FuelKindOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource FuelKindChip}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='Tankbook.Form.FuelKind.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <!-- Start-Kilometerstand mit festem Suffix „km“ -->
+                    <Label Text="{x:Static texts:TankbookTexts.OdometerLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasOdometerError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference OdometerEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="OdometerEntry"
+                                   Text="{Binding FormOdometer}"
+                                   Placeholder="{x:Static texts:TankbookTexts.OdometerPlaceholder}"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{x:Static texts:TankbookTexts.OdometerDescription}"
+                                   AutomationId="Tankbook.Form.Odometer" />
+                            <Label Grid.Column="1"
+                                   Text="{x:Static texts:TankbookTexts.KilometerUnit}"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="Tankbook.Form.OdometerUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding OdometerError}"
+                           IsVisible="{Binding HasOdometerError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="Tankbook.Form.OdometerError" />
+
+                    <!-- Startverbrauch mit Suffix je nach Kraftstoffart -->
+                    <Label Text="{x:Static texts:TankbookTexts.ConsumptionLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasConsumptionError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference ConsumptionEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="ConsumptionEntry"
+                                   Text="{Binding FormConsumption}"
+                                   Placeholder="{Binding ConsumptionPlaceholder}"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{Binding ConsumptionDescription}"
+                                   AutomationId="Tankbook.Form.Consumption" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding ConsumptionUnit}"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="Tankbook.Form.ConsumptionUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding ConsumptionError}"
+                           IsVisible="{Binding HasConsumptionError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="Tankbook.Form.ConsumptionError" />
+
+                    <Button Text="{x:Static texts:TankbookTexts.Save}"
+                            Command="{Binding SaveCommand}"
+                            Style="{StaticResource TankbookButton}"
+                            AutomationId="Tankbook.Form.Save" />
+                    <Button Text="{x:Static texts:TankbookTexts.Cancel}"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Tankbook.Form.Cancel" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="{x:Static texts:TankbookTexts.VehiclesHeading}"
+                   Style="{StaticResource headline-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   SemanticProperties.HeadingLevel="Level2" />
+
+            <Label Text="{x:Static texts:TankbookTexts.NoVehicles}"
+                   IsVisible="{Binding ShowEmptyHint}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Tankbook.Empty" />
+
+            <!-- Fahrzeugkarten: Name, darunter „Kraftstoffart • …“ -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Vehicles}"
+                                 IsVisible="{Binding HasVehicles}"
+                                 Spacing="{StaticResource space-sm}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:VehicleItemViewModel">
+                        <Border Style="{StaticResource TankbookCard}">
+                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                <Label Text="{Binding Name}"
+                                       Style="{StaticResource headline-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       AutomationId="Tankbook.Vehicle.Name" />
+                                <Label Text="{Binding Details}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="Tankbook.Vehicle.Details" />
+                                <Button Text="{x:Static texts:TankbookTexts.Edit}"
+                                        Command="{Binding EditCommand}"
+                                        Style="{StaticResource TankbookOutlineButton}"
+                                        SemanticProperties.Description="{Binding Name}"
+                                        AutomationId="Tankbook.Vehicle.Edit" />
+                                <Button Text="{x:Static texts:TankbookTexts.Delete}"
+                                        Command="{Binding DeleteCommand}"
+                                        Style="{StaticResource TankbookOutlineButton}"
+                                        TextColor="{StaticResource ColorErrorRed}"
+                                        SemanticProperties.Description="{Binding Name}"
+                                        AutomationId="Tankbook.Vehicle.Delete" />
+
+                                <!-- Rückfrage vor dem Löschen -->
+                                <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
+                                    <Label Text="{Binding DeleteQuestion}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="Tankbook.Vehicle.DeleteQuestion" />
+                                    <Button Text="{Binding ConfirmDeleteLabel}"
+                                            Command="{Binding ConfirmDeleteCommand}"
+                                            Style="{StaticResource TankbookDangerButton}"
+                                            AutomationId="Tankbook.Vehicle.DeleteConfirm" />
+                                    <Button Text="{x:Static texts:TankbookTexts.Cancel}"
+                                            Command="{Binding CancelDeleteCommand}"
+                                            Style="{StaticResource TankbookOutlineButton}"
+                                            AutomationId="Tankbook.Vehicle.DeleteCancel" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Button Text="{x:Static texts:TankbookTexts.AddVehicle}"
+                    Command="{Binding AddVehicleCommand}"
+                    IsVisible="{Binding IsFormClosed}"
+                    Style="{StaticResource TankbookButton}"
+                    AutomationId="Tankbook.AddVehicle" />
+        </VerticalStackLayout>
+    </ScrollView>
 
 </views:TankradarContentPage>

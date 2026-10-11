@@ -28,6 +28,8 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<!-- Bindungen mit Source (Fokusrahmen der Tankbuch-Eingabefelder über x:Reference) werden ebenfalls kompiliert (sonst Warnung XC0025). -->
+		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
