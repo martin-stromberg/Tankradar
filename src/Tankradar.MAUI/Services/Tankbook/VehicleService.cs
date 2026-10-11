@@ -179,14 +179,7 @@ public sealed class VehicleService : IVehicleService
 
         foreach (var photo in photos)
         {
-            try
-            {
-                _photoStore.Delete(photo);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _logger.LogWarning("Ein Belegfoto konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
-            }
+            _photoStore.Delete(photo);
         }
 
         return new VehicleDeleteResult(VehicleResult.Ok, expectedEntryCount);
@@ -226,10 +219,9 @@ public sealed class VehicleService : IVehicleService
 
     private Vehicle ToVehicle(VehicleEntity entity)
     {
-        if (!Enum.TryParse(entity.FuelKind, out VehicleFuelKind fuelKind) || !Enum.IsDefined(fuelKind))
+        if (!VehicleValidator.TryParseFuelKind(entity.FuelKind, out var fuelKind))
         {
             _logger.LogWarning("Unbekannte Kraftstoffart eines gespeicherten Fahrzeugs; es wird Benzin angenommen.");
-            fuelKind = VehicleFuelKind.Petrol;
         }
 
         return new Vehicle(entity.Id, entity.Name, fuelKind, entity.StartOdometerKm, entity.StartConsumption);

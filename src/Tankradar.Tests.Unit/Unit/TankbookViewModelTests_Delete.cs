@@ -216,8 +216,7 @@ public class TankbookViewModelTests_Delete : BaseTest
         await PressAsync(viewModel, item.DeleteCommand);
 
         Assert.Equal([item.DeleteQuestion], _announcer.Announcements);
-        Assert.Equal("Golf bearbeiten", item.EditDescription);
-        Assert.Equal("Golf löschen", item.DeleteDescription);
+        Assert.Equal("Fahrzeug „Golf“", item.VehicleHint);
         Assert.Equal("Fahrzeug und Vorgänge löschen", item.ConfirmDeleteLabel);
         Assert.Equal("Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen", item.ConfirmDeleteHint);
         Assert.Equal("Fahrzeug „Golf“ behalten", item.CancelDeleteHint);

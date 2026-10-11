@@ -166,26 +166,6 @@ public static class TankbookTexts
     }
 
     /// <summary>
-    /// Beschreibung der Schaltfläche „Bearbeiten“ eines Fahrzeugs für die Sprachausgabe, z. B. „Golf bearbeiten“.
-    /// </summary>
-    /// <param name="name">Der Name des Fahrzeugs.</param>
-    /// <returns>Der Text.</returns>
-    public static string FormatEditDescription(string name)
-    {
-        return $"{name} bearbeiten";
-    }
-
-    /// <summary>
-    /// Beschreibung der Schaltfläche „Löschen“ eines Fahrzeugs für die Sprachausgabe, z. B. „Golf löschen“.
-    /// </summary>
-    /// <param name="name">Der Name des Fahrzeugs.</param>
-    /// <returns>Der Text.</returns>
-    public static string FormatDeleteDescription(string name)
-    {
-        return $"{name} löschen";
-    }
-
-    /// <summary>
     /// Hinweis der Bestätigung der Löschrückfrage für die Sprachausgabe (der vorgelesene Name bleibt der sichtbare Text); nennt das Fahrzeug
     /// und bei vorhandenen Vorgängen deren Zahl, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“.
     /// </summary>

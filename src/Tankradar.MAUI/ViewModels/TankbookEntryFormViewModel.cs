@@ -22,11 +22,15 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     private readonly IScreenReaderAnnouncer _announcer;
     private readonly ILogger<TankbookEntryFormViewModel> _logger;
     private readonly Command _saveCommand;
+    private readonly Command _pickPhotoCommand;
+    private readonly Command _capturePhotoCommand;
     private Vehicle? _vehicle;
     private TankbookEntry? _editingEntry;
     private string? _pendingPhoto;
     private bool _isOpen;
     private bool _isSaving;
+    private bool _isTakingPhoto;
+    private int _session;
     private bool _isSelectingStation;
     private string _formTitle = TankbookEntryTexts.NewEntryTitle;
     private DateTime? _entryDate;
@@ -84,8 +88,10 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
         _saveCommand = new Command(() => LastTask = SaveAsync(), () => !IsSaving);
         SaveCommand = _saveCommand;
         CancelCommand = new Command(Cancel);
-        PickPhotoCommand = new Command(() => LastTask = TakePhotoAsync(capture: false));
-        CapturePhotoCommand = new Command(() => LastTask = TakePhotoAsync(capture: true));
+        _pickPhotoCommand = new Command(() => LastTask = TakePhotoAsync(capture: false), () => !_isTakingPhoto);
+        _capturePhotoCommand = new Command(() => LastTask = TakePhotoAsync(capture: true), () => !_isTakingPhoto);
+        PickPhotoCommand = _pickPhotoCommand;
+        CapturePhotoCommand = _capturePhotoCommand;
         RemovePhotoCommand = new Command(RemovePhoto);
     }
 
@@ -706,6 +712,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     {
         ArgumentNullException.ThrowIfNull(vehicle);
         DiscardPendingPhoto();
+        _session++;
         _vehicle = vehicle;
         _editingEntry = null;
         var now = Now();
@@ -735,6 +742,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
         ArgumentNullException.ThrowIfNull(vehicle);
         ArgumentNullException.ThrowIfNull(entry);
         DiscardPendingPhoto();
+        _session++;
         _vehicle = vehicle;
         _editingEntry = entry;
         MaximumDate = Now().Date > entry.OccurredAt.Date ? Now().Date : entry.OccurredAt.Date;
@@ -782,6 +790,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     public void Cancel()
     {
         DiscardPendingPhoto();
+        _session++;
         IsOpen = false;
         ClearMessages();
     }
@@ -964,6 +973,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
                 case TankbookEntryResult.Ok:
                     // Das neu ausgewählte Foto gehört jetzt zum gespeicherten Vorgang.
                     _pendingPhoto = null;
+                    _session++;
                     IsOpen = false;
                     ClearMessages();
                     saved = true;
@@ -1004,7 +1014,14 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
 
     private async Task TakePhotoAsync(bool capture)
     {
+        if (_isTakingPhoto)
+        {
+            return;
+        }
+
         PhotoError = string.Empty;
+        var session = _session;
+        SetTakingPhoto(true);
         try
         {
             var photo = capture
@@ -1019,6 +1036,17 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
             await using (var stream = await photo.OpenReadAsync().ConfigureAwait(true))
             {
                 result = await _photoStore.ImportAsync(stream, photo.Extension).ConfigureAwait(true);
+            }
+
+            if (session != _session || !IsOpen)
+            {
+                // Das Formular wurde inzwischen abgebrochen, gespeichert oder für einen anderen Vorgang geöffnet: Das Foto gehört zu keinem Formular mehr.
+                if (result.FileName is { } orphan)
+                {
+                    _photoStore.Delete(orphan);
+                }
+
+                return;
             }
 
             if (result.FileName is not { } fileName)
@@ -1038,6 +1066,17 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
             PhotoError = TankbookEntryTexts.PhotoFailed;
             _announcer.Announce(PhotoError);
         }
+        finally
+        {
+            SetTakingPhoto(false);
+        }
+    }
+
+    private void SetTakingPhoto(bool value)
+    {
+        _isTakingPhoto = value;
+        _pickPhotoCommand.ChangeCanExecute();
+        _capturePhotoCommand.ChangeCanExecute();
     }
 
     private void RemovePhoto()

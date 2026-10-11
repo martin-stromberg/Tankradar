@@ -35,7 +35,7 @@ public class TankbookEntryServiceTests_Change : BaseTest
         var result = await _fixture.Service.UpdateEntryAsync(first.Id, input);
 
         Assert.Equal(TankbookEntryResult.Ok, result.Result);
-        var stored = await _fixture.Service.GetEntryAsync(first.Id);
+        var stored = await _fixture.ReadEntryAsync(vehicle.Id, first.Id);
         Assert.Equal(new TankbookEntry(first.Id, vehicle.Id, input.OccurredAt, TankbookEntryKind.Fuel, 20m, 1.799m, 35.98m, 10_400, true, "Beta Tankstelle", null, "Korrigiert", null), stored);
         var entries = await _fixture.Service.GetEntriesAsync(vehicle.Id);
         Assert.Equal(TankbookConsumptionState.NoPreviousFullEntry, entries[0].ConsumptionState);
@@ -75,7 +75,7 @@ public class TankbookEntryServiceTests_Change : BaseTest
         await _fixture.Service.UpdateEntryAsync(entry.Id, TankbookEntryFixture.Input(entry.OccurredAt, 10_500, photo: newPhoto));
 
         Assert.Equal([oldPhoto], _fixture.Photos.Deleted);
-        Assert.Equal(newPhoto, (await _fixture.Service.GetEntryAsync(entry.Id))!.ReceiptPhotoFileName);
+        Assert.Equal(newPhoto, (await _fixture.ReadEntryAsync(vehicle.Id, entry.Id)).ReceiptPhotoFileName);
     }
 
     /// <summary>

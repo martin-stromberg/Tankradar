@@ -4,7 +4,7 @@ using Tankradar.MAUI.Models.Tankbook;
 namespace Tankradar.MAUI.Services.Tankbook;
 
 /// <summary>
-/// Umsetzung von <see cref="IReceiptPhotoStore"/> im Verzeichnis <c>&lt;Datenverzeichnis&gt;/receipts</c>. Fotos werden nicht neu kodiert;
+/// Umsetzung von <see cref="IReceiptPhotoStore"/> im Verzeichnis <c>&lt;Datenverzeichnis&gt;/receipts</c>. Endung und Dateisignatur werden geprüft, Fotos werden nicht neu kodiert;
 /// jede neue Datei erhält den Dateischutz über <see cref="IDatabaseFileProtector.ProtectFile"/>. Protokolliert werden nur Ausnahmetypen.
 /// </summary>
 public sealed class ReceiptPhotoStore : IReceiptPhotoStore
@@ -72,10 +72,21 @@ public sealed class ReceiptPhotoStore : IReceiptPhotoStore
                 return new ReceiptPhotoImportResult(null, ReceiptPhotoError.TooLarge);
             }
 
-            if (written == 0)
+            // Der Typ wird zusätzlich am Inhalt erkannt: Dateien ohne JPEG-, PNG- oder HEIC/HEIF-Signatur werden abgelehnt,
+            // ein falsch benanntes Foto erhält die Endung seines tatsächlichen Formats.
+            var detected = DetectExtension(path);
+            if (detected is null)
             {
                 TryDeleteFile(path);
                 return new ReceiptPhotoImportResult(null, ReceiptPhotoError.UnsupportedFormat);
+            }
+
+            if (!SameFormat(normalized, detected))
+            {
+                var renamed = Path.ChangeExtension(fileName, detected);
+                File.Move(path, Path.Combine(directory, renamed));
+                fileName = renamed;
+                path = Path.Combine(directory, renamed);
             }
 
             _protector.ProtectFile(path);
@@ -163,6 +174,54 @@ public sealed class ReceiptPhotoStore : IReceiptPhotoStore
         var extension = fileName[dot..];
         return Guid.TryParseExact(fileName[..dot], "N", out _)
             && TankbookEntryLimits.ReceiptPhotoExtensions.Contains(extension, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Erkennt das Bildformat an den ersten Bytes einer Datei: JPEG (<c>FF D8 FF</c>), PNG (<c>89 50 4E 47 0D 0A 1A 0A</c>) oder HEIC/HEIF
+    /// (<c>ftyp</c> ab Byte 4 mit einer HEIF-Marke).
+    /// </summary>
+    /// <param name="path">Der Pfad der Datei.</param>
+    /// <returns>Die passende Endung (<c>.jpg</c>, <c>.png</c>, <c>.heic</c>, <c>.heif</c>) oder <see langword="null"/>, wenn keine Signatur passt.</returns>
+    public static string? DetectExtension(string path)
+    {
+        var header = new byte[12];
+        int length;
+        using (var stream = File.OpenRead(path))
+        {
+            length = stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false);
+        }
+
+        if (length >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
+        {
+            return ".jpg";
+        }
+
+        if (length >= 8 && header.AsSpan(0, 8).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
+        {
+            return ".png";
+        }
+
+        if (length >= 12 && System.Text.Encoding.ASCII.GetString(header, 4, 4) == "ftyp")
+        {
+            return System.Text.Encoding.ASCII.GetString(header, 8, 4) switch
+            {
+                "heic" or "heix" or "hevc" or "hevx" or "heim" or "heis" => ".heic",
+                "mif1" or "msf1" => ".heif",
+                _ => null,
+            };
+        }
+
+        return null;
+    }
+
+    private static bool SameFormat(string extension, string detected)
+    {
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => detected == ".jpg",
+            ".heic" or ".heif" => detected is ".heic" or ".heif",
+            _ => extension == detected,
+        };
     }
 
     private static string? NormalizeExtension(string? extension)

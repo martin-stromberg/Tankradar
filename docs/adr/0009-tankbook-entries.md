@@ -54,14 +54,18 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
   `TestReceiptPhotoPicker` die Datei aus `TANKATLAS_TEST_RECEIPT_PHOTO`. Das Foto wird unverändert nach
   `<Datenverzeichnis>/receipts/<Guid>.<Endung>` kopiert und erhält den Dateischutz der Datenbank
   (`IDatabaseFileProtector.ProtectFile`, iOS `CompleteUntilFirstUserAuthentication`). Gespeichert wird nur der Dateiname.
-  Erlaubt sind JPG, PNG und HEIC/HEIF bis 20 MB. Ein ausgewähltes, noch nicht gespeichertes Foto wird beim Abbrechen oder
-  Ersetzen gelöscht. Ersetzte und mitgelöschte Fotos werden nach dem Speichern entfernt. Beim ersten Laden je Prozess werden
+  Erlaubt sind JPG, PNG und HEIC/HEIF bis 20 MB. Der Typ wird zusätzlich an der Dateisignatur geprüft (JPEG `FF D8 FF`,
+  PNG `89 50 4E 47 …`, HEIF `ftyp` mit HEIF-Marke); Dateien ohne passende Signatur werden abgelehnt, ein falsch benanntes Foto
+  erhält die Endung seines tatsächlichen Formats. Während einer laufenden Auswahl ist „Foto auswählen“ gesperrt; wird das
+  Formular inzwischen geschlossen oder neu geöffnet, wird das nachträglich übernommene Foto sofort gelöscht. Ein ausgewähltes,
+  noch nicht gespeichertes Foto wird beim Abbrechen oder Ersetzen gelöscht. Ersetzte und mitgelöschte Fotos werden nach dem Speichern entfernt. Beim ersten Laden je Prozess werden
   nicht referenzierte Dateien bereinigt.
 - **Dienstschicht** `ITankbookEntryService` (Load-and-Patch über `TankbookEntryEntity.Apply`, Ergebnis-Enums statt
   Ausnahmen, Protokolle nur mit Ausnahmetyp).
 - **Migration `AddTankbookEntryDetails`** ist rein additiv (`ALTER TABLE … ADD COLUMN` mit Standardwerten, Index
-  (`VehicleId`, `OccurredAt`)). Bestandszeilen erhalten den Zeitpunkt aus `CreatedUtc`, den Start-Kilometerstand des
-  Fahrzeugs und bei Elektrofahrzeugen die Art „Strom“.
+  (`VehicleId`, `OccurredAt`)). Bestandszeilen erhalten als Zeitpunkt `CreatedUtc` in
+  Ortszeit auf die Minute gekürzt (`strftime('%Y-%m-%d %H:%M:00', CreatedUtc, 'localtime')`, wie neu erfasste Vorgänge), den
+  Start-Kilometerstand des Fahrzeugs und bei Elektrofahrzeugen die Art „Strom“.
 - **Zusatz 12a – Neuzählung:** `DeleteVehicleAsync(vehicleId, expectedEntryCount)` zählt in derselben Transaktion. Weicht
   die Zahl von der in der Rückfrage genannten ab, wird nicht gelöscht. Die Rückfrage nennt dann die neue Zahl, wird erneut
   angesagt und braucht eine weitere Bestätigung.
@@ -69,8 +73,10 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
   nutzen dieselbe Verbindungszeichenfolge.
 - **Zusatz 12c – WCAG 2.5.3:** Der vorgelesene Name einer Schaltfläche ist ihr sichtbarer Text. Der Kontext steht
   ausschließlich in `SemanticProperties.Hint`, z. B. „Ja, löschen“ mit dem Hinweis
-  „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“. Das gilt für die Rückfrage und „Abbrechen“ des
-  Fahrzeugformulars sowie für alle neuen Schaltflächen dieses Schritts. Chips behalten „Ausgewählt“ im Hinweis.
+  „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“. Das gilt für die Rückfrage, „Abbrechen“ des
+  Fahrzeugformulars sowie „Bearbeiten“ und „Löschen“ der Fahrzeugkarte (Hinweis „Fahrzeug „Golf““; die bisherigen
+  Beschreibungen „Golf bearbeiten“/„Golf löschen“ entfallen) und für alle neuen Schaltflächen dieses Schritts.
+  Statusmeldungen der Vorgangsseite (Lade- und Löschfehler) werden zusätzlich angesagt. Chips behalten „Ausgewählt“ im Hinweis.
 
 ## Abweichungen vom Designentwurf
 

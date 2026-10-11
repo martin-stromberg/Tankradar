@@ -13,7 +13,7 @@ Migration `AddTankbookEntryDetails` (Schritt 13, erzeugt mit `dotnet ef migratio
 
 - Neue Spalten in `TankbookEntries`: `OccurredAt` (lokale Wanduhrzeit, `TEXT`), `Kind` (Enum-Name von `TankbookEntryKind`: `Fuel`, `Electricity`; Standard `Fuel`), `Quantity`, `UnitPrice`, `TotalAmount` (`decimal` als `TEXT`, Standard 0), `OdometerKm`, `IsPartial` (Standard 0), `StationName` (Standard leer), `StationId` (ohne Fremdschlüssel), `Note`, `ReceiptPhotoFileName`.
 - Index `IX_TankbookEntries_VehicleId_OccurredAt` ersetzt `IX_TankbookEntries_VehicleId`; Fremdschlüssel und Kaskade bleiben unverändert.
-- Datenübernahme im `Up`: `OccurredAt = CreatedUtc`, `OdometerKm` = Start-Kilometerstand des Fahrzeugs, `Kind = 'Electricity'` für Elektrofahrzeuge.
+- Datenübernahme im `Up`: `OccurredAt` = `CreatedUtc` in Ortszeit, auf die Minute gekürzt, `OdometerKm` = Start-Kilometerstand des Fahrzeugs, `Kind = 'Electricity'` für Elektrofahrzeuge.
 
 Verbindungszeichenfolge: `TankradarDbContext.BuildConnectionString(pfad, pooling)` setzt `Foreign Keys=True` (App in `MauiProgram`, Integrationstests über `TestDatabase`; `ForeignKeysTests_Connection` prüft `PRAGMA foreign_keys = 1`).
 
@@ -30,7 +30,7 @@ Unbekannte gespeicherte Enum-Namen werden als `Petrol` bzw. `Fuel` gelesen und a
 `ITankbookEntryService` / `TankbookEntryService` (Singleton, `IDbContextFactory`, `IDatabaseInitializer`, `IReceiptPhotoStore`, `TimeProvider`, `ILogger`):
 
 - `GetEntriesAsync(vehicleId)` → `TankbookEntryOverview` (neueste zuerst, Strecke, Verbrauch, `TankbookConsumptionState`); beim ersten Aufruf je Prozess `IReceiptPhotoStore.DeleteUnreferenced`.
-- `GetEntryAsync`, `CreateEntryAsync(vehicleId, input)`, `UpdateEntryAsync(entryId, input)` → `TankbookEntrySaveResult` (`Result`, `Entry`, `OdometerBoundKm`), `DeleteEntryAsync` → `TankbookEntryResult`.
+- `CreateEntryAsync(vehicleId, input)`, `UpdateEntryAsync(entryId, input)` → `TankbookEntrySaveResult` (`Result`, `Entry`, `OdometerBoundKm`), `DeleteEntryAsync` → `TankbookEntryResult`.
 - Ablauf beim Speichern: Schutzprüfung `TankbookEntryValidator.Validate`, Fahrzeug laden, Art erlaubt (`IsKindAllowed`; beim Korrigieren bleibt die gespeicherte Art erlaubt), Vorgänger/Nachfolger nach `TankbookEntryOrder` (Zeitpunkt, Kilometerstand, Kennung), Kilometerregeln (`OdometerBelowVehicleStart`, `OdometerBelowPrevious`, `OdometerAboveNext`), Load-and-Patch per `TankbookEntryEntity.Apply`. Ein ersetztes Foto wird nach dem Commit gelöscht.
 - `GetKnownStationsAsync`: `FavoriteEntries` ⨝ `Stations` (eindeutig je Kennung, nach Namen de-DE), danach freie Namen aus `TankbookEntries` ohne `StationId` (ohne Duplikate, ohne Beachtung der Groß- und Kleinschreibung); höchstens `TankbookEntryLimits.MaxKnownStations` (30).
 
@@ -42,13 +42,14 @@ Rechenbausteine (reine statische Funktionen):
 
 Belegfotos:
 
-- `IReceiptPhotoStore` / `ReceiptPhotoStore`: `<Datenverzeichnis>/receipts/<Guid>.<Endung>`, nur Endungen `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif` und höchstens 20 MB, unveränderte Kopie, Dateischutz über `IDatabaseFileProtector.ProtectFile`; nur Dateinamen im Format der Ablage werden akzeptiert (kein Pfad).
+- `IReceiptPhotoStore` / `ReceiptPhotoStore`: `<Datenverzeichnis>/receipts/<Guid>.<Endung>`, nur Endungen `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif` mit passender Dateisignatur (`DetectExtension`; ein falsch benanntes Foto erhält die Endung des erkannten Formats) und höchstens 20 MB, unveränderte Kopie, Dateischutz über `IDatabaseFileProtector.ProtectFile`; nur Dateinamen im Format der Ablage werden akzeptiert (kein Pfad).
+- Das Formular sperrt „Foto auswählen“/„Foto aufnehmen“ während einer laufenden Auswahl und löscht ein Foto, das erst nach dem Schließen oder Neuöffnen des Formulars fertig wird. `IReceiptPhotoStore.Delete` wirft nicht (Fehler werden protokolliert).
 - `IReceiptPhotoPicker`: `MauiReceiptPhotoPicker` (`MediaPicker.PickPhotosAsync` mit `SelectionLimit = 1`, `CapturePhotoAsync` nur bei `IsCaptureSupported`); im Testmodus (`TANKATLAS_TEST_DATA_PATH`) `TestReceiptPhotoPicker` mit der Datei aus `TANKATLAS_TEST_RECEIPT_PHOTO` (Auswahl über `ReceiptPhotoPickerSelector`).
 - iOS/MacCatalyst: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` in `Info.plist`.
 
 ## Oberfläche
 
-- `TankbookPage` / `TankbookViewModel` mit `VehicleItemViewModel` (u. a. `OpenEntriesCommand`, `ShownEntryCount`, `ConfirmDeleteHint`, `CancelDeleteHint`, `EntriesHint`); `ITankbookNavigator` / `ShellTankbookNavigator` öffnet die Route `tankbookentries` mit `vehicleId`.
+- `TankbookPage` / `TankbookViewModel` mit `VehicleItemViewModel` (u. a. `OpenEntriesCommand`, `ShownEntryCount`, `ConfirmDeleteHint`, `CancelDeleteHint`, `VehicleHint` als Hinweis von „Tank- und Ladevorgänge“, „Bearbeiten“ und „Löschen“); `ITankbookNavigator` / `ShellTankbookNavigator` öffnet die Route `tankbookentries` mit `vehicleId`.
 - `TankbookEntriesPage` / `TankbookEntriesViewModel` (`IQueryAttributable`; Liste aus `TankbookEntryItemViewModel`, Löschrückfrage im Eintrag), Formular `TankbookEntryFormViewModel` (Datum/Uhrzeit, Art-Chips `ChoiceOptionViewModel<TankbookEntryKind>`, Tankstellen-Chips `KnownStationOptionViewModel`, Rechenhinweis, Feldfehler, Foto mit ausstehender Datei).
 - Gemeinsame Stile in `Resources/TankbookStyles.xaml` (Karten, Schaltflächen, Chips, Eingabefelder mit Einheiten-Suffix, Feldbeschriftung und -fehler), in beiden Seiten eingebunden.
 - Texte: `TankbookTexts` und `TankbookEntryTexts` (Formatierungen de-DE, z. B. „74,36 €“, „1,859 €/L“, „6,00 L/100 km“, „18.05.2026, 14:30“).

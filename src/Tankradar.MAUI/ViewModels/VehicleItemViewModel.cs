@@ -35,10 +35,8 @@ public sealed class VehicleItemViewModel : BaseViewModel
         ArgumentNullException.ThrowIfNull(vehicle);
         Vehicle = vehicle;
         Details = TankbookTexts.FormatVehicleDetails(vehicle);
-        EditDescription = TankbookTexts.FormatEditDescription(vehicle.Name);
-        DeleteDescription = TankbookTexts.FormatDeleteDescription(vehicle.Name);
         CancelDeleteHint = TankbookTexts.FormatCancelDeleteHint(vehicle.Name);
-        EntriesHint = TankbookTexts.FormatVehicleHint(vehicle.Name);
+        VehicleHint = TankbookTexts.FormatVehicleHint(vehicle.Name);
         EditCommand = new Command(() => edit(this));
         OpenEntriesCommand = new Command(() => openEntries(this));
         DeleteCommand = new Command(() => delete(this));
@@ -73,16 +71,6 @@ public sealed class VehicleItemViewModel : BaseViewModel
     public string Details { get; }
 
     /// <summary>
-    /// Beschreibung der Schaltfläche „Bearbeiten“ für die Sprachausgabe, z. B. „Golf bearbeiten“.
-    /// </summary>
-    public string EditDescription { get; }
-
-    /// <summary>
-    /// Beschreibung der Schaltfläche „Löschen“ für die Sprachausgabe, z. B. „Golf löschen“.
-    /// </summary>
-    public string DeleteDescription { get; }
-
-    /// <summary>
     /// Hinweis der Schaltfläche „Abbrechen“ der Rückfrage für die Sprachausgabe, z. B. „Fahrzeug „Golf“ behalten“; der vorgelesene Name bleibt der sichtbare Text.
     /// </summary>
     public string CancelDeleteHint { get; }
@@ -98,9 +86,10 @@ public sealed class VehicleItemViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Hinweis der Schaltfläche „Tank- und Ladevorgänge“ für die Sprachausgabe, z. B. „Fahrzeug „Golf““.
+    /// Hinweis der Schaltflächen „Tank- und Ladevorgänge“, „Bearbeiten“ und „Löschen“ der Karte für die Sprachausgabe, z. B. „Fahrzeug „Golf““;
+    /// der vorgelesene Name bleibt der sichtbare Text (WCAG 2.5.3).
     /// </summary>
-    public string EntriesHint { get; }
+    public string VehicleHint { get; }
 
     /// <summary>
     /// Die Zahl der Vorgänge, die die angezeigte Rückfrage nennt; beim Bestätigen prüft der Dienst, ob sie noch stimmt.

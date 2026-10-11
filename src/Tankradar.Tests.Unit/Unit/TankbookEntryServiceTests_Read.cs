@@ -36,7 +36,6 @@ public class TankbookEntryServiceTests_Read : BaseTest
         Assert.Equal([11_000, 10_500], entries.Select(entry => entry.Entry.OdometerKm));
         Assert.Equal(6.00m, entries[0].Consumption);
         Assert.Equal(TankbookConsumptionState.NoPreviousFullEntry, entries[1].ConsumptionState);
-        Assert.Equal(await _fixture.Service.GetEntryAsync(entries[0].Entry.Id), entries[0].Entry);
     }
 
     /// <summary>
@@ -54,7 +53,6 @@ public class TankbookEntryServiceTests_Read : BaseTest
 
         Assert.Equal([10_500], entries.Select(entry => entry.Entry.OdometerKm));
         Assert.Empty(await _fixture.Service.GetEntriesAsync(4711));
-        Assert.Null(await _fixture.Service.GetEntryAsync(4711));
     }
 
     /// <summary>

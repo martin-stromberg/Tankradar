@@ -123,4 +123,51 @@ public class TankbookEntryFormViewModelTests_Photo : TankbookEntriesViewModelTes
         await PressFormAsync(viewModel, viewModel.Form.PickPhotoCommand);
         Assert.Equal(before, viewModel.Form.PhotoFileName);
     }
+
+    /// <summary>
+    /// Prüft, dass „Foto auswählen“ während einer laufenden Auswahl gesperrt ist und ein nach dem Abbrechen fertig gewordenes Foto sofort gelöscht wird.
+    /// </summary>
+    [Fact]
+    public async Task PickPhoto_FinishedAfterCancel_IsLockedMeanwhileAndDeleted()
+    {
+        var viewModel = await OpenFormAsync();
+        var form = viewModel.Form;
+        Picker.Gate = new TaskCompletionSource();
+
+        form.PickPhotoCommand.Execute(null);
+        var pending = form.LastTask;
+
+        Assert.False(form.PickPhotoCommand.CanExecute(null));
+        Assert.False(form.CapturePhotoCommand.CanExecute(null));
+        form.CancelCommand.Execute(null);
+        Picker.Gate.SetResult();
+        await pending;
+
+        Assert.Equal(1, Picker.PickCalls);
+        Assert.True(form.PickPhotoCommand.CanExecute(null));
+        Assert.False(form.HasPhoto);
+        Assert.Single(Fixture.Photos.Deleted);
+        Assert.Empty(Fixture.Photos.Files);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Foto, dessen Auswahl beim Wechsel zu einem anderen Formular noch lief, nicht im neuen Formular landet und gelöscht wird.
+    /// </summary>
+    [Fact]
+    public async Task PickPhoto_FinishedAfterReopening_IsNotAttachedToNewForm()
+    {
+        var viewModel = await OpenFormAsync();
+        var form = viewModel.Form;
+        Picker.Gate = new TaskCompletionSource();
+        form.PickPhotoCommand.Execute(null);
+        var pending = form.LastTask;
+
+        viewModel.AddEntryCommand.Execute(null);
+        Picker.Gate.SetResult();
+        await pending;
+
+        Assert.True(form.IsOpen);
+        Assert.False(form.HasPhoto);
+        Assert.Empty(Fixture.Photos.Files);
+    }
 }

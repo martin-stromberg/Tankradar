@@ -16,14 +16,6 @@ public interface ITankbookEntryService
     Task<IReadOnlyList<TankbookEntryOverview>> GetEntriesAsync(long vehicleId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Liefert einen Vorgang.
-    /// </summary>
-    /// <param name="entryId">Die Kennung des Vorgangs.</param>
-    /// <param name="cancellationToken">Abbruchsignal.</param>
-    /// <returns>Der Vorgang oder <see langword="null"/>, wenn es ihn nicht gibt.</returns>
-    Task<TankbookEntry?> GetEntryAsync(long entryId, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Legt einen Vorgang an. Geprüft werden die Eingabe, die Art je Kraftstoffart und der Kilometerstand gegenüber Fahrzeug, Vorgänger und Nachfolger.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>

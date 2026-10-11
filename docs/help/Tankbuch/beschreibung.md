@@ -39,7 +39,7 @@ Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die n
 | Kilometerstand | ja | ganze Kilometer; nicht unter dem Start-Kilometerstand und dem vorherigen Vorgang, nicht über dem nächsten Vorgang |
 | Teilbetankung | nein | Schalter, Standard aus (voll getankt bzw. geladen) |
 | Notiz | nein | höchstens 500 Zeichen |
-| Belegfoto | nein | JPG, PNG oder HEIC, höchstens 20 MB |
+| Belegfoto | nein | JPG, PNG oder HEIC, höchstens 20 MB; Tankatlas prüft den Dateiinhalt |
 
 **Menge, Preis und Gesamtbetrag:** Zwei der drei Werte genügen; der dritte wird berechnet und unter den Feldern angezeigt („Ergibt 74,36 €“). Beim Speichern wird er ins leere Feld übernommen. Geben Sie alle drei an und weicht Menge × Preis um mehr als 0,02 € vom Gesamtbetrag ab, wird nicht gespeichert. Die Meldung nennt den rechnerischen Betrag, z. B. „Menge × Preis ergibt 74,36 €, nicht 75,00 €. Bitte prüfe die Werte.“ Bei Belegen mit Zusatzgebühren (z. B. einer Ladesitzung) geben Sie Menge und Gesamtbetrag an.
 
@@ -77,7 +77,7 @@ Vor dem Löschen fragt Tankatlas immer nach, direkt im Eintrag:
 
 ## Barrierefreiheit
 
-Die Sprachausgabe liest bei Schaltflächen den sichtbaren Text vor, z. B. „Ja, löschen“. Den Zusammenhang nennt sie als Hinweis, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“ oder „Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle“. So funktioniert auch die Sprachsteuerung mit dem sichtbaren Text.
+Die Sprachausgabe liest bei Schaltflächen den sichtbaren Text vor, z. B. „Ja, löschen“. Den Zusammenhang nennt sie als Hinweis, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“ oder „Fahrzeug „Golf““ bei **Bearbeiten** und **Löschen** der Fahrzeugkarte. Fehlermeldungen, etwa wenn das Laden oder Löschen fehlschlägt, werden ebenfalls angesagt. So funktioniert auch die Sprachsteuerung mit dem sichtbaren Text.
 
 ## Datenschutz
 

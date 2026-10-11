@@ -24,6 +24,21 @@ public class ReceiptPhotoStoreTests_Files : BaseTest
         _store = new ReceiptPhotoStore(new FakeAppDataPathProvider(_directory), _protector, _logger);
     }
 
+    private static byte[] Jpeg
+    {
+        get { return [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 1, 2, 3]; }
+    }
+
+    private static byte[] Png
+    {
+        get { return [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13]; }
+    }
+
+    private static byte[] Heic
+    {
+        get { return [0, 0, 0, 0x18, (byte)'f', (byte)'t', (byte)'y', (byte)'p', (byte)'h', (byte)'e', (byte)'i', (byte)'c', 0, 0]; }
+    }
+
     private string ReceiptDirectory
     {
         get { return Path.Combine(_directory, ReceiptPhotoStore.DirectoryName); }
@@ -46,7 +61,7 @@ public class ReceiptPhotoStoreTests_Files : BaseTest
     [Fact]
     public async Task Import_SupportedPhoto_CopiesAndProtects()
     {
-        byte[] content = [1, 2, 3, 4];
+        var content = Jpeg;
 
         var result = await _store.ImportAsync(new MemoryStream(content), ".JPG");
 
@@ -92,7 +107,7 @@ public class ReceiptPhotoStoreTests_Files : BaseTest
     [Fact]
     public async Task Delete_RemovesFile()
     {
-        var fileName = (await _store.ImportAsync(new MemoryStream([1]), ".heic")).FileName!;
+        var fileName = (await _store.ImportAsync(new MemoryStream(Heic), ".heic")).FileName!;
 
         _store.Delete(fileName);
         _store.Delete(fileName);
@@ -125,8 +140,8 @@ public class ReceiptPhotoStoreTests_Files : BaseTest
     [Fact]
     public async Task DeleteUnreferenced_KeepsReferencedFiles()
     {
-        var kept = (await _store.ImportAsync(new MemoryStream([1]), ".jpg")).FileName!;
-        var orphan = (await _store.ImportAsync(new MemoryStream([2]), ".jpg")).FileName!;
+        var kept = (await _store.ImportAsync(new MemoryStream(Jpeg), ".jpg")).FileName!;
+        var orphan = (await _store.ImportAsync(new MemoryStream(Jpeg), ".jpg")).FileName!;
         var foreign = Path.Combine(ReceiptDirectory, "notiz.txt");
         File.WriteAllText(foreign, "x");
 
@@ -135,5 +150,34 @@ public class ReceiptPhotoStoreTests_Files : BaseTest
         Assert.True(_store.Exists(kept));
         Assert.False(_store.Exists(orphan));
         Assert.True(File.Exists(foreign));
+    }
+
+    /// <summary>
+    /// Prüft, dass eine Datei mit erlaubter Endung, aber ohne Bildsignatur abgelehnt wird und keine Datei zurückbleibt.
+    /// </summary>
+    [Fact]
+    public async Task Import_ContentWithoutPhotoSignature_IsRejected()
+    {
+        var result = await _store.ImportAsync(new MemoryStream("kein Foto"u8.ToArray()), ".jpg");
+
+        Assert.Equal(new ReceiptPhotoImportResult(null, ReceiptPhotoError.UnsupportedFormat), result);
+        Assert.Empty(Directory.EnumerateFiles(ReceiptDirectory));
+        Assert.Empty(_protector.ProtectedFiles);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein als JPG benanntes PNG die Endung seines tatsächlichen Formats erhält und HEIC/HEIF an der Marke erkannt wird.
+    /// </summary>
+    [Fact]
+    public async Task Import_MisnamedPhoto_GetsExtensionOfDetectedFormat()
+    {
+        var png = await _store.ImportAsync(new MemoryStream(Png), ".jpg");
+        var heic = await _store.ImportAsync(new MemoryStream(Heic), ".heif");
+
+        Assert.EndsWith(".png", png.FileName, StringComparison.Ordinal);
+        Assert.True(_store.Exists(png.FileName!));
+        Assert.EndsWith(".heif", heic.FileName, StringComparison.Ordinal);
+        Assert.Equal(2, Directory.EnumerateFiles(ReceiptDirectory).Count());
+        Assert.Equal(Path.Combine(ReceiptDirectory, png.FileName!), _protector.ProtectedFiles[0]);
     }
 }

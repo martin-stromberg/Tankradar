@@ -29,6 +29,10 @@ public class TankbookE2ETests_Flow : TankbookE2ETestBase
             WaitForTexts("Tankbook.Vehicle.Details", "Diesel • Start 84.350 km • Startverbrauch 5,4 L/100 km");
             Assert.False(Exists("Tankbook.Empty"));
 
+            Assert.Equal("Bearbeiten", WaitForAutomationId("Tankbook.Vehicle.Edit").Name);
+            Assert.Equal("Fahrzeug „Golf“", Tankbook.ReadHint("Tankbook.Vehicle.Edit"));
+            Assert.Equal("Löschen", WaitForAutomationId("Tankbook.Vehicle.Delete").Name);
+            Assert.Equal("Fahrzeug „Golf“", Tankbook.ReadHint("Tankbook.Vehicle.Delete"));
             PressForVehicle("Tankbook.Vehicle.Edit", "Golf");
             Assert.Equal("Fahrzeug bearbeiten", WaitForAutomationId("Tankbook.Form.Title").Name);
             Assert.Equal("Golf", WaitForAutomationId("Tankbook.Form.Name").Patterns.Value.Pattern.Value.Value);

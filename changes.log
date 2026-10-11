@@ -3,10 +3,10 @@
 - Je Fahrzeug öffnet „Tank- und Ladevorgänge“ eine eigene Seite: Vorgänge erfassen, korrigieren und nach Rückfrage löschen; Liste neueste zuerst mit Tankstelle, Gesamtbetrag, Datum, Preis pro Einheit, Menge, Strecke und Verbrauch pro 100 km (L bzw. kWh), Teilbetankung, Notiz und Belegfoto
 - Angaben: Datum und Uhrzeit (vorbelegt, nicht in der Zukunft), Tankstelle aus „Bekannte Tankstellen“ (Favoriten und bereits verwendete Namen) oder frei, Art nach Kraftstoffart (Hybrid wählbar), zwei aus drei Werten Menge/Preis/Gesamtbetrag mit Rechenhinweis und Abweichungsprüfung (0,02 €), Kilometerstand nicht unter Start und Vorgänger und nicht über dem Nachfolger
 - Verbrauch je Vollvorgang aus der Strecke seit dem vorherigen Vollvorgang; Teilbetankungen zählen beim nächsten Vollvorgang mit; Kraftstoff und Strom getrennt gerechnet
-- Belegfoto aus der Fotomediathek (bzw. Kamera), unverändert lokal unter Dateischutz abgelegt; nicht mehr verwendete Fotos werden entfernt
+- Belegfoto aus der Fotomediathek (bzw. Kamera), unverändert lokal unter Dateischutz abgelegt; Format wird zusätzlich am Dateiinhalt geprüft; mehrfaches Auslösen der Fotoauswahl gesperrt; nicht mehr verwendete Fotos werden entfernt
 - Start-Kilometerstand eines Fahrzeugs nicht über dem ersten Vorgang; Wechsel der Kraftstoffart mit Vorgängen erlaubt
-- Restpunkte aus Schritt 12: Neuzählung der Vorgänge beim Bestätigen der Fahrzeug-Löschung (neuer Vorgang wird vor dem Löschen genannt), `Foreign Keys=True` in der Verbindungszeichenfolge, WCAG 2.5.3 (vorgelesener Name = sichtbarer Text, Kontext im Hinweis)
-- Datenbankmigration `AddTankbookEntryDetails` (rein additiv, Datenübernahme für Bestandszeilen); iOS/MacCatalyst: Berechtigungstexte für Kamera und Fotos
+- Restpunkte aus Schritt 12: Neuzählung der Vorgänge beim Bestätigen der Fahrzeug-Löschung (neuer Vorgang wird vor dem Löschen genannt), `Foreign Keys=True` in der Verbindungszeichenfolge, WCAG 2.5.3 (vorgelesener Name = sichtbarer Text, Kontext im Hinweis; auch „Bearbeiten“ und „Löschen“ der Fahrzeugkarte)
+- Datenbankmigration `AddTankbookEntryDetails` (rein additiv, Datenübernahme für Bestandszeilen; Zeitpunkt als minutengenaue Ortszeit); iOS/MacCatalyst: Berechtigungstexte für Kamera und Fotos
 - Tests: Unit-, Integrations- und FlaUI-E2E-Tests (Erfassen und Verbrauch, Teilbetankung, Laden, Validierung, Korrigieren/Löschen, Belegfoto, Neustart, Offline-Szenario mit nicht erreichbarem Preisdienst)
 - Dokumentation: `docs/help/Tankbuch/`, `docs/adr/0009-tankbook-entries.md`
 

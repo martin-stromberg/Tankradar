@@ -152,6 +152,17 @@ public sealed class TankbookEntryFixture : IDisposable
     }
 
     /// <summary>
+    /// Liest einen gespeicherten Vorgang über die Liste des Fahrzeugs.
+    /// </summary>
+    /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
+    /// <param name="entryId">Die Kennung des Vorgangs.</param>
+    /// <returns>Der Vorgang.</returns>
+    public async Task<TankbookEntry> ReadEntryAsync(long vehicleId, long entryId)
+    {
+        return (await Service.GetEntriesAsync(vehicleId)).Single(overview => overview.Entry.Id == entryId).Entry;
+    }
+
+    /// <summary>
     /// Legt eine Tankstelle im Preis-Cache an und ordnet sie einer Favoritengruppe zu.
     /// </summary>
     /// <param name="stationId">Die Kennung der Tankstelle.</param>

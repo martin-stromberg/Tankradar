@@ -18,14 +18,30 @@ public sealed class FakeReceiptPhotoPicker : IReceiptPhotoPicker
     public string? NextExtension { get; set; } = ".jpg";
 
     /// <summary>
+    /// Hält die nächste Auswahl an, bis das Tor geöffnet wird (simuliert einen offenen Systemdialog); <see langword="null"/> liefert sofort.
+    /// </summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    /// <summary>
+    /// Die Zahl der Aufrufe von <see cref="PickAsync"/>.
+    /// </summary>
+    public int PickCalls { get; private set; }
+
+    /// <summary>
     /// Die Zahl der Aufrufe von <see cref="CaptureAsync"/>.
     /// </summary>
     public int CaptureCalls { get; private set; }
 
     /// <inheritdoc />
-    public Task<PickedReceiptPhoto?> PickAsync(CancellationToken cancellationToken = default)
+    public async Task<PickedReceiptPhoto?> PickAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Create());
+        PickCalls++;
+        if (Gate is { } gate)
+        {
+            await gate.Task;
+        }
+
+        return Create();
     }
 
     /// <inheritdoc />

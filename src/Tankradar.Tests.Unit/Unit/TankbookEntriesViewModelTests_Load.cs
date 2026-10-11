@@ -79,6 +79,7 @@ public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBa
         var viewModel = await OpenAsync(vehicle.Id);
 
         Assert.Equal("Die Tank- und Ladevorgänge konnten nicht geladen werden.", viewModel.StatusMessage);
+        Assert.Equal([viewModel.StatusMessage!], Announcer.Announcements);
         Assert.False(viewModel.IsBusy);
         Assert.DoesNotContain("Geheim", Logger.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain("10500", Logger.AllText, StringComparison.Ordinal);

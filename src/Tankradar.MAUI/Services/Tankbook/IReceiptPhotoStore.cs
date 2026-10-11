@@ -32,7 +32,7 @@ public interface IReceiptPhotoStore
     bool Exists(string fileName);
 
     /// <summary>
-    /// Löscht ein Foto aus der Ablage; ungültige Namen und fehlende Dateien werden ignoriert.
+    /// Löscht ein Foto aus der Ablage; ungültige Namen und fehlende Dateien werden ignoriert. Wirft nicht: Fehler beim Löschen werden nur protokolliert.
     /// </summary>
     /// <param name="fileName">Der Dateiname.</param>
     void Delete(string fileName);

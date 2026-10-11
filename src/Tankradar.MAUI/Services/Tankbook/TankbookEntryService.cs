@@ -57,14 +57,6 @@ public sealed class TankbookEntryService : ITankbookEntryService
     }
 
     /// <inheritdoc />
-    public async Task<TankbookEntry?> GetEntryAsync(long entryId, CancellationToken cancellationToken = default)
-    {
-        await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var row = await context.TankbookEntries.AsNoTracking().FirstOrDefaultAsync(e => e.Id == entryId, cancellationToken).ConfigureAwait(false);
-        return row is null ? null : ToEntry(row);
-    }
-
-    /// <inheritdoc />
     public async Task<TankbookEntrySaveResult> CreateEntryAsync(long vehicleId, TankbookEntryInput input, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(input);
@@ -139,7 +131,7 @@ public sealed class TankbookEntryService : ITankbookEntryService
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         if (previousPhoto is not null && !string.Equals(previousPhoto, entity.ReceiptPhotoFileName, StringComparison.Ordinal))
         {
-            DeletePhoto(previousPhoto);
+            _photoStore.Delete(previousPhoto);
         }
 
         return new TankbookEntrySaveResult(TankbookEntryResult.Ok, ToEntry(entity), null);
@@ -160,7 +152,7 @@ public sealed class TankbookEntryService : ITankbookEntryService
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         if (photo is not null)
         {
-            DeletePhoto(photo);
+            _photoStore.Delete(photo);
         }
 
         return TankbookEntryResult.Ok;
@@ -244,7 +236,8 @@ public sealed class TankbookEntryService : ITankbookEntryService
 
     private static VehicleFuelKind ParseFuelKind(string value)
     {
-        return Enum.TryParse(value, out VehicleFuelKind fuelKind) && Enum.IsDefined(fuelKind) ? fuelKind : VehicleFuelKind.Petrol;
+        VehicleValidator.TryParseFuelKind(value, out var fuelKind);
+        return fuelKind;
     }
 
     private async Task<List<TankbookEntry>> LoadEntriesAsync(TankradarDbContext context, long vehicleId, long? exceptEntryId, CancellationToken cancellationToken)
@@ -270,18 +263,6 @@ public sealed class TankbookEntryService : ITankbookEntryService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Nicht mehr verwendete Belegfotos konnten nicht bereinigt werden ({ExceptionType}).", ex.GetType().Name);
-        }
-    }
-
-    private void DeletePhoto(string fileName)
-    {
-        try
-        {
-            _photoStore.Delete(fileName);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogWarning("Ein Belegfoto konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
 

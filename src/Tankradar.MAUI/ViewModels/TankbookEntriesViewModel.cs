@@ -298,6 +298,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         {
             _logger.LogWarning("Die Vorgänge konnten nicht geladen werden ({ExceptionType}).", ex.GetType().Name);
             StatusMessage = TankbookEntryTexts.LoadFailed;
+            _announcer.Announce(StatusMessage);
         }
         finally
         {
@@ -358,12 +359,14 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
             else
             {
                 StatusMessage = TankbookEntryTexts.GetResultMessage(result, null);
+                _announcer.Announce(StatusMessage);
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Der Vorgang konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
             StatusMessage = TankbookTexts.SaveFailed;
+            _announcer.Announce(StatusMessage);
         }
         finally
         {

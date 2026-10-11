@@ -13,7 +13,7 @@ namespace Tankradar.Tests.Integration.Integration;
 
 /// <summary>
 /// Prüft die Migration <c>AddTankbookEntryDetails</c> auf einer echten SQLite-Datei mit Bestandsdaten des Stands 0.1.16: Alle Daten bleiben erhalten,
-/// Altvorgänge erhalten Zeitpunkt, Kilometerstand und Art aus ihrem Fahrzeug, die übrigen Spalten ihre Standardwerte.
+/// Altvorgänge erhalten den Anlagezeitpunkt als minutengenaue lokale Zeit, Kilometerstand und Art aus ihrem Fahrzeug, die übrigen Spalten ihre Standardwerte.
 /// </summary>
 public class TankbookEntriesMigrationTests_Upgrade : IDisposable
 {
@@ -37,6 +37,12 @@ public class TankbookEntriesMigrationTests_Upgrade : IDisposable
         return values;
     }
 
+    private static DateTime ToLocalMinute(DateTime utc)
+    {
+        var local = DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime();
+        return new DateTime(local.Year, local.Month, local.Day, local.Hour, local.Minute, 0, DateTimeKind.Unspecified);
+    }
+
     private async Task MigrateToBeforeEntryDetailsAsync()
     {
         await using var oldContext = _database.CreateFactory().CreateDbContext();
@@ -55,7 +61,7 @@ public class TankbookEntriesMigrationTests_Upgrade : IDisposable
             "INSERT INTO Vehicles (Id, Name, FuelKind, StartOdometerKm, StartConsumption, CreatedUtc) VALUES "
             + "(1, 'Golf', 'Petrol', 84350, '5.4', '2026-10-11 09:00:00'), (2, 'Zoe', 'Electric', 12000, NULL, '2026-10-11 09:00:00')");
         await oldContext.Database.ExecuteSqlRawAsync(
-            "INSERT INTO TankbookEntries (VehicleId, CreatedUtc) VALUES (1, '2026-10-11 10:00:00'), (1, '2026-10-11 11:00:00'), (2, '2026-10-11 12:00:00')");
+            "INSERT INTO TankbookEntries (VehicleId, CreatedUtc) VALUES (1, '2026-10-11 10:00:42.1234567'), (1, '2026-10-11 11:00:00'), (2, '2026-10-11 12:00:00')");
         Assert.DoesNotContain(await oldContext.Database.GetAppliedMigrationsAsync(), m => m.EndsWith("_AddTankbookEntryDetails", StringComparison.Ordinal));
     }
 
@@ -80,7 +86,7 @@ public class TankbookEntriesMigrationTests_Upgrade : IDisposable
 
         var entries = await context.TankbookEntries.AsNoTracking().OrderBy(e => e.Id).ToListAsync();
         Assert.Equal(3, entries.Count);
-        Assert.All(entries, entry => Assert.Equal(entry.CreatedUtc, entry.OccurredAt));
+        Assert.All(entries, entry => Assert.Equal(ToLocalMinute(entry.CreatedUtc), entry.OccurredAt));
         Assert.Equal([84350, 84350, 12000], entries.Select(entry => entry.OdometerKm));
         Assert.Equal(["Fuel", "Fuel", "Electricity"], entries.Select(entry => entry.Kind));
         Assert.All(entries, entry =>

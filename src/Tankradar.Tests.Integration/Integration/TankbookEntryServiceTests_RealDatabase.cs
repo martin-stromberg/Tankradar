@@ -61,8 +61,8 @@ public class TankbookEntryServiceTests_RealDatabase : IDisposable
         var golf = (await vehicles.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 10_000, null))).Vehicle!;
         var polo = (await vehicles.CreateVehicleAsync(new VehicleInput("Polo", VehicleFuelKind.Petrol, 10_000, null))).Vehicle!;
         var store = _database.CreatePhotoStore();
-        var golfPhoto = (await store.ImportAsync(new MemoryStream([1, 2, 3]), ".jpg")).FileName!;
-        var poloPhoto = (await store.ImportAsync(new MemoryStream([4, 5, 6]), ".png")).FileName!;
+        var golfPhoto = (await store.ImportAsync(new MemoryStream([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]), ".jpg")).FileName!;
+        var poloPhoto = (await store.ImportAsync(new MemoryStream([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 4, 5, 6]), ".png")).FileName!;
         var service = CreateService();
         var input = new TankbookEntryInput(new DateTime(2026, 5, 18, 14, 30, 0), TankbookEntryKind.Fuel, 40m, 1.859m, 74.36m, 10_500, false, "Alpha Tankstelle", null, null, null);
         await service.CreateEntryAsync(golf.Id, input with { ReceiptPhotoFileName = golfPhoto });

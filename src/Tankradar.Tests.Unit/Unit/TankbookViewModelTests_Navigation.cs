@@ -42,6 +42,6 @@ public class TankbookViewModelTests_Navigation : BaseTest
         await viewModel.LastTask;
 
         Assert.Equal([polo.Id], _navigator.Opened);
-        Assert.Equal("Fahrzeug „Polo“", item.EntriesHint);
+        Assert.Equal("Fahrzeug „Polo“", item.VehicleHint);
     }
 }

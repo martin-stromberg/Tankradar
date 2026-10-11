@@ -197,18 +197,18 @@
                                 <Button Text="{x:Static texts:TankbookTexts.Entries}"
                                         Command="{Binding OpenEntriesCommand}"
                                         Style="{StaticResource TankbookButton}"
-                                        SemanticProperties.Hint="{Binding EntriesHint}"
+                                        SemanticProperties.Hint="{Binding VehicleHint}"
                                         AutomationId="Tankbook.Vehicle.Entries" />
                                 <Button Text="{x:Static texts:TankbookTexts.Edit}"
                                         Command="{Binding EditCommand}"
                                         Style="{StaticResource TankbookOutlineButton}"
-                                        SemanticProperties.Description="{Binding EditDescription}"
+                                        SemanticProperties.Hint="{Binding VehicleHint}"
                                         AutomationId="Tankbook.Vehicle.Edit" />
                                 <Button Text="{x:Static texts:TankbookTexts.Delete}"
                                         Command="{Binding DeleteCommand}"
                                         Style="{StaticResource TankbookOutlineButton}"
                                         TextColor="{StaticResource ColorErrorRed}"
-                                        SemanticProperties.Description="{Binding DeleteDescription}"
+                                        SemanticProperties.Hint="{Binding VehicleHint}"
                                         AutomationId="Tankbook.Vehicle.Delete" />
 
                                 <!-- Rückfrage vor dem Löschen -->

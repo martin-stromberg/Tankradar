@@ -89,9 +89,9 @@ namespace Tankradar.MAUI.Data.Migrations
                 nullable: false,
                 defaultValue: 0m);
 
-            // Datenübernahme für Bestandszeilen aus Schritt 12: Zeitpunkt = Anlagezeitpunkt, Kilometerstand = Start-Kilometerstand des Fahrzeugs,
-            // Vorgänge von Elektrofahrzeugen sind Ladevorgänge. Alle übrigen Spalten behalten ihre Standardwerte.
-            migrationBuilder.Sql("UPDATE \"TankbookEntries\" SET \"OccurredAt\" = \"CreatedUtc\";");
+            // Datenübernahme für Bestandszeilen aus Schritt 12: Zeitpunkt = Anlagezeitpunkt als minutengenaue lokale Wanduhrzeit (wie neu erfasste Vorgänge),
+            // Kilometerstand = Start-Kilometerstand des Fahrzeugs, Vorgänge von Elektrofahrzeugen sind Ladevorgänge. Alle übrigen Spalten behalten ihre Standardwerte.
+            migrationBuilder.Sql("UPDATE \"TankbookEntries\" SET \"OccurredAt\" = strftime('%Y-%m-%d %H:%M:00', \"CreatedUtc\", 'localtime');");
             migrationBuilder.Sql(
                 "UPDATE \"TankbookEntries\" SET \"OdometerKm\" = COALESCE((SELECT \"StartOdometerKm\" FROM \"Vehicles\" WHERE \"Vehicles\".\"Id\" = \"TankbookEntries\".\"VehicleId\"), 0);");
             migrationBuilder.Sql(

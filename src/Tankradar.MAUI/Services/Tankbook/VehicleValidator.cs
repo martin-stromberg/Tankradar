@@ -84,6 +84,23 @@ public static class VehicleValidator
     }
 
     /// <summary>
+    /// Liest den gespeicherten Namen einer Kraftstoffart (Persistenzvertrag <c>Vehicles.FuelKind</c>).
+    /// </summary>
+    /// <param name="value">Der gespeicherte Name.</param>
+    /// <param name="fuelKind">Die Kraftstoffart; bei einem unbekannten Namen <see cref="VehicleFuelKind.Petrol"/>.</param>
+    /// <returns><see langword="true"/>, wenn der Name eine bekannte Kraftstoffart ist.</returns>
+    internal static bool TryParseFuelKind(string? value, out VehicleFuelKind fuelKind)
+    {
+        if (Enum.TryParse(value, out fuelKind) && Enum.IsDefined(fuelKind))
+        {
+            return true;
+        }
+
+        fuelKind = VehicleFuelKind.Petrol;
+        return false;
+    }
+
+    /// <summary>
     /// Entfernt nachgestellte Nullen eines Dezimalwerts, damit seine Skala die tatsächlichen Nachkommastellen angibt.
     /// </summary>
     /// <param name="value">Der Wert.</param>

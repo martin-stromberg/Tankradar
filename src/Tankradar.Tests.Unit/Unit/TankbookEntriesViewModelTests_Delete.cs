@@ -70,4 +70,23 @@ public class TankbookEntriesViewModelTests_Delete : TankbookEntriesViewModelTest
         Assert.Equal("Vorgang behalten", item.CancelDeleteHint);
         Assert.Equal("Fahrzeug „Golf“", viewModel.AddEntryHint);
     }
+
+    /// <summary>
+    /// Prüft, dass ein Speicherfehler beim Löschen gemeldet und angesagt wird und der Vorgang bleibt.
+    /// </summary>
+    [Fact]
+    public async Task Delete_StorageFailure_ShowsAndAnnouncesMessage()
+    {
+        var vehicleId = await CreateVehicleWithEntryAsync();
+        var viewModel = await OpenAsync(vehicleId);
+        var item = viewModel.Entries[0];
+        await PressAsync(viewModel, item.DeleteCommand);
+        Fixture.Factory.FailingCreations = 1;
+
+        await PressAsync(viewModel, item.ConfirmDeleteCommand);
+
+        Assert.Equal("Die Änderung konnte nicht gespeichert werden.", viewModel.StatusMessage);
+        Assert.Equal(viewModel.StatusMessage, Announcer.Announcements[^1]);
+        Assert.Single(await Fixture.Service.GetEntriesAsync(vehicleId));
+    }
 }
