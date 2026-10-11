@@ -172,6 +172,11 @@ public abstract class E2ETestBase : IDisposable
     }
 
     /// <summary>
+    /// Das isolierte Datenverzeichnis der gestarteten App (Testmodus); die Datenbank der App liegt dort als <c>tankatlas.db</c>.
+    /// </summary>
+    protected string TestDataDirectory => _testDataDirectory;
+
+    /// <summary>
     /// Die UI-Automation-Engine, mit der die gestartete App bedient wird.
     /// </summary>
     protected UIA3Automation Automation { get; private set; }

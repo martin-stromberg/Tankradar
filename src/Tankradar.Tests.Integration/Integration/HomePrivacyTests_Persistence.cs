@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services;
@@ -60,7 +59,6 @@ public class HomePrivacyTests_Persistence : SearchMockServerTestBase
         Assert.NotEmpty(nearby.Entries);
         Assert.True(home.Groups[0].Stations[0].HasDistance);
         home.OnDisappearing();
-        SqliteConnection.ClearAllPools();
     }
 
     /// <summary>
@@ -87,7 +85,6 @@ public class HomePrivacyTests_Persistence : SearchMockServerTestBase
             }
         }
 
-        SqliteConnection.ClearAllPools();
         await using var stream = new FileStream(Database.DatabasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         var bytes = new byte[stream.Length];
         await stream.ReadExactlyAsync(bytes);

@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.Tests.Integration.Integration.Support;
@@ -61,7 +60,6 @@ public class AddressSearchPrivacyTests_Persistence : SearchMockServerTestBase
     public async Task AfterAddressSearch_DatabaseFileDoesNotContainAddressOrPosition()
     {
         await SearchAndSettleAsync();
-        SqliteConnection.ClearAllPools();
 
         await using var stream = new FileStream(Database.DatabasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         var bytes = new byte[stream.Length];

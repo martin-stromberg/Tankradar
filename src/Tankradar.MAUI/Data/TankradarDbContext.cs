@@ -52,6 +52,16 @@ public class TankradarDbContext : DbContext
     public DbSet<FavoriteEntryEntity> FavoriteEntries { get; set; } = null!;
 
     /// <summary>
+    /// Die Tabelle der Fahrzeuge des Tankbuchs.
+    /// </summary>
+    public DbSet<VehicleEntity> Vehicles { get; set; } = null!;
+
+    /// <summary>
+    /// Die Tabelle der Tank- und Ladevorgänge des Tankbuchs.
+    /// </summary>
+    public DbSet<TankbookEntryEntity> TankbookEntries { get; set; } = null!;
+
+    /// <summary>
     /// Ermittelt den vollständigen Pfad der Datenbankdatei.
     /// </summary>
     /// <param name="dataDirectory">Das App-Datenverzeichnis.</param>
@@ -130,6 +140,30 @@ public class TankradarDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.GroupId, e.StationId }).IsUnique();
             entity.HasIndex(e => e.StationId);
+        });
+
+        modelBuilder.Entity<VehicleEntity>(entity =>
+        {
+            entity.ToTable("Vehicles");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().UseCollation("NOCASE");
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.Property(e => e.FuelKind).IsRequired();
+            entity.Property(e => e.StartOdometerKm).IsRequired();
+            entity.Property(e => e.StartConsumption).HasColumnType("TEXT");
+            entity.Property(e => e.CreatedUtc).IsRequired();
+        });
+
+        modelBuilder.Entity<TankbookEntryEntity>(entity =>
+        {
+            entity.ToTable("TankbookEntries");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Vehicle)
+                .WithMany(v => v.Entries)
+                .HasForeignKey(e => e.VehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.VehicleId);
+            entity.Property(e => e.CreatedUtc).IsRequired();
         });
     }
 }

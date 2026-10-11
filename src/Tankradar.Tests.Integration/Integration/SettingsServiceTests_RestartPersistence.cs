@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models;
@@ -31,7 +30,6 @@ public class SettingsServiceTests_RestartPersistence : IDisposable
             ResultSortOrder.Name);
         await CreateService().SaveAsync(saved);
 
-        SqliteConnection.ClearAllPools();
         var loaded = await CreateService().LoadAsync();
 
         Assert.Equal(saved.FuelTypes, loaded.FuelTypes);
@@ -135,7 +133,6 @@ public class SettingsServiceTests_RestartPersistence : IDisposable
 
     private async Task<AppSettings> LoadAfterRestartAsync()
     {
-        SqliteConnection.ClearAllPools();
         return await CreateService().LoadAsync();
     }
 
