@@ -72,6 +72,13 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     /// </summary>
     public Task? RefreshGate { get; set; }
 
+    private readonly TaskCompletionSource _refreshEntered = CreateSource();
+
+    /// <summary>
+    /// Wird abgeschlossen, sobald <see cref="RefreshStationsAsync"/> erstmals aufgerufen wurde.
+    /// </summary>
+    public TaskCompletionSource RefreshEntered => _refreshEntered;
+
     /// <summary>
     /// Die Kennungen aller Aktualisierungen nach Kennungen in Reihenfolge.
     /// </summary>
@@ -92,6 +99,7 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     {
         RefreshRequests.Add(stationIds.ToList());
         RefreshForces.Add(force);
+        RefreshEntered.TrySetResult();
         if (RefreshGate is { } gate)
         {
             await gate.WaitAsync(cancellationToken);
@@ -135,5 +143,10 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     private static StationDetailResult CreateUnknownStation()
     {
         return new StationDetailResult(null, PriceDataSource.Live, PriceFailure.None);
+    }
+
+    private static TaskCompletionSource CreateSource()
+    {
+        return new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }

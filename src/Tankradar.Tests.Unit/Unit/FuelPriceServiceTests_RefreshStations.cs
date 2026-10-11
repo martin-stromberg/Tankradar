@@ -65,6 +65,24 @@ public class FuelPriceServiceTests_RefreshStations : FuelPriceServiceTestBase
     }
 
     /// <summary>
+    /// Prüft, dass eine Kennung ohne Eintrag in der Antwort nicht als frisch gilt und beim nächsten Mal erneut abgerufen wird.
+    /// </summary>
+    [Fact]
+    public async Task Refresh_IdWithoutResponseEntry_IsNotMarkedFresh()
+    {
+        await SeedAsync(2);
+        Client.OmitUnknownPriceIds = true;
+        SetFetched(1, 1.60m);
+        var ids = new[] { Id(1), Id(2) };
+        await Service.RefreshStationsAsync(ids, force: false);
+
+        await Service.RefreshStationsAsync(ids, force: false);
+
+        Assert.Equal(2, Client.PricesRequests.Count);
+        Assert.Equal([Id(2)], Client.PricesRequests[1]);
+    }
+
+    /// <summary>
     /// Prüft, dass ohne Verbindung kein Abruf erfolgt und der lokale Stand als Offline-Rückfall geliefert wird.
     /// </summary>
     [Fact]

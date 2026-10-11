@@ -24,6 +24,11 @@ public sealed class StubTankerkoenigClient : ITankerkoenigClient
     public Dictionary<string, IReadOnlyList<FuelPrice>> PricesResult { get; } = [];
 
     /// <summary>
+    /// Wenn gesetzt, enthält die Preisantwort nur Kennungen aus <see cref="PricesResult"/> (statt leerer Einträge für unbekannte Kennungen).
+    /// </summary>
+    public bool OmitUnknownPriceIds { get; set; }
+
+    /// <summary>
     /// Die Kennungen je Abruf nach Kennungen, in Reihenfolge der Abrufe.
     /// </summary>
     public List<IReadOnlyList<string>> PricesRequests { get; } = [];
@@ -87,7 +92,7 @@ public sealed class StubTankerkoenigClient : ITankerkoenigClient
             throw PricesFailure;
         }
 
-        IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> result = stationIds.ToDictionary(
+        IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> result = stationIds.Where(id => !OmitUnknownPriceIds || PricesResult.ContainsKey(id)).ToDictionary(
             id => id,
             id => PricesResult.TryGetValue(id, out var lines) ? lines : (IReadOnlyList<FuelPrice>)[]);
         return Task.FromResult(result);

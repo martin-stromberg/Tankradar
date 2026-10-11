@@ -14,10 +14,10 @@ public abstract class HomeE2ETestBase : FavoritesE2ETestBase
     /// </summary>
     protected const string AgePattern = @"^vor \d+ Min\.$";
 
-    protected const string DistancePattern = @"^\d+[,.]?\d* ?[km]+$";
+    /// <summary>
     /// Das Muster einer Entfernungsangabe („0,2 km“ oder „120 m“).
     /// </summary>
-    protected const string DistancePattern = @"^\d+([,.]\d+)? (km|m)$";
+    protected const string DistancePattern = @"^\d+[,.]?\d* ?[km]+$";
 
     /// <summary>
     /// Wechselt auf die Startseite und wartet, bis die Gruppen mit den angegebenen Namen erscheinen; ohne Namen wird der Leerhinweis erwartet.

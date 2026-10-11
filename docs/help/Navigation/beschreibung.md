@@ -11,7 +11,7 @@ Tankatlas ist eine App für Ihre Tankstellen-Verwaltung mit vier Hauptbereichen,
 Die App zeigt immer einen der vier Hauptbereiche:
 
 ### Favoriten
-Der Startbildschirm. Hier verwalten Sie Ihre Favoritengruppen (siehe [Favoritengruppen](../Favoriten/index.md)); die Startseite mit Preisen der favorisierten Tankstellen folgt in einer späteren Version.
+Der Startbildschirm ([Startseite](../Startseite/index.md)): Ihre Favoritengruppen mit den Tankstellen, ihren aktuellen Preisen und auf Wunsch dem Bereich „In der Nähe“; hier verwalten Sie auch die Gruppen (siehe [Favoritengruppen](../Favoriten/index.md)).
 
 ### Karte
 Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Alternativ zur Liste gibt es eine Kartenansicht.
@@ -44,6 +44,6 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 
 ## Einschränkungen
 
-- Das Tankbuch ist aktuell in Vorbereitung und zeigt Platzhalter-Text; Favoriten (Gruppenverwaltung), Optionen und Karte (Umkreissuche) sind bereits funktional.
+- Das Tankbuch ist aktuell in Vorbereitung und zeigt Platzhalter-Text; Favoriten (Startseite und Gruppenverwaltung), Optionen und Karte (Umkreissuche) sind bereits funktional.
 - Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
-- Das Tankbuch und die Startseite mit Preisen erhalten ihre Inhalte in späteren Versionen.
+- Das Tankbuch erhält seine Inhalte in einer späteren Version.

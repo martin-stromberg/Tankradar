@@ -8,13 +8,16 @@ Im Bereich **Optionen** passen Sie Tankatlas an Ihre Gewohnheiten an. Alle Einst
 
 ## Funktionsweise
 
-Die Seite besteht aus vier Gruppen:
+Die Seite besteht aus fünf Gruppen:
 
 ### Spritsorten
 Zur Auswahl stehen **Super E5**, **Super E10** und **Diesel**. Mit dem Schalter neben dem Namen wählen Sie eine Sorte aus oder ab. Mit den Pfeil-Schaltflächen (▲ und ▼) legen Sie die Reihenfolge fest. Mindestens eine Spritsorte muss ausgewählt bleiben; das Abwählen der letzten Sorte wird abgelehnt und mit einem Hinweis angezeigt.
 
 ### Standort und GPS
 Legt fest, wann Tankatlas Ihren Standort verwenden darf: **Immer**, **Nur bei Nutzung** oder **Nie**. Voreingestellt ist „Nur bei Nutzung“: Der Standort wird nur verwendet, solange die App geöffnet ist.
+
+### In der Nähe
+Mit dem Schalter bei **In der Nähe** legen Sie fest, ob die [Startseite](../Startseite/index.md) zusätzlich Tankstellen im Umkreis von 5 km um Ihren Standort zeigt. Voreingestellt ist aus. Der Bereich erscheint nur, wenn auch die Standortnutzung nicht **Nie** ist; ist sie **Nie**, weist die Seite darauf hin („Wirkt nur, wenn die Standortnutzung nicht „Nie“ ist.“).
 
 ### Standardansicht der Suchergebnisse
 **Liste** oder **Karte**. Voreingestellt ist „Liste“.
@@ -28,6 +31,7 @@ Legt fest, wann Tankatlas Ihren Standort verwenden darf: **Immer**, **Nur bei Nu
 |-------------|----------|
 | Spritsorten | Super E5, Super E10, Diesel (alle ausgewählt, in dieser Reihenfolge) |
 | Standort und GPS | Nur bei Nutzung |
+| In der Nähe | aus |
 | Standardansicht | Liste |
 | Standardsortierung | Preis |
 
@@ -45,4 +49,5 @@ Die Einstellungen liegen in einer lokalen Datenbank auf Ihrem Gerät und werden 
 
 - Die Umkreissuche nutzt die gewählten Spritsorten (in Ihrer Reihenfolge), die Standardsortierung und die Standardansicht („Liste“ oder „Karte“) als Vorbelegung; in der Suche lässt sich die Ansicht jederzeit umschalten, ohne die Einstellung zu ändern.
 - Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt; sonst fragt die Suche beim Tippen auf „Suchen“ nach der Standortfreigabe des Geräts.
+- Die Spritsorten und ihre Reihenfolge bestimmen auch, welche Preise die [Startseite](../Startseite/index.md) in welcher Reihenfolge zeigt.
 - Die Einstellungen gelten für die App auf diesem Gerät und werden nicht zwischen Geräten synchronisiert.

@@ -201,7 +201,7 @@ public sealed class FuelPriceService : IFuelPriceService
                 if (await TrySavePricesAsync(prices, cancellationToken).ConfigureAwait(false))
                 {
                     var stamp = _timeProvider.GetUtcNow().UtcDateTime;
-                    foreach (var id in chunk)
+                    foreach (var id in chunk.Where(id => prices.Keys.Any(key => string.Equals(key, id, StringComparison.OrdinalIgnoreCase))))
                     {
                         _refreshed[id] = stamp;
                     }
@@ -291,7 +291,7 @@ public sealed class FuelPriceService : IFuelPriceService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Die frisch abgerufenen Daten sind gültig; ein Speicherfehler darf sie dem Aufrufer nicht vorenthalten.
-            _logger.LogError(ex, "Die abgerufenen Preise konnten nicht lokal gespeichert werden.");
+            _logger.LogError("Die abgerufenen Preise konnten nicht lokal gespeichert werden ({ExceptionType}).", ex.GetType().Name);
             return false;
         }
     }
@@ -323,7 +323,7 @@ public sealed class FuelPriceService : IFuelPriceService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogError(ex, "Die abgerufenen Preise konnten nicht lokal gespeichert werden.");
+            _logger.LogError("Die abgerufenen Preise konnten nicht lokal gespeichert werden ({ExceptionType}).", ex.GetType().Name);
             return false;
         }
     }

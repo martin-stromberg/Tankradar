@@ -17,12 +17,14 @@ In der Gruppenübersicht und in der Gruppenansicht lassen sich Tankstellen weder
 
 ## Gruppen verwalten (Bereich „Favoriten“)
 
-- Die Übersicht zeigt je Gruppe Name, Beschreibung und Zahl der Tankstellen; **Neue Gruppe** legt eine Gruppe mit optionaler Beschreibung an.
+- Die Übersicht ist die [Startseite](../Startseite/index.md): je Gruppe Name, Beschreibung, Zahl der Tankstellen und die Tankstellen mit Preisen; **Neue Gruppe** legt eine Gruppe mit optionaler Beschreibung an.
 - Die Gruppenansicht (**Gruppe öffnen**) bietet **Gruppe bearbeiten** (umbenennen, Beschreibung ändern) und **Gruppe löschen** (nach Rückfrage; die Tankstellen bleiben bekannt und in anderen Gruppen erhalten).
+- In der Gruppenansicht öffnet das Antippen des Tankstellennamens oder **Details öffnen** die Detailansicht der Tankstelle.
 - Zu jeder Tankstelle der Gruppe lassen sich über **Notiz und Priorität** eine Notiz und eine Priorität (Keine, Niedrig, Mittel, Hoch) hinterlegen; die Liste ist nach Priorität geordnet (hoch zuerst), dann nach Namen.
 
 ## Regeln
 
 - Gruppennamen: 1 bis 40 Zeichen, ohne Beachtung der Groß- und Kleinschreibung eindeutig. Beschreibung höchstens 200, Notiz höchstens 500 Zeichen.
 - Eine Tankstelle muss lokal bekannt sein (jede Tankstelle der Suche ist es); sonst bittet die App, erneut zu suchen.
-- Die Startseite mit Preisen und Entfernungen folgt in einem späteren Schritt; aus der Gruppenansicht lässt sich die Detailansicht noch nicht öffnen.
+- Preise, Entfernungen und der Bereich **In der Nähe** stehen auf der [Startseite](../Startseite/index.md).
+- Wird dieselbe Tankstelle gleichzeitig (z. B. aus zwei Ansichten) derselben Gruppe zugeordnet, meldet die App „Die Tankstelle gehört der Gruppe bereits an.“

@@ -29,6 +29,7 @@ public class FavoritesViewModel : BaseViewModel
     private readonly IStationNavigator _stationNavigator;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<FavoritesViewModel> _logger;
+    private readonly SynchronizationContext? _context = SynchronizationContext.Current;
     private readonly HashSet<long> _collapsed = [];
     private IReadOnlyList<HomeGroupViewModel> _groups = [];
     private IReadOnlyList<FavoriteGroupOverview> _overview = [];
@@ -327,6 +328,7 @@ public class FavoritesViewModel : BaseViewModel
                 location = await GetLocationAsync(settings.GpsUsage, token).ConfigureAwait(true);
             }
 
+            token.ThrowIfCancellationRequested();
             _position = location?.Position;
 
             if (ids.Count > 0)
@@ -334,7 +336,13 @@ public class FavoritesViewModel : BaseViewModel
                 var result = await _priceService.RefreshStationsAsync(ids, force, token).ConfigureAwait(true);
                 token.ThrowIfCancellationRequested();
                 _lastRefresh = result;
-                _stations = result.Stations.ToDictionary(station => station.Id);
+                var merged = new Dictionary<string, StationInfo>(_stations);
+                foreach (var station in result.Stations)
+                {
+                    merged[station.Id] = station;
+                }
+
+                _stations = merged;
                 StatusMessage = NullIfEmpty(SearchTexts.GetFailureMessage(result.Failure, result.Stations.Count > 0));
             }
             else
@@ -342,6 +350,7 @@ public class FavoritesViewModel : BaseViewModel
                 _lastRefresh = null;
             }
 
+            token.ThrowIfCancellationRequested();
             Rebuild();
             await Nearby.LoadAsync(settings, location, token).ConfigureAwait(true);
         }
@@ -433,11 +442,34 @@ public class FavoritesViewModel : BaseViewModel
 
     private void OnConnectionChanged(object? sender, bool online)
     {
-        UpdateOfflineState();
+        RunOnUiThread(UpdateOfflineState);
     }
 
     private void OnConnectionRestored(object? sender, EventArgs e)
     {
+        RunOnUiThread(HandleConnectionRestored);
+    }
+
+    private void RunOnUiThread(Action action)
+    {
+        // Das Ereignis kommt vom Threadpool; die Reaktion läuft im Kontext, in dem das ViewModel erzeugt wurde (UI-Thread der App).
+        if (_context is null || SynchronizationContext.Current == _context)
+        {
+            action();
+        }
+        else
+        {
+            _context.Post(_ => action(), null);
+        }
+    }
+
+    private void HandleConnectionRestored()
+    {
+        if (!_subscribed)
+        {
+            return;
+        }
+
         // Nach Wiederverbindung wird nur aktualisiert, wenn zuletzt kein Abruf möglich war oder Preise veraltet sind (ab 60 Minuten).
         UpdateOfflineState();
         var needsRefresh = _lastRefresh?.Source == PriceDataSource.OfflineFallback

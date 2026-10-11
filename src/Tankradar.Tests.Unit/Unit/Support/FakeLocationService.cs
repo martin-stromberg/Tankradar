@@ -25,10 +25,16 @@ public sealed class FakeLocationService : ILocationService
     /// </summary>
     public Task? Gate { get; set; }
 
+    /// <summary>
+    /// Wenn gesetzt, wird sie bei jedem Aufruf ausgeführt, bevor das Ergebnis geliefert wird (z. B. um das Verlassen der Seite während der Ortung nachzustellen).
+    /// </summary>
+    public Action? OnCall { get; set; }
+
     /// <inheritdoc />
     public async Task<LocationResult> GetCurrentLocationAsync(GpsUsage gpsUsage, CancellationToken cancellationToken = default)
     {
         Calls.Add(gpsUsage);
+        OnCall?.Invoke();
         if (Gate is not null)
         {
             await Gate.WaitAsync(cancellationToken).ConfigureAwait(false);

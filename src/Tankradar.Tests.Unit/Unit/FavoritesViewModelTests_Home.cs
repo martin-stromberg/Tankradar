@@ -11,17 +11,6 @@ namespace Tankradar.Tests.Unit.Unit;
 /// </summary>
 public class FavoritesViewModelTests_Home : FavoritesViewModelTestBase
 {
-    private static async Task WaitUntilAsync(Func<bool> condition)
-    {
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (!condition() && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(10);
-        }
-
-        Assert.True(condition());
-    }
-
     /// <summary>
     /// Prüft, dass zuerst der lokale Stand erscheint und danach der Abruf die Preise aktualisiert und Entfernungen ergänzt.
     /// </summary>
@@ -170,7 +159,7 @@ public class FavoritesViewModelTests_Home : FavoritesViewModelTestBase
         Prices.RefreshGate = gate.Task;
         var viewModel = CreateViewModel();
         viewModel.OnAppearing();
-        await WaitUntilAsync(() => Prices.RefreshRequests.Count == 1);
+        await Prices.RefreshEntered.Task.WaitAsync(TimeSpan.FromSeconds(30));
 
         viewModel.OnDisappearing();
         await viewModel.LastTask;

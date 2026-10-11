@@ -96,7 +96,7 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteGroups.Remove(group);
-        return await SaveAsync(context, FavoriteResult.DuplicateName, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -159,7 +159,7 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteEntries.RemoveRange(entries);
-        return await SaveAsync(context, FavoriteResult.DuplicateName, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -200,7 +200,7 @@ public sealed class FavoritesService : IFavoritesService
 
         entry.Note = trimmedNote;
         entry.Priority = priority.ToString();
-        return await SaveAsync(context, FavoriteResult.DuplicateName, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task<IReadOnlyList<FavoriteEntry>> LoadEntriesAsync(
@@ -296,16 +296,16 @@ public sealed class FavoritesService : IFavoritesService
             .ToList();
     }
 
-    private async Task<FavoriteResult> SaveAsync(TankradarDbContext context, FavoriteResult duplicateResult, CancellationToken cancellationToken)
+    private async Task<FavoriteResult> SaveAsync(TankradarDbContext context, FavoriteResult? duplicateResult, CancellationToken cancellationToken)
     {
         try
         {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed })
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed } && duplicateResult is not null)
         {
             // Gleichzeitiges Anlegen desselben Namens oder derselben Zuordnung aus einer anderen Ansicht; der Aufrufer bestimmt das Ergebnis. Andere Fehler (gesperrte Datenbank, voller Datenträger) werden weitergereicht und als Speicherfehler gemeldet.
-            return duplicateResult;
+            return duplicateResult.Value;
         }
 
         Changed?.Invoke(this, EventArgs.Empty);

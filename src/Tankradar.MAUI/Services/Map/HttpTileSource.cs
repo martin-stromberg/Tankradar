@@ -235,7 +235,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             _logger.LogDebug("Der Abruf einer Kachel hat das Zeitlimit überschritten.");
             return DownloadOutcome.Failed;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException or IOException)
         {
             _logger.LogDebug("Eine Kachel konnte nicht abgerufen werden ({ExceptionType}).", ex.GetType().Name);
             return DownloadOutcome.Failed;
@@ -431,7 +431,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             }
 
             var directory = new DirectoryInfo(root);
-            foreach (var leftover in directory.EnumerateFiles("*.tmp", SearchOption.AllDirectories).Where(file => file.LastWriteTimeUtc < DateTime.UtcNow.AddHours(-1)))
+            foreach (var leftover in directory.EnumerateFiles("*.tmp", SearchOption.AllDirectories).Where(file => file.LastWriteTimeUtc < _timeProvider.GetUtcNow().UtcDateTime.AddHours(-1)))
             {
                 leftover.Delete();
             }

@@ -10,7 +10,14 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Entwicklungsschritt 10 umgesetzt: Favoritengruppen (Zuordnung von Tankstellen in der Detailansicht, Mehrfachzuordnung, Gruppen anlegen/umbenennen/beschreiben/nach Rückfrage löschen, Notiz und Priorität je Tankstelle, lokal und offline; Details unter [`docs/help/Favoriten/`](docs/help/Favoriten/index.md), [ADR 0006](docs/adr/0006-favorite-groups.md)) sowie Kachel-Cache nach HTTP-Caching-Angaben (Cache im Cache-Verzeichnis, Kennung mit App-Version, Quellenlink, Mausbedienung der Karte unter Windows). Zuvor Schritt 8: Tankstellen-Detailansicht aus der Ergebnisliste (Adresse, Entfernung, Preise mit Alter,
+Entwicklungsschritt 11 umgesetzt: Startseite (Bereich „Favoriten“) mit allen Favoritengruppen und ihren Tankstellen
+(Name, Entfernung nur bei erlaubter Standortnutzung, Preise der gewählten Sorten mit Alter „vor X Min.“ und Amber ab
+60 Minuten, Hinweise „Preis unbestätigt“/„Automatentankstelle“), Preisabruf nach Kennungen beim Öffnen und auf Wunsch,
+Offline-Stand mit Hinweis und automatischer Aktualisierung nach Wiederverbindung, optionalem Bereich „In der Nähe“
+(Schalter in den Optionen, Standard aus; Standort nur im Arbeitsspeicher) sowie Öffnen der Detailansicht aus Startseite und
+Gruppenansicht; Details unter [`docs/help/Startseite/`](docs/help/Startseite/index.md), [ADR 0007](docs/adr/0007-home-page-design-deviations.md),
+[ADR 0006](docs/adr/0006-favorite-groups.md). Außerdem: Kachel-Cache berücksichtigt `Age` und die Lebensdauer bei `304`,
+gleichzeitiges Zuordnen meldet „bereits zugeordnet“. Zuvor Schritt 10: Favoritengruppen (Zuordnung von Tankstellen in der Detailansicht, Mehrfachzuordnung, Gruppen anlegen/umbenennen/beschreiben/nach Rückfrage löschen, Notiz und Priorität je Tankstelle, lokal und offline; Details unter [`docs/help/Favoriten/`](docs/help/Favoriten/index.md), [ADR 0006](docs/adr/0006-favorite-groups.md)) sowie Kachel-Cache nach HTTP-Caching-Angaben (Cache im Cache-Verzeichnis, Kennung mit App-Version, Quellenlink, Mausbedienung der Karte unter Windows). Zuvor Schritt 8: Tankstellen-Detailansicht aus der Ergebnisliste (Adresse, Entfernung, Preise mit Alter,
 Hinweise, Öffnungszeiten mit Stand und Altersgrenze von 24 Stunden, Offline-Betrieb mit automatischer Aktualisierung nach
 Wiederverbindung; Details unter [`docs/help/Tankstellendetails/`](docs/help/Tankstellendetails/index.md)). Zuvor Schritt 7:
 Suche nach Adresse, Ort oder PLZ. Schritt 6: Umkreissuche am aktuellen Standort (Radius als Chip-Auswahl 1/2/5/10/15/25 km, Standard 5 km)

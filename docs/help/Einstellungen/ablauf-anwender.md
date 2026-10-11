@@ -10,7 +10,7 @@ Tankatlas ist installiert und gestartet.
 
 ### 1. Optionen öffnen
 
-Tippen Sie in der unteren Menüleiste auf **Optionen** (Zahnrad-Symbol). Die Seite zeigt die Gruppen **Spritsorten**, **Standort und GPS**, **Standardansicht der Suchergebnisse** und **Standardsortierung**.
+Tippen Sie in der unteren Menüleiste auf **Optionen** (Zahnrad-Symbol). Die Seite zeigt die Gruppen **Spritsorten**, **Standort und GPS**, **In der Nähe**, **Standardansicht der Suchergebnisse** und **Standardsortierung**.
 
 ### 2. Spritsorten auswählen und ordnen
 
@@ -22,11 +22,15 @@ Tippen Sie in der unteren Menüleiste auf **Optionen** (Zahnrad-Symbol). Die Sei
 
 Wählen Sie unter **Standort und GPS** eine der Optionen **Immer**, **Nur bei Nutzung** oder **Nie**.
 
-### 4. Ansicht und Sortierung wählen
+### 4. „In der Nähe“ ein- oder ausschalten
+
+Mit dem Schalter bei **In der Nähe** zeigt die Startseite zusätzlich Tankstellen im Umkreis von 5 km. Bei der Standortnutzung **Nie** erscheint der Hinweis, dass der Schalter dann keine Wirkung hat.
+
+### 5. Ansicht und Sortierung wählen
 
 Wählen Sie unter **Standardansicht der Suchergebnisse** zwischen **Liste** und **Karte** und unter **Standardsortierung** zwischen **Preis**, **Entfernung** und **Name**.
 
-### 5. Einstellungen behalten
+### 6. Einstellungen behalten
 
 Es gibt keine Schaltfläche „Speichern“: Jede Änderung wird sofort gespeichert. Nach dem Schließen und erneuten Öffnen von Tankatlas finden Sie alle Einstellungen unverändert vor.
 

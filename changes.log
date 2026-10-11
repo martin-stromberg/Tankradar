@@ -1,3 +1,13 @@
+## 2026-10-11 — Startseite mit Favoritengruppen und Bereich „In der Nähe“ (Tankradar Schritt 11, Version 0.1.15)
+
+- Die Startseite („Favoriten“) zeigt alle Favoritengruppen (einklappbar) mit ihren Tankstellen: Name, Entfernung (nur wenn die Standortnutzung es erlaubt), Preise der in den Optionen gewählten Sorten in deren Reihenfolge mit Alter „vor X Min.“ (ab 60 Minuten amber) sowie Hinweisen „Preis unbestätigt“ und „Automatentankstelle“; Antippen öffnet die Detailansicht; ohne Gruppen erscheint ein Hinweis zum Anlegen von Favoriten
+- Preise werden beim Öffnen (nach Kennungen, höchstens 10 je Anfrage) und auf Wunsch aktualisiert; ohne Verbindung erscheinen die zuletzt bekannten Preise mit Alter und Offline-Hinweis in der Kopfzeile; nach Wiederverbindung werden veraltete Preise automatisch aktualisiert und der Hinweis entfällt
+- Neuer, in den Optionen aktivierbarer Bereich „In der Nähe“ (nur bei erlaubter Standortnutzung, 5 km, höchstens 10 Tankstellen, filterbar nach Spritsorte, nur Information); der Standort wird nur im Speicher gehalten und nie gespeichert oder protokolliert
+- Aus der Gruppenansicht öffnet ein Eintrag die Detailansicht der Tankstelle
+- Kachel-Cache berücksichtigt den HTTP-Header `Age`; eine `304`-Antwort ohne eigene Caching-Angaben übernimmt die zuvor gültige Lebensdauer
+- Gleichzeitiges Zuordnen derselben Tankstelle zur selben Gruppe meldet „bereits zugeordnet“ statt „doppelter Name“
+- Datenbankmigration `AddNearbySetting`; Dokumentation: `docs/help/Startseite/`, ADR 0006 aktualisiert, `docs/adr/0007-home-page-design-deviations.md`
+
 ## 2026-10-05 — Suchseite nach Designentwurf, Ergebnisliste in Seiten, realistischer Mock (Tankradar Schritt 6, Nachbesserung Runde 1, Version 0.1.8)
 
 - Suchseite an den Designentwurf angeglichen: Radius (2/5/10/15/25 km, Standard 5), Spritsorte und Sortierung als Chips; Ergebniskarten mit 16 px Rundung, Schatten, hervorgehobenem Preis und Adresszeile; die Radiusprüfung vor dem Abruf bleibt; Abweichungen in `docs/adr/0002-search-page-design-deviations.md`
