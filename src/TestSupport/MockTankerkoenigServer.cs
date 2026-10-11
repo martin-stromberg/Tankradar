@@ -7,7 +7,7 @@ namespace Tankradar.TestSupport;
 
 /// <summary>
 /// Lokaler Mock der Tankerkönig-API auf einer Loopback-Adresse (ausschließlich für Tests; kein produktiver Endpunkt).
-/// Beantwortet <c>list.php</c> und <c>detail.php</c> mit festen Testdaten und lässt sich zu Fehlerantworten und Verzögerungen anweisen.
+/// Beantwortet <c>list.php</c>, <c>detail.php</c> und <c>prices.php</c> mit festen Testdaten und lässt sich zu Fehlerantworten und Verzögerungen anweisen.
 /// </summary>
 public sealed class MockTankerkoenigServer : IDisposable
 {
@@ -60,6 +60,9 @@ public sealed class MockTankerkoenigServer : IDisposable
     private readonly Task _loop;
     private int _listRequests;
     private int _detailRequests;
+    private int _pricesRequests;
+    private readonly Dictionary<string, (decimal? E5, decimal? E10, decimal? Diesel)> _priceOverrides = [];
+    private string? _lastPricesIds;
     private int _disposed;
     private volatile string? _lastRequest;
     private int? _lastListRadius;
@@ -105,7 +108,26 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// <summary>
     /// Gesamtzahl der empfangenen Anfragen.
     /// </summary>
-    public int TotalRequests => ListRequests + DetailRequests;
+    public int TotalRequests => ListRequests + DetailRequests + PricesRequests;
+
+    /// <summary>
+    /// Anzahl der empfangenen Preisanfragen nach Kennungen (<c>prices.php</c>).
+    /// </summary>
+    public int PricesRequests => _pricesRequests;
+
+    /// <summary>
+    /// Der unveränderte <c>ids</c>-Parameter der zuletzt empfangenen Preisanfrage; <see langword="null"/>, wenn keine empfangen wurde.
+    /// </summary>
+    public string? LastPricesIds
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _lastPricesIds;
+            }
+        }
+    }
 
     /// <summary>
     /// Die zuletzt empfangene Anfrageadresse (Pfad und Query).
@@ -175,6 +197,21 @@ public sealed class MockTankerkoenigServer : IDisposable
                 var e5 = 1.700m + ((i * 7 % 90) / 1000m);
                 _generated.Add(new MockStation(id, $"Station {i + 1:D3}", "GEN", "Generierte Straße", (i % 50 + 1).ToString(CultureInfo.InvariantCulture), "10115", "Berlin", 52.5000 + offset, 13.3900 + offsetLng, e5, e5 - 0.060m, e5 - 0.160m, false, "Mo-Fr", "06:00:00", "22:00:00"));
             }
+        }
+    }
+
+    /// <summary>
+    /// Legt die Preise fest, die <c>prices.php</c> für eine Tankstelle liefert (überschreibt nur diesen Endpunkt; <see langword="null"/> ergibt <c>false</c>).
+    /// </summary>
+    /// <param name="stationId">Die Kennung der Tankstelle.</param>
+    /// <param name="e5">Preis Super E5.</param>
+    /// <param name="e10">Preis Super E10.</param>
+    /// <param name="diesel">Preis Diesel.</param>
+    public void SetPrices(string stationId, decimal? e5, decimal? e10, decimal? diesel)
+    {
+        lock (_gate)
+        {
+            _priceOverrides[stationId] = (e5, e10, diesel);
         }
     }
 
@@ -325,6 +362,51 @@ public sealed class MockTankerkoenigServer : IDisposable
         return "{\"ok\":true,\"license\":\"CC BY 4.0 - https://creativecommons.tankerkoenig.de\",\"data\":\"MTS-K\",\"status\":\"ok\",\"stations\":[" + string.Join(",", inRadius) + "]}";
     }
 
+    private (decimal? E5, decimal? E10, decimal? Diesel)? KnownPrices(string id)
+    {
+        lock (_gate)
+        {
+            if (_priceOverrides.TryGetValue(id, out var overridden))
+            {
+                return overridden;
+            }
+        }
+
+        return id switch
+        {
+            StationAlpha => (1.859m, 1.799m, 1.699m),
+            StationBeta => (1.879m, 1.819m, null),
+            _ => GenericStations.Concat(GeneratedSnapshot()).FirstOrDefault(station => station.Id == id) is { } generic
+                ? (generic.E5, generic.E10, generic.Diesel)
+                : null,
+        };
+    }
+
+    private string PricesBody(HttpListenerContext context)
+    {
+        var raw = context.Request.QueryString["ids"];
+        lock (_gate)
+        {
+            _lastPricesIds = raw;
+        }
+
+        var ids = (raw ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (ids.Length == 0)
+        {
+            return "{\"ok\":false,\"message\":\"ids fehlt\"}";
+        }
+
+        if (ids.Length > 10)
+        {
+            return "{\"ok\":false,\"message\":\"maximal 10 ids erlaubt\"}";
+        }
+
+        var entries = ids.Select(id => KnownPrices(id) is { } known
+            ? "\"" + id + "\":{\"status\":\"open\",\"e5\":" + PriceOrFalse(known.E5) + ",\"e10\":" + PriceOrFalse(known.E10) + ",\"diesel\":" + PriceOrFalse(known.Diesel) + "}"
+            : "\"" + id + "\":{\"status\":\"no prices\"}");
+        return "{\"ok\":true,\"license\":\"CC BY 4.0 - https://creativecommons.tankerkoenig.de\",\"data\":\"MTS-K\",\"prices\":{" + string.Join(",", entries) + "}}";
+    }
+
     private async Task RunAsync()
     {
         while (!_stop.IsCancellationRequested)
@@ -359,9 +441,14 @@ public sealed class MockTankerkoenigServer : IDisposable
         LastRequest = context.Request.Url?.PathAndQuery;
         var isList = path.EndsWith("/list.php", StringComparison.Ordinal);
         var isDetail = path.EndsWith("/detail.php", StringComparison.Ordinal);
+        var isPrices = path.EndsWith("/prices.php", StringComparison.Ordinal);
         if (isList)
         {
             Interlocked.Increment(ref _listRequests);
+        }
+        else if (isPrices)
+        {
+            Interlocked.Increment(ref _pricesRequests);
         }
         else if (isDetail)
         {
@@ -396,6 +483,10 @@ public sealed class MockTankerkoenigServer : IDisposable
         else if (isList)
         {
             body = ListBody(context);
+        }
+        else if (isPrices)
+        {
+            body = PricesBody(context);
         }
         else if (isDetail)
         {

@@ -44,7 +44,8 @@ public class SettingsService : ISettingsService
             MapFuelTypes(fuelRows, defaults.FuelTypes),
             ParseOrDefault(user?.GpsUsage, defaults.GpsUsage),
             ParseOrDefault(user?.ResultView, defaults.ResultView),
-            ParseOrDefault(user?.ResultSortOrder, defaults.ResultSortOrder));
+            ParseOrDefault(user?.ResultSortOrder, defaults.ResultSortOrder),
+            user?.ShowNearby ?? false);
     }
 
     /// <inheritdoc />

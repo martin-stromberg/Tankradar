@@ -109,4 +109,11 @@ public interface IFavoritesService
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Das Ergebnis.</returns>
     Task<FavoriteResult> UpdateEntryAsync(long groupId, string stationId, string? note, FavoritePriority priority, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Liefert alle Gruppen (nach Namen geordnet) samt ihren Einträgen (nach Priorität, dann Namen) in einem Datenbankzugriff.
+    /// </summary>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die Gruppen mit ihren Einträgen; eine Gruppe ohne Tankstellen hat eine leere Liste.</returns>
+    Task<IReadOnlyList<FavoriteGroupOverview>> GetOverviewAsync(CancellationToken cancellationToken = default);
 }

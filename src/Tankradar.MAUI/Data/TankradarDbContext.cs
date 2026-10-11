@@ -72,6 +72,7 @@ public class TankradarDbContext : DbContext
             entity.Property(e => e.GpsUsage).IsRequired();
             entity.Property(e => e.ResultView).IsRequired();
             entity.Property(e => e.ResultSortOrder).IsRequired();
+            entity.Property(e => e.ShowNearby).HasDefaultValue(false);
         });
 
         modelBuilder.Entity<FuelTypeSettingEntity>(entity =>

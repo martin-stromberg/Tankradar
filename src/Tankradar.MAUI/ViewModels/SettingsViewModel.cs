@@ -17,6 +17,8 @@ public class SettingsViewModel : BaseViewModel
     private bool _isLoading;
     private string? _statusMessage;
     private bool _isLoaded;
+    private bool _showNearby;
+    private bool _showNearbyGpsHint;
 
     /// <summary>
     /// Erstellt ein neues <see cref="SettingsViewModel"/> mit dem Seitentitel „Optionen“.
@@ -102,6 +104,47 @@ public class SettingsViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Gibt an, ob der Bereich „In der Nähe“ auf der Startseite angezeigt wird; eine Änderung durch den Anwender wird sofort gespeichert.
+    /// </summary>
+    public bool ShowNearby
+    {
+        get => _showNearby;
+        set
+        {
+            if (!SetProperty(ref _showNearby, value) || _isLoading)
+            {
+                return;
+            }
+
+            LastSaveTask = SaveAsync();
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob der Hinweis angezeigt wird, dass „In der Nähe“ bei der Standortnutzung „Nie“ nicht wirkt.
+    /// </summary>
+    public bool ShowNearbyGpsHint
+    {
+        get => _showNearbyGpsHint;
+        private set => SetProperty(ref _showNearbyGpsHint, value);
+    }
+
+    /// <summary>
+    /// Überschrift der Karte „In der Nähe“.
+    /// </summary>
+    public string NearbyHeading => SettingsTexts.NearbyHeading;
+
+    /// <summary>
+    /// Beschreibung des Schalters „In der Nähe“.
+    /// </summary>
+    public string NearbyHint => SettingsTexts.NearbyHint;
+
+    /// <summary>
+    /// Hinweis, dass „In der Nähe“ bei der Standortnutzung „Nie“ nicht wirkt.
+    /// </summary>
+    public string NearbyGpsHint => SettingsTexts.NearbyGpsHint;
+
+    /// <summary>
     /// Der zuletzt gestartete Speichervorgang (für Tests und Abwarten).
     /// </summary>
     public Task LastSaveTask { get; private set; }
@@ -163,6 +206,8 @@ public class SettingsViewModel : BaseViewModel
                 ApplySelection(GpsOptions, settings.GpsUsage);
                 ApplySelection(ViewOptions, settings.ResultView);
                 ApplySelection(SortOptions, settings.ResultSortOrder);
+                ShowNearby = settings.ShowNearby;
+                UpdateNearbyGpsHint();
             }
             finally
             {
@@ -238,7 +283,13 @@ public class SettingsViewModel : BaseViewModel
             option.SetSelectedSilently(false);
         }
 
+        UpdateNearbyGpsHint();
         LastSaveTask = SaveAsync();
+    }
+
+    private void UpdateNearbyGpsHint()
+    {
+        ShowNearbyGpsHint = GpsOptions.Any(option => option.IsSelected && option.Value == GpsUsage.Never);
     }
 
     private void OnFuelTypeSelectionChanged(FuelTypeItemViewModel item)
@@ -290,7 +341,8 @@ public class SettingsViewModel : BaseViewModel
                 FuelTypes.Select(item => new FuelTypeSelection(item.FuelType, item.IsSelected)).ToList(),
                 GpsOptions.First(option => option.IsSelected).Value,
                 ViewOptions.First(option => option.IsSelected).Value,
-                SortOptions.First(option => option.IsSelected).Value);
+                SortOptions.First(option => option.IsSelected).Value,
+                ShowNearby);
 
             await _settingsService.SaveAsync(settings).ConfigureAwait(true);
             StatusMessage = null;

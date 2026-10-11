@@ -33,6 +33,11 @@ public class UserSettingsEntity
     public string ResultSortOrder { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gibt an, ob der Bereich „In der Nähe“ auf der Startseite angezeigt wird.
+    /// </summary>
+    public bool ShowNearby { get; set; }
+
+    /// <summary>
     /// Übernimmt die skalaren Einstellungen aus <paramref name="settings"/> in diese Zeile.
     /// </summary>
     /// <param name="settings">Die zu speichernden Einstellungen.</param>
@@ -41,5 +46,6 @@ public class UserSettingsEntity
         GpsUsage = settings.GpsUsage.ToString();
         ResultView = settings.ResultView.ToString();
         ResultSortOrder = settings.ResultSortOrder.ToString();
+        ShowNearby = settings.ShowNearby;
     }
 }

@@ -30,6 +30,16 @@ public interface ITankerkoenigClient
     /// <returns>Die Tankstelle mit Öffnungszeiten und Preisen.</returns>
     /// <exception cref="PriceApiException">Der Abruf ist fehlgeschlagen.</exception>
     Task<StationInfo> GetDetailAsync(string stationId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Ruft die aktuellen Preise mehrerer Tankstellen nach Kennungen ab.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen (UUID), 1 bis <see cref="TankerkoenigClient.MaxPriceIds"/> Stück.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Je Kennung die Preiszeilen; Kennungen ohne Preise liefern eine leere Liste.</returns>
+    /// <exception cref="ArgumentException">Eine Kennung ist keine UUID oder die Anzahl ist unzulässig.</exception>
+    /// <exception cref="PriceApiException">Der Abruf ist fehlgeschlagen.</exception>
+    Task<IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>>> GetPricesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -37,6 +47,11 @@ public interface ITankerkoenigClient
 /// </summary>
 public sealed class TankerkoenigClient : ITankerkoenigClient
 {
+    /// <summary>
+    /// Höchstzahl der Kennungen je Preisanfrage.
+    /// </summary>
+    public const int MaxPriceIds = 10;
+
     private const string CredentialParameter = "apikey";
 
     private readonly HttpClient _httpClient;
@@ -125,6 +140,54 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
         }
 
         return parsed;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>>> GetPricesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(stationIds);
+        if (stationIds.Count is < 1 or > MaxPriceIds)
+        {
+            throw new ArgumentException($"Es sind 1 bis {MaxPriceIds} Tankstellenkennungen je Anfrage zulässig.", nameof(stationIds));
+        }
+
+        var ids = new List<string>(stationIds.Count);
+        foreach (var stationId in stationIds)
+        {
+            if (!Guid.TryParse(stationId, out var id))
+            {
+                throw new ArgumentException("Die Tankstellenkennung muss eine UUID sein.", nameof(stationIds));
+            }
+
+            ids.Add(id.ToString("D"));
+        }
+
+        var body = await GetAsync($"prices.php?ids={string.Join(',', ids)}", "prices", cancellationToken).ConfigureAwait(false);
+        var retrievedUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        using var document = ParseDocument(body);
+        EnsureOk(document.RootElement);
+
+        if (!document.RootElement.TryGetProperty("prices", out var prices) || prices.ValueKind != JsonValueKind.Object)
+        {
+            throw new PriceApiException(PriceFailure.InvalidResponse, "Die Antwort enthält keine Preise.");
+        }
+
+        var result = new Dictionary<string, IReadOnlyList<FuelPrice>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in prices.EnumerateObject())
+        {
+            var lines = new List<FuelPrice>();
+            if (property.Value.ValueKind == JsonValueKind.Object
+                && (GetString(property.Value, "status") is not { } status || string.Equals(status, "open", StringComparison.OrdinalIgnoreCase) || string.Equals(status, "closed", StringComparison.OrdinalIgnoreCase)))
+            {
+                AddPrice(lines, property.Value, "e5", FuelType.SuperE5, retrievedUtc);
+                AddPrice(lines, property.Value, "e10", FuelType.SuperE10, retrievedUtc);
+                AddPrice(lines, property.Value, "diesel", FuelType.Diesel, retrievedUtc);
+            }
+
+            result[property.Name] = lines;
+        }
+
+        return result;
     }
 
     private async Task<string> GetAsync(string relativeQuery, string endpointName, CancellationToken cancellationToken)

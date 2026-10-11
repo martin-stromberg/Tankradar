@@ -4,6 +4,7 @@
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:controls="clr-namespace:Tankradar.MAUI.Views.Controls"
              x:DataType="vm:FavoritesViewModel"
              x:Class="Tankradar.MAUI.Views.FavoritesPage"
              Title="Favoriten"
@@ -38,6 +39,18 @@
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
         </Style>
+        <Style x:Key="HomeChipButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#334155, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
     </views:TankradarContentPage.Resources>
 
     <ScrollView>
@@ -46,6 +59,26 @@
                    Style="{StaticResource headline-lg}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                    AutomationId="FavoritesPage.Headline" />
+
+            <!-- Offline-Hinweis in der Kopfzeile (einheitlich mit Karte und Detailansicht) -->
+            <Border Padding="{StaticResource space-md}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 12"
+                    BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                    IsVisible="{Binding IsOffline}">
+                <Label Text="{Binding OfflineMessage}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{StaticResource ColorTextPrimaryLight}"
+                       AutomationId="Favorites.OfflineBanner" />
+            </Border>
+
+            <Button Text="{Binding RefreshText}"
+                    Command="{Binding RefreshCommand}"
+                    IsEnabled="{Binding CanRefresh}"
+                    HorizontalOptions="Start"
+                    Style="{StaticResource FavoritesOutlineButton}"
+                    SemanticProperties.Hint="{x:Static texts:FavoritesTexts.RefreshPrices}"
+                    AutomationId="Favorites.Refresh" />
 
             <Label Text="{Binding StatusMessage}"
                    IsVisible="{Binding HasStatusMessage}"
@@ -59,26 +92,61 @@
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                    AutomationId="Favorites.Empty" />
 
+            <!-- Favoritengruppen: einklappbar, Standard aufgeklappt -->
             <VerticalStackLayout BindableLayout.ItemsSource="{Binding Groups}"
                                  IsVisible="{Binding HasGroups}"
                                  Spacing="{StaticResource space-sm}">
                 <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="vm:FavoriteGroupItemViewModel">
-                        <Border Style="{StaticResource GroupCard}">
-                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                                <Label Text="{Binding Name}"
-                                       Style="{StaticResource headline-md}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                       AutomationId="Favorites.Group.Name" />
-                                <Label Text="{Binding Description}"
-                                       IsVisible="{Binding HasDescription}"
+                    <DataTemplate x:DataType="vm:HomeGroupViewModel">
+                        <Border Style="{StaticResource GroupCard}" Padding="{StaticResource space-sm}">
+                            <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}" Padding="{StaticResource space-xs}">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
+                                        <Label Text="{Binding Name}"
+                                               Style="{StaticResource headline-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="Favorites.Group.Name" />
+                                        <Label Text="{Binding Description}"
+                                               IsVisible="{Binding HasDescription}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                               AutomationId="Favorites.Group.Description" />
+                                        <Label Text="{Binding CountText}"
+                                               Style="{StaticResource body-sm}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                               AutomationId="Favorites.Group.Count" />
+                                    </VerticalStackLayout>
+                                    <Button Grid.Column="1"
+                                            Text="{Binding ToggleGlyph}"
+                                            Command="{Binding ToggleCommand}"
+                                            WidthRequest="{StaticResource MinimumTouchTarget}"
+                                            HeightRequest="{StaticResource MinimumTouchTarget}"
+                                            Padding="0"
+                                            FontSize="16"
+                                            CornerRadius="22"
+                                            VerticalOptions="Start"
+                                            BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorBackgroundDark}}"
+                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                            SemanticProperties.Description="{x:Static texts:FavoritesTexts.ToggleGroup}"
+                                            AutomationId="Favorites.Group.Toggle" />
+                                </Grid>
+
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Stations}"
+                                                     IsVisible="{Binding ShowStations}"
+                                                     Spacing="{StaticResource space-sm}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:HomeStationViewModel">
+                                            <controls:StationTile />
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+
+                                <Label Text="{Binding EmptyNoteText}"
+                                       IsVisible="{Binding ShowEmptyNote}"
                                        Style="{StaticResource body-md}"
                                        TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                       AutomationId="Favorites.Group.Description" />
-                                <Label Text="{Binding CountText}"
-                                       Style="{StaticResource body-sm}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
-                                       AutomationId="Favorites.Group.Count" />
+                                       AutomationId="Favorites.Group.Empty" />
+
                                 <Button Text="{x:Static texts:FavoritesTexts.OpenGroup}"
                                         Command="{Binding OpenCommand}"
                                         Style="{StaticResource FavoritesOutlineButton}"
@@ -90,6 +158,71 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
+
+            <!-- Bereich „In der Nähe“: nur bei eingeschalteter Einstellung und erlaubter Standortnutzung -->
+            <Border Style="{StaticResource GroupCard}"
+                    Padding="{StaticResource space-sm}"
+                    BindingContext="{Binding Nearby}"
+                    x:DataType="vm:NearbySectionViewModel"
+                    IsVisible="{Binding IsVisible}"
+                    SemanticProperties.Description="{Binding Heading}"
+                    AutomationId="Nearby.Section">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <VerticalStackLayout Spacing="{StaticResource space-xs}" Padding="{StaticResource space-xs}">
+                        <Label Text="{Binding Heading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               SemanticProperties.HeadingLevel="Level2"
+                               AutomationId="Nearby.Heading" />
+                        <Label Text="{Binding Description}"
+                               Style="{StaticResource body-sm}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    </VerticalStackLayout>
+
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding FilterOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource HomeChipButton}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='Nearby.Filter.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{StaticResource ColorErrorRed}"
+                           AutomationId="Nearby.Status" />
+
+                    <Label Text="{Binding EmptyHintText}"
+                           IsVisible="{Binding ShowEmptyHint}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Nearby.Empty" />
+
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Entries}"
+                                         IsVisible="{Binding HasEntries}"
+                                         Spacing="{StaticResource space-sm}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:HomeStationViewModel">
+                                <controls:StationTile />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
 
             <Button Text="{x:Static texts:FavoritesTexts.NewGroup}"
                     Command="{Binding ShowCreateCommand}"

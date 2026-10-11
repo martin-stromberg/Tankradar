@@ -29,6 +29,24 @@ public interface IFuelPriceService
     Task<StationDetailResult> GetStationDetailAsync(string stationId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Aktualisiert die Preise mehrerer Tankstellen nach Kennungen (höchstens 10 je Anfrage). Fehler führen zum Rückfall auf die zuletzt bekannten Preise, nicht zu einer Ausnahme.
+    /// Tankstellen, die innerhalb der Cache-Lebensdauer erfolgreich aktualisiert wurden, werden ohne <paramref name="force"/> nicht erneut abgerufen.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen (UUID); ungültige und doppelte Kennungen werden ausgelassen.</param>
+    /// <param name="force">Ruft unabhängig von der Frische ab.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die lokal bekannten Tankstellen mit den zuletzt bekannten Preisen und Herkunftsangabe.</returns>
+    Task<StationRefreshResult> RefreshStationsAsync(IReadOnlyCollection<string> stationIds, bool force, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Liefert die lokal bekannten Tankstellen zu den Kennungen mit den zuletzt bekannten Preisen, ohne Abruf.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen (UUID); ungültige und doppelte Kennungen werden ausgelassen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die bekannten Tankstellen in der Reihenfolge der Kennungen.</returns>
+    Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Prüft auf Veranlassung des Anwenders, ob der Preisdienst erreichbar ist und den Schlüssel akzeptiert.
     /// </summary>
     /// <param name="cancellationToken">Abbruchsignal.</param>
@@ -43,6 +61,7 @@ public sealed class FuelPriceService : IFuelPriceService
 {
     private const double ProbeLatitude = 52.5200;
     private const double ProbeLongitude = 13.4050;
+    private const int MaxRefreshIds = 100;
 
     private readonly ITankerkoenigClient _client;
     private readonly IPriceRepository _repository;
@@ -51,6 +70,7 @@ public sealed class FuelPriceService : IFuelPriceService
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<FuelPriceService> _logger;
     private readonly ConcurrentDictionary<string, DateTime> _searchCache = new();
+    private readonly ConcurrentDictionary<string, DateTime> _refreshed = new();
 
     /// <summary>
     /// Erstellt den Dienst.
@@ -149,6 +169,73 @@ public sealed class FuelPriceService : IFuelPriceService
     }
 
     /// <inheritdoc />
+    public async Task<StationRefreshResult> RefreshStationsAsync(IReadOnlyCollection<string> stationIds, bool force, CancellationToken cancellationToken = default)
+    {
+        var ids = NormalizeIds(stationIds);
+        if (ids.Count == 0)
+        {
+            return new StationRefreshResult([], PriceDataSource.Cache, PriceFailure.None);
+        }
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var due = force
+            ? ids
+            : ids.Where(id => !_refreshed.TryGetValue(id, out var at) || now - at >= _options.CacheLifetime).ToList();
+        if (due.Count == 0)
+        {
+            return new StationRefreshResult(await _repository.GetStationsAsync(ids, cancellationToken).ConfigureAwait(false), PriceDataSource.Cache, PriceFailure.None);
+        }
+
+        if (!_connection.IsOnline)
+        {
+            return new StationRefreshResult(await _repository.GetStationsAsync(ids, cancellationToken).ConfigureAwait(false), PriceDataSource.OfflineFallback, PriceFailure.Offline);
+        }
+
+        var fetched = new Dictionary<string, IReadOnlyList<FuelPrice>>(StringComparer.OrdinalIgnoreCase);
+        var failure = PriceFailure.None;
+        foreach (var chunk in due.Chunk(TankerkoenigClient.MaxPriceIds))
+        {
+            try
+            {
+                var prices = await _client.GetPricesAsync(chunk, cancellationToken).ConfigureAwait(false);
+                if (await TrySavePricesAsync(prices, cancellationToken).ConfigureAwait(false))
+                {
+                    var stamp = _timeProvider.GetUtcNow().UtcDateTime;
+                    foreach (var id in chunk)
+                    {
+                        _refreshed[id] = stamp;
+                    }
+                }
+
+                foreach (var entry in prices)
+                {
+                    fetched[entry.Key] = entry.Value;
+                }
+            }
+            catch (PriceApiException ex)
+            {
+                _logger.LogWarning("Preisabruf nach Kennungen nicht möglich ({Failure}); es werden die zuletzt bekannten Preise geliefert.", ex.Failure);
+                failure = ex.Failure;
+                break;
+            }
+        }
+
+        var local = await _repository.GetStationsAsync(ids, cancellationToken).ConfigureAwait(false);
+        var merged = local
+            .Select(station => fetched.TryGetValue(station.Id, out var lines) && lines.Count > 0 ? WithFetchedPrices(station, lines) : station)
+            .ToList();
+        var source = fetched.Count == 0 && failure != PriceFailure.None ? PriceDataSource.OfflineFallback : PriceDataSource.Live;
+        return new StationRefreshResult(merged, source, failure);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+    {
+        var ids = NormalizeIds(stationIds);
+        return ids.Count == 0 ? [] : await _repository.GetStationsAsync(ids, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<PriceFailure> CheckAvailabilityAsync(CancellationToken cancellationToken = default)
     {
         if (!_connection.IsOnline)
@@ -204,6 +291,38 @@ public sealed class FuelPriceService : IFuelPriceService
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Die frisch abgerufenen Daten sind gültig; ein Speicherfehler darf sie dem Aufrufer nicht vorenthalten.
+            _logger.LogError(ex, "Die abgerufenen Preise konnten nicht lokal gespeichert werden.");
+            return false;
+        }
+    }
+
+    private static List<string> NormalizeIds(IReadOnlyCollection<string> stationIds)
+    {
+        ArgumentNullException.ThrowIfNull(stationIds);
+        return stationIds
+            .Select(id => Guid.TryParse(id, out var parsed) ? parsed.ToString("D") : null)
+            .OfType<string>()
+            .Distinct()
+            .Take(MaxRefreshIds)
+            .ToList();
+    }
+
+    private static StationInfo WithFetchedPrices(StationInfo station, IReadOnlyList<FuelPrice> fetched)
+    {
+        var replaced = fetched.Select(p => p.FuelType).ToHashSet();
+        var merged = station.Prices.Where(p => !replaced.Contains(p.FuelType)).Concat(fetched).OrderBy(p => p.FuelType).ToList();
+        return station.With(merged);
+    }
+
+    private async Task<bool> TrySavePricesAsync(IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> prices, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _repository.SavePricesAsync(prices, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
             _logger.LogError(ex, "Die abgerufenen Preise konnten nicht lokal gespeichert werden.");
             return false;
         }

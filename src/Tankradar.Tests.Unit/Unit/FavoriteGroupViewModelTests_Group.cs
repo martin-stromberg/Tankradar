@@ -12,11 +12,12 @@ public class FavoriteGroupViewModelTests_Group : BaseTest
 {
     private readonly FavoritesFixture _fixture = new();
     private readonly FakeFavoriteGroupNavigator _navigator = new();
+    private readonly FakeStationNavigator _stationNavigator = new();
     private readonly RecordingLogger<FavoriteGroupViewModel> _logger = new();
 
     private FavoriteGroupViewModel CreateViewModel()
     {
-        return new FavoriteGroupViewModel(_fixture.Service, _navigator, _logger);
+        return new FavoriteGroupViewModel(_fixture.Service, _navigator, _stationNavigator, _logger);
     }
 
     private async Task<(FavoriteGroupViewModel ViewModel, long GroupId)> OpenGroupAsync()
@@ -272,5 +273,62 @@ public class FavoriteGroupViewModelTests_Group : BaseTest
 
         Assert.Equal("Die Favoriten konnten nicht geladen werden.", viewModel.StatusMessage);
         Assert.DoesNotContain("Arbeitsweg", _logger.AllText, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass das Öffnen eines Eintrags die Detailansicht der Tankstelle mit Kennung, Name und Adresse öffnet.
+    /// </summary>
+    [Fact]
+    public async Task OpenEntry_NavigatesToStationDetail()
+    {
+        var (viewModel, _) = await OpenGroupAsync();
+
+        viewModel.Entries[0].OpenCommand.Execute(null);
+        await viewModel.LastTask;
+
+        var opened = Assert.Single(_stationNavigator.Opened);
+        Assert.Equal(FavoritesFixture.StationA, opened.Id);
+        Assert.Equal("Alpha Tankstelle", opened.Name);
+        Assert.Equal("Hauptstraße 1, 10115 Berlin", opened.AddressText);
+        Assert.Empty(opened.PriceLines);
+        Assert.False(viewModel.HasStatusMessage);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Navigationsfehler als Meldung erscheint und danach erneut geöffnet werden kann.
+    /// </summary>
+    [Fact]
+    public async Task OpenEntry_NavigationFailure_ShowsMessage()
+    {
+        var (viewModel, _) = await OpenGroupAsync();
+        _stationNavigator.OpenException = new InvalidOperationException("kaputt");
+
+        viewModel.Entries[0].OpenCommand.Execute(null);
+        await viewModel.LastTask;
+        _stationNavigator.OpenException = null;
+        viewModel.Entries[0].OpenCommand.Execute(null);
+        await viewModel.LastTask;
+
+        Assert.Equal(Tankradar.MAUI.Resources.Texts.DetailTexts.NotAvailable, viewModel.StatusMessage);
+        Assert.Equal(2, _stationNavigator.Opened.Count);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein doppeltes Antippen während des Öffnens nur einmal öffnet.
+    /// </summary>
+    [Fact]
+    public async Task OpenEntry_DoubleTap_OpensOnce()
+    {
+        var (viewModel, _) = await OpenGroupAsync();
+
+        var gate = new TaskCompletionSource();
+        _stationNavigator.Gate = gate.Task;
+
+        viewModel.Entries[0].OpenCommand.Execute(null);
+        viewModel.Entries[0].OpenCommand.Execute(null);
+        gate.SetResult();
+        await viewModel.LastTask;
+
+        Assert.Single(_stationNavigator.Opened);
     }
 }

@@ -11,7 +11,7 @@ namespace Tankradar.MAUI.Services.Map;
 /// Ruft Kartenkacheln per HTTP ab und hält sie im Arbeitsspeicher und auf dem Gerät vor. Die Klasse hält die Nutzungsrichtlinie der OpenStreetMap-Kachelserver ein:
 /// identifizierende Kennung, höchstens zwei parallele Abrufe, keine Wiederholung nach Fehlern innerhalb des Wartefensters, keine Weiterleitungen und keine Vorabrufe.
 /// Die Gültigkeit einer Kachel richtet sich nach den HTTP-Caching-Angaben des Servers (<c>Cache-Control</c>, <c>Expires</c>); fehlen sie, gelten sieben Tage.
-/// Abgelaufene Kacheln werden bedingt (<c>If-None-Match</c> bzw. <c>If-Modified-Since</c>) neu angefragt; ein <c>304</c> verlängert die Gültigkeit ohne erneute Übertragung.
+/// Abgelaufene Kacheln werden bedingt (<c>If-None-Match</c> bzw. <c>If-Modified-Since</c>) neu angefragt; ein <c>304</c> verlängert die Gültigkeit ohne erneute Übertragung (nennt er keine Caching-Angaben, um die gespeicherte Lebensdauer). Die Angabe <c>Age</c> kürzt die Gültigkeit.
 /// Koordinaten oder Kachelnummern werden nie protokolliert.
 /// </summary>
 public sealed class HttpTileSource : ITileSource, IDisposable
@@ -165,7 +165,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
 
     private static TileMetadata CreateMetadata(HttpResponseMessage response, TileFreshness freshness)
     {
-        return new TileMetadata(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, freshness.ExpiresUtc);
+        return new TileMetadata(response.Headers.ETag?.ToString(), response.Content.Headers.LastModified, freshness.ExpiresUtc, freshness.Lifetime);
     }
 
     private async Task<DownloadOutcome> DownloadAsync(TileKey key, StoredTile? stored, DateTimeOffset now, CancellationToken cancellationToken)
@@ -187,6 +187,13 @@ public sealed class HttpTileSource : ITileSource, IDisposable
                 }
 
                 var confirmedFreshness = EvaluateFreshness(response, now);
+                if (!confirmedFreshness.IsExplicit)
+                {
+                    // Nennt die 304 keine Caching-Angaben, gelten die gespeicherten weiter (RFC 9111, 4.3.4); Altbestand ohne Lebensdauer erhält die Rückfallfrist.
+                    var previousLifetime = stored.Metadata?.Lifetime ?? _options.CacheLifetime;
+                    confirmedFreshness = TileCachePolicy.Create(now, previousLifetime, response.Headers.Age, isExplicit: false);
+                }
+
                 return new DownloadOutcome(DownloadKind.NotModified, null, confirmedFreshness, CreateMetadata(response, confirmedFreshness));
             }
 
@@ -248,7 +255,7 @@ public sealed class HttpTileSource : ITileSource, IDisposable
             expires = DateTimeOffset.UnixEpoch;
         }
 
-        return TileCachePolicy.Evaluate(response.Headers.CacheControl, expires, response.Headers.Date, now, _options.CacheLifetime);
+        return TileCachePolicy.Evaluate(response.Headers.CacheControl, expires, response.Headers.Date, now, _options.CacheLifetime, response.Headers.Age);
     }
 
     private bool TryGetFreshMemory(TileKey key, DateTimeOffset now, out byte[]? data)
@@ -469,5 +476,6 @@ public sealed class HttpTileSource : ITileSource, IDisposable
 /// <param name="ETag">Der <c>ETag</c> des Servers oder <see langword="null"/>.</param>
 /// <param name="LastModified">Die Angabe <c>Last-Modified</c> des Servers oder <see langword="null"/>.</param>
 /// <param name="ExpiresUtc">Der Zeitpunkt, bis zu dem die Kachel ohne Rückfrage gilt.</param>
+/// <param name="Lifetime">Die Lebensdauer vor Abzug des Alters oder <see langword="null"/> bei Altbestand ohne diese Angabe.</param>
 /// <returns>Der Wert.</returns>
-public sealed record TileMetadata(string? ETag, DateTimeOffset? LastModified, DateTimeOffset ExpiresUtc);
+public sealed record TileMetadata(string? ETag, DateTimeOffset? LastModified, DateTimeOffset ExpiresUtc, TimeSpan? Lifetime = null);

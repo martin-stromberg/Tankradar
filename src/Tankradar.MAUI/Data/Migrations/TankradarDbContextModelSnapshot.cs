@@ -181,6 +181,11 @@ namespace Tankradar.MAUI.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ShowNearby")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
                     b.HasKey("Id");
 
                     b.ToTable("UserSettings", (string)null);

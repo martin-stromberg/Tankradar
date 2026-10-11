@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:Class="Tankradar.MAUI.Views.Controls.StationTile"
+             x:DataType="vm:HomeStationViewModel">
+
+    <ContentView.Resources>
+        <Style x:Key="TileChip" TargetType="Border">
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="StrokeThickness" Value="0" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 9999" />
+        </Style>
+        <Style x:Key="TileOpenButton" TargetType="Button">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="FontFamily" Value="InterSemibold" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="HorizontalOptions" Value="End" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+    </ContentView.Resources>
+
+    <!-- Tankstellenkachel (Designentwurf: Name, Entfernung, Preistafel je Sorte, Hinweise); Antippen öffnet die Detailansicht -->
+    <Border x:Name="TileBorder"
+            Padding="{StaticResource space-sm}"
+            StrokeThickness="0"
+            StrokeShape="RoundRectangle 12"
+            BackgroundColor="{AppThemeBinding Light=#F2F3FF, Dark=#131B2E}"
+            SemanticProperties.Description="{Binding SpokenDescription}">
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Command="{Binding OpenCommand}" />
+        </Border.GestureRecognizers>
+        <VerticalStackLayout Spacing="{StaticResource space-sm}">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
+                    <Label x:Name="NameLabel"
+                           Text="{Binding Name}"
+                           Style="{StaticResource headline-md}"
+                           FontSize="16"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label x:Name="AddressLabel"
+                           Text="{Binding AddressText}"
+                           IsVisible="{Binding HasAddress}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                </VerticalStackLayout>
+                <Label x:Name="DistanceLabel"
+                       Grid.Column="1"
+                       Text="{Binding DistanceText}"
+                       IsVisible="{Binding HasDistance}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       VerticalOptions="Start" />
+            </Grid>
+
+            <!-- Preistafel: zwei Spalten, je Sorte Name und Alter links, Preis rechts; veraltete Preise (ab 60 Minuten) in Amber -->
+            <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="SpaceBetween" AlignItems="Stretch"
+                        BindableLayout.ItemsSource="{Binding PriceLines}"
+                        IsVisible="{Binding HasPrices}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HomePriceLineViewModel">
+                        <Border FlexLayout.Basis="48%"
+                                FlexLayout.Grow="0"
+                                Margin="0,0,0,8"
+                                Padding="{StaticResource space-sm}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-xs}">
+                                <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
+                                    <Label Text="{Binding FuelLabel}"
+                                           Style="{StaticResource body-sm}"
+                                           FontFamily="InterSemibold"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding FuelId}" />
+                                    <Label Text="{Binding AgeText}"
+                                           Style="{StaticResource body-sm}"
+                                           FontSize="11"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding AgeId}">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsStale}" Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource ColorTertiaryAmber}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1"
+                                       VerticalOptions="Center"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                                       AutomationId="{Binding PriceId}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding PriceMainText}" FontFamily="InterSemibold" FontAttributes="Bold" FontSize="22" />
+                                            <Span Text="{Binding PriceFractionText}" FontFamily="InterSemibold" FontAttributes="Bold" FontSize="13" />
+                                            <Span Text="{Binding PriceUnitText, StringFormat=' {0}'}" FontFamily="InterRegular" FontSize="11" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+            <Label x:Name="NoPricesLabel"
+                   Text="{Binding NoPricesText}"
+                   IsVisible="{Binding ShowNoPrices}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+
+            <HorizontalStackLayout Spacing="{StaticResource space-sm}" IsVisible="{Binding HasHints}">
+                <Border Style="{StaticResource TileChip}"
+                        BackgroundColor="{StaticResource ColorTertiaryAmber}"
+                        IsVisible="{Binding HasUnconfirmedPrice}">
+                    <Label x:Name="UnconfirmedLabel"
+                           Text="{x:Static texts:PriceTexts.PriceUnconfirmed}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{StaticResource ColorTextPrimaryLight}" />
+                </Border>
+                <Border Style="{StaticResource TileChip}"
+                        BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                        IsVisible="{Binding IsAutomatedStation}">
+                    <Label x:Name="AutomatedLabel"
+                           Text="{x:Static texts:PriceTexts.AutomatedStation}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="White" />
+                </Border>
+            </HorizontalStackLayout>
+
+            <Label x:Name="NoteLabel"
+                   Text="{Binding Note}"
+                   IsVisible="{Binding HasNote}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+
+            <Button x:Name="OpenButton"
+                    Text="{x:Static texts:FavoritesTexts.OpenDetails}"
+                    Command="{Binding OpenCommand}"
+                    Style="{StaticResource TileOpenButton}"
+                    SemanticProperties.Description="{Binding Name}"
+                    SemanticProperties.Hint="{x:Static texts:FavoritesTexts.OpenDetails}" />
+        </VerticalStackLayout>
+    </Border>
+</ContentView>

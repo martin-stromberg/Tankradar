@@ -19,6 +19,16 @@ public sealed class StubTankerkoenigClient : ITankerkoenigClient
     public StationInfo? DetailResult { get; set; }
 
     /// <summary>
+    /// Die Preise, die ein Abruf nach Kennungen je Kennung liefert (fehlende Kennungen ergeben keine Zeilen).
+    /// </summary>
+    public Dictionary<string, IReadOnlyList<FuelPrice>> PricesResult { get; } = [];
+
+    /// <summary>
+    /// Die Kennungen je Abruf nach Kennungen, in Reihenfolge der Abrufe.
+    /// </summary>
+    public List<IReadOnlyList<string>> PricesRequests { get; } = [];
+
+    /// <summary>
     /// Wenn gesetzt, lösen alle Abrufe diese Ausnahme aus.
     /// </summary>
     public PriceApiException? Failure { get; set; }
@@ -40,6 +50,16 @@ public sealed class StubTankerkoenigClient : ITankerkoenigClient
         return Failure is not null ? throw Failure : Task.FromResult<IReadOnlyList<StationInfo>>(SearchResult.ToList());
     }
 
+    /// <summary>
+    /// Wenn gesetzt, löst der Abruf nach Kennungen ab dem angegebenen (nullbasierten) Abruf diese Ausnahme aus.
+    /// </summary>
+    public int PricesFailureFromCall { get; set; } = int.MaxValue;
+
+    /// <summary>
+    /// Die Ausnahme, die ab <see cref="PricesFailureFromCall"/> ausgelöst wird.
+    /// </summary>
+    public PriceApiException? PricesFailure { get; set; }
+
     /// <inheritdoc />
     public Task<StationInfo> GetDetailAsync(string stationId, CancellationToken cancellationToken)
     {
@@ -50,5 +70,26 @@ public sealed class StubTankerkoenigClient : ITankerkoenigClient
         }
 
         return Task.FromResult(DetailResult ?? throw new InvalidOperationException("Kein Detail vorgegeben."));
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>>> GetPricesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken)
+    {
+        var call = PricesRequests.Count;
+        PricesRequests.Add(stationIds.ToList());
+        if (Failure is not null)
+        {
+            throw Failure;
+        }
+
+        if (PricesFailure is not null && call >= PricesFailureFromCall)
+        {
+            throw PricesFailure;
+        }
+
+        IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> result = stationIds.ToDictionary(
+            id => id,
+            id => PricesResult.TryGetValue(id, out var lines) ? lines : (IReadOnlyList<FuelPrice>)[]);
+        return Task.FromResult(result);
     }
 }

@@ -141,6 +141,33 @@ public sealed class StationInfo
     }
 
     /// <summary>
+    /// Liefert eine Kopie mit anderer Entfernung.
+    /// </summary>
+    /// <param name="distanceKm">Die Entfernung in Kilometern oder <see langword="null"/>.</param>
+    /// <returns>Die Kopie.</returns>
+    public StationInfo WithDistance(double? distanceKm)
+    {
+        return new StationInfo
+        {
+            Id = Id,
+            Name = Name,
+            Brand = Brand,
+            Street = Street,
+            HouseNumber = HouseNumber,
+            PostCode = PostCode,
+            Place = Place,
+            Latitude = Latitude,
+            Longitude = Longitude,
+            DistanceKm = distanceKm,
+            IsOpen = IsOpen,
+            WholeDay = WholeDay,
+            OpeningTimes = OpeningTimes,
+            Prices = Prices,
+            DetailsUpdatedUtc = DetailsUpdatedUtc,
+        };
+    }
+
+    /// <summary>
     /// Liefert eine Kopie mit anderen Preisen.
     /// </summary>
     /// <param name="prices">Die neuen Preise.</param>

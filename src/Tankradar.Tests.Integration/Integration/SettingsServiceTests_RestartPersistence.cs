@@ -58,6 +58,22 @@ public class SettingsServiceTests_RestartPersistence : IDisposable
     }
 
     /// <summary>
+    /// Prüft, dass der Schalter „In der Nähe“ über die Datei hinweg erhalten bleibt.
+    /// </summary>
+    /// <param name="showNearby">Der zu speichernde Wert.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Save_ShowNearby_RoundTripsThroughFile(bool showNearby)
+    {
+        await CreateService().SaveAsync(AppSettings.CreateDefault() with { ShowNearby = showNearby });
+
+        var loaded = await LoadAfterRestartAsync();
+
+        Assert.Equal(showNearby, loaded.ShowNearby);
+    }
+
+    /// <summary>
     /// Prüft, dass jede Ergebnisansicht über die Datei hinweg erhalten bleibt.
     /// </summary>
     /// <param name="view">Die zu speichernde Ansicht.</param>
