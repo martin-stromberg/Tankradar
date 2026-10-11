@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -78,7 +77,6 @@ public class NearbySettingMigrationTests_Upgrade : IDisposable
         var settings = await CreateService().LoadAsync();
         await CreateService().SaveAsync(settings with { ShowNearby = true });
 
-        SqliteConnection.ClearAllPools();
         var restarted = await CreateService().LoadAsync();
 
         Assert.True(restarted.ShowNearby);

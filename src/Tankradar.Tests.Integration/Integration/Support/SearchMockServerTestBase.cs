@@ -122,12 +122,13 @@ public abstract class SearchMockServerTestBase : IDisposable
     /// Erstellt den Geokodierungsdienst gegen den Nominatim-Mock mit dem Mindestabstand der Nutzungsrichtlinie (oder einer anderen Adresse).
     /// </summary>
     /// <param name="baseUrl">Die Adresse oder <see langword="null"/> für den Mock-Server.</param>
+    /// <param name="handler">Der zu verwendende HTTP-Handler oder <see langword="null"/> für einen <see cref="HttpClientHandler"/> ohne automatische Weiterleitung.</param>
     /// <returns>Der Dienst.</returns>
-    protected NominatimGeocodingService CreateGeocoding(Uri? baseUrl = null)
+    protected NominatimGeocodingService CreateGeocoding(Uri? baseUrl = null, HttpMessageHandler? handler = null)
     {
         var options = new GeocodingOptions { BaseUrl = baseUrl ?? Nominatim.BaseUrl, AllowLoopbackHttp = true, RequestTimeout = TimeSpan.FromSeconds(3) };
         return new NominatimGeocodingService(
-            new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan },
+            new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan },
             options,
             new RequestThrottle(options.MinRequestInterval, new TaskDelay(), TimeProvider.System),
             new RecordingLogger<NominatimGeocodingService>(_logSink));
