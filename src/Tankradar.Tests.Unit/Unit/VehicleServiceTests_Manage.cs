@@ -203,4 +203,32 @@ public class VehicleServiceTests_Manage : BaseTest
             return ValueTask.FromResult(result);
         }
     }
+
+    /// <summary>
+    /// Prüft, dass der Start-Kilometerstand nicht über den niedrigsten Kilometerstand der Vorgänge gesetzt werden kann; gleich ist erlaubt.
+    /// </summary>
+    [Fact]
+    public async Task UpdateVehicle_StartOdometerAboveFirstEntry_IsRejected()
+    {
+        var id = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null))).Vehicle!.Id;
+        await _fixture.AddEntriesAsync(id, 2, odometerKm: 1500);
+
+        Assert.Equal(VehicleResult.StartOdometerAboveEntries, await _fixture.Service.UpdateVehicleAsync(id, new VehicleInput("Golf", VehicleFuelKind.Diesel, 1501, null)));
+        Assert.Equal(1000, (await _fixture.Service.GetVehicleAsync(id))!.StartOdometerKm);
+        Assert.Equal(VehicleResult.Ok, await _fixture.Service.UpdateVehicleAsync(id, new VehicleInput("Golf", VehicleFuelKind.Diesel, 1500, null)));
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Wechsel der Kraftstoffart auch bei vorhandenen Vorgängen erlaubt ist.
+    /// </summary>
+    [Fact]
+    public async Task UpdateVehicle_FuelKindChangeWithEntries_IsAllowed()
+    {
+        var id = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null))).Vehicle!.Id;
+        await _fixture.AddEntriesAsync(id, 1, odometerKm: 1500);
+
+        Assert.Equal(VehicleResult.Ok, await _fixture.Service.UpdateVehicleAsync(id, new VehicleInput("Golf", VehicleFuelKind.Electric, 1000, null)));
+
+        Assert.Equal(VehicleFuelKind.Electric, (await _fixture.Service.GetVehicleAsync(id))!.FuelKind);
+    }
 }

@@ -17,9 +17,31 @@ public class ViewModelTests_PageTitles : BaseTest
     {
         using var vehicles = new VehicleFixture();
 
-        var viewModel = new TankbookViewModel(vehicles.Service, NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer());
+        var viewModel = new TankbookViewModel(vehicles.Service, new FakeTankbookNavigator(), NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer());
 
         Assert.Equal("Tankbuch", viewModel.Title);
+    }
+
+    /// <summary>
+    /// Prüft den Seitentitel des <see cref="TankbookEntriesViewModel"/> (Vorgänge eines Fahrzeugs).
+    /// </summary>
+    [Fact]
+    public void TankbookEntriesViewModel_Constructor_SetsTitle()
+    {
+        using var fixture = new TankbookEntryFixture();
+        var form = fixture.CreateForm(new FakeReceiptPhotoPicker(), new FakeScreenReaderAnnouncer(), new Tankradar.TestSupport.RecordingLogger<TankbookEntryFormViewModel>());
+
+        var viewModel = new TankbookEntriesViewModel(
+            fixture.Vehicles,
+            fixture.Service,
+            fixture.Photos,
+            form,
+            new FakeTankbookNavigator(),
+            new FakeScreenReaderAnnouncer(),
+            NullLogger<TankbookEntriesViewModel>.Instance);
+
+        Assert.Equal("Tank- und Ladevorgänge", viewModel.Title);
+        viewModel.OnAppearing();
     }
 
     /// <summary>

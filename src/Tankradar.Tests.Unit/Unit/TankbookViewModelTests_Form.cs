@@ -17,7 +17,7 @@ public class TankbookViewModelTests_Form : BaseTest
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;
@@ -239,7 +239,7 @@ public class TankbookViewModelTests_Form : BaseTest
         var id = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null))).Vehicle!.Id;
         var viewModel = await OpenAsync();
         viewModel.Vehicles[0].EditCommand.Execute(null);
-        await _fixture.Service.DeleteVehicleAsync(id);
+        await _fixture.Service.DeleteVehicleAsync(id, 0);
 
         await SaveAsync(viewModel);
 
@@ -303,5 +303,25 @@ public class TankbookViewModelTests_Form : BaseTest
             await _release.Task.ConfigureAwait(false);
             return result;
         }
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Start-Kilometerstand über dem ersten Vorgang als Feldfehler am Start-Kilometerstand erscheint, angesagt und nicht gespeichert wird.
+    /// </summary>
+    [Fact]
+    public async Task Save_StartOdometerAboveEntries_ShowsOdometerError()
+    {
+        var id = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null))).Vehicle!.Id;
+        await _fixture.AddEntriesAsync(id, 1, odometerKm: 1500);
+        var viewModel = await OpenAsync();
+        viewModel.Vehicles[0].EditCommand.Execute(null);
+        viewModel.FormOdometer = "2000";
+
+        await SaveAsync(viewModel);
+
+        Assert.Equal("Der Start-Kilometerstand darf nicht über dem Kilometerstand des ersten Tank- oder Ladevorgangs liegen.", viewModel.OdometerError);
+        Assert.True(viewModel.IsFormOpen);
+        Assert.Equal(viewModel.OdometerError, _announcer.Announcements[^1]);
+        Assert.Equal(1000, (await _fixture.Service.GetVehicleAsync(id))!.StartOdometerKm);
     }
 }

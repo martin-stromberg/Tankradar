@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Tankbook;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Integration.Integration.Support;
 
@@ -31,13 +33,13 @@ public sealed class TestDatabase : IDisposable
 
     /// <summary>
     /// Erstellt eine neue Kontext-Factory auf der Datenbankdatei (simuliert einen frischen App-Start).
-    /// Die Verbindungen nutzen keinen Pool, damit kein Test die Verbindungen paralleler Testklassen global leeren muss.
+    /// Die Verbindungen nutzen die Verbindungszeichenfolge der App (<c>Foreign Keys=True</c>), aber keinen Pool, damit kein Test die Verbindungen paralleler Testklassen global leeren muss.
     /// </summary>
     /// <returns>Die Factory.</returns>
     public IDbContextFactory<TankradarDbContext> CreateFactory()
     {
         var options = new DbContextOptionsBuilder<TankradarDbContext>()
-            .UseSqlite($"Data Source={DatabasePath};Pooling=False")
+            .UseSqlite(TankradarDbContext.BuildConnectionString(DatabasePath, pooling: false))
             .Options;
         return new FileDbContextFactory(options);
     }
@@ -50,6 +52,15 @@ public sealed class TestDatabase : IDisposable
     public DatabaseInitializer CreateInitializer(IDbContextFactory<TankradarDbContext> factory)
     {
         return new DatabaseInitializer(factory, new FixedPathProvider(DataDirectory), new NoOpProtector());
+    }
+
+    /// <summary>
+    /// Erstellt die Ablage der Belegfotos im Datenverzeichnis dieser Umgebung.
+    /// </summary>
+    /// <returns>Die Ablage.</returns>
+    public ReceiptPhotoStore CreatePhotoStore()
+    {
+        return new ReceiptPhotoStore(new FixedPathProvider(DataDirectory), new NoOpProtector(), new RecordingLogger<ReceiptPhotoStore>());
     }
 
     /// <summary>
@@ -98,6 +109,10 @@ public sealed class TestDatabase : IDisposable
     private sealed class NoOpProtector : IDatabaseFileProtector
     {
         public void Protect(string databasePath)
+        {
+        }
+
+        public void ProtectFile(string filePath)
         {
         }
     }

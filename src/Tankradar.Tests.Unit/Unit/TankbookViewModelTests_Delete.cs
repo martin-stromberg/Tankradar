@@ -16,7 +16,7 @@ public class TankbookViewModelTests_Delete : BaseTest
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;
@@ -191,7 +191,7 @@ public class TankbookViewModelTests_Delete : BaseTest
         var viewModel = await OpenAsync();
         var item = viewModel.Vehicles[0];
         await PressAsync(viewModel, item.DeleteCommand);
-        await _fixture.Service.DeleteVehicleAsync(id);
+        await _fixture.Service.DeleteVehicleAsync(id, 0);
 
         await PressAsync(viewModel, item.ConfirmDeleteCommand);
 
@@ -202,13 +202,14 @@ public class TankbookViewModelTests_Delete : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass die erscheinende Rückfrage angesagt wird und die Schaltflächen den Fahrzeugnamen für die Sprachausgabe tragen.
+    /// Prüft, dass die erscheinende Rückfrage angesagt wird, die Schaltflächen der Rückfrage ihren sichtbaren Text als Namen behalten (WCAG 2.5.3)
+    /// und der Hinweis den Fahrzeugnamen und die Zahl der Vorgänge nennt.
     /// </summary>
     [Fact]
-    public async Task Delete_AnnouncesQuestionAndDescribesButtonsWithName()
+    public async Task Delete_ButtonsNameIsVisibleTextAndHintNamesVehicle()
     {
         var golf = await CreateAsync("Golf");
-        await _fixture.AddEntriesAsync(golf, 1);
+        await _fixture.AddEntriesAsync(golf, 2);
         var viewModel = await OpenAsync();
         var item = viewModel.Vehicles[0];
 
@@ -217,7 +218,38 @@ public class TankbookViewModelTests_Delete : BaseTest
         Assert.Equal([item.DeleteQuestion], _announcer.Announcements);
         Assert.Equal("Golf bearbeiten", item.EditDescription);
         Assert.Equal("Golf löschen", item.DeleteDescription);
-        Assert.Equal("Fahrzeug „Golf“ und Vorgänge löschen", item.ConfirmDeleteDescription);
-        Assert.Equal("Löschen von „Golf“ abbrechen", item.CancelDeleteDescription);
+        Assert.Equal("Fahrzeug und Vorgänge löschen", item.ConfirmDeleteLabel);
+        Assert.Equal("Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen", item.ConfirmDeleteHint);
+        Assert.Equal("Fahrzeug „Golf“ behalten", item.CancelDeleteHint);
+        Assert.Equal(2, item.ShownEntryCount);
+    }
+
+    /// <summary>
+    /// Prüft die Neuzählung beim Bestätigen: Ist inzwischen ein Vorgang hinzugekommen, bleibt das Fahrzeug, die Rückfrage nennt die neue Zahl und wird angesagt;
+    /// erst die erneute Bestätigung löscht.
+    /// </summary>
+    [Fact]
+    public async Task Delete_EntryAddedMeanwhile_ShowsUpdatedQuestionAndKeepsVehicle()
+    {
+        var golf = await CreateAsync("Golf");
+        await _fixture.AddEntriesAsync(golf, 2);
+        var viewModel = await OpenAsync();
+        var item = viewModel.Vehicles[0];
+        await PressAsync(viewModel, item.DeleteCommand);
+        await _fixture.AddEntriesAsync(golf, 1, odometerKm: 5000);
+
+        await PressAsync(viewModel, item.ConfirmDeleteCommand);
+
+        Assert.True(item.IsConfirmingDelete);
+        Assert.Contains("3 zugehörigen Tank- und Ladevorgänge", item.DeleteQuestion, StringComparison.Ordinal);
+        Assert.Equal("Fahrzeug „Golf“ und 3 Tank- und Ladevorgänge endgültig löschen", item.ConfirmDeleteHint);
+        Assert.Equal(item.DeleteQuestion, _announcer.Announcements[^1]);
+        Assert.Single(await _fixture.Service.GetVehiclesAsync());
+        Assert.Equal(3, await _fixture.Service.CountEntriesAsync(golf));
+
+        await PressAsync(viewModel, item.ConfirmDeleteCommand);
+
+        Assert.Empty(viewModel.Vehicles);
+        Assert.Equal(0, await _fixture.CountAllEntriesAsync());
     }
 }

@@ -37,6 +37,10 @@ public class TankbookTextsTests_Messages : BaseTest
             "Der Startverbrauch muss größer als 0 und kleiner als 100 sein, mit höchstens 2 Nachkommastellen.",
             TankbookTexts.GetResultMessage(VehicleResult.InvalidConsumption));
         Assert.Equal("Das Fahrzeug gibt es nicht mehr.", TankbookTexts.GetResultMessage(VehicleResult.VehicleNotFound));
+        Assert.Equal(TankbookTexts.EntryCountChanged, TankbookTexts.GetResultMessage(VehicleResult.EntryCountChanged));
+        Assert.Equal(
+            "Der Start-Kilometerstand darf nicht über dem Kilometerstand des ersten Tank- oder Ladevorgangs liegen.",
+            TankbookTexts.GetResultMessage(VehicleResult.StartOdometerAboveEntries));
         foreach (var result in Enum.GetValues<VehicleResult>().Where(value => value != VehicleResult.Ok))
         {
             Assert.NotEmpty(TankbookTexts.GetResultMessage(result));

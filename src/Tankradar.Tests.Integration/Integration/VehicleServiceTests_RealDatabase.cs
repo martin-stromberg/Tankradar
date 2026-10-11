@@ -17,7 +17,7 @@ public class VehicleServiceTests_RealDatabase : IDisposable
     private VehicleService CreateService()
     {
         var factory = _database.CreateFactory();
-        return new VehicleService(factory, _database.CreateInitializer(factory), TimeProvider.System, new RecordingLogger<VehicleService>());
+        return new VehicleService(factory, _database.CreateInitializer(factory), _database.CreatePhotoStore(), TimeProvider.System, new RecordingLogger<VehicleService>());
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public class VehicleServiceTests_RealDatabase : IDisposable
         }
 
         Assert.Equal(2, await service.CountEntriesAsync(golf));
-        Assert.Equal(VehicleResult.Ok, await CreateService().DeleteVehicleAsync(golf));
+        Assert.Equal(VehicleResult.Ok, (await CreateService().DeleteVehicleAsync(golf, 2)).Result);
 
         await using var check = _database.CreateFactory().CreateDbContext();
         Assert.Equal([polo], await check.TankbookEntries.Select(e => e.VehicleId).ToListAsync());
