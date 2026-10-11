@@ -21,6 +21,15 @@ public class AppSettingsTests_Defaults : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass der Bereich „In der Nähe“ standardmäßig aus ist.
+    /// </summary>
+    [Fact]
+    public void Defaults_ShowNearbyIsFalse()
+    {
+        Assert.False(AppSettings.CreateDefault().ShowNearby);
+    }
+
+    /// <summary>
     /// Prüft, dass alle Spritsorten in der Reihenfolge E5, E10, Diesel ausgewählt sind.
     /// </summary>
     [Fact]

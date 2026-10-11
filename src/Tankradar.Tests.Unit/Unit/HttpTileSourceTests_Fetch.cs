@@ -205,6 +205,31 @@ public class HttpTileSourceTests_Fetch : BaseTest
         Assert.Equal(2, counting.MaxInFlight);
     }
 
+    /// <summary>
+    /// Prüft, dass ein Verbindungsabbruch beim Lesen des Antwortstroms wie ein Netzwerkfehler zu <see langword="null"/> führt.
+    /// </summary>
+    [Fact]
+    public async Task GetTile_StreamReadFails_ReturnsNull()
+    {
+        _handler.Respond(() => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new FailingStream()) });
+        using var source = CreateSource();
+
+        Assert.Null(await source.GetTileAsync(Key));
+    }
+
+    private sealed class FailingStream : MemoryStream
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromException<int>(new IOException("Verbindung abgebrochen"));
+        }
+
+        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+        {
+            return Task.FromException(new IOException("Verbindung abgebrochen"));
+        }
+    }
+
     private sealed class ConcurrencyHandler : HttpMessageHandler
     {
         private readonly byte[] _body;

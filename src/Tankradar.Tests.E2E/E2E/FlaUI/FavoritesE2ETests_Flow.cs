@@ -47,4 +47,24 @@ public class FavoritesE2ETests_Flow : FavoritesE2ETestBase
             WaitForText("Favorites.Group.Count", "0 Tankstellen");
         });
     }
+
+    /// <summary>
+    /// Prüft, dass „Details öffnen“ in der Gruppenansicht die Detailansicht der Tankstelle mit Preisen zeigt und der Zurück-Pfeil dorthin zurückführt.
+    /// </summary>
+    [Fact]
+    public void GroupView_OpenEntry_ShowsStationDetail()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenStationDetail(0, "Alpha Tankstelle");
+            AddToNewGroup("Arbeitsweg", "Arbeitsweg");
+            OpenFavorites("Arbeitsweg");
+            OpenGroup("Arbeitsweg");
+
+            Press("FavoriteGroup.Entry.Open");
+
+            WaitUntil(() => FindByAutomationId("Detail.Name")?.Name == "Alpha Tankstelle", "Die Detailansicht zeigt nicht 'Alpha Tankstelle'.");
+            Assert.Equal("1,859 Euro pro Liter", WaitForAutomationId("Detail.Price.SuperE5").Name);
+        });
+    }
 }

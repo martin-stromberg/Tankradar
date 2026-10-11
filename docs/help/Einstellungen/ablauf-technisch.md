@@ -21,7 +21,7 @@ Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.
 1. `SettingsPage` erscheint, `SettingsViewModel.OnAppearing()` startet `LoadAsync()`.
 2. `SettingsService.LoadAsync()` wartet auf die Initialisierung und liest `UserSettings` (Zeile mit `Id` = 1) sowie alle `FuelTypeSettings` (sortiert nach `SortOrder`).
 3. Mapping auf das Domänenmodell `AppSettings`: Fehlende Zeilen oder ungültige Enum-Texte ergeben Standardwerte (`AppSettings.CreateDefault()`); unbekannte Spritsorten-Schlüssel werden ignoriert, fehlende `FuelType`-Werte ans Ende angehängt; sind keine Sorten gespeichert oder keine ausgewählt, gilt die Standardauswahl.
-4. Das ViewModel befüllt `FuelTypes`, `GpsOptions`, `ViewOptions`, `SortOptions` mit unterdrücktem Speichern. Bei einer Ausnahme erscheint `StatusMessage`, es werden die Standardwerte angezeigt und nichts gespeichert.
+4. `AppSettings.ShowNearby` kommt aus `UserSettings.ShowNearby` (fehlende Zeile: `false`); `SettingsViewModel.ShowNearby` löst beim Umschalten ein Speichern aus, `ShowNearbyGpsHint` zeigt den Hinweis bei `GpsUsage.Never`. Das ViewModel befüllt `FuelTypes`, `GpsOptions`, `ViewOptions`, `SortOptions` mit unterdrücktem Speichern. Bei einer Ausnahme erscheint `StatusMessage`, es werden die Standardwerte angezeigt und nichts gespeichert.
 
 ### 3. Änderung und sofortiges Speichern
 
@@ -47,12 +47,12 @@ flowchart TD
 
 | Tabelle | Inhalt |
 |---------|--------|
-| `UserSettings` | Eine Zeile (`Id` = 1): `GpsUsage`, `ResultView`, `ResultSortOrder` |
+| `UserSettings` | Eine Zeile (`Id` = 1): `GpsUsage`, `ResultView`, `ResultSortOrder`, `ShowNearby` (Schalter „In der Nähe“, Standard `false`) |
 | `FuelTypeSettings` | Eine Zeile je Spritsorte: `FuelTypeKey` (Primärschlüssel), `SortOrder`, `IsSelected` |
 
 Enum-Werte werden als Text (Enum-Name) gespeichert: `FuelType` (`SuperE5`, `SuperE10`, `Diesel`), `GpsUsage` (`Always`, `WhileInUse`, `Never`), `ResultView` (`List`, `Map`), `ResultSortOrder` (`Price`, `Distance`, `Name`). Die Namen sind ein Persistenzvertrag und durch Tests festgeschrieben. Standardwerte stehen im Code, nicht in Migrationen.
 
-Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`, `AddFuelTypeSettings`). Neue Migration: `dotnet ef migrations add <Name> --project src/Tankradar.MAUI` (Design-Time-Fabrik `TankradarDbContextFactory`).
+Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`, `AddFuelTypeSettings`, `AddPriceCache`, `AddFavorites`, `AddNearbySetting`). `AddNearbySetting` ergänzt `UserSettings.ShowNearby` (`INTEGER NOT NULL`, Standard 0); bestehende Einstellungen bleiben erhalten. Neue Migration: `dotnet ef migrations add <Name> --project src/Tankradar.MAUI --framework net10.0-windows10.0.19041.0` (Design-Time-Fabrik `TankradarDbContextFactory`). Das Projekt hat mehrere Zielframeworks; ohne `--framework` bricht `dotnet ef` ab.
 
 ## Beteiligte Komponenten
 

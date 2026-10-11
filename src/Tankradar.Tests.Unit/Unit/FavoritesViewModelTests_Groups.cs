@@ -7,28 +7,8 @@ namespace Tankradar.Tests.Unit.Unit;
 /// <summary>
 /// Prüft den Bereich „Favoriten“: Gruppenliste, Anlegen einer Gruppe, Öffnen der Gruppenansicht und Fehlerfälle.
 /// </summary>
-public class FavoritesViewModelTests_Groups : BaseTest
+public class FavoritesViewModelTests_Groups : FavoritesViewModelTestBase
 {
-    private readonly FavoritesFixture _fixture = new();
-    private readonly FakeFavoriteGroupNavigator _navigator = new();
-    private readonly RecordingLogger<FavoritesViewModel> _logger = new();
-
-    private FavoritesViewModel CreateViewModel()
-    {
-        return new FavoritesViewModel(_fixture.Service, _navigator, _logger);
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _fixture.Dispose();
-        }
-
-        base.Dispose(disposing);
-    }
-
     /// <summary>
     /// Prüft, dass ohne Gruppen der Hinweis erscheint, nicht aber vor dem Laden.
     /// </summary>
@@ -51,10 +31,10 @@ public class FavoritesViewModelTests_Groups : BaseTest
     [Fact]
     public async Task Load_ShowsGroupsAndOpensSelectedGroup()
     {
-        var home = (await _fixture.Service.CreateGroupAsync("Heimat", "Zuhause und Umgebung")).Group!.Id;
-        var work = (await _fixture.Service.CreateGroupAsync("Arbeitsweg", null)).Group!.Id;
-        await _fixture.Service.AddStationAsync(home, FavoritesFixture.StationA);
-        await _fixture.Service.AddStationAsync(home, FavoritesFixture.StationB);
+        var home = (await Fixture.Service.CreateGroupAsync("Heimat", "Zuhause und Umgebung")).Group!.Id;
+        var work = (await Fixture.Service.CreateGroupAsync("Arbeitsweg", null)).Group!.Id;
+        await Fixture.Service.AddStationAsync(home, FavoritesFixture.StationA);
+        await Fixture.Service.AddStationAsync(home, FavoritesFixture.StationB);
         var viewModel = CreateViewModel();
 
         viewModel.OnAppearing();
@@ -69,7 +49,7 @@ public class FavoritesViewModelTests_Groups : BaseTest
         viewModel.Groups[1].OpenCommand.Execute(null);
         await viewModel.LastTask;
 
-        Assert.Equal([home], _navigator.Opened);
+        Assert.Equal([home], GroupNavigator.Opened);
         Assert.NotEqual(work, home);
     }
 
@@ -102,7 +82,7 @@ public class FavoritesViewModelTests_Groups : BaseTest
     [Fact]
     public async Task Create_InvalidOrDuplicate_ShowsMessage()
     {
-        await _fixture.Service.CreateGroupAsync("Urlaub", null);
+        await Fixture.Service.CreateGroupAsync("Urlaub", null);
         var viewModel = CreateViewModel();
         await viewModel.LoadAsync();
         viewModel.ShowCreateCommand.Execute(null);
@@ -130,13 +110,13 @@ public class FavoritesViewModelTests_Groups : BaseTest
     [Fact]
     public async Task Load_StorageFailure_ShowsMessage()
     {
-        _fixture.Factory.FailingCreations = 1;
+        Fixture.Factory.FailingCreations = 1;
         var viewModel = CreateViewModel();
 
         await viewModel.LoadAsync();
 
         Assert.Equal("Die Favoriten konnten nicht geladen werden.", viewModel.StatusMessage);
-        Assert.DoesNotContain("simuliert", _logger.AllText, StringComparison.Ordinal);
+        Assert.DoesNotContain("simuliert", Logger.AllText, StringComparison.Ordinal);
         Assert.False(viewModel.ShowEmptyHint);
     }
 
@@ -150,7 +130,7 @@ public class FavoritesViewModelTests_Groups : BaseTest
         await viewModel.LoadAsync();
         viewModel.ShowCreateCommand.Execute(null);
         viewModel.NewName = "Heimat";
-        _fixture.Factory.FailingCreations = 1;
+        Fixture.Factory.FailingCreations = 1;
 
         viewModel.CreateCommand.Execute(null);
         await viewModel.LastTask;

@@ -46,6 +46,22 @@ public interface IPriceRepository
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Die Tankstellen im Umkreis.</returns>
     Task<IReadOnlyList<StationInfo>> FindNearbyAsync(double latitude, double longitude, double radiusKm, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Liefert die lokal bekannten Tankstellen zu den Kennungen mit Stammdaten, Position, Detailangaben und den zuletzt bekannten Preisen.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die bekannten Tankstellen in der Reihenfolge der Kennungen; unbekannte Kennungen fehlen.</returns>
+    Task<IReadOnlyList<StationInfo>> GetStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hängt neue Preiszeilen für lokal bekannte Tankstellen an; Stammdaten bleiben unverändert, unbekannte Kennungen werden ignoriert.
+    /// </summary>
+    /// <param name="prices">Die Preiszeilen je Kennung.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Ein Task, der nach dem Speichern abgeschlossen ist.</returns>
+    Task SavePricesAsync(IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> prices, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -214,6 +230,65 @@ public sealed class PriceRepository : IPriceRepository
         return inRadius
             .Select(x => Map(x.Entity, prices.GetValueOrDefault(x.Entity.Id) ?? [], x.Distance))
             .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<StationInfo>> GetStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationIds);
+        if (stationIds.Count == 0)
+        {
+            return [];
+        }
+
+        await _initializer.InitializeAsync().ConfigureAwait(false);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = stationIds.Distinct().ToList();
+        var entities = await context.Stations.AsNoTracking()
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, cancellationToken)
+            .ConfigureAwait(false);
+        var prices = await LoadLatestPricesAsync(context, ids, cancellationToken).ConfigureAwait(false);
+        return ids
+            .Where(entities.ContainsKey)
+            .Select(id => Map(entities[id], prices.GetValueOrDefault(id) ?? [], null))
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task SavePricesAsync(IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> prices, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(prices);
+        if (prices.Count == 0)
+        {
+            return;
+        }
+
+        await _initializer.InitializeAsync().ConfigureAwait(false);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = prices.Keys.ToList();
+        var known = await context.Stations.AsNoTracking()
+            .Where(s => ids.Contains(s.Id))
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        foreach (var id in known)
+        {
+            foreach (var price in prices[id])
+            {
+                context.PriceEntries.Add(new PriceEntryEntity
+                {
+                    StationId = id,
+                    FuelTypeKey = price.FuelType.ToString(),
+                    Price = price.Price,
+                    RetrievedUtc = price.RetrievedUtc,
+                });
+            }
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task<Dictionary<string, List<FuelPrice>>> LoadLatestPricesAsync(

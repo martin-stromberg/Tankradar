@@ -8,8 +8,8 @@ Alle Komponenten liegen im Projekt `Tankradar.MAUI` unter `Services/Pricing/` un
 
 | Komponente | Aufgabe |
 |------------|---------|
-| `FuelPriceService` (`IFuelPriceService`) | Fassade: Umkreissuche, Tankstellendetails, Verfügbarkeitsprüfung; entscheidet zwischen Cache, Live-Abruf und Offline-Rückfall |
-| `TankerkoenigClient` (`ITankerkoenigClient`) | HTTP-Zugriff auf `list.php` und `detail.php`, Auswertung der JSON-Antworten, Zeitlimit, Wiederholung, Drosselung |
+| `FuelPriceService` (`IFuelPriceService`) | Fassade: Umkreissuche, Tankstellendetails, Preisaktualisierung nach Kennungen (`RefreshStationsAsync`, `GetKnownStationsAsync`), Verfügbarkeitsprüfung; entscheidet zwischen Cache, Live-Abruf und Offline-Rückfall |
+| `TankerkoenigClient` (`ITankerkoenigClient`) | HTTP-Zugriff auf `list.php`, `detail.php` und `prices.php` (`GetPricesAsync`), Auswertung der JSON-Antworten, Zeitlimit, Wiederholung, Drosselung |
 | `RequestThrottle`, `IDelay` | Mindestabstand zwischen Anfragen; austauschbares Warten für Tests |
 | `PriceRepository` (`IPriceRepository`) | Persistenz in SQLite (`Stations`, `PriceEntries`), letzte Preise, Umkreis per Haversine |
 | `ConnectionMonitor` (`IConnectionMonitor`) | Online/Offline-Zustand und Ereignis `ConnectionRestored` über `INetworkStatusSource` (MAUI-`Connectivity`) |
@@ -28,6 +28,18 @@ Alle Komponenten liegen im Projekt `Tankradar.MAUI` unter `Services/Pricing/` un
 6. Fehler (`PriceApiException`): Rückfall auf `FindNearbyAsync` (letzte bekannte Preise, Entfernung neu berechnet) mit `OfflineFallback` und dem Fehlergrund. Es entsteht keine Ausnahme für den Aufrufer.
 
 Tankstellendetails (`GetStationDetailAsync`) folgen demselben Muster; der Cache gilt, wenn `DetailsUpdatedUtc` jünger als fünf Minuten ist. Ein späterer Listenabruf überschreibt gespeicherte Detailangaben (Öffnungszeiten) nicht.
+
+## Aktualisierung nach Kennungen (Startseite)
+
+`FuelPriceService.RefreshStationsAsync(stationIds, force, ct)` liefert ein `StationRefreshResult` (`Stations`, `Source`, `Failure`):
+
+1. Kennungen werden normalisiert (`Guid`, Format `D`; ungültige und doppelte entfallen; eine Obergrenze für die Zahl der Kennungen gibt es nicht, die Anfragen sind auf je 10 Kennungen aufgeteilt).
+2. Ohne `force` werden nur Kennungen abgerufen, die nicht innerhalb von `PriceApiOptions.CacheLifetime` (Standard 5 Minuten) erfolgreich aktualisiert wurden (`_refreshed`, nur im Speicher, wird nur nach erfolgreichem Speichern gesetzt). Ist nichts fällig, kommt der lokale Stand mit `PriceDataSource.Cache`.
+3. Offline: lokaler Stand mit `OfflineFallback` und `PriceFailure.Offline`.
+4. Sonst `TankerkoenigClient.GetPricesAsync` in Blöcken zu `MaxPriceIds` = 10 (`prices.php?ids=…`, gleiche Wiederholung, Drosselung und Fehlerabbildung wie die übrigen Abrufe; Status `open`/`closed` liefert Preise für `e5`, `e10`, `diesel`, andere Status eine leere Liste). `PriceRepository.SavePricesAsync` legt je Preis eine Zeile in `PriceEntries` an. Bei einem `PriceApiException` endet der Abruf; bereits abgerufene Blöcke bleiben erhalten, die übrigen Tankstellen zeigen den lokalen Stand (`OfflineFallback`, wenn gar nichts abgerufen wurde, sonst `Live`).
+5. `GetKnownStationsAsync` liefert den lokalen Stand ohne Abruf.
+
+Der Mock-Server (`MockTankerkoenigServer`) bildet `prices.php` nach.
 
 ## Datenmodell (Migration `AddPriceCache`)
 

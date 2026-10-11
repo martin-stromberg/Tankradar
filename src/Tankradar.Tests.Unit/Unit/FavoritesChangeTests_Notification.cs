@@ -77,7 +77,7 @@ public class FavoritesChangeTests_Notification : BaseTest
     [Fact]
     public async Task FavoritesList_FollowsChangesAfterFirstLoad()
     {
-        var viewModel = new FavoritesViewModel(_fixture.Service, new FakeFavoriteGroupNavigator(), NullLogger<FavoritesViewModel>.Instance);
+        var viewModel = HomeViewModelFactory.Create(_fixture.Service);
         await _fixture.Service.CreateGroupAsync("Vorher", null);
         await viewModel.LastTask;
         Assert.Empty(viewModel.Groups);

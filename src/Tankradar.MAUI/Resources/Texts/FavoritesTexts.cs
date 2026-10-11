@@ -91,6 +91,67 @@ public static class FavoritesTexts
     public const string OpenGroupHint = "Zeigt die Tankstellen der Gruppe";
 
     /// <summary>
+    /// Beschriftung „Details öffnen“ einer Tankstelle.
+    /// </summary>
+    public const string OpenDetails = "Details öffnen";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Aktualisieren der Preise.
+    /// </summary>
+    public const string RefreshPrices = "Preise aktualisieren";
+
+    /// <summary>
+    /// Hinweis, dass für eine Tankstelle keine Preise der gewählten Sorten bekannt sind.
+    /// </summary>
+    public const string NoPricesKnown = "Keine Preise bekannt";
+
+    /// <summary>
+    /// Hinweis, dass die Gruppe keine Tankstellen enthält (Startseite).
+    /// </summary>
+    public const string GroupNoStations = "Noch keine Tankstellen";
+
+    /// <summary>
+    /// Beschreibung des Umschalters zum Ein- und Ausklappen einer Gruppe.
+    /// </summary>
+    public const string ToggleGroup = "Gruppe ein-/ausklappen";
+
+    /// <summary>
+    /// Beschreibung des Umschalters einer Gruppe für die Sprachausgabe mit Gruppenname und Zustand.
+    /// </summary>
+    /// <param name="groupName">Der Name der Gruppe.</param>
+    /// <param name="expanded">Gibt an, ob die Gruppe aufgeklappt ist.</param>
+    /// <returns>Der Beschreibungstext.</returns>
+    public static string ToggleGroupDescription(string groupName, bool expanded)
+    {
+        return $"{ToggleGroup}: {groupName}, {(expanded ? "aufgeklappt" : "eingeklappt")}";
+    }
+
+    /// <summary>
+    /// Zeichen des Umschalters bei aufgeklappter Gruppe.
+    /// </summary>
+    public const string ToggleExpandedGlyph = "▴";
+
+    /// <summary>
+    /// Zeichen des Umschalters bei eingeklappter Gruppe.
+    /// </summary>
+    public const string ToggleCollapsedGlyph = "▾";
+
+    /// <summary>
+    /// Überschrift des Bereichs „In der Nähe“.
+    /// </summary>
+    public const string NearbyHeading = "In der Nähe";
+
+    /// <summary>
+    /// Erläuterung des Bereichs „In der Nähe“.
+    /// </summary>
+    public const string NearbyDescription = "Tankstellen im Umkreis von 5 km, nach Entfernung. Reine Information, ohne Favoritenaktion.";
+
+    /// <summary>
+    /// Hinweis, dass in der Nähe keine Tankstellen gefunden wurden.
+    /// </summary>
+    public const string NearbyEmpty = "Keine Tankstellen in der Nähe";
+
+    /// <summary>
     /// Beschriftung „Bearbeiten“ eines Eintrags.
     /// </summary>
     public const string EditEntry = "Notiz und Priorität";

@@ -47,6 +47,11 @@ ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_k
   Last-Modified, Ablaufzeitpunkt); Kacheln aus früheren Versionen ohne `.meta` gelten ab ihrer Dateizeit für
   die Rückfallfrist. Abwegig lange Angaben werden auf ein Jahr begrenzt. Die Prüfung aller Fälle erfolgt gegen
   einen Test-HTTP-Handler und den Mock-Kachelserver (`ETag`, `Cache-Control`, `304`), nie gegen den echten Server.
+  **Präzisierung in Schritt 11:** Die Gültigkeit ist die Lebensdauer abzüglich der Angabe `Age` der Antwort (mindestens 0;
+  negative Werte gelten als 0, bei `no-cache`/`no-store` ohne Wirkung). Die Lebensdauer vor Abzug von `Age` steht in der
+  `.meta`-Datei (`TileMetadata.Lifetime`). Nennt eine `304`-Antwort keine eigenen Caching-Angaben, gilt die gespeicherte
+  Lebensdauer weiter (RFC 9111, 4.3.4) statt pauschal 7 Tage; Altbestand ohne gespeicherte Lebensdauer erhält die
+  Rückfallfrist.
 - **Speicherort des Kachelspeichers (Schritt 10).** Die Kacheln liegen im Zwischenspeicher-Verzeichnis der
   Plattform (`FileSystem.CacheDirectory`, über `IAppDataPathProvider.GetCacheDirectory`) statt im Datenverzeichnis
   (`AppDataDirectory`). Unter iOS ist das Cache-Verzeichnis von der Datensicherung ausgenommen, das System darf es

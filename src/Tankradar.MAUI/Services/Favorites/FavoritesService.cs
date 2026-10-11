@@ -82,7 +82,7 @@ public sealed class FavoritesService : IFavoritesService
 
         group.Name = trimmedName;
         group.Description = trimmedDescription;
-        return await SaveAsync(context, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, FavoriteResult.DuplicateName, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -96,7 +96,7 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteGroups.Remove(group);
-        return await SaveAsync(context, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -131,7 +131,7 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteEntries.Add(NewEntry(groupId, stationId));
-        return await SaveAsync(context, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, FavoriteResult.AlreadyMember, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -159,15 +159,56 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteEntries.RemoveRange(entries);
-        return await SaveAsync(context, cancellationToken).ConfigureAwait(false);
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<FavoriteEntry>> GetEntriesAsync(long groupId, CancellationToken cancellationToken = default)
     {
         await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var rows = await context.FavoriteEntries.AsNoTracking()
-            .Where(e => e.GroupId == groupId)
+        return await LoadEntriesAsync(context, query => query.Where(e => e.GroupId == groupId), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<FavoriteGroupOverview>> GetOverviewAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var groups = await LoadGroupsAsync(context, null, cancellationToken).ConfigureAwait(false);
+        var entries = await LoadEntriesAsync(context, query => query, cancellationToken).ConfigureAwait(false);
+        var byGroup = entries.ToLookup(entry => entry.GroupId);
+        return groups.Select(group => new FavoriteGroupOverview(group, byGroup[group.Id].ToList())).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<FavoriteResult> UpdateEntryAsync(long groupId, string stationId, string? note, FavoritePriority priority, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationId);
+        var trimmedNote = Normalize(note);
+        if (trimmedNote is { Length: > FavoriteLimits.MaxNoteLength })
+        {
+            return FavoriteResult.InvalidText;
+        }
+
+        await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        var entry = await context.FavoriteEntries
+            .FirstOrDefaultAsync(e => e.GroupId == groupId && e.StationId == stationId, cancellationToken)
+            .ConfigureAwait(false);
+        if (entry is null)
+        {
+            return FavoriteResult.NotMember;
+        }
+
+        entry.Note = trimmedNote;
+        entry.Priority = priority.ToString();
+        return await SaveAsync(context, null, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<IReadOnlyList<FavoriteEntry>> LoadEntriesAsync(
+        TankradarDbContext context,
+        Func<IQueryable<FavoriteEntryEntity>, IQueryable<FavoriteEntryEntity>> filter,
+        CancellationToken cancellationToken)
+    {
+        var rows = await filter(context.FavoriteEntries.AsNoTracking())
             .Select(e => new
             {
                 e.Id,
@@ -197,30 +238,6 @@ public sealed class FavoritesService : IFavoritesService
                 item.Row.Note,
                 item.Priority))
             .ToList();
-    }
-
-    /// <inheritdoc />
-    public async Task<FavoriteResult> UpdateEntryAsync(long groupId, string stationId, string? note, FavoritePriority priority, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(stationId);
-        var trimmedNote = Normalize(note);
-        if (trimmedNote is { Length: > FavoriteLimits.MaxNoteLength })
-        {
-            return FavoriteResult.InvalidText;
-        }
-
-        await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var entry = await context.FavoriteEntries
-            .FirstOrDefaultAsync(e => e.GroupId == groupId && e.StationId == stationId, cancellationToken)
-            .ConfigureAwait(false);
-        if (entry is null)
-        {
-            return FavoriteResult.NotMember;
-        }
-
-        entry.Note = trimmedNote;
-        entry.Priority = priority.ToString();
-        return await SaveAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     private static string? Normalize(string? text)
@@ -279,16 +296,16 @@ public sealed class FavoritesService : IFavoritesService
             .ToList();
     }
 
-    private async Task<FavoriteResult> SaveAsync(TankradarDbContext context, CancellationToken cancellationToken)
+    private async Task<FavoriteResult> SaveAsync(TankradarDbContext context, FavoriteResult? duplicateResult, CancellationToken cancellationToken)
     {
         try
         {
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed })
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: SqliteUniqueConstraintFailed } && duplicateResult is not null)
         {
-            // Gleichzeitiges Anlegen desselben Namens oder derselben Zuordnung aus einer anderen Ansicht; andere Fehler (gesperrte Datenbank, voller Datenträger) werden weitergereicht und als Speicherfehler gemeldet.
-            return FavoriteResult.DuplicateName;
+            // Gleichzeitiges Anlegen desselben Namens oder derselben Zuordnung aus einer anderen Ansicht; der Aufrufer bestimmt das Ergebnis. Andere Fehler (gesperrte Datenbank, voller Datenträger) werden weitergereicht und als Speicherfehler gemeldet.
+            return duplicateResult.Value;
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
@@ -342,7 +359,7 @@ public sealed class FavoritesService : IFavoritesService
         }
 
         context.FavoriteGroups.Add(group);
-        var saved = await SaveAsync(context, cancellationToken).ConfigureAwait(false);
+        var saved = await SaveAsync(context, FavoriteResult.DuplicateName, cancellationToken).ConfigureAwait(false);
         return saved == FavoriteResult.Ok
             ? new FavoriteGroupResult(FavoriteResult.Ok, new FavoriteGroup(group.Id, group.Name, group.Description, group.Entries.Count))
             : new FavoriteGroupResult(saved, null);

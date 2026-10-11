@@ -1,3 +1,5 @@
+using FlaUI.Core.Definitions;
+
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class SettingsE2ETests_Defaults : SettingsE2ETestBase
 {
     /// <summary>
-    /// Prüft, dass ein frischer Start die Standardwerte anzeigt (GPS nur bei Nutzung, Liste, Preis, alle Sorten in der Reihenfolge E5, E10, Diesel).
+    /// Prüft, dass ein frischer Start die Standardwerte anzeigt (GPS nur bei Nutzung, Liste, Preis, alle Sorten in der Reihenfolge E5, E10, Diesel, „In der Nähe“ aus).
     /// </summary>
     [Fact]
     public void FirstStart_ShowsDefaultValues()
@@ -29,6 +31,8 @@ public class SettingsE2ETests_Defaults : SettingsE2ETestBase
             }
 
             Assert.Equal(DefaultFuelTypeOrder, ReadFuelTypeOrder());
+            Assert.Equal(ToggleState.Off, WaitForAutomationId("Settings.Nearby.Switch").Patterns.Toggle.Pattern.ToggleState.Value);
+            Assert.False(Exists("Settings.Nearby.GpsHint"));
         });
     }
 
@@ -54,6 +58,7 @@ public class SettingsE2ETests_Defaults : SettingsE2ETestBase
                 Assert.True(Exists($"Settings.{id}"), $"Element Settings.{id} fehlt.");
             }
 
+            Assert.True(Exists("Settings.Nearby.Switch"), "Schalter 'In der Nähe' fehlt.");
             Assert.False(Exists("Settings.FuelType.Electric.Switch"));
             Assert.False(Exists("Settings.ChargingType"));
         });

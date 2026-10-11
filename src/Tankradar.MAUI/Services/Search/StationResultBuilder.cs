@@ -67,6 +67,25 @@ public static class StationResultBuilder
         return selected.Count > 0 ? selected[0] : null;
     }
 
+    /// <summary>
+    /// Bereitet eine einzelne Tankstelle als Listeneintrag auf (Preiszeilen der gewählten Sorten in der Reihenfolge der Einstellungen, Alter, Hinweise, Entfernung).
+    /// </summary>
+    /// <param name="station">Die Tankstelle.</param>
+    /// <param name="fuelTypes">Die Spritsorten der Einstellungen in ihrer Reihenfolge; nur ausgewählte Sorten werden angezeigt.</param>
+    /// <param name="nowUtc">Der aktuelle Zeitpunkt in UTC (für Alter und Hinweise).</param>
+    /// <returns>Der Listeneintrag.</returns>
+    public static StationListItem BuildItem(StationInfo station, IReadOnlyList<FuelTypeSelection> fuelTypes, DateTime nowUtc)
+    {
+        ArgumentNullException.ThrowIfNull(station);
+        ArgumentNullException.ThrowIfNull(fuelTypes);
+        var selected = fuelTypes
+            .Where(selection => selection.IsSelected && Enum.IsDefined(selection.FuelType))
+            .Select(selection => selection.FuelType)
+            .Distinct()
+            .ToList();
+        return CreateItem(station, selected, nowUtc);
+    }
+
     private static StationListItem CreateItem(StationInfo source, IReadOnlyList<FuelType> selected, DateTime nowUtc)
     {
         // Hinweise aus Öffnungszeiten (z. B. „Automatentankstelle“) nur aus Detailangaben, die nicht älter als die Altersgrenze sind.
