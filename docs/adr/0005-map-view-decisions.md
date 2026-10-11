@@ -108,6 +108,15 @@ ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_k
   Wischgeste der Karte mit dem Scrollen der Seite konkurrieren; die Bedienung über die Schaltflächen
   bleibt immer möglich.
 
+## Markierungen nur sichtbar, nur im Ausschnitt, begrenzt
+
+Jede Markierung ist eine Schaltfläche und damit ein Element im Oberflächenbaum und in der Bedienhilfe (UI Automation). Bei
+großen Ergebnismengen (z. B. 300 Stationen) machte das den Baum riesig: Baumsuchen wurden auf langsamen Rechnern extrem langsam
+und liefen in UIA-Timeouts (Staging-Lauf mit `SearchE2ETests_LargeResult`), zugleich stiegen Speicher und Layoutaufwand. Deshalb:
+
+- Die Karte baut Markierungen, Suchposition und Kacheln nur auf, solange sie sichtbar ist; beim Wechsel zur Liste werden sie aus dem Baum entfernt, beim Zurückwechseln neu aufgebaut.
+- Aufgebaut werden nur Stationen im sichtbaren Ausschnitt, höchstens `MapMarkerSelection.MaxRendered` (100), die der Bildmitte nächsten zuerst. Der Zähler „X von Y Stationen sichtbar“ nennt weiterhin alle Stationen im Ausschnitt; bei Begrenzung ergänzt er „N dargestellt – für alle hineinzoomen“.
+
 ## Folgen
 
 - Die Kartenkomponente ist die Grundlage für spätere Schritte (z. B. Routenansicht, Schritt 17).

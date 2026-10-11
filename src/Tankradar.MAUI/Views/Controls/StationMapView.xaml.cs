@@ -198,6 +198,50 @@ public partial class StationMapView : ContentView
 
     private void RefreshMarkers()
     {
+        ClearMarkerVisuals();
+        if (_viewport is not null)
+        {
+            Render();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(string? propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+        if (propertyName == IsVisibleProperty.PropertyName)
+        {
+            if (IsVisible)
+            {
+                Render();
+            }
+            else
+            {
+                // Unsichtbare Karte: Markierungen und Kacheln nicht im Oberflächenbaum (und in der Bedienhilfe) halten.
+                ClearVisuals();
+            }
+        }
+    }
+
+    private void ClearVisuals()
+    {
+        ClearMarkerVisuals();
+        foreach (var load in _tileLoads.Values)
+        {
+            load.Cancel();
+        }
+
+        _tileLoads.Clear();
+        foreach (var image in _tiles.Values)
+        {
+            TileLayer.Remove(image);
+        }
+
+        _tiles.Clear();
+    }
+
+    private void ClearMarkerVisuals()
+    {
         foreach (var button in _markerButtons.Values)
         {
             MarkerLayer.Remove(button);
@@ -209,16 +253,11 @@ public partial class StationMapView : ContentView
             MarkerLayer.Remove(_originMarker);
             _originMarker = null;
         }
-
-        if (_viewport is not null)
-        {
-            Render();
-        }
     }
 
     private void Render()
     {
-        if (_viewport is not { } viewport)
+        if (!IsVisible || _viewport is not { } viewport)
         {
             return;
         }
@@ -317,18 +356,11 @@ public partial class StationMapView : ContentView
     private void RenderMarkers(MapViewport viewport)
     {
         var markers = Markers ?? [];
-        var visible = 0;
+        var selection = MapMarkerSelection.Select(markers, viewport);
         var seen = new HashSet<string>();
-        foreach (var marker in markers)
+        foreach (var marker in selection.Rendered)
         {
             var (x, y) = viewport.ToScreen(marker.Latitude, marker.Longitude);
-            var inside = viewport.Contains(marker.Latitude, marker.Longitude);
-            if (!inside)
-            {
-                continue;
-            }
-
-            visible++;
             var id = marker.Station.Id;
             seen.Add(id);
             if (!_markerButtons.TryGetValue(id, out var button))
@@ -350,7 +382,9 @@ public partial class StationMapView : ContentView
         }
 
         RenderOrigin(viewport);
-        CountLabel.Text = MapTexts.FormatStationCount(visible, markers.Count);
+        CountLabel.Text = selection.IsTruncated
+            ? MapTexts.FormatStationCountLimited(selection.InViewport, markers.Count, selection.Rendered.Count)
+            : MapTexts.FormatStationCount(selection.InViewport, markers.Count);
     }
 
     private Button CreateMarkerButton(MapMarker marker)

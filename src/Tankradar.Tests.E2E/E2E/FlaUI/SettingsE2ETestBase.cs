@@ -1,6 +1,7 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Definitions;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
@@ -59,7 +60,7 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// <returns><see langword="true"/>, wenn das Element existiert.</returns>
     protected bool Exists(string automationId)
     {
-        return MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId)) is not null;
+        return FindByAutomationId(automationId) is not null;
     }
 
     /// <summary>
@@ -136,7 +137,8 @@ public abstract class SettingsE2ETestBase : E2ETestBase
         var deadline = DateTime.UtcNow + DefaultTimeout;
         while (DateTime.UtcNow < deadline)
         {
-            if (condition())
+            // Ein einzelner UIA-Timeout (langsamer Runner, große Baumsuche) wird begrenzt wiederholt; andere Fehler und Assertions bleiben unverändert sichtbar.
+            if (TransientRetry.Run(condition, failureMessage, maxAttempts: 3, pause: TimeSpan.FromSeconds(1)))
             {
                 return;
             }
@@ -147,10 +149,24 @@ public abstract class SettingsE2ETestBase : E2ETestBase
         Assert.Fail(failureMessage);
     }
 
+    /// <summary>
+    /// Sucht das erste Element mit der AutomationId unterhalb des Hauptfensters; ein vorübergehender UIA-Timeout wird begrenzt wiederholt.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Das Element oder <see langword="null"/>.</returns>
+    protected AutomationElement? FindByAutomationId(string automationId)
+    {
+        return TransientRetry.Run(
+            () => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId)),
+            $"Suche des Elements '{automationId}'",
+            maxAttempts: 3,
+            pause: TimeSpan.FromSeconds(1));
+    }
+
     private AutomationElement WaitForElement(Func<ConditionFactory, ConditionBase> condition)
     {
         AutomationElement? found = null;
-        WaitUntil(() => (found = MainWindow.FindFirstDescendant(condition)) is not null, "Ein erwartetes Element wurde nicht gefunden.");
+        WaitUntil(() => (found = TransientRetry.Run(() => MainWindow.FindFirstDescendant(condition), "Suche eines Elements", maxAttempts: 3, pause: TimeSpan.FromSeconds(1))) is not null, "Ein erwartetes Element wurde nicht gefunden.");
         return found!;
     }
 }
