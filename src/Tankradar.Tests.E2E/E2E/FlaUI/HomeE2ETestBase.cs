@@ -14,7 +14,7 @@ public abstract class HomeE2ETestBase : FavoritesE2ETestBase
     /// </summary>
     protected const string AgePattern = @"^vor \d+ Min\.$";
 
-    protected const string DistancePattern = @"^d+[,.]?d* ?[km]+$";
+    protected const string DistancePattern = @"^\d+[,.]?\d* ?[km]+$";
     /// Das Muster einer Entfernungsangabe („0,2 km“ oder „120 m“).
     /// </summary>
     protected const string DistancePattern = @"^\d+([,.]\d+)? (km|m)$";
