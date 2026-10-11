@@ -36,7 +36,7 @@ if ($Version -notmatch '^\d+\.\d+\.\d+$') {
 
 # Der Changelog ist Pflicht und wird vor dem Build geprueft (kein Zwischenstand ohne Beschreibung der Aenderungen).
 if ($ChangelogFile -and (Test-Path $ChangelogFile -PathType Leaf)) {
-    $changelogEntry = Get-Content -Path $ChangelogFile -Raw
+    $changelogEntry = Get-Content -Path $ChangelogFile -Raw -Encoding UTF8
 }
 else {
     $changelogEntry = $ChangelogFile
