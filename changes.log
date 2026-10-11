@@ -1,3 +1,8 @@
+## 2026-10-11 — Hotfix: Datenbank im iOS-Release-Build (TestFlight)
+
+- Im TestFlight-Build schlugen Favoriten, Einstellungen und Tankstellensuche fehl („… konnten nicht geladen werden“, „Die Änderung konnte nicht gespeichert werden.“): Der iOS-Release-Build läuft ohne JIT und mit Linker, EF Core benötigt aber Laufzeit-Codeerzeugung und Reflection
+- iOS: Interpreter als Ausweichweg für dynamisch erzeugten Code (`MtouchInterpreter=-all`, AOT bleibt aktiv); App-Assembly, EF Core und Microsoft.Data.Sqlite werden vom Linker nicht gekürzt
+
 ## 2026-10-11 — Startseite: Nachbesserung Runde 1 (Tankradar Schritt 11, Version 0.1.15)
 
 - Die Startseite zeigt Preise für alle Favoriten-Tankstellen: Die stille Kürzung auf 100 Kennungen ist entfernt (lokales Lesen ohne Grenze, Abruf weiterhin in Anfragen zu je 10 Kennungen mit Drosselung und 5-Minuten-Frist); Unit-Tests mit mehr als 100 Kennungen
