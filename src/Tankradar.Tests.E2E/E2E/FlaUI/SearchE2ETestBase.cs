@@ -317,8 +317,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="text">Der Text.</param>
     protected void SetAddress(string text)
     {
-        WaitForAutomationId("Search.Address.Input").Patterns.Value.Pattern.SetValue(text);
-        WaitUntil(() => ReadAddress() == text, $"Das Adressfeld enthält nicht '{text}'.");
+        SetFieldValue("Search.Address.Input", text);
     }
 
     /// <summary>

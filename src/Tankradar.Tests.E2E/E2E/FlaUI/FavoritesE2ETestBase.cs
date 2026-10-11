@@ -37,10 +37,7 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
     /// <param name="text">Der Text.</param>
     protected void Type(string automationId, string text)
     {
-        WaitForAutomationId(automationId).Patterns.Value.Pattern.SetValue(text);
-        WaitUntil(
-            () => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault == text,
-            $"Das Feld '{automationId}' enthält nicht '{text}'.");
+        SetFieldValue(automationId, text);
     }
 
     /// <summary>
@@ -55,10 +52,14 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
             () =>
             {
                 var texts = SafeTexts(automationId);
-                last = string.Join(" | ", texts);
+                if (texts.Count > 0)
+                {
+                    last = string.Join(" | ", texts);
+                }
+
                 return texts.SequenceEqual(expected);
             },
-            $"'{automationId}' zeigt nicht [{string.Join(" | ", expected)}], zuletzt: [{last}].");
+            $"'{automationId}' zeigt nicht [{string.Join(" | ", expected)}], zuletzt gelesen: [{last}].");
     }
 
     /// <summary>
