@@ -75,4 +75,6 @@ Nicht umgesetzt, weil sie zu späteren Schritten gehören oder nicht gefordert s
 
 - Schritt 13 baut auf `TankbookEntries` und `IVehicleService` auf. Er prüft zusätzlich, dass der Start-Kilometerstand nicht
   über dem ersten Vorgang liegt, und wie mit einem Wechsel der Kraftstoffart bei vorhandenen Vorgängen umzugehen ist.
+  Beides ist in [ADR 0009](0009-tankbook-entries.md) entschieden; dort sind auch die Neuzählung beim Löschen und das
+  WCAG-Muster (Kontext im Hinweis statt in der Beschreibung) festgehalten, die die Beschreibungen der Schaltflächen ersetzen.
 - Schritt 15 ergänzt die Löschrückfrage um den Sicherungshinweis (`TankbookTexts.FormatDeleteQuestion`).
