@@ -42,10 +42,7 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
     /// <param name="text">Der Text.</param>
     protected void Type(string automationId, string text)
     {
-        WaitForAutomationId(automationId).Patterns.Value.Pattern.SetValue(text);
-        WaitUntil(
-            () => FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault == text,
-            $"Das Feld '{automationId}' enthält nicht '{text}'.");
+        SetFieldValue(automationId, text);
     }
 
     /// <summary>
@@ -77,10 +74,16 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
             () =>
             {
                 var texts = ReadTexts(automationId);
-                last = string.Join(" | ", texts);
+
+                // Eine leere Liste bedeutet nur „Element gerade neu aufgebaut/nicht lesbar“; als Diagnose bleibt der letzte lesbare Stand erhalten.
+                if (texts.Count > 0)
+                {
+                    last = string.Join(" | ", texts);
+                }
+
                 return texts.SequenceEqual(expected);
             },
-            $"'{automationId}' zeigt nicht [{string.Join(" | ", expected)}], zuletzt: [{last}].");
+            $"'{automationId}' zeigt nicht [{string.Join(" | ", expected)}], zuletzt gelesen: [{last}].");
     }
 
     /// <summary>

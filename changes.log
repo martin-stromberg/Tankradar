@@ -1,3 +1,8 @@
+## 2026-10-11 — Test: E2E-Eingaben vor dem Speichern abgesichert
+
+- FlaUI-E2E: Die Eingabe per UI-Automation (`SetValue`) ändert nur das native Feld; die Bindung ans MAUI-Modell folgt verzögert. Auf dem langsamen CI-Runner wurde „Speichern“ im Tankbuch-Test teils vor der Übernahme des Startverbrauchs ausgelöst (Fahrzeug ohne Startverbrauch). Gemeinsamer Helfer `SetFieldValue` (Tankbuch, Favoriten, Adresssuche) wechselt den Fokus und wartet auf den UI-Thread der App, bevor der Test weitermacht
+- Fehlermeldung von `WaitForTexts` zeigt den letzten lesbaren Stand statt einer leeren Liste
+
 ## 2026-10-11 — Hotfix: Datenbank im iOS-Release-Build (TestFlight)
 
 - Im TestFlight-Build schlugen Favoriten, Einstellungen und Tankstellensuche fehl („… konnten nicht geladen werden“, „Die Änderung konnte nicht gespeichert werden.“): Der iOS-Release-Build läuft ohne JIT und mit Linker, EF Core benötigt aber Laufzeit-Codeerzeugung und Reflection
