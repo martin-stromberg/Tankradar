@@ -63,10 +63,11 @@
 	<!-- iOS-Release (TestFlight/App Store) läuft ohne JIT und mit Linker. EF Core erzeugt zur Laufzeit Code
 	     (Abfragen, Materialisierung) und findet Migrationen und Dienste per Reflection. Ohne Interpreter und
 	     mit gekürzten Assemblys schlägt deshalb schon die Datenbankinitialisierung fehl (Favoriten,
-	     Einstellungen und Preis-Cache nicht nutzbar). "-all": alles bleibt AOT-übersetzt, der Interpreter
-	     springt nur für dynamisch erzeugten Code ein. -->
+	     Einstellungen und Preis-Cache nicht nutzbar). "all": Interpreter für alle Assemblys. Die Variante
+	     "-all" (alles AOT plus Interpreter) überschritt mit den unten ausgenommenen Assemblys das
+	     60-Minuten-Limit des CI-Builds. -->
 	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
-		<MtouchInterpreter>-all</MtouchInterpreter>
+		<MtouchInterpreter>all</MtouchInterpreter>
 	</PropertyGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">

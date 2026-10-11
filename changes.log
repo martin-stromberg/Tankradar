@@ -1,7 +1,7 @@
 ## 2026-10-11 — Hotfix: Datenbank im iOS-Release-Build (TestFlight)
 
 - Im TestFlight-Build schlugen Favoriten, Einstellungen und Tankstellensuche fehl („… konnten nicht geladen werden“, „Die Änderung konnte nicht gespeichert werden.“): Der iOS-Release-Build läuft ohne JIT und mit Linker, EF Core benötigt aber Laufzeit-Codeerzeugung und Reflection
-- iOS: Interpreter als Ausweichweg für dynamisch erzeugten Code (`MtouchInterpreter=-all`, AOT bleibt aktiv); App-Assembly, EF Core und Microsoft.Data.Sqlite werden vom Linker nicht gekürzt
+- iOS: Interpreter für alle Assemblys (`MtouchInterpreter=all`; die Variante `-all` mit vollständiger AOT-Übersetzung überschritt das 60-Minuten-Limit des CI-Builds); App-Assembly, EF Core und Microsoft.Data.Sqlite werden vom Linker nicht gekürzt
 
 ## 2026-10-11 — Fahrzeugverwaltung im Tankbuch (Tankradar Schritt 12, Version 0.1.16)
 
