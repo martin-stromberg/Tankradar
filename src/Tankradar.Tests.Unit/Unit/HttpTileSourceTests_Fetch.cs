@@ -217,49 +217,16 @@ public class HttpTileSourceTests_Fetch : BaseTest
         Assert.Null(await source.GetTileAsync(Key));
     }
 
-    private sealed class FailingStream : Stream
+    private sealed class FailingStream : MemoryStream
     {
-        public override bool CanRead => true;
-
-        public override bool CanSeek => false;
-
-        public override bool CanWrite => false;
-
-        public override long Length => throw new NotSupportedException();
-
-        public override long Position
-        {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
-        }
-
-        public override void Flush()
-        {
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            throw new IOException("Verbindung abgebrochen");
-        }
-
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            throw new IOException("Verbindung abgebrochen");
+            return ValueTask.FromException<int>(new IOException("Verbindung abgebrochen"));
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
+        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            throw new NotSupportedException();
-        }
-
-        public override void SetLength(long value)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException();
+            return Task.FromException(new IOException("Verbindung abgebrochen"));
         }
     }
 
