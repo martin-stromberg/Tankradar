@@ -136,9 +136,34 @@ public static class TankbookTexts
     public const string DuplicateName = "Ein Fahrzeug mit diesem Namen gibt es bereits.";
 
     /// <summary>
-    /// Beschreibung der Schaltfläche „Abbrechen“ des Formulars für die Sprachausgabe.
+    /// Beschriftung der Schaltfläche, die die Tank- und Ladevorgänge eines Fahrzeugs öffnet.
     /// </summary>
-    public const string CancelFormDescription = "Formular schließen, ohne zu speichern";
+    public const string Entries = "Tank- und Ladevorgänge";
+
+    /// <summary>
+    /// Hinweis der Schaltfläche „Abbrechen“ des Formulars für die Sprachausgabe (der vorgelesene Name bleibt der sichtbare Text).
+    /// </summary>
+    public const string CancelFormHint = "Formular schließen, ohne zu speichern";
+
+    /// <summary>
+    /// Meldung, wenn der Start-Kilometerstand über dem Kilometerstand des ersten Tank- oder Ladevorgangs liegt.
+    /// </summary>
+    public const string StartOdometerAboveEntries = "Der Start-Kilometerstand darf nicht über dem Kilometerstand des ersten Tank- oder Ladevorgangs liegen.";
+
+    /// <summary>
+    /// Meldung, wenn sich die Zahl der Vorgänge beim Bestätigen des Löschens geändert hat.
+    /// </summary>
+    public const string EntryCountChanged = "Inzwischen hat sich die Zahl der Tank- und Ladevorgänge geändert. Bitte bestätige das Löschen erneut.";
+
+    /// <summary>
+    /// Hinweis einer Schaltfläche, die sich auf ein Fahrzeug bezieht, für die Sprachausgabe, z. B. „Fahrzeug „Golf““.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatVehicleHint(string name)
+    {
+        return $"Fahrzeug „{name}“";
+    }
 
     /// <summary>
     /// Beschreibung der Schaltfläche „Bearbeiten“ eines Fahrzeugs für die Sprachausgabe, z. B. „Golf bearbeiten“.
@@ -161,24 +186,30 @@ public static class TankbookTexts
     }
 
     /// <summary>
-    /// Beschreibung der Bestätigung der Löschrückfrage für die Sprachausgabe; nennt bei vorhandenen Vorgängen auch deren Mitlöschen.
+    /// Hinweis der Bestätigung der Löschrückfrage für die Sprachausgabe (der vorgelesene Name bleibt der sichtbare Text); nennt das Fahrzeug
+    /// und bei vorhandenen Vorgängen deren Zahl, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“.
     /// </summary>
     /// <param name="name">Der Name des Fahrzeugs.</param>
     /// <param name="entryCount">Die Zahl der Tank- und Ladevorgänge des Fahrzeugs.</param>
     /// <returns>Der Text.</returns>
-    public static string FormatConfirmDeleteDescription(string name, int entryCount)
+    public static string FormatConfirmDeleteHint(string name, int entryCount)
     {
-        return entryCount > 0 ? $"Fahrzeug „{name}“ und Vorgänge löschen" : $"Ja, Fahrzeug „{name}“ löschen";
+        return entryCount switch
+        {
+            <= 0 => $"Fahrzeug „{name}“ endgültig löschen",
+            1 => $"Fahrzeug „{name}“ und 1 Tank- oder Ladevorgang endgültig löschen",
+            _ => string.Create(German, $"Fahrzeug „{name}“ und {entryCount} Tank- und Ladevorgänge endgültig löschen"),
+        };
     }
 
     /// <summary>
-    /// Beschreibung der Schaltfläche „Abbrechen“ der Löschrückfrage für die Sprachausgabe, z. B. „Löschen von „Golf“ abbrechen“.
+    /// Hinweis der Schaltfläche „Abbrechen“ der Löschrückfrage für die Sprachausgabe, z. B. „Fahrzeug „Golf“ behalten“.
     /// </summary>
     /// <param name="name">Der Name des Fahrzeugs.</param>
     /// <returns>Der Text.</returns>
-    public static string FormatCancelDeleteDescription(string name)
+    public static string FormatCancelDeleteHint(string name)
     {
-        return $"Löschen von „{name}“ abbrechen";
+        return $"Fahrzeug „{name}“ behalten";
     }
 
     /// <summary>
@@ -354,6 +385,8 @@ public static class TankbookTexts
                 German,
                 $"Der Startverbrauch muss größer als 0 und kleiner als {VehicleLimits.MaxConsumptionExclusive:0} sein, mit höchstens {VehicleLimits.MaxConsumptionDecimals} Nachkommastellen."),
             VehicleResult.VehicleNotFound => "Das Fahrzeug gibt es nicht mehr.",
+            VehicleResult.EntryCountChanged => EntryCountChanged,
+            VehicleResult.StartOdometerAboveEntries => StartOdometerAboveEntries,
             _ => SaveFailed,
         };
     }

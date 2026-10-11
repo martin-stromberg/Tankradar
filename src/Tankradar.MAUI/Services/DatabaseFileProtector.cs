@@ -24,22 +24,31 @@ public class DatabaseFileProtector : IDatabaseFileProtector
     /// <inheritdoc />
     public void Protect(string databasePath)
     {
-#if IOS
         // Neue Dateien (z. B. -wal/-shm, die erst später entstehen) erben die Schutzklasse des Verzeichnisses;
         // vorhandene Dateien werden zusätzlich ausdrücklich geschützt.
+        ApplyProtection(databasePath, [databasePath, databasePath + "-wal", databasePath + "-shm"]);
+    }
+
+    /// <inheritdoc />
+    public void ProtectFile(string filePath)
+    {
+        ApplyProtection(filePath, [filePath]);
+    }
+
+    private void ApplyProtection(string path, IReadOnlyList<string> files)
+    {
+#if IOS
         var targets = new List<string>();
-        var directory = Path.GetDirectoryName(databasePath);
+        var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory))
         {
             targets.Add(directory);
         }
 
-        targets.Add(databasePath);
-        targets.Add(databasePath + "-wal");
-        targets.Add(databasePath + "-shm");
+        targets.AddRange(files);
 
         var attributes = new NSDictionary(NSFileManager.FileProtectionKey, NSFileProtectionType.CompleteUntilFirstUserAuthentication);
-        foreach (var target in targets.Where(path => File.Exists(path) || Directory.Exists(path)))
+        foreach (var target in targets.Where(candidate => File.Exists(candidate) || Directory.Exists(candidate)))
         {
             if (!NSFileManager.DefaultManager.SetAttributes(attributes, target, out var error))
             {
@@ -47,7 +56,7 @@ public class DatabaseFileProtector : IDatabaseFileProtector
             }
         }
 #else
-        _logger.LogDebug("Kein plattformspezifischer Dateischutz für {Path} erforderlich.", databasePath);
+        _logger.LogDebug("Kein plattformspezifischer Dateischutz für {Path} ({FileCount} Dateien) erforderlich.", path, files.Count);
 #endif
     }
 }

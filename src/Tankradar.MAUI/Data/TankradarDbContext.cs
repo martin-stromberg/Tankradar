@@ -1,4 +1,6 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Tankradar.MAUI.Models.Tankbook;
 
 namespace Tankradar.MAUI.Data;
 
@@ -69,6 +71,28 @@ public class TankradarDbContext : DbContext
     public static string GetDatabasePath(string dataDirectory)
     {
         return Path.Combine(dataDirectory, DatabaseFileName);
+    }
+
+    /// <summary>
+    /// Baut die Verbindungszeichenfolge der App: Fremdschlüssel sind ausdrücklich eingeschaltet (<c>Foreign Keys=True</c>),
+    /// damit die Kaskaden nicht vom Standard der SQLite-Bibliothek abhängen.
+    /// </summary>
+    /// <param name="databasePath">Der Pfad der Datenbankdatei.</param>
+    /// <param name="pooling"><see langword="false"/> schaltet das Verbindungspooling ab (Tests, die Dateien sofort löschen).</param>
+    /// <returns>Die Verbindungszeichenfolge.</returns>
+    public static string BuildConnectionString(string databasePath, bool pooling = true)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = databasePath,
+            ForeignKeys = true,
+        };
+        if (!pooling)
+        {
+            builder.Pooling = false;
+        }
+
+        return builder.ToString();
     }
 
     /// <inheritdoc />
@@ -162,8 +186,16 @@ public class TankradarDbContext : DbContext
                 .WithMany(v => v.Entries)
                 .HasForeignKey(e => e.VehicleId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.VehicleId);
+            entity.HasIndex(e => new { e.VehicleId, e.OccurredAt });
             entity.Property(e => e.CreatedUtc).IsRequired();
+            entity.Property(e => e.OccurredAt).IsRequired();
+            entity.Property(e => e.Kind).IsRequired().HasDefaultValue(nameof(TankbookEntryKind.Fuel));
+            entity.Property(e => e.Quantity).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.UnitPrice).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.TotalAmount).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.OdometerKm).IsRequired();
+            entity.Property(e => e.IsPartial).HasDefaultValue(false);
+            entity.Property(e => e.StationName).IsRequired().HasDefaultValue(string.Empty);
         });
     }
 }

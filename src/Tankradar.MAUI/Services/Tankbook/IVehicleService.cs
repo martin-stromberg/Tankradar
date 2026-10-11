@@ -31,7 +31,8 @@ public interface IVehicleService
     Task<VehicleSaveResult> CreateVehicleAsync(VehicleInput input, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Ändert alle Angaben eines Fahrzeugs; der eigene Name in anderer Schreibweise ist erlaubt.
+    /// Ändert alle Angaben eines Fahrzeugs; der eigene Name in anderer Schreibweise ist erlaubt. Der Start-Kilometerstand darf nicht über dem
+    /// niedrigsten Kilometerstand der vorhandenen Vorgänge liegen; ein Wechsel der Kraftstoffart ist auch mit Vorgängen erlaubt.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
     /// <param name="input">Die neuen Angaben.</param>
@@ -48,10 +49,12 @@ public interface IVehicleService
     Task<int> CountEntriesAsync(long vehicleId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Löscht ein Fahrzeug samt aller seiner Tank- und Ladevorgänge; Vorgänge anderer Fahrzeuge bleiben unberührt.
+    /// Löscht ein Fahrzeug samt aller seiner Tank- und Ladevorgänge und deren Belegfotos; Vorgänge anderer Fahrzeuge bleiben unberührt.
+    /// Die Vorgänge werden in derselben Transaktion neu gezählt; weicht die Zahl von der in der Rückfrage genannten ab, wird nichts gelöscht.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
+    /// <param name="expectedEntryCount">Die Zahl der Vorgänge, die die bestätigte Rückfrage genannt hat.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
-    /// <returns>Das Ergebnis der Änderung.</returns>
-    Task<VehicleResult> DeleteVehicleAsync(long vehicleId, CancellationToken cancellationToken = default);
+    /// <returns>Das Ergebnis mit der aktuellen Zahl der Vorgänge (<see cref="VehicleResult.EntryCountChanged"/>, wenn sie abweicht).</returns>
+    Task<VehicleDeleteResult> DeleteVehicleAsync(long vehicleId, int expectedEntryCount, CancellationToken cancellationToken = default);
 }

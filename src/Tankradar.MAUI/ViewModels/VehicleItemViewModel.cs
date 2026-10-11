@@ -12,19 +12,22 @@ public sealed class VehicleItemViewModel : BaseViewModel
     private bool _isConfirmingDelete;
     private string _deleteQuestion = string.Empty;
     private string _confirmDeleteLabel = TankbookTexts.ConfirmDelete;
-    private string _confirmDeleteDescription = string.Empty;
+    private string _confirmDeleteHint = string.Empty;
+    private int _shownEntryCount;
 
     /// <summary>
     /// Erstellt den Eintrag.
     /// </summary>
     /// <param name="vehicle">Das Fahrzeug.</param>
     /// <param name="edit">Öffnet das Formular zum Bearbeiten dieses Fahrzeugs.</param>
+    /// <param name="openEntries">Öffnet die Tank- und Ladevorgänge dieses Fahrzeugs.</param>
     /// <param name="delete">Startet das Löschen (liest die Zahl der Vorgänge und zeigt die Rückfrage).</param>
     /// <param name="confirmDelete">Löscht das Fahrzeug nach der Bestätigung.</param>
     /// <param name="canConfirmDelete">Gibt an, ob die Bestätigung gerade ausführbar ist (gesperrt, solange eine Änderung gespeichert wird).</param>
     public VehicleItemViewModel(
         Vehicle vehicle,
         Action<VehicleItemViewModel> edit,
+        Action<VehicleItemViewModel> openEntries,
         Action<VehicleItemViewModel> delete,
         Action<VehicleItemViewModel> confirmDelete,
         Func<bool> canConfirmDelete)
@@ -34,8 +37,10 @@ public sealed class VehicleItemViewModel : BaseViewModel
         Details = TankbookTexts.FormatVehicleDetails(vehicle);
         EditDescription = TankbookTexts.FormatEditDescription(vehicle.Name);
         DeleteDescription = TankbookTexts.FormatDeleteDescription(vehicle.Name);
-        CancelDeleteDescription = TankbookTexts.FormatCancelDeleteDescription(vehicle.Name);
+        CancelDeleteHint = TankbookTexts.FormatCancelDeleteHint(vehicle.Name);
+        EntriesHint = TankbookTexts.FormatVehicleHint(vehicle.Name);
         EditCommand = new Command(() => edit(this));
+        OpenEntriesCommand = new Command(() => openEntries(this));
         DeleteCommand = new Command(() => delete(this));
         ConfirmDeleteCommand = new Command(() => confirmDelete(this), canConfirmDelete);
         CancelDeleteCommand = new Command(HideDeleteConfirmation);
@@ -78,17 +83,32 @@ public sealed class VehicleItemViewModel : BaseViewModel
     public string DeleteDescription { get; }
 
     /// <summary>
-    /// Beschreibung der Schaltfläche „Abbrechen“ der Rückfrage für die Sprachausgabe.
+    /// Hinweis der Schaltfläche „Abbrechen“ der Rückfrage für die Sprachausgabe, z. B. „Fahrzeug „Golf“ behalten“; der vorgelesene Name bleibt der sichtbare Text.
     /// </summary>
-    public string CancelDeleteDescription { get; }
+    public string CancelDeleteHint { get; }
 
     /// <summary>
-    /// Beschreibung der Bestätigung der Rückfrage für die Sprachausgabe; nennt den Fahrzeugnamen und gegebenenfalls das Mitlöschen der Vorgänge.
+    /// Hinweis der Bestätigung der Rückfrage für die Sprachausgabe; nennt den Fahrzeugnamen und gegebenenfalls die Zahl der mitgelöschten Vorgänge.
+    /// Der vorgelesene Name bleibt der sichtbare Text.
     /// </summary>
-    public string ConfirmDeleteDescription
+    public string ConfirmDeleteHint
     {
-        get => _confirmDeleteDescription;
-        private set => SetProperty(ref _confirmDeleteDescription, value);
+        get => _confirmDeleteHint;
+        private set => SetProperty(ref _confirmDeleteHint, value);
+    }
+
+    /// <summary>
+    /// Hinweis der Schaltfläche „Tank- und Ladevorgänge“ für die Sprachausgabe, z. B. „Fahrzeug „Golf““.
+    /// </summary>
+    public string EntriesHint { get; }
+
+    /// <summary>
+    /// Die Zahl der Vorgänge, die die angezeigte Rückfrage nennt; beim Bestätigen prüft der Dienst, ob sie noch stimmt.
+    /// </summary>
+    public int ShownEntryCount
+    {
+        get => _shownEntryCount;
+        private set => SetProperty(ref _shownEntryCount, value);
     }
 
     /// <summary>
@@ -124,6 +144,11 @@ public sealed class VehicleItemViewModel : BaseViewModel
     public ICommand EditCommand { get; }
 
     /// <summary>
+    /// Befehl „Tank- und Ladevorgänge“: öffnet die Vorgänge des Fahrzeugs.
+    /// </summary>
+    public ICommand OpenEntriesCommand { get; }
+
+    /// <summary>
     /// Befehl „Löschen“: zeigt die Rückfrage.
     /// </summary>
     public ICommand DeleteCommand { get; }
@@ -146,7 +171,8 @@ public sealed class VehicleItemViewModel : BaseViewModel
     {
         DeleteQuestion = TankbookTexts.FormatDeleteQuestion(Name, entryCount);
         ConfirmDeleteLabel = entryCount > 0 ? TankbookTexts.ConfirmDeleteWithEntries : TankbookTexts.ConfirmDelete;
-        ConfirmDeleteDescription = TankbookTexts.FormatConfirmDeleteDescription(Name, entryCount);
+        ConfirmDeleteHint = TankbookTexts.FormatConfirmDeleteHint(Name, entryCount);
+        ShownEntryCount = entryCount;
         IsConfirmingDelete = true;
     }
 

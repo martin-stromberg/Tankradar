@@ -39,4 +39,14 @@ public enum VehicleResult
     /// Das Fahrzeug gibt es nicht (mehr).
     /// </summary>
     VehicleNotFound,
+
+    /// <summary>
+    /// Beim Bestätigen des Löschens hat sich die Zahl der Tank- und Ladevorgänge geändert; nichts wurde gelöscht.
+    /// </summary>
+    EntryCountChanged,
+
+    /// <summary>
+    /// Der Start-Kilometerstand liegt über dem Kilometerstand des ersten Tank- oder Ladevorgangs.
+    /// </summary>
+    StartOdometerAboveEntries,
 }
