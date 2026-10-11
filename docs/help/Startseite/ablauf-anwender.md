@@ -42,4 +42,4 @@ Sie sehen die aktuellen Preise Ihrer favorisierten Tankstellen und können jede 
 
 ## Barrierefreiheit
 
-Kacheln, Schaltflächen und Chips sind per Tabulator erreichbar und haben Beschreibungen für Sprachausgabe; die Kachelbeschreibung nennt Name, Entfernung und Preise mit Alter.
+Schaltflächen (**Details öffnen**, **Gruppe öffnen**, **Gruppe ein-/ausklappen**) und Chips sind per Tabulator erreichbar; die Kachel selbst nimmt den Tabulator-Fokus nicht auf, öffnet aber per Antippen und über **Details öffnen**. Die Beschreibung der Kachel für die Sprachausgabe nennt Name, Entfernung und Preise mit Alter (nicht die Hinweise wie „Preis unbestätigt“); der Schalter zum Ein- und Ausklappen nennt Gruppenname und Zustand.

@@ -270,4 +270,25 @@ public class FavoritesViewModelTests_Home : FavoritesViewModelTestBase
             Assert.DoesNotContain("13.4", message, StringComparison.Ordinal);
         });
     }
+
+    /// <summary>
+    /// Prüft, dass die Beschreibung des Ein-/Ausklapp-Schalters Gruppenname und Zustand nennt und dem Zustand folgt.
+    /// </summary>
+    [Fact]
+    public async Task Load_ToggleDescription_NamesGroupAndState()
+    {
+        SeedPrices(FreshTime);
+        await CreateGroupAsync("Arbeitsweg", FavoritesFixture.StationA);
+        var viewModel = CreateViewModel();
+        await viewModel.LoadAsync();
+        var group = Assert.Single(viewModel.Groups);
+
+        Assert.Contains("Arbeitsweg", group.ToggleDescription, StringComparison.Ordinal);
+        Assert.Contains("aufgeklappt", group.ToggleDescription, StringComparison.Ordinal);
+
+        group.ToggleCommand.Execute(null);
+
+        Assert.Contains("Arbeitsweg", group.ToggleDescription, StringComparison.Ordinal);
+        Assert.Contains("eingeklappt", group.ToggleDescription, StringComparison.Ordinal);
+    }
 }

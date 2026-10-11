@@ -33,7 +33,7 @@ Tankstellendetails (`GetStationDetailAsync`) folgen demselben Muster; der Cache 
 
 `FuelPriceService.RefreshStationsAsync(stationIds, force, ct)` liefert ein `StationRefreshResult` (`Stations`, `Source`, `Failure`):
 
-1. Kennungen werden normalisiert (`Guid`, Format `D`; ungültige und doppelte entfallen, höchstens 100).
+1. Kennungen werden normalisiert (`Guid`, Format `D`; ungültige und doppelte entfallen; eine Obergrenze für die Zahl der Kennungen gibt es nicht, die Anfragen sind auf je 10 Kennungen aufgeteilt).
 2. Ohne `force` werden nur Kennungen abgerufen, die nicht innerhalb von `PriceApiOptions.CacheLifetime` (Standard 5 Minuten) erfolgreich aktualisiert wurden (`_refreshed`, nur im Speicher, wird nur nach erfolgreichem Speichern gesetzt). Ist nichts fällig, kommt der lokale Stand mit `PriceDataSource.Cache`.
 3. Offline: lokaler Stand mit `OfflineFallback` und `PriceFailure.Offline`.
 4. Sonst `TankerkoenigClient.GetPricesAsync` in Blöcken zu `MaxPriceIds` = 10 (`prices.php?ids=…`, gleiche Wiederholung, Drosselung und Fehlerabbildung wie die übrigen Abrufe; Status `open`/`closed` liefert Preise für `e5`, `e10`, `diesel`, andere Status eine leere Liste). `PriceRepository.SavePricesAsync` legt je Preis eine Zeile in `PriceEntries` an. Bei einem `PriceApiException` endet der Abruf; bereits abgerufene Blöcke bleiben erhalten, die übrigen Tankstellen zeigen den lokalen Stand (`OfflineFallback`, wenn gar nichts abgerufen wurde, sonst `Live`).

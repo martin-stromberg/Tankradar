@@ -21,7 +21,7 @@
 `RefreshAsync(force)` bricht einen laufenden Abruf ab (`CancellationTokenSource`) und setzt `IsBusy`.
 
 1. Standort: nur wenn `GpsUsage.AllowsLocation()` und Bedarf besteht (Favoriten-Tankstellen vorhanden oder `ShowNearby`); `ILocationService.GetCurrentLocationAsync`, Fehler ergeben `LocationStatus.Unavailable`. Der Standort liegt nur im Feld `_position` (Arbeitsspeicher). Wird die Seite während der Ermittlung verlassen, wird der Vorgang abgebrochen und der Standort nicht mehr übernommen.
-2. Preise: `FuelPriceService.RefreshStationsAsync(ids, force)` normalisiert die Kennungen (UUID, doppelte werden ausgelassen, höchstens 100) und ruft nur Tankstellen ab, die ohne `force` nicht innerhalb von `PriceApiOptions.CacheLifetime` (Standard 5 Minuten) erfolgreich aktualisiert wurden (`_refreshed`, nur im Speicher). Offline (`IConnectionMonitor.IsOnline` falsch) folgt sofort der Rückfall `PriceDataSource.OfflineFallback`. Sonst ruft `TankerkoenigClient.GetPricesAsync` in Blöcken zu höchstens `MaxPriceIds` = 10 den Endpunkt `prices.php?ids=…` ab, `PriceRepository.SavePricesAsync` speichert jeden Preis mit Zeitstempel, die abgerufenen Preise ersetzen je Sorte die lokalen. Ergebnis: `StationRefreshResult` (`Stations`, `Source` = `Live`/`Cache`/`OfflineFallback`, `Failure`). Ein `PriceApiException` bricht den Abruf ab und liefert die zuletzt bekannten Preise.
+2. Preise: `FuelPriceService.RefreshStationsAsync(ids, force)` normalisiert die Kennungen (UUID, doppelte werden ausgelassen; keine Obergrenze, abgerufen wird in Blöcken zu 10) und ruft nur Tankstellen ab, die ohne `force` nicht innerhalb von `PriceApiOptions.CacheLifetime` (Standard 5 Minuten) erfolgreich aktualisiert wurden (`_refreshed`, nur im Speicher). Offline (`IConnectionMonitor.IsOnline` falsch) folgt sofort der Rückfall `PriceDataSource.OfflineFallback`. Sonst ruft `TankerkoenigClient.GetPricesAsync` in Blöcken zu höchstens `MaxPriceIds` = 10 den Endpunkt `prices.php?ids=…` ab, `PriceRepository.SavePricesAsync` speichert jeden Preis mit Zeitstempel, die abgerufenen Preise ersetzen je Sorte die lokalen. Ergebnis: `StationRefreshResult` (`Stations`, `Source` = `Live`/`Cache`/`OfflineFallback`, `Failure`). Ein `PriceApiException` bricht den Abruf ab und liefert die zuletzt bekannten Preise.
 3. Anzeige: `Rebuild` setzt `Groups`; `StatusMessage` stammt aus `SearchTexts.GetFailureMessage`; `Nearby.LoadAsync(settings, location, token)` lädt den Bereich neu.
 4. Abschluss: `UpdateOfflineState` setzt `IsOffline` (keine Verbindung, Rückfall der Favoriten oder des Bereichs „In der Nähe“), `OfflineMessage` = `SearchTexts.OfflineBanner`.
 
@@ -33,7 +33,7 @@
 
 ### 5. Verlassen der Seite
 
-`OnDisappearing` meldet die Ereignisse ab, bricht laufende Abrufe ab, löscht `IsBusy` und setzt `_position` auf `null`. Der Standort wird nie in der Datenbank abgelegt und nie protokolliert (Protokolle nennen nur Ausnahmetypen).
+`OnDisappearing` meldet die Ereignisse ab, bricht laufende Abrufe ab, löscht `IsBusy` und setzt `_position` auf `null`. Der Standort wird nie in der Datenbank abgelegt und nie protokolliert (Protokolle nennen nur Ausnahmetypen). Der Suchcache `FuelPriceService._searchCache` (Schlüssel mit auf ca. 110 m gerundeter Position, nur Arbeitsspeicher) verliert abgelaufene Einträge (`CacheLifetime`, 5 Minuten) bei jedem Aufruf von `SearchNearbyAsync`, `RefreshStationsAsync` und `GetKnownStationsAsync`.
 
 ### 6. Navigation
 

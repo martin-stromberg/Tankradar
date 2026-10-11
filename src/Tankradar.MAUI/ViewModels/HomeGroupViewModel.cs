@@ -84,6 +84,7 @@ public sealed class HomeGroupViewModel : BaseViewModel
                 OnPropertyChanged(nameof(ShowStations));
                 OnPropertyChanged(nameof(ShowEmptyNote));
                 OnPropertyChanged(nameof(ToggleGlyph));
+                OnPropertyChanged(nameof(ToggleDescription));
             }
         }
     }
@@ -107,6 +108,14 @@ public sealed class HomeGroupViewModel : BaseViewModel
     /// Das Zeichen des Umschalters.
     /// </summary>
     public string ToggleGlyph => IsExpanded ? FavoritesTexts.ToggleExpandedGlyph : FavoritesTexts.ToggleCollapsedGlyph;
+
+    /// <summary>
+    /// Die Beschreibung des Umschalters für die Sprachausgabe (Gruppenname und Zustand).
+    /// </summary>
+    public string ToggleDescription
+    {
+        get { return FavoritesTexts.ToggleGroupDescription(Name, IsExpanded); }
+    }
 
     /// <summary>
     /// Gibt an, ob mindestens eine Tankstelle der Gruppe einen veralteten Preis zeigt.

@@ -127,7 +127,7 @@
                                             VerticalOptions="Start"
                                             BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorBackgroundDark}}"
                                             TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                            SemanticProperties.Description="{x:Static texts:FavoritesTexts.ToggleGroup}"
+                                            SemanticProperties.Description="{Binding ToggleDescription}"
                                             AutomationId="Favorites.Group.Toggle" />
                                 </Grid>
 

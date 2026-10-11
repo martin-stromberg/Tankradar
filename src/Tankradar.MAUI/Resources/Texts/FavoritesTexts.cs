@@ -116,6 +116,17 @@ public static class FavoritesTexts
     public const string ToggleGroup = "Gruppe ein-/ausklappen";
 
     /// <summary>
+    /// Beschreibung des Umschalters einer Gruppe für die Sprachausgabe mit Gruppenname und Zustand.
+    /// </summary>
+    /// <param name="groupName">Der Name der Gruppe.</param>
+    /// <param name="expanded">Gibt an, ob die Gruppe aufgeklappt ist.</param>
+    /// <returns>Der Beschreibungstext.</returns>
+    public static string ToggleGroupDescription(string groupName, bool expanded)
+    {
+        return $"{ToggleGroup}: {groupName}, {(expanded ? "aufgeklappt" : "eingeklappt")}";
+    }
+
+    /// <summary>
     /// Zeichen des Umschalters bei aufgeklappter Gruppe.
     /// </summary>
     public const string ToggleExpandedGlyph = "▴";

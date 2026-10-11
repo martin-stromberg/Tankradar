@@ -40,7 +40,7 @@ Gibt es noch keine Gruppen, erklärt die Startseite, wie Sie Favoriten anlegen: 
 
 ### Datenschutz
 
-Ihr Standort wird nur verwendet, solange Sie die Startseite sehen, und nur im Arbeitsspeicher gehalten. Er wird nicht gespeichert, nicht protokolliert und beim Verlassen der Seite verworfen. Bei der Standortnutzung **Nie** fragt Tankatlas den Standort nicht ab.
+Ihr Standort wird nur verwendet, solange Sie die Startseite sehen, und nur im Arbeitsspeicher gehalten. Er wird nicht gespeichert, nicht protokolliert und beim Verlassen der Seite verworfen. Für die Suche „In der Nähe“ merkt sich Tankatlas außerdem höchstens fünf Minuten lang, nur im Arbeitsspeicher und auf etwa 110 m gerundet, dass für diesen Ort kürzlich gesucht wurde; danach wird dieser Merker entfernt. Bei der Standortnutzung **Nie** fragt Tankatlas den Standort nicht ab.
 
 ## Beispiele
 

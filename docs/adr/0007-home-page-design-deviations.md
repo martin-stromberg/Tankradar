@@ -28,14 +28,29 @@ Folgende Elemente des Entwurfs sind bewusst nicht umgesetzt:
   Anforderung nicht vorgesehen; angezeigt wird nur, was die Quelle liefert (Entscheidung „Fehlende Quelldaten“).
 - **Keine Gruppen-Mindestpreisangabe** im Gruppenkopf: Der Kopf zeigt Name, Beschreibung und Anzahl der Tankstellen. Ein
   Mindestpreis je Gruppe wäre sortenabhängig und könnte veraltete Preise hervorheben.
+- **Keine Kopfzeile „Vor X Min. aktualisiert (Quelle)“:** Das Alter steht bei jedem Preis an der Kachel („vor X Min.“, Amber
+  ab 60 Minuten); eine Gesamtangabe mit Quelle wäre bei Preisen verschiedenen Alters irreführend. Die Kopfzeile zeigt nur den
+  Offline-Hinweis.
+- **Keine Gruppensymbole und keine Zwischenüberschrift „Meine Favoriten · N Gruppen“:** Die Anforderung sieht für Gruppen
+  nur Name und Beschreibung vor; der Kopf der Gruppe zeigt Name, Beschreibung und Anzahl der Tankstellen.
+- **Bereich „In der Nähe“ ohne Öffnungsstatus und Spar-Zeile:** Die Umkreissuche der Quelle liefert keine Öffnungszeiten
+  (der Entwurf zeigt „Geöffnet bis …“), und Aussagen wie „Günstigste in 3 km …“ oder „Bester Preis“ setzen einen
+  Preisvergleich voraus, den die Anforderung nicht vorsieht. Der Schalter für den Bereich liegt, wie verlangt, in
+  „Optionen“ und nicht im Bereich selbst.
+- **Kein Lesezeichen-Knopf je Eintrag in „In der Nähe“:** Der Bereich ist rein informativ, Favoritenaktionen gibt es nur in
+  der Detailansicht.
+- **Lage des Bereichs „In der Nähe“:** Er steht unter den Favoritengruppen, vor „Neue Gruppe“; der Entwurf ordnet ihn
+  anders an.
 - **Kein Sortieren der Startseite** und keine Filter für die Favoritengruppen: Die Reihenfolge ist fest (Gruppen nach Namen,
   Tankstellen nach Priorität, dann Name). Spritsorten-Filter gibt es nur im Bereich „In der Nähe“.
 
 ## Weitere Entscheidungen
 
 - **Preisabruf nach Kennungen statt Umkreissuche.** Die Preise der Favoriten holt `FuelPriceService.RefreshStationsAsync` über
-  den Tankerkönig-Endpunkt `prices.php` (höchstens 10 Kennungen je Anfrage, größere Mengen werden aufgeteilt, höchstens 100
-  Kennungen je Aufruf). Das spart Anfragen gegenüber einem Einzelabruf je Favorit und liefert Preise auch für Tankstellen
+  den Tankerkönig-Endpunkt `prices.php` (höchstens 10 Kennungen je Anfrage, größere Mengen werden aufgeteilt). Eine Obergrenze
+  für die Zahl der Kennungen je Aufruf gibt es nicht, damit keine Favoriten-Tankstelle ohne Preise bleibt; die Last
+  begrenzen die Aufteilung, die Drosselung und die Frist von fünf Minuten. Das lokale Lesen (`GetKnownStationsAsync`) kennt
+  ohnehin keine Grenze. Das spart Anfragen gegenüber einem Einzelabruf je Favorit und liefert Preise auch für Tankstellen
   außerhalb des Umkreises. Ohne „erzwingen“ werden Tankstellen, die innerhalb der Cache-Lebensdauer erfolgreich
   aktualisiert wurden, nicht erneut abgerufen. Fehler führen zum Rückfall auf die zuletzt bekannten Preise.
 - **Lokale Daten zuerst.** Beim Erscheinen zeigt die Seite sofort den lokalen Stand (`GetKnownStationsAsync`), danach folgt
@@ -45,7 +60,9 @@ Folgende Elemente des Entwurfs sind bewusst nicht umgesetzt:
 - **Standort nur im Arbeitsspeicher.** Der Standort wird nur ermittelt, wenn die Einstellung ihn erlaubt und ein Bedarf besteht
   (Entfernungen der Favoriten oder „In der Nähe“), nur für die Berechnung gehalten und beim Verlassen der Seite verworfen;
   er wird nie gespeichert oder protokolliert (Protokolle nennen nur Ausnahmetypen). Entfernungen zu Favoriten berechnet die
-  App lokal aus Standort und gespeicherter Tankstellenposition.
+  App lokal aus Standort und gespeicherter Tankstellenposition. Der Suchcache des Preisdienstes führt die Umkreissuche unter
+  einem Schlüssel mit auf drei Nachkommastellen (ca. 110 m) gerundeter Position; diese Schlüssel liegen nur im
+  Arbeitsspeicher, und abgelaufene Einträge (nach fünf Minuten) werden bei jeder weiteren Anfrage des Preisdienstes entfernt.
 - **„In der Nähe“:** optional (Schalter in „Optionen“, Standard aus, Spalte `ShowNearby` per Migration `AddNearbySetting`),
   sichtbar nur bei aktivem Schalter und Standortnutzung ungleich „Nie“; fester Radius 5 km, höchstens 10 Einträge nach
   Entfernung, Filter „Alle“ und je gewählte Sorte. Rein informativ: kein Zuordnen oder Entfernen von Favoriten; Antippen

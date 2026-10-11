@@ -1,3 +1,12 @@
+## 2026-10-11 — Startseite: Nachbesserung Runde 1 (Tankradar Schritt 11, Version 0.1.15)
+
+- Die Startseite zeigt Preise für alle Favoriten-Tankstellen: Die stille Kürzung auf 100 Kennungen ist entfernt (lokales Lesen ohne Grenze, Abruf weiterhin in Anfragen zu je 10 Kennungen mit Drosselung und 5-Minuten-Frist); Unit-Tests mit mehr als 100 Kennungen
+- Der Suchcache des Preisdienstes entfernt abgelaufene Einträge samt gerundeter Koordinaten, damit die Aussage „Standort wird nicht aufbewahrt“ in Hilfe und ADR 0007 stimmt
+- Der Schalter zum Ein-/Ausklappen einer Gruppe nennt für die Sprachausgabe Gruppenname und Zustand; Hilfe zur Tabulator-Erreichbarkeit korrigiert
+- ADR 0007 um die fehlenden Designabweichungen ergänzt (Kopfzeile, Gruppensymbole, Öffnungsstatus und Spar-Zeile, Lesezeichen-Knopf, Lage des Bereichs)
+- Testhilfe `FailingStream` ohne Platzhalter-Member (Pre-Push-Prüfung); Historie des Schrittbranchs mit `merge:`-Nachricht im Conventional-Format neu aufgebaut
+- `scripts/create-review-version.ps1` liest den Changelog als UTF-8 (keine doppelt kodierten Umlaute mehr)
+
 ## 2026-10-11 — Startseite mit Favoritengruppen und Bereich „In der Nähe“ (Tankradar Schritt 11, Version 0.1.15)
 
 - Die Startseite („Favoriten“) zeigt alle Favoritengruppen (einklappbar) mit ihren Tankstellen: Name, Entfernung (nur wenn die Standortnutzung es erlaubt), Preise der in den Optionen gewählten Sorten in deren Reihenfolge mit Alter „vor X Min.“ (ab 60 Minuten amber) sowie Hinweisen „Preis unbestätigt“ und „Automatentankstelle“; Antippen öffnet die Detailansicht; ohne Gruppen erscheint ein Hinweis zum Anlegen von Favoriten

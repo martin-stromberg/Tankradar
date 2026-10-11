@@ -61,7 +61,6 @@ public sealed class FuelPriceService : IFuelPriceService
 {
     private const double ProbeLatitude = 52.5200;
     private const double ProbeLongitude = 13.4050;
-    private const int MaxRefreshIds = 100;
 
     private readonly ITankerkoenigClient _client;
     private readonly IPriceRepository _repository;
@@ -104,6 +103,7 @@ public sealed class FuelPriceService : IFuelPriceService
 
         var key = CacheKey(query);
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        PruneSearchCache(now);
         if (_searchCache.TryGetValue(key, out var cachedAt) && now - cachedAt < _options.CacheLifetime)
         {
             var cached = await _repository.FindNearbyAsync(query.Latitude, query.Longitude, query.RadiusKm, cancellationToken).ConfigureAwait(false);
@@ -178,6 +178,7 @@ public sealed class FuelPriceService : IFuelPriceService
         }
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
+        PruneSearchCache(now);
         var due = force
             ? ids
             : ids.Where(id => !_refreshed.TryGetValue(id, out var at) || now - at >= _options.CacheLifetime).ToList();
@@ -232,6 +233,7 @@ public sealed class FuelPriceService : IFuelPriceService
     public async Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
     {
         var ids = NormalizeIds(stationIds);
+        PruneSearchCache(_timeProvider.GetUtcNow().UtcDateTime);
         return ids.Count == 0 ? [] : await _repository.GetStationsAsync(ids, cancellationToken).ConfigureAwait(false);
     }
 
@@ -296,6 +298,21 @@ public sealed class FuelPriceService : IFuelPriceService
         }
     }
 
+    /// <summary>
+    /// Entfernt abgelaufene Einträge des Suchcaches, damit die gerundeten Koordinaten der Schlüssel nicht bis zum Ende der App im Arbeitsspeicher bleiben.
+    /// </summary>
+    /// <param name="now">Der aktuelle Zeitpunkt (UTC).</param>
+    private void PruneSearchCache(DateTime now)
+    {
+        foreach (var entry in _searchCache)
+        {
+            if (now - entry.Value >= _options.CacheLifetime)
+            {
+                _searchCache.TryRemove(entry);
+            }
+        }
+    }
+
     private static List<string> NormalizeIds(IReadOnlyCollection<string> stationIds)
     {
         ArgumentNullException.ThrowIfNull(stationIds);
@@ -303,7 +320,6 @@ public sealed class FuelPriceService : IFuelPriceService
             .Select(id => Guid.TryParse(id, out var parsed) ? parsed.ToString("D") : null)
             .OfType<string>()
             .Distinct()
-            .Take(MaxRefreshIds)
             .ToList();
     }
 
