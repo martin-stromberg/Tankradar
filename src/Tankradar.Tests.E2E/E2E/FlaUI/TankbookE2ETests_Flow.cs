@@ -43,7 +43,7 @@ public class TankbookE2ETests_Flow : TankbookE2ETestBase
 
             PressForVehicle("Tankbook.Vehicle.Delete", "Golf Variant");
             Assert.Equal("Fahrzeug „Golf Variant“ löschen?", WaitForAutomationId("Tankbook.Vehicle.DeleteQuestion").Name);
-            Assert.Equal("Ja, löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
+            Assert.Equal("Ja, Fahrzeug „Golf Variant“ löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
             Press("Tankbook.Vehicle.DeleteCancel");
             WaitUntil(() => !Exists("Tankbook.Vehicle.DeleteQuestion"), "Die Rückfrage blieb stehen.");
             WaitForTexts("Tankbook.Vehicle.Name", "Golf Variant");
