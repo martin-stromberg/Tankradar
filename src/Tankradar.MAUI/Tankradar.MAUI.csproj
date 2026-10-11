@@ -60,6 +60,24 @@
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
+	<!-- iOS-Release (TestFlight/App Store) läuft ohne JIT und mit Linker. EF Core erzeugt zur Laufzeit Code
+	     (Abfragen, Materialisierung) und findet Migrationen und Dienste per Reflection. Ohne Interpreter und
+	     mit gekürzten Assemblys schlägt deshalb schon die Datenbankinitialisierung fehl (Favoriten,
+	     Einstellungen und Preis-Cache nicht nutzbar). "-all": alles bleibt AOT-übersetzt, der Interpreter
+	     springt nur für dynamisch erzeugten Code ein. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<MtouchInterpreter>-all</MtouchInterpreter>
+	</PropertyGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<!-- Vom Linker ausnehmen: per Reflection genutzte Typen (Entitäten, Migrationen, EF-Core-Dienste). -->
+		<TrimmerRootAssembly Include="Tankradar.MAUI" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Relational" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Sqlite" />
+		<TrimmerRootAssembly Include="Microsoft.Data.Sqlite" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0F766E" />
