@@ -458,6 +458,11 @@ Verwaltung, das Mitlöschen der Vorgänge sowie per FlaUI das Anlegen, Bearbeite
 Fahrzeugs ab. Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter
 `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 11:**
+
+- Anwenderhilfe `docs/help/Startseite/beschreibung.md`: Die Aussage zum Suchcache ("höchstens fünf Minuten … danach entfernt") an das tatsächliche Verhalten anpassen – abgelaufene Ortsmerker werden beim nächsten Aufruf des Preisdienstes bzw. spätestens beim Beenden der App verworfen – oder das Aufräumen so ändern, dass die Aussage stimmt.
+- Sporadisch scheiternde Integrationstests stabilisieren: Geokodierungs-Drosselungstest aus Schritt 7 (Echtzeitmessung) und Migrationstest aus Schritt 10 (`ObjectDisposedException`, vermutlich paralleles `SqliteConnection.ClearAllPools` in anderen Testklassen), damit der Pre-Push-Hook nicht ohne Produktfehler scheitert.
+
 **Abhängigkeiten:** 4
 
 **Betroffene Bereiche:** Tankbuch, Fahrzeuge, Datenhaltung
