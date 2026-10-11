@@ -26,7 +26,7 @@ Tippen Sie auf eine dieser Schaltflächen, um zu diesem Bereich zu wechseln. Die
 
 ### 3. Bereich erkunden
 
-Favoriten zeigt Ihre Favoritengruppen mit Preisen (siehe [Startseite](../Startseite/index.md) und [Favoritengruppen](../Favoriten/index.md)); das Tankbuch zeigt aktuell einen Platzhalter-Text, der erklärt, was dort später zur Verfügung stehen wird. Im Bereich **Karte** suchen Sie Tankstellen im Umkreis (siehe [Umkreissuche](../Suche/index.md)), im Bereich **Optionen** stellen Sie Ihre Einstellungen ein (siehe [Einstellungen](../Einstellungen/index.md)). Tippen Sie auf andere Schaltflächen, um die anderen Bereiche kennenzulernen.
+Favoriten zeigt Ihre Favoritengruppen mit Preisen (siehe [Startseite](../Startseite/index.md) und [Favoritengruppen](../Favoriten/index.md)); im **Tankbuch** verwalten Sie Ihre Fahrzeuge (siehe [Tankbuch](../Tankbuch/index.md)). Im Bereich **Karte** suchen Sie Tankstellen im Umkreis (siehe [Umkreissuche](../Suche/index.md)), im Bereich **Optionen** stellen Sie Ihre Einstellungen ein (siehe [Einstellungen](../Einstellungen/index.md)). Tippen Sie auf andere Schaltflächen, um die anderen Bereiche kennenzulernen.
 
 ### 4. Darstellung ändern (Hell-/Dunkelmodus)
 
