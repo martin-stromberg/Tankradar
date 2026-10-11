@@ -1,4 +1,5 @@
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Exceptions;
 
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
@@ -89,18 +90,28 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
     /// <param name="vehicleName">Der Name des Fahrzeugs.</param>
     protected void PressForVehicle(string automationId, string vehicleName)
     {
-        WaitUntil(() => ReadTexts("Tankbook.Vehicle.Name").Contains(vehicleName), $"Das Fahrzeug '{vehicleName}' steht nicht in der Liste.");
-        var index = ReadTexts("Tankbook.Vehicle.Name").ToList().IndexOf(vehicleName);
-        AutomationElement? button = null;
+        // Indexermittlung, Suche und Auslösen laufen gemeinsam im Wiederholungsblock: Baut sich die Liste zwischendurch neu auf, wird neu gesucht.
         WaitUntil(
             () =>
             {
-                var buttons = FindAllOrdered(automationId);
-                button = buttons.Count > index ? buttons[index] : null;
-                return button is not null;
+                try
+                {
+                    var index = ReadTexts("Tankbook.Vehicle.Name").ToList().IndexOf(vehicleName);
+                    var buttons = FindAllOrdered(automationId);
+                    if (index < 0 || buttons.Count <= index)
+                    {
+                        return false;
+                    }
+
+                    buttons[index].Patterns.Invoke.Pattern.Invoke();
+                    return true;
+                }
+                catch (Exception ex) when (ex is ElementNotAvailableException or PropertyNotSupportedException or InvalidOperationException)
+                {
+                    return false;
+                }
             },
-            $"Die Schaltfläche '{automationId}' des Fahrzeugs '{vehicleName}' fehlt.");
-        button!.Patterns.Invoke.Pattern.Invoke();
+            $"Die Schaltfläche '{automationId}' des Fahrzeugs '{vehicleName}' fehlt oder ließ sich nicht auslösen.");
     }
 
     /// <summary>

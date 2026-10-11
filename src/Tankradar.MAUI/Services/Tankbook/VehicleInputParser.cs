@@ -66,24 +66,13 @@ public static partial class VehicleInputParser
             return VehicleFieldError.NotANumber;
         }
 
-        if (parsed < 0m)
+        var error = VehicleValidator.CheckConsumption(parsed);
+        if (error == VehicleFieldError.None)
         {
-            return VehicleFieldError.Negative;
+            value = VehicleValidator.Normalize(parsed);
         }
 
-        if (parsed <= 0m || parsed >= VehicleLimits.MaxConsumptionExclusive)
-        {
-            return VehicleFieldError.OutOfRange;
-        }
-
-        var normalized = VehicleValidator.Normalize(parsed);
-        if (normalized.Scale > VehicleLimits.MaxConsumptionDecimals)
-        {
-            return VehicleFieldError.TooManyDecimals;
-        }
-
-        value = normalized;
-        return VehicleFieldError.None;
+        return error;
     }
 
     [GeneratedRegex(@"^-?(\d{1,3}(\.\d{3})+|\d+)$", RegexOptions.CultureInvariant)]

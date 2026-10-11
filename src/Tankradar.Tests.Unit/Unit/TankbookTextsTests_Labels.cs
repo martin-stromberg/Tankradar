@@ -69,4 +69,18 @@ public class TankbookTextsTests_Labels : BaseTest
     {
         Assert.Equal(expected, TankbookTexts.FormatDeleteQuestion("Golf", count));
     }
+
+    /// <summary>
+    /// Prüft die Beschreibungen der Schaltflächen eines Eintrags für die Sprachausgabe: Aktion und Fahrzeugname sind hörbar.
+    /// </summary>
+    [Fact]
+    public void ButtonDescriptions_NameActionAndVehicle()
+    {
+        Assert.Equal("Golf bearbeiten", TankbookTexts.FormatEditDescription("Golf"));
+        Assert.Equal("Golf löschen", TankbookTexts.FormatDeleteDescription("Golf"));
+        Assert.Equal("Ja, Fahrzeug „Golf“ löschen", TankbookTexts.FormatConfirmDeleteDescription("Golf", 0));
+        Assert.Equal("Fahrzeug „Golf“ und Vorgänge löschen", TankbookTexts.FormatConfirmDeleteDescription("Golf", 2));
+        Assert.Equal("Löschen von „Golf“ abbrechen", TankbookTexts.FormatCancelDeleteDescription("Golf"));
+        Assert.Equal("Formular schließen, ohne zu speichern", TankbookTexts.CancelFormDescription);
+    }
 }

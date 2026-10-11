@@ -12,6 +12,7 @@ public sealed class VehicleItemViewModel : BaseViewModel
     private bool _isConfirmingDelete;
     private string _deleteQuestion = string.Empty;
     private string _confirmDeleteLabel = TankbookTexts.ConfirmDelete;
+    private string _confirmDeleteDescription = string.Empty;
 
     /// <summary>
     /// Erstellt den Eintrag.
@@ -20,18 +21,23 @@ public sealed class VehicleItemViewModel : BaseViewModel
     /// <param name="edit">Öffnet das Formular zum Bearbeiten dieses Fahrzeugs.</param>
     /// <param name="delete">Startet das Löschen (liest die Zahl der Vorgänge und zeigt die Rückfrage).</param>
     /// <param name="confirmDelete">Löscht das Fahrzeug nach der Bestätigung.</param>
+    /// <param name="canConfirmDelete">Gibt an, ob die Bestätigung gerade ausführbar ist (gesperrt, solange eine Änderung gespeichert wird).</param>
     public VehicleItemViewModel(
         Vehicle vehicle,
         Action<VehicleItemViewModel> edit,
         Action<VehicleItemViewModel> delete,
-        Action<VehicleItemViewModel> confirmDelete)
+        Action<VehicleItemViewModel> confirmDelete,
+        Func<bool> canConfirmDelete)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
         Vehicle = vehicle;
         Details = TankbookTexts.FormatVehicleDetails(vehicle);
+        EditDescription = TankbookTexts.FormatEditDescription(vehicle.Name);
+        DeleteDescription = TankbookTexts.FormatDeleteDescription(vehicle.Name);
+        CancelDeleteDescription = TankbookTexts.FormatCancelDeleteDescription(vehicle.Name);
         EditCommand = new Command(() => edit(this));
         DeleteCommand = new Command(() => delete(this));
-        ConfirmDeleteCommand = new Command(() => confirmDelete(this));
+        ConfirmDeleteCommand = new Command(() => confirmDelete(this), canConfirmDelete);
         CancelDeleteCommand = new Command(HideDeleteConfirmation);
     }
 
@@ -60,6 +66,30 @@ public sealed class VehicleItemViewModel : BaseViewModel
     /// Die Angaben des Fahrzeugs, z. B. „Diesel • Start 84.350 km • Startverbrauch 5,4 L/100 km“.
     /// </summary>
     public string Details { get; }
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Bearbeiten“ für die Sprachausgabe, z. B. „Golf bearbeiten“.
+    /// </summary>
+    public string EditDescription { get; }
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Löschen“ für die Sprachausgabe, z. B. „Golf löschen“.
+    /// </summary>
+    public string DeleteDescription { get; }
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Abbrechen“ der Rückfrage für die Sprachausgabe.
+    /// </summary>
+    public string CancelDeleteDescription { get; }
+
+    /// <summary>
+    /// Beschreibung der Bestätigung der Rückfrage für die Sprachausgabe; nennt den Fahrzeugnamen und gegebenenfalls das Mitlöschen der Vorgänge.
+    /// </summary>
+    public string ConfirmDeleteDescription
+    {
+        get => _confirmDeleteDescription;
+        private set => SetProperty(ref _confirmDeleteDescription, value);
+    }
 
     /// <summary>
     /// Gibt an, ob die Rückfrage zum Löschen angezeigt wird.
@@ -116,6 +146,7 @@ public sealed class VehicleItemViewModel : BaseViewModel
     {
         DeleteQuestion = TankbookTexts.FormatDeleteQuestion(Name, entryCount);
         ConfirmDeleteLabel = entryCount > 0 ? TankbookTexts.ConfirmDeleteWithEntries : TankbookTexts.ConfirmDelete;
+        ConfirmDeleteDescription = TankbookTexts.FormatConfirmDeleteDescription(Name, entryCount);
         IsConfirmingDelete = true;
     }
 
@@ -125,5 +156,13 @@ public sealed class VehicleItemViewModel : BaseViewModel
     public void HideDeleteConfirmation()
     {
         IsConfirmingDelete = false;
+    }
+
+    /// <summary>
+    /// Aktualisiert die Ausführbarkeit der Bestätigung, nachdem sich die Sperre während des Speicherns geändert hat.
+    /// </summary>
+    public void RefreshCommandStates()
+    {
+        ((Command)ConfirmDeleteCommand).ChangeCanExecute();
     }
 }

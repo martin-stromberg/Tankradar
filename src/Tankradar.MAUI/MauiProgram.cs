@@ -79,6 +79,7 @@ public static class MauiProgram
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();
         builder.Services.AddTransient<FavoriteGroupViewModel>();
+        builder.Services.AddSingleton<IScreenReaderAnnouncer, SemanticScreenReaderAnnouncer>();
         builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
         builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();

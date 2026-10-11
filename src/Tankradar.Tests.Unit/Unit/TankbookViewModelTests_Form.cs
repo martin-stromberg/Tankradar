@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
@@ -12,10 +13,11 @@ public class TankbookViewModelTests_Form : BaseTest
 {
     private readonly VehicleFixture _fixture = new();
     private readonly RecordingLogger<TankbookViewModel> _logger = new();
+    private readonly FakeScreenReaderAnnouncer _announcer = new();
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, _logger);
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer);
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;
@@ -110,6 +112,7 @@ public class TankbookViewModelTests_Form : BaseTest
         Assert.True(viewModel.HasConsumptionError);
         Assert.True(viewModel.IsFormOpen);
         Assert.Empty(await _fixture.Service.GetVehiclesAsync());
+        Assert.Equal(["Bitte gib einen Namen ein."], _announcer.Announcements);
     }
 
     /// <summary>
@@ -150,6 +153,7 @@ public class TankbookViewModelTests_Form : BaseTest
         await SaveAsync(viewModel);
 
         Assert.Equal("Ein Fahrzeug mit diesem Namen gibt es bereits.", viewModel.NameError);
+        Assert.Equal(["Ein Fahrzeug mit diesem Namen gibt es bereits."], _announcer.Announcements);
         Assert.True(viewModel.IsFormOpen);
         Assert.Single(await _fixture.Service.GetVehiclesAsync());
     }
@@ -224,5 +228,80 @@ public class TankbookViewModelTests_Form : BaseTest
         Assert.True(viewModel.IsFormOpen);
         Assert.False(viewModel.IsBusy);
         Assert.DoesNotContain("Geheimauto", _logger.AllText, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass das Speichern eines inzwischen gelöschten Fahrzeugs das Formular schließt, die Meldung zeigt und die Liste neu lädt.
+    /// </summary>
+    [Fact]
+    public async Task Save_VehicleDeletedMeanwhile_ClosesFormShowsMessageAndReloads()
+    {
+        var id = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null))).Vehicle!.Id;
+        var viewModel = await OpenAsync();
+        viewModel.Vehicles[0].EditCommand.Execute(null);
+        await _fixture.Service.DeleteVehicleAsync(id);
+
+        await SaveAsync(viewModel);
+
+        Assert.False(viewModel.IsFormOpen);
+        Assert.Equal("Das Fahrzeug gibt es nicht mehr.", viewModel.StatusMessage);
+        Assert.Empty(viewModel.Vehicles);
+        Assert.True(viewModel.ShowEmptyHint);
+    }
+
+    /// <summary>
+    /// Prüft, dass „Speichern“ und die Bestätigung des Löschens während des Speicherns gesperrt sind, auch wenn die Liste dabei neu geladen wird.
+    /// </summary>
+    [Fact]
+    public async Task Save_WhileSaving_LocksSaveAndConfirmDeleteEvenDuringReload()
+    {
+        await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null));
+        var viewModel = await OpenAsync();
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+        viewModel.AddVehicleCommand.Execute(null);
+        viewModel.FormName = "Polo";
+        viewModel.FormOdometer = "1";
+        var blocker = new BlockingSaveInterceptor();
+        _fixture.Factory.Interceptor = blocker;
+
+        viewModel.SaveCommand.Execute(null);
+        var saving = viewModel.LastTask;
+        await blocker.Entered.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.True(viewModel.IsSaving);
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        Assert.False(viewModel.Vehicles[0].ConfirmDeleteCommand.CanExecute(null));
+        viewModel.OnAppearing();
+        await viewModel.LastTask;
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        Assert.False(viewModel.Vehicles[0].ConfirmDeleteCommand.CanExecute(null));
+
+        blocker.Release();
+        await saving;
+
+        Assert.False(viewModel.IsSaving);
+        Assert.True(viewModel.SaveCommand.CanExecute(null));
+        Assert.All(viewModel.Vehicles, item => Assert.True(item.ConfirmDeleteCommand.CanExecute(null)));
+        Assert.Equal(["Golf", "Polo"], viewModel.Vehicles.Select(item => item.Name));
+    }
+
+    private sealed class BlockingSaveInterceptor : SaveChangesInterceptor
+    {
+        private readonly TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Entered => _entered.Task;
+
+        public void Release()
+        {
+            _release.TrySetResult();
+        }
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            _entered.TrySetResult();
+            await _release.Task.ConfigureAwait(false);
+            return result;
+        }
     }
 }

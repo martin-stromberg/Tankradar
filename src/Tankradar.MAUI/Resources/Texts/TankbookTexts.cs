@@ -136,6 +136,52 @@ public static class TankbookTexts
     public const string DuplicateName = "Ein Fahrzeug mit diesem Namen gibt es bereits.";
 
     /// <summary>
+    /// Beschreibung der Schaltfläche „Abbrechen“ des Formulars für die Sprachausgabe.
+    /// </summary>
+    public const string CancelFormDescription = "Formular schließen, ohne zu speichern";
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Bearbeiten“ eines Fahrzeugs für die Sprachausgabe, z. B. „Golf bearbeiten“.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatEditDescription(string name)
+    {
+        return $"{name} bearbeiten";
+    }
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Löschen“ eines Fahrzeugs für die Sprachausgabe, z. B. „Golf löschen“.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatDeleteDescription(string name)
+    {
+        return $"{name} löschen";
+    }
+
+    /// <summary>
+    /// Beschreibung der Bestätigung der Löschrückfrage für die Sprachausgabe; nennt bei vorhandenen Vorgängen auch deren Mitlöschen.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <param name="entryCount">Die Zahl der Tank- und Ladevorgänge des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatConfirmDeleteDescription(string name, int entryCount)
+    {
+        return entryCount > 0 ? $"Fahrzeug „{name}“ und Vorgänge löschen" : $"Ja, Fahrzeug „{name}“ löschen";
+    }
+
+    /// <summary>
+    /// Beschreibung der Schaltfläche „Abbrechen“ der Löschrückfrage für die Sprachausgabe, z. B. „Löschen von „Golf“ abbrechen“.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatCancelDeleteDescription(string name)
+    {
+        return $"Löschen von „{name}“ abbrechen";
+    }
+
+    /// <summary>
     /// Liefert die Beschriftung einer Kraftstoffart.
     /// </summary>
     /// <param name="fuelKind">Die Kraftstoffart.</param>
@@ -284,8 +330,8 @@ public static class TankbookTexts
         {
             VehicleFieldError.NotANumber => "Bitte gib den Startverbrauch als Zahl ein, z. B. 5,4.",
             VehicleFieldError.Negative => "Der Startverbrauch darf nicht negativ sein.",
-            VehicleFieldError.OutOfRange => "Der Startverbrauch muss größer als 0 und kleiner als 100 sein.",
-            VehicleFieldError.TooManyDecimals => "Der Startverbrauch darf höchstens zwei Nachkommastellen haben.",
+            VehicleFieldError.OutOfRange => string.Create(German, $"Der Startverbrauch muss größer als 0 und kleiner als {VehicleLimits.MaxConsumptionExclusive:0} sein."),
+            VehicleFieldError.TooManyDecimals => string.Create(German, $"Der Startverbrauch darf höchstens {VehicleLimits.MaxConsumptionDecimals} Nachkommastellen haben."),
             _ => string.Empty,
         };
     }
@@ -304,7 +350,9 @@ public static class TankbookTexts
             VehicleResult.DuplicateName => DuplicateName,
             VehicleResult.InvalidFuelKind => "Bitte wähle eine Kraftstoffart.",
             VehicleResult.InvalidOdometer => string.Create(German, $"Der Start-Kilometerstand muss zwischen 0 und {VehicleLimits.MaxOdometerKm:N0} km liegen."),
-            VehicleResult.InvalidConsumption => "Der Startverbrauch muss größer als 0 und kleiner als 100 sein, mit höchstens zwei Nachkommastellen.",
+            VehicleResult.InvalidConsumption => string.Create(
+                German,
+                $"Der Startverbrauch muss größer als 0 und kleiner als {VehicleLimits.MaxConsumptionExclusive:0} sein, mit höchstens {VehicleLimits.MaxConsumptionDecimals} Nachkommastellen."),
             VehicleResult.VehicleNotFound => "Das Fahrzeug gibt es nicht mehr.",
             _ => SaveFailed,
         };

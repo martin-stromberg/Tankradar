@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.Tests.Unit.Unit.Support;
@@ -160,5 +161,46 @@ public class VehicleServiceTests_Manage : BaseTest
         Assert.Equal(VehicleFuelKind.Petrol, vehicle.FuelKind);
         Assert.Contains("Unbekannte Kraftstoffart", _fixture.Logger.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain("Geheimauto", _fixture.Logger.AllText, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein zwischen Namensprüfung und Speichern gleichzeitig angelegter gleicher Name über den eindeutigen Index als doppelter Name gemeldet wird.
+    /// </summary>
+    [Fact]
+    public async Task CreateVehicle_ConcurrentSameName_ReportsDuplicateName()
+    {
+        _fixture.Factory.Interceptor = new RivalInsertInterceptor(_fixture.Factory, "GOLF");
+
+        var result = await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 0, null));
+
+        Assert.Equal(VehicleResult.DuplicateName, result.Result);
+        Assert.Null(result.Vehicle);
+        Assert.Equal(["GOLF"], (await _fixture.Service.GetVehiclesAsync()).Select(v => v.Name));
+    }
+
+    private sealed class RivalInsertInterceptor : SaveChangesInterceptor
+    {
+        private readonly InMemoryDbContextFactory _factory;
+        private readonly string _rivalName;
+        private bool _fired;
+
+        public RivalInsertInterceptor(InMemoryDbContextFactory factory, string rivalName)
+        {
+            _factory = factory;
+            _rivalName = rivalName;
+        }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (!_fired)
+            {
+                _fired = true;
+                using var rival = _factory.CreateDbContext();
+                rival.Vehicles.Add(new VehicleEntity { Name = _rivalName, FuelKind = "Petrol", CreatedUtc = DateTime.UtcNow });
+                rival.SaveChanges();
+            }
+
+            return ValueTask.FromResult(result);
+        }
     }
 }

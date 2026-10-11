@@ -17,7 +17,7 @@ public class ViewModelTests_PageTitles : BaseTest
     {
         using var vehicles = new VehicleFixture();
 
-        var viewModel = new TankbookViewModel(vehicles.Service, NullLogger<TankbookViewModel>.Instance);
+        var viewModel = new TankbookViewModel(vehicles.Service, NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer());
 
         Assert.Equal("Tankbuch", viewModel.Title);
     }

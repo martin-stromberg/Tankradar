@@ -4,6 +4,7 @@
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:tankbook="clr-namespace:Tankradar.MAUI.Models.Tankbook"
              x:DataType="vm:TankbookViewModel"
              x:Class="Tankradar.MAUI.Views.TankbookPage"
              Title="{x:Static texts:TankbookTexts.PageTitle}"
@@ -104,7 +105,7 @@
                         </Border.Triggers>
                         <Entry x:Name="NameEntry"
                                Text="{Binding FormName}"
-                               MaxLength="40"
+                               MaxLength="{x:Static tankbook:VehicleLimits.MaxNameLength}"
                                SemanticProperties.Description="{x:Static texts:TankbookTexts.NameLabel}"
                                AutomationId="Tankbook.Form.Name" />
                     </Border>
@@ -204,6 +205,7 @@
                     <Button Text="{x:Static texts:TankbookTexts.Cancel}"
                             Command="{Binding CancelCommand}"
                             Style="{StaticResource TankbookOutlineButton}"
+                            SemanticProperties.Description="{x:Static texts:TankbookTexts.CancelFormDescription}"
                             AutomationId="Tankbook.Form.Cancel" />
                 </VerticalStackLayout>
             </Border>
@@ -238,13 +240,13 @@
                                 <Button Text="{x:Static texts:TankbookTexts.Edit}"
                                         Command="{Binding EditCommand}"
                                         Style="{StaticResource TankbookOutlineButton}"
-                                        SemanticProperties.Description="{Binding Name}"
+                                        SemanticProperties.Description="{Binding EditDescription}"
                                         AutomationId="Tankbook.Vehicle.Edit" />
                                 <Button Text="{x:Static texts:TankbookTexts.Delete}"
                                         Command="{Binding DeleteCommand}"
                                         Style="{StaticResource TankbookOutlineButton}"
                                         TextColor="{StaticResource ColorErrorRed}"
-                                        SemanticProperties.Description="{Binding Name}"
+                                        SemanticProperties.Description="{Binding DeleteDescription}"
                                         AutomationId="Tankbook.Vehicle.Delete" />
 
                                 <!-- Rückfrage vor dem Löschen -->
@@ -256,10 +258,12 @@
                                     <Button Text="{Binding ConfirmDeleteLabel}"
                                             Command="{Binding ConfirmDeleteCommand}"
                                             Style="{StaticResource TankbookDangerButton}"
+                                            SemanticProperties.Description="{Binding ConfirmDeleteDescription}"
                                             AutomationId="Tankbook.Vehicle.DeleteConfirm" />
                                     <Button Text="{x:Static texts:TankbookTexts.Cancel}"
                                             Command="{Binding CancelDeleteCommand}"
                                             Style="{StaticResource TankbookOutlineButton}"
+                                            SemanticProperties.Description="{Binding CancelDeleteDescription}"
                                             AutomationId="Tankbook.Vehicle.DeleteCancel" />
                                 </VerticalStackLayout>
                             </VerticalStackLayout>

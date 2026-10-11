@@ -12,10 +12,11 @@ public class TankbookViewModelTests_Delete : BaseTest
 {
     private readonly VehicleFixture _fixture = new();
     private readonly RecordingLogger<TankbookViewModel> _logger = new();
+    private readonly FakeScreenReaderAnnouncer _announcer = new();
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, _logger);
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer);
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;
@@ -129,28 +130,94 @@ public class TankbookViewModelTests_Delete : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass immer nur eine Rückfrage offen ist und sich Formular und Rückfragen gegenseitig schließen.
+    /// Prüft, dass „Löschen“ ein offenes Formular schließt.
     /// </summary>
     [Fact]
-    public async Task Delete_OpensOnlyOneConfirmationAndClosesForm()
+    public async Task Delete_ClosesOpenForm()
+    {
+        await CreateAsync("Golf");
+        var viewModel = await OpenAsync();
+        viewModel.AddVehicleCommand.Execute(null);
+
+        await PressAsync(viewModel, viewModel.Vehicles[0].DeleteCommand);
+
+        Assert.False(viewModel.IsFormOpen);
+        Assert.True(viewModel.Vehicles[0].IsConfirmingDelete);
+    }
+
+    /// <summary>
+    /// Prüft, dass die Rückfrage eines zweiten Fahrzeugs die erste schließt.
+    /// </summary>
+    [Fact]
+    public async Task Delete_SecondVehicle_ClosesFirstConfirmation()
     {
         await CreateAsync("Golf");
         await CreateAsync("Polo");
         var viewModel = await OpenAsync();
         var golf = viewModel.Vehicles[0];
         var polo = viewModel.Vehicles[1];
-        viewModel.AddVehicleCommand.Execute(null);
-
         await PressAsync(viewModel, golf.DeleteCommand);
-        Assert.False(viewModel.IsFormOpen);
-        Assert.True(golf.IsConfirmingDelete);
 
         await PressAsync(viewModel, polo.DeleteCommand);
+
         Assert.False(golf.IsConfirmingDelete);
         Assert.True(polo.IsConfirmingDelete);
+    }
+
+    /// <summary>
+    /// Prüft, dass „Bearbeiten“ eine offene Rückfrage schließt.
+    /// </summary>
+    [Fact]
+    public async Task Edit_ClosesOpenConfirmation()
+    {
+        await CreateAsync("Golf");
+        var viewModel = await OpenAsync();
+        var golf = viewModel.Vehicles[0];
+        await PressAsync(viewModel, golf.DeleteCommand);
 
         golf.EditCommand.Execute(null);
+
         Assert.True(viewModel.IsFormOpen);
-        Assert.False(polo.IsConfirmingDelete);
+        Assert.False(golf.IsConfirmingDelete);
+    }
+
+    /// <summary>
+    /// Prüft, dass das Bestätigen bei einem inzwischen gelöschten Fahrzeug die Rückfrage schließt und die Liste neu lädt.
+    /// </summary>
+    [Fact]
+    public async Task Delete_VehicleDeletedMeanwhile_ClosesConfirmationAndReloads()
+    {
+        var id = await CreateAsync("Golf");
+        var viewModel = await OpenAsync();
+        var item = viewModel.Vehicles[0];
+        await PressAsync(viewModel, item.DeleteCommand);
+        await _fixture.Service.DeleteVehicleAsync(id);
+
+        await PressAsync(viewModel, item.ConfirmDeleteCommand);
+
+        Assert.False(item.IsConfirmingDelete);
+        Assert.False(viewModel.HasStatusMessage);
+        Assert.Empty(viewModel.Vehicles);
+        Assert.True(viewModel.ShowEmptyHint);
+    }
+
+    /// <summary>
+    /// Prüft, dass die erscheinende Rückfrage angesagt wird und die Schaltflächen den Fahrzeugnamen für die Sprachausgabe tragen.
+    /// </summary>
+    [Fact]
+    public async Task Delete_AnnouncesQuestionAndDescribesButtonsWithName()
+    {
+        var golf = await CreateAsync("Golf");
+        await _fixture.AddEntriesAsync(golf, 1);
+        var viewModel = await OpenAsync();
+        var item = viewModel.Vehicles[0];
+
+        await PressAsync(viewModel, item.DeleteCommand);
+
+        Assert.Equal([item.DeleteQuestion], _announcer.Announcements);
+        Assert.Equal("Golf bearbeiten", item.EditDescription);
+        Assert.Equal("Golf löschen", item.DeleteDescription);
+        Assert.Equal("Fahrzeug „Golf“ und Vorgänge löschen", item.ConfirmDeleteDescription);
+        Assert.Equal("Löschen von „Golf“ abbrechen", item.CancelDeleteDescription);
     }
 }

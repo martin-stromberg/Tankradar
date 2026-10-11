@@ -31,8 +31,7 @@ public static class VehicleValidator
             return VehicleResult.InvalidOdometer;
         }
 
-        if (input.StartConsumption is { } consumption
-            && (consumption <= 0m || consumption >= VehicleLimits.MaxConsumptionExclusive || Normalize(consumption).Scale > VehicleLimits.MaxConsumptionDecimals))
+        if (input.StartConsumption is { } consumption && CheckConsumption(consumption) != VehicleFieldError.None)
         {
             return VehicleResult.InvalidConsumption;
         }
@@ -59,9 +58,29 @@ public static class VehicleValidator
         };
         var odometerError = VehicleInputParser.ParseOdometer(odometerText, out var odometer);
         var consumptionError = VehicleInputParser.ParseConsumption(consumptionText, out var consumption);
-        var hasErrors = nameError != VehicleFieldError.None || odometerError != VehicleFieldError.None || consumptionError != VehicleFieldError.None;
-        var input = hasErrors ? null : new VehicleInput(trimmedName, fuelKind, odometer, consumption);
-        return new VehicleFormValidation(nameError, odometerError, consumptionError, input);
+        var validation = new VehicleFormValidation(nameError, odometerError, consumptionError, null);
+        return validation.HasErrors ? validation : validation with { Input = new VehicleInput(trimmedName, fuelKind, odometer, consumption) };
+    }
+
+    /// <summary>
+    /// Prüft den Wertebereich eines Startverbrauchs: nicht negativ, größer als 0 und kleiner als <see cref="VehicleLimits.MaxConsumptionExclusive"/>,
+    /// höchstens <see cref="VehicleLimits.MaxConsumptionDecimals"/> Nachkommastellen (nachgestellte Nullen zählen nicht).
+    /// </summary>
+    /// <param name="consumption">Der Verbrauch.</param>
+    /// <returns><see cref="VehicleFieldError.None"/> bei gültigem Wert, sonst der Fehler.</returns>
+    public static VehicleFieldError CheckConsumption(decimal consumption)
+    {
+        if (consumption < 0m)
+        {
+            return VehicleFieldError.Negative;
+        }
+
+        if (consumption == 0m || consumption >= VehicleLimits.MaxConsumptionExclusive)
+        {
+            return VehicleFieldError.OutOfRange;
+        }
+
+        return Normalize(consumption).Scale > VehicleLimits.MaxConsumptionDecimals ? VehicleFieldError.TooManyDecimals : VehicleFieldError.None;
     }
 
     /// <summary>

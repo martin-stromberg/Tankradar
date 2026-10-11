@@ -2,6 +2,7 @@ using System.Windows.Input;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.Resources.Texts;
+using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Tankbook;
 
 namespace Tankradar.MAUI.ViewModels;
@@ -14,6 +15,9 @@ public class TankbookViewModel : BaseViewModel
 {
     private readonly IVehicleService _service;
     private readonly ILogger<TankbookViewModel> _logger;
+    private readonly IScreenReaderAnnouncer _announcer;
+    private readonly Command _saveCommand;
+    private bool _isSaving;
     private IReadOnlyList<VehicleItemViewModel> _vehicles = [];
     private bool _isLoaded;
     private bool _isFormOpen;
@@ -32,17 +36,20 @@ public class TankbookViewModel : BaseViewModel
     /// </summary>
     /// <param name="service">Der Fahrzeugdienst.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
-    public TankbookViewModel(IVehicleService service, ILogger<TankbookViewModel> logger)
+    /// <param name="announcer">Sagt erscheinende Rückfragen und Fehlermeldungen über die Sprachausgabe an.</param>
+    public TankbookViewModel(IVehicleService service, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer)
     {
         _service = service;
         _logger = logger;
+        _announcer = announcer;
         Title = TankbookTexts.PageTitle;
         FuelKindOptions = new[] { VehicleFuelKind.Petrol, VehicleFuelKind.Diesel, VehicleFuelKind.Electric, VehicleFuelKind.Hybrid }
             .Select(value => new ChoiceOptionViewModel<VehicleFuelKind>(value, TankbookTexts.GetFuelKindLabel(value), OnFuelKindSelected))
             .ToList();
         LastTask = Task.CompletedTask;
         AddVehicleCommand = new Command(BeginCreate);
-        SaveCommand = new Command(() => LastTask = SaveAsync());
+        _saveCommand = new Command(() => LastTask = SaveAsync(), () => !IsSaving);
+        SaveCommand = _saveCommand;
         CancelCommand = new Command(() =>
         {
             IsFormOpen = false;
@@ -54,6 +61,26 @@ public class TankbookViewModel : BaseViewModel
     /// Der zuletzt gestartete Vorgang (für Tests und Abwarten).
     /// </summary>
     public Task LastTask { get; private set; }
+
+    /// <summary>
+    /// Gibt an, ob gerade eine Änderung gespeichert oder ein Fahrzeug gelöscht wird; „Speichern“ und die Bestätigung des Löschens sind dann gesperrt.
+    /// Unabhängig von <see cref="BaseViewModel.IsBusy"/>, das nur das Laden anzeigt.
+    /// </summary>
+    public bool IsSaving
+    {
+        get => _isSaving;
+        private set
+        {
+            if (SetProperty(ref _isSaving, value))
+            {
+                _saveCommand.ChangeCanExecute();
+                foreach (var item in Vehicles)
+                {
+                    item.RefreshCommandStates();
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Die Fahrzeuge nach Namen geordnet.
@@ -303,6 +330,7 @@ public class TankbookViewModel : BaseViewModel
     /// </summary>
     public override void OnAppearing()
     {
+        StatusMessage = null;
         LastTask = LoadAsync();
     }
 
@@ -321,7 +349,8 @@ public class TankbookViewModel : BaseViewModel
                     vehicle,
                     BeginEdit,
                     item => LastTask = BeginDeleteAsync(item),
-                    item => LastTask = DeleteAsync(item)))
+                    item => LastTask = DeleteAsync(item),
+                    () => !IsSaving))
                 .ToList();
             IsLoaded = true;
         }
@@ -390,7 +419,7 @@ public class TankbookViewModel : BaseViewModel
 
     private async Task SaveAsync()
     {
-        if (IsBusy)
+        if (IsSaving)
         {
             return;
         }
@@ -399,14 +428,15 @@ public class TankbookViewModel : BaseViewModel
         NameError = TankbookTexts.GetNameError(validation.NameError);
         OdometerError = TankbookTexts.GetOdometerError(validation.OdometerError);
         ConsumptionError = TankbookTexts.GetConsumptionError(validation.ConsumptionError);
-        if (validation.HasErrors || validation.Input is not { } input)
+        if (validation.Input is not { } input)
         {
+            _announcer.Announce(new[] { NameError, OdometerError, ConsumptionError }.First(error => error.Length > 0));
             return;
         }
 
         StatusMessage = null;
         var reload = false;
-        IsBusy = true;
+        IsSaving = true;
         try
         {
             var result = EditingVehicleId is { } vehicleId
@@ -420,6 +450,7 @@ public class TankbookViewModel : BaseViewModel
                     break;
                 case VehicleResult.DuplicateName:
                     NameError = TankbookTexts.DuplicateName;
+                    _announcer.Announce(NameError);
                     break;
                 case VehicleResult.VehicleNotFound:
                     IsFormOpen = false;
@@ -438,7 +469,7 @@ public class TankbookViewModel : BaseViewModel
         }
         finally
         {
-            IsBusy = false;
+            IsSaving = false;
         }
 
         if (reload)
@@ -457,6 +488,7 @@ public class TankbookViewModel : BaseViewModel
         {
             var count = await _service.CountEntriesAsync(item.Id).ConfigureAwait(true);
             item.ShowDeleteConfirmation(count);
+            _announcer.Announce(item.DeleteQuestion);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -467,13 +499,13 @@ public class TankbookViewModel : BaseViewModel
 
     private async Task DeleteAsync(VehicleItemViewModel item)
     {
-        if (IsBusy)
+        if (IsSaving)
         {
             return;
         }
 
         var reload = false;
-        IsBusy = true;
+        IsSaving = true;
         try
         {
             var result = await _service.DeleteVehicleAsync(item.Id).ConfigureAwait(true);
@@ -494,7 +526,7 @@ public class TankbookViewModel : BaseViewModel
         }
         finally
         {
-            IsBusy = false;
+            IsSaving = false;
         }
 
         if (reload)

@@ -26,7 +26,7 @@ public class TankbookTextsTests_Messages : BaseTest
         Assert.Equal("Bitte gib den Startverbrauch als Zahl ein, z. B. 5,4.", TankbookTexts.GetConsumptionError(VehicleFieldError.NotANumber));
         Assert.Equal("Der Startverbrauch darf nicht negativ sein.", TankbookTexts.GetConsumptionError(VehicleFieldError.Negative));
         Assert.Equal("Der Startverbrauch muss größer als 0 und kleiner als 100 sein.", TankbookTexts.GetConsumptionError(VehicleFieldError.OutOfRange));
-        Assert.Equal("Der Startverbrauch darf höchstens zwei Nachkommastellen haben.", TankbookTexts.GetConsumptionError(VehicleFieldError.TooManyDecimals));
+        Assert.Equal("Der Startverbrauch darf höchstens 2 Nachkommastellen haben.", TankbookTexts.GetConsumptionError(VehicleFieldError.TooManyDecimals));
 
         Assert.Equal(string.Empty, TankbookTexts.GetResultMessage(VehicleResult.Ok));
         Assert.Equal("Bitte gib einen Namen mit höchstens 40 Zeichen ein.", TankbookTexts.GetResultMessage(VehicleResult.InvalidName));
@@ -34,7 +34,7 @@ public class TankbookTextsTests_Messages : BaseTest
         Assert.Equal("Bitte wähle eine Kraftstoffart.", TankbookTexts.GetResultMessage(VehicleResult.InvalidFuelKind));
         Assert.Equal("Der Start-Kilometerstand muss zwischen 0 und 9.999.999 km liegen.", TankbookTexts.GetResultMessage(VehicleResult.InvalidOdometer));
         Assert.Equal(
-            "Der Startverbrauch muss größer als 0 und kleiner als 100 sein, mit höchstens zwei Nachkommastellen.",
+            "Der Startverbrauch muss größer als 0 und kleiner als 100 sein, mit höchstens 2 Nachkommastellen.",
             TankbookTexts.GetResultMessage(VehicleResult.InvalidConsumption));
         Assert.Equal("Das Fahrzeug gibt es nicht mehr.", TankbookTexts.GetResultMessage(VehicleResult.VehicleNotFound));
         foreach (var result in Enum.GetValues<VehicleResult>().Where(value => value != VehicleResult.Ok))
