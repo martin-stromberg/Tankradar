@@ -133,7 +133,11 @@
                                     <Label Text="{Binding StationName}"
                                            Style="{StaticResource headline-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="FavoriteGroup.Entry.Name" />
+                                           AutomationId="FavoriteGroup.Entry.Name">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding OpenCommand}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
                                     <Label Text="{Binding AddressText}"
                                            IsVisible="{Binding HasAddress}"
                                            Style="{StaticResource body-md}"
@@ -148,6 +152,11 @@
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="FavoriteGroup.Entry.Note" />
+                                    <Button Text="{x:Static texts:FavoritesTexts.OpenDetails}"
+                                            Command="{Binding OpenCommand}"
+                                            Style="{StaticResource GroupOutlineButton}"
+                                            SemanticProperties.Description="{Binding StationName}"
+                                            AutomationId="FavoriteGroup.Entry.Open" />
                                     <Button Text="{x:Static texts:FavoritesTexts.EditEntry}"
                                             Command="{Binding EditCommand}"
                                             Style="{StaticResource GroupOutlineButton}"

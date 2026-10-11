@@ -19,4 +19,6 @@
 
 **Notiz und Priorität:** in der Gruppenansicht bei einer Tankstelle **Notiz und Priorität** tippen, Notiz eingeben, Priorität wählen, **Speichern**.
 
+**Details einer Tankstelle öffnen:** in der Gruppenansicht den Tankstellennamen oder **Details öffnen** antippen; der Zurück-Pfeil führt zur Gruppenansicht zurück.
+
 **Tankstelle entfernen:** in der Detailansicht **Aus Favoriten entfernen**; bei mehreren Gruppen die gewünschten Gruppen wählen und **Entfernen** tippen.

@@ -62,7 +62,7 @@ public class ViewModelTests_PageTitles : BaseTest
         using var favorites = new FavoritesFixture();
         var navigator = new FakeFavoriteGroupNavigator();
 
-        Assert.Equal("Favoriten", new FavoritesViewModel(favorites.Service, navigator, NullLogger<FavoritesViewModel>.Instance).Title);
-        Assert.Equal("Favoritengruppe", new FavoriteGroupViewModel(favorites.Service, navigator, NullLogger<FavoriteGroupViewModel>.Instance).Title);
+        Assert.Equal("Favoriten", HomeViewModelFactory.Create(favorites.Service).Title);
+        Assert.Equal("Favoritengruppe", new FavoriteGroupViewModel(favorites.Service, navigator, new FakeStationNavigator(), NullLogger<FavoriteGroupViewModel>.Instance).Title);
     }
 }

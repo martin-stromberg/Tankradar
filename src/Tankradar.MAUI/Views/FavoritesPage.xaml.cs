@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Favoriten“: Liste der Favoritengruppen mit Anlegen einer neuen Gruppe; Antippen einer Gruppe öffnet die Gruppenansicht.
+/// Startseite („Favoriten“): Favoritengruppen mit Tankstellenkacheln (Preise, Entfernung, Hinweise), Offline-Hinweis, Aktualisierung, optionaler Bereich „In der Nähe“ und Anlegen einer neuen Gruppe; Antippen einer Tankstelle öffnet die Detailansicht, einer Gruppe die Gruppenansicht.
 /// </summary>
 public partial class FavoritesPage : TankradarContentPage
 {

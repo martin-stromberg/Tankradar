@@ -1,6 +1,7 @@
 using System.Windows.Input;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Favorites;
+using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services.Favorites;
 using Tankradar.MAUI.Services.Navigation;
@@ -15,6 +16,7 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
 {
     private readonly IFavoritesService _service;
     private readonly IFavoriteGroupNavigator _navigator;
+    private readonly IStationNavigator _stationNavigator;
     private readonly ILogger<FavoriteGroupViewModel> _logger;
     private long? _groupId;
     private FavoriteGroup? _group;
@@ -25,6 +27,7 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
     private string _editDescription = string.Empty;
     private string? _statusMessage;
     private bool _loaded;
+    private bool _isOpeningStation;
     private int _loadVersion;
 
     /// <summary>
@@ -32,11 +35,13 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
     /// </summary>
     /// <param name="service">Der Favoritendienst.</param>
     /// <param name="navigator">Schließt die Ansicht nach dem Löschen.</param>
+    /// <param name="stationNavigator">Öffnet die Detailansicht einer Tankstelle.</param>
     /// <param name="logger">Logger (protokolliert nie Namen).</param>
-    public FavoriteGroupViewModel(IFavoritesService service, IFavoriteGroupNavigator navigator, ILogger<FavoriteGroupViewModel> logger)
+    public FavoriteGroupViewModel(IFavoritesService service, IFavoriteGroupNavigator navigator, IStationNavigator stationNavigator, ILogger<FavoriteGroupViewModel> logger)
     {
         _service = service;
         _navigator = navigator;
+        _stationNavigator = stationNavigator;
         _logger = logger;
         Title = FavoritesTexts.GroupPageTitle;
         LastTask = Task.CompletedTask;
@@ -270,7 +275,7 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
 
             _group = group;
             _loaded = true;
-            Entries = entries.Select(entry => new FavoriteEntryItemViewModel(entry, SaveEntryAsync)).ToList();
+            Entries = entries.Select(entry => new FavoriteEntryItemViewModel(entry, SaveEntryAsync, OpenStation)).ToList();
             StatusMessage = group is null ? FavoritesTexts.GetResultMessage(FavoriteResult.GroupNotFound) : null;
             NotifyGroupChanged();
         }
@@ -278,6 +283,36 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
         {
             _logger.LogWarning("Die Favoritengruppe konnte nicht geladen werden ({ExceptionType}).", ex.GetType().Name);
             StatusMessage = FavoritesTexts.LoadFailed;
+        }
+    }
+
+    private void OpenStation(FavoriteEntryItemViewModel item)
+    {
+        // Name und Schaltfläche des Eintrags können dasselbe Antippen melden; geöffnet wird nur einmal.
+        if (_isOpeningStation)
+        {
+            return;
+        }
+
+        _isOpeningStation = true;
+        LastTask = OpenStationAsync(item);
+    }
+
+    private async Task OpenStationAsync(FavoriteEntryItemViewModel item)
+    {
+        try
+        {
+            var station = new StationListItem(item.StationId, item.StationName, null, string.Empty, [], false, false, string.Empty, item.AddressText);
+            await _stationNavigator.OpenDetailAsync(station).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Die Detailansicht konnte nicht geöffnet werden ({ExceptionType}).", ex.GetType().Name);
+            StatusMessage = DetailTexts.NotAvailable;
+        }
+        finally
+        {
+            _isOpeningStation = false;
         }
     }
 

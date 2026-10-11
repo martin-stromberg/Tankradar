@@ -2,7 +2,9 @@
 
 ## Status
 
-Angenommen (2026-10-06)
+Angenommen (2026-10-06); in Schritt 11 (2026-10-11) aktualisiert: Die Gruppenübersicht ist zur Startseite ausgebaut (siehe
+[ADR 0007](0007-home-page-design-deviations.md)), die Gruppenansicht öffnet die Detailansicht einer Tankstelle, und das
+gleichzeitige Zuordnen derselben Tankstelle zur selben Gruppe meldet „bereits zugeordnet“.
 
 ## Kontext
 
@@ -41,10 +43,12 @@ Gruppen, „Zu weiterer Gruppe hinzufügen / verwalten“ und „Aus Favoriten e
   Beschreibungen, Auswahlhinweis „Ausgewählt“).
 - **Gruppenübersicht im Bereich „Favoriten“, Gruppenansicht als eigene Seite** (Route `favoritegroup`, Parameter
   `groupId`). Die Übersicht listet Name, Beschreibung und Zahl der Tankstellen und legt neue Gruppen an. Die Startseite
-  mit Preisen, Entfernungen und „In der Nähe“ (Schritt 11) ersetzt später die Darstellung der Übersicht; Datenmodell
-  und Dienst bleiben. Aus der Gruppenansicht lässt sich die Detailansicht einer Tankstelle noch nicht öffnen (Schritt 11:
-  „Tippt der Nutzer eine Tankstelle an, öffnet sich ihre Detailansicht“); die Tankstelle wird weiterhin über die Suche
-  geöffnet.
+  mit Preisen, Entfernungen und „In der Nähe“ hat in Schritt 11 die Darstellung der Übersicht ersetzt (Gruppen mit ihren
+  Tankstellen, einklappbar; Datenmodell und Dienst blieben unverändert, `IFavoritesService.GetOverviewAsync` liefert alle
+  Gruppen mit Einträgen in einer Abfrage). **Seit Schritt 11 öffnet ein Eintrag der Gruppenansicht die Detailansicht der
+  Tankstelle** (Schaltfläche „Details öffnen“ bzw. Antippen des Tankstellennamens, über `IStationNavigator`; die Tankstelle wird
+  aus der lokalen Datenbank mit ihren zuletzt bekannten Preisen aufgebaut). Zuordnen und Entfernen bleiben ausschließlich
+  in der Detailansicht.
 - **Änderungsbenachrichtigung.** Der Dienst löst nach jeder gespeicherten Änderung `Changed` aus. Geöffnete Ansichten
   (Detailansicht im Hintergrund eines anderen Reiters, Gruppenliste) laden sich neu; die Anmeldung referenziert die
   Ansicht nur schwach (`FavoritesChangeSubscription`), damit der Singleton-Dienst keine Seiten am Leben hält. Grund: Die
@@ -61,15 +65,19 @@ Gruppen, „Zu weiterer Gruppe hinzufügen / verwalten“ und „Aus Favoriten e
 - **Schaltflächen „Zu Favoriten hinzufügen“ und „Aus Favoriten entfernen“** statt „Zu weiterer Gruppe hinzufügen /
   verwalten“ und eines Kreuzes am Gruppen-Chip, wie in der Anforderung benannt; die Chips der zugeordneten Gruppen sind
   rein anzeigend. „Aktiv synchronisiert“ entfällt (es gibt keine Synchronisierung, nur lokale Speicherung).
-- **Gruppenansicht und Gruppenübersicht** sind im Entwurf nur als Startseite mit Preisen vorhanden (Schritt 11); sie
-  zeigen hier Name, Beschreibung, Anzahl, Adresse, Notiz und Priorität in den Kartenstilen der Detailansicht. Preise,
-  Entfernung und „In der Nähe“ folgen in Schritt 11.
+- **Gruppenansicht** ist im Entwurf nur als Startseite mit Preisen vorhanden; sie zeigt Name, Beschreibung, Anzahl,
+  Adresse, Notiz und Priorität in den Kartenstilen der Detailansicht. Preise, Entfernung und „In der Nähe“ stehen seit
+  Schritt 11 auf der Startseite (Abweichungen dort: [ADR 0007](0007-home-page-design-deviations.md)).
 - **Prioritäten** als vier benannte Stufen (keine, niedrig, mittel, hoch) statt einer freien Zahl: eindeutig zu bedienen
   und zu sortieren, ohne Eingabefehler.
 
 ## Folgen
 
-- Schritt 11 baut die Startseite auf `IFavoritesService` auf (Gruppen mit Tankstellen) und ergänzt Preise, Entfernung
-  und das Öffnen der Detailansicht aus der Gruppe.
+- Die Startseite (Schritt 11) baut auf `IFavoritesService` auf und ergänzt Preise, Entfernung und das Öffnen der
+  Detailansicht aus Startseite und Gruppenansicht.
+- Restpunkt aus der Abnahme von Schritt 10: Verletzt eine gleichzeitige Zuordnung derselben Tankstelle zur selben Gruppe
+  den eindeutigen Index, bildet `FavoritesService.SaveAsync` das Ergebnis je Aufrufer ab: Zuordnung (`AddStationAsync`)
+  ergibt `FavoriteResult.AlreadyMember` („Die Tankstelle gehört der Gruppe bereits an.“), Anlegen und Umbenennen ergeben
+  weiterhin `DuplicateName`. Bisher meldete die Zuordnung fälschlich „doppelter Name“.
 - Neue Spalten oder Tabellen für Favoriten erfordern weiterhin Migrationen, die bestehende Daten erhalten
   (Skill `entityframework-database`).

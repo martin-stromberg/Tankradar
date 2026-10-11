@@ -118,6 +118,32 @@
 
             <Border Style="{StaticResource SettingsCard}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding NearbyHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                        <Switch Grid.Column="0"
+                                IsToggled="{Binding ShowNearby}"
+                                VerticalOptions="Center"
+                                AutomationId="Settings.Nearby.Switch"
+                                SemanticProperties.Description="{x:Static texts:SettingsTexts.NearbyHint}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding NearbyHint}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               VerticalOptions="Center"
+                               AutomationId="Settings.Nearby.Hint" />
+                    </Grid>
+                    <Label Text="{Binding NearbyGpsHint}"
+                           IsVisible="{Binding ShowNearbyGpsHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Nearby.GpsHint" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
                     <Label Text="{Binding ViewHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />

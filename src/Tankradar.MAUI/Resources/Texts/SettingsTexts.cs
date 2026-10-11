@@ -38,6 +38,21 @@ public static class SettingsTexts
     public const string SortHeading = "Standardsortierung";
 
     /// <summary>
+    /// Überschrift der Karte „In der Nähe“.
+    /// </summary>
+    public const string NearbyHeading = "In der Nähe";
+
+    /// <summary>
+    /// Beschreibung des Schalters „In der Nähe“ (auch Beschreibung für Screenreader).
+    /// </summary>
+    public const string NearbyHint = "Zeigt auf der Startseite Tankstellen im Umkreis von 5 km um deinen Standort an.";
+
+    /// <summary>
+    /// Hinweis, wenn die Standortnutzung „Nie“ gewählt ist.
+    /// </summary>
+    public const string NearbyGpsHint = "Wirkt nur, wenn die Standortnutzung nicht „Nie“ ist.";
+
+    /// <summary>
     /// Meldung, wenn die Einstellungen nicht geladen werden konnten.
     /// </summary>
     public const string LoadFailed = "Die Einstellungen konnten nicht geladen werden.";

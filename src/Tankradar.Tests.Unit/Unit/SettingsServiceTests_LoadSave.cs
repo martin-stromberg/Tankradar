@@ -65,6 +65,34 @@ public class SettingsServiceTests_LoadSave : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass der Schalter „In der Nähe“ gespeichert und wieder geladen wird.
+    /// </summary>
+    /// <param name="showNearby">Der zu speichernde Wert.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task SaveThenLoad_RoundTrips_ShowNearby(bool showNearby)
+    {
+        await _service.SaveAsync(AppSettings.CreateDefault() with { ShowNearby = !showNearby });
+        await _service.SaveAsync(AppSettings.CreateDefault() with { ShowNearby = showNearby });
+
+        var loaded = await _service.LoadAsync();
+
+        Assert.Equal(showNearby, loaded.ShowNearby);
+    }
+
+    /// <summary>
+    /// Prüft, dass ohne gespeicherten Wert (keine Zeile) „In der Nähe“ aus ist.
+    /// </summary>
+    [Fact]
+    public async Task Load_WithoutStoredValue_ShowNearbyFalse()
+    {
+        var loaded = await _service.LoadAsync();
+
+        Assert.False(loaded.ShowNearby);
+    }
+
+    /// <summary>
     /// Prüft, dass Auswahl und Reihenfolge der Spritsorten erhalten bleiben.
     /// </summary>
     [Fact]

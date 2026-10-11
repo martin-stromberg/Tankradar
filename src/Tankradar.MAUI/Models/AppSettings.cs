@@ -1,7 +1,7 @@
 namespace Tankradar.MAUI.Models;
 
 /// <summary>
-/// Die Einstellungen der App: Spritsorten (geordnet), Standortnutzung, Standardansicht und Standardsortierung.
+/// Die Einstellungen der App: Spritsorten (geordnet), Standortnutzung, Standardansicht, Standardsortierung und der Bereich „In der Nähe“ der Startseite.
 /// </summary>
 public sealed record AppSettings
 {
@@ -12,12 +12,14 @@ public sealed record AppSettings
     /// <param name="gpsUsage">Die Standortnutzung.</param>
     /// <param name="resultView">Die Standardansicht der Suchergebnisse.</param>
     /// <param name="resultSortOrder">Die Standardsortierung der Suchergebnisse.</param>
-    public AppSettings(IReadOnlyList<FuelTypeSelection> fuelTypes, GpsUsage gpsUsage, ResultView resultView, ResultSortOrder resultSortOrder)
+    /// <param name="showNearby">Gibt an, ob der Bereich „In der Nähe“ auf der Startseite angezeigt wird.</param>
+    public AppSettings(IReadOnlyList<FuelTypeSelection> fuelTypes, GpsUsage gpsUsage, ResultView resultView, ResultSortOrder resultSortOrder, bool showNearby = false)
     {
         FuelTypes = fuelTypes;
         GpsUsage = gpsUsage;
         ResultView = resultView;
         ResultSortOrder = resultSortOrder;
+        ShowNearby = showNearby;
     }
 
     /// <summary>
@@ -41,7 +43,12 @@ public sealed record AppSettings
     public ResultSortOrder ResultSortOrder { get; init; }
 
     /// <summary>
-    /// Erzeugt die Standardeinstellungen: Standort nur bei Nutzung, Listenansicht, Sortierung nach Preis, alle Spritsorten ausgewählt.
+    /// Gibt an, ob der Bereich „In der Nähe“ auf der Startseite angezeigt wird (wirkt nur bei erlaubter Standortnutzung).
+    /// </summary>
+    public bool ShowNearby { get; init; }
+
+    /// <summary>
+    /// Erzeugt die Standardeinstellungen: Standort nur bei Nutzung, Listenansicht, Sortierung nach Preis, alle Spritsorten ausgewählt, ohne Bereich „In der Nähe“.
     /// </summary>
     /// <returns>Die Standardeinstellungen.</returns>
     public static AppSettings CreateDefault()
@@ -50,7 +57,8 @@ public sealed record AppSettings
             Enum.GetValues<FuelType>().Select(fuelType => new FuelTypeSelection(fuelType, true)).ToList(),
             GpsUsage.WhileInUse,
             ResultView.List,
-            ResultSortOrder.Price);
+            ResultSortOrder.Price,
+            showNearby: false);
     }
 
     /// <summary>

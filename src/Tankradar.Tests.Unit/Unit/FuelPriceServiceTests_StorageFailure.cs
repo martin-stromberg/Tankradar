@@ -55,5 +55,15 @@ public class FuelPriceServiceTests_StorageFailure : BaseTest
         {
             return Task.FromResult<IReadOnlyList<StationInfo>>([]);
         }
+
+        public Task<IReadOnlyList<StationInfo>> GetStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<StationInfo>>([]);
+        }
+
+        public Task SavePricesAsync(IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> prices, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

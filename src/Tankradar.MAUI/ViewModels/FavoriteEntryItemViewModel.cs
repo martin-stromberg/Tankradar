@@ -10,6 +10,7 @@ namespace Tankradar.MAUI.ViewModels;
 public sealed class FavoriteEntryItemViewModel : BaseViewModel
 {
     private readonly Func<FavoriteEntryItemViewModel, Task> _save;
+    private readonly Action<FavoriteEntryItemViewModel> _open;
     private bool _isEditing;
     private string _editNote = string.Empty;
 
@@ -18,10 +19,12 @@ public sealed class FavoriteEntryItemViewModel : BaseViewModel
     /// </summary>
     /// <param name="entry">Der Eintrag.</param>
     /// <param name="save">Speichert die geänderte Notiz und Priorität.</param>
-    public FavoriteEntryItemViewModel(FavoriteEntry entry, Func<FavoriteEntryItemViewModel, Task> save)
+    /// <param name="open">Öffnet die Detailansicht der Tankstelle.</param>
+    public FavoriteEntryItemViewModel(FavoriteEntry entry, Func<FavoriteEntryItemViewModel, Task> save, Action<FavoriteEntryItemViewModel> open)
     {
         ArgumentNullException.ThrowIfNull(entry);
         _save = save;
+        _open = open;
         GroupId = entry.GroupId;
         StationId = entry.StationId;
         StationName = entry.StationName;
@@ -32,6 +35,7 @@ public sealed class FavoriteEntryItemViewModel : BaseViewModel
             .Select(value => new ChoiceOptionViewModel<FavoritePriority>(value, FavoritesTexts.GetPriorityLabel(value), OnPrioritySelected))
             .ToList();
         EditCommand = new Command(BeginEdit);
+        OpenCommand = new Command(() => _open(this));
         SaveCommand = new Command(() => LastSaveTask = _save(this));
         CancelCommand = new Command(() => IsEditing = false);
         LastSaveTask = Task.CompletedTask;
@@ -120,6 +124,11 @@ public sealed class FavoriteEntryItemViewModel : BaseViewModel
         get => _editNote;
         set => SetProperty(ref _editNote, value ?? string.Empty);
     }
+
+    /// <summary>
+    /// Befehl, der die Detailansicht der Tankstelle öffnet.
+    /// </summary>
+    public ICommand OpenCommand { get; }
 
     /// <summary>
     /// Befehl, der das Formular öffnet.

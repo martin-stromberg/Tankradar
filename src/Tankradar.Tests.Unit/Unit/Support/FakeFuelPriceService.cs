@@ -51,6 +51,70 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     /// </summary>
     public List<StationSearchQuery> Queries { get; } = [];
 
+    /// <summary>
+    /// Das gelieferte Ergebnis der Aktualisierung nach Kennungen (Standard: keine Tankstellen, live).
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public StationRefreshResult RefreshResult { get; set; } = new StationRefreshResult([], PriceDataSource.Live, PriceFailure.None);
+
+    /// <summary>
+    /// Die lokal bekannten Tankstellen, die <see cref="GetKnownStationsAsync"/> liefert.
+    /// </summary>
+    public List<StationInfo> KnownStations { get; } = [];
+
+    /// <summary>
+    /// Wenn gesetzt, wird sie von <see cref="RefreshStationsAsync"/> ausgelöst.
+    /// </summary>
+    public Exception? RefreshException { get; set; }
+
+    /// <summary>
+    /// Wenn gesetzt, wartet <see cref="RefreshStationsAsync"/> auf dieses Signal (abbrechbar), bevor es das Ergebnis liefert.
+    /// </summary>
+    public Task? RefreshGate { get; set; }
+
+    private readonly TaskCompletionSource _refreshEntered = CreateSource();
+
+    /// <summary>
+    /// Wird abgeschlossen, sobald <see cref="RefreshStationsAsync"/> erstmals aufgerufen wurde.
+    /// </summary>
+    public TaskCompletionSource RefreshEntered => _refreshEntered;
+
+    /// <summary>
+    /// Die Kennungen aller Aktualisierungen nach Kennungen in Reihenfolge.
+    /// </summary>
+    public List<IReadOnlyList<string>> RefreshRequests { get; } = [];
+
+    /// <summary>
+    /// Der <c>force</c>-Wert aller Aktualisierungen nach Kennungen in Reihenfolge.
+    /// </summary>
+    public List<bool> RefreshForces { get; } = [];
+
+    /// <summary>
+    /// Alle Abfragen der lokal bekannten Tankstellen in Reihenfolge.
+    /// </summary>
+    public List<IReadOnlyList<string>> KnownRequests { get; } = [];
+
+    /// <inheritdoc />
+    public async Task<StationRefreshResult> RefreshStationsAsync(IReadOnlyCollection<string> stationIds, bool force, CancellationToken cancellationToken = default)
+    {
+        RefreshRequests.Add(stationIds.ToList());
+        RefreshForces.Add(force);
+        RefreshEntered.TrySetResult();
+        if (RefreshGate is { } gate)
+        {
+            await gate.WaitAsync(cancellationToken);
+        }
+
+        return RefreshException is null ? RefreshResult : throw RefreshException;
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+    {
+        KnownRequests.Add(stationIds.ToList());
+        return Task.FromResult<IReadOnlyList<StationInfo>>(KnownStations.Where(s => stationIds.Contains(s.Id)).ToList());
+    }
+
     /// <inheritdoc />
     public Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
     {
@@ -79,5 +143,10 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     private static StationDetailResult CreateUnknownStation()
     {
         return new StationDetailResult(null, PriceDataSource.Live, PriceFailure.None);
+    }
+
+    private static TaskCompletionSource CreateSource()
+    {
+        return new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }

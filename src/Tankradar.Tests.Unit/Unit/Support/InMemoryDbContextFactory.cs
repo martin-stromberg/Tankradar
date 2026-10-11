@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Tankradar.MAUI.Data;
 
 namespace Tankradar.Tests.Unit.Unit.Support;
@@ -11,6 +12,8 @@ public sealed class InMemoryDbContextFactory : IDbContextFactory<TankradarDbCont
 {
     private readonly SqliteConnection _connection;
     private readonly DbContextOptions<TankradarDbContext> _options;
+    private DbContextOptions<TankradarDbContext>? _interceptedOptions;
+    private ISaveChangesInterceptor? _interceptor;
 
     /// <summary>
     /// Öffnet die In-Memory-Datenbank.
@@ -32,6 +35,21 @@ public sealed class InMemoryDbContextFactory : IDbContextFactory<TankradarDbCont
     /// </summary>
     public int CreatedCount { get; private set; }
 
+    /// <summary>
+    /// Ein optionaler Interceptor, der in alle danach erstellten Kontexte eingehängt wird (z. B. um vor dem Speichern eine rivalisierende Zeile einzufügen).
+    /// </summary>
+    public ISaveChangesInterceptor? Interceptor
+    {
+        get => _interceptor;
+        set
+        {
+            _interceptor = value;
+            _interceptedOptions = value is null
+                ? null
+                : new DbContextOptionsBuilder<TankradarDbContext>().UseSqlite(_connection).AddInterceptors(value).Options;
+        }
+    }
+
     /// <inheritdoc />
     public TankradarDbContext CreateDbContext()
     {
@@ -42,7 +60,7 @@ public sealed class InMemoryDbContextFactory : IDbContextFactory<TankradarDbCont
         }
 
         CreatedCount++;
-        return new TankradarDbContext(_options);
+        return new TankradarDbContext(_interceptedOptions ?? _options);
     }
 
     /// <summary>

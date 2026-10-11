@@ -18,10 +18,23 @@ public sealed class FakeStationNavigator : IStationNavigator
     /// </summary>
     public Exception? OpenException { get; set; }
 
+    /// <summary>
+    /// Wenn gesetzt, schließt das Öffnen erst ab, wenn dieses Signal gesetzt wird (für Tests gegen doppeltes Öffnen).
+    /// </summary>
+    public Task? Gate { get; set; }
+
     /// <inheritdoc />
-    public Task OpenDetailAsync(StationListItem station)
+    public async Task OpenDetailAsync(StationListItem station)
     {
         Opened.Add(station);
-        return OpenException is null ? Task.CompletedTask : Task.FromException(OpenException);
+        if (Gate is { } gate)
+        {
+            await gate;
+        }
+
+        if (OpenException is not null)
+        {
+            throw OpenException;
+        }
     }
 }

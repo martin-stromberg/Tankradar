@@ -150,5 +150,15 @@ public class DataSourceViewModelTests_Check : BaseTest
         {
             return Task.FromResult(new StationDetailResult(null, PriceDataSource.OfflineFallback, PriceFailure.None));
         }
+
+        public Task<StationRefreshResult> RefreshStationsAsync(IReadOnlyCollection<string> stationIds, bool force, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new StationRefreshResult([], PriceDataSource.OfflineFallback, PriceFailure.None));
+        }
+
+        public Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<StationInfo>>([]);
+        }
     }
 }

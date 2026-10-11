@@ -2,6 +2,8 @@
 
 # Tankstellen-Detailansicht — Ablauf für Anwender
 
+Die Detailansicht lässt sich aus der Ergebnisliste der Suche, von der [Startseite](../Startseite/index.md) (Kachel oder **Details öffnen**) und aus der Gruppenansicht der [Favoriten](../Favoriten/index.md) öffnen; der Zurück-Pfeil führt jeweils dorthin zurück.
+
 1. Im Bereich **Karte** eine Suche ausführen (siehe [Umkreissuche](../Suche/index.md)).
 2. In der Ergebnisliste die Karte einer Tankstelle antippen oder auf **Details** tippen.
 3. Die Ansicht zeigt sofort die Angaben aus der Liste und ergänzt Öffnungszeiten und aktuelle Preise, sobald sie abgerufen sind.

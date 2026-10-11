@@ -97,4 +97,18 @@ public class AppSettingsTests_Validation : BaseTest
         Assert.Throws<ArgumentException>((defaults with { ResultView = (ResultView)99 }).Validate);
         Assert.Throws<ArgumentException>((defaults with { ResultSortOrder = (ResultSortOrder)99 }).Validate);
     }
+
+    /// <summary>
+    /// Prüft, dass der Schalter „In der Nähe“ in beiden Werten gültig ist.
+    /// </summary>
+    /// <param name="showNearby">Der zu prüfende Wert.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Validate_ShowNearby_IsAccepted(bool showNearby)
+    {
+        var exception = Record.Exception(() => (AppSettings.CreateDefault() with { ShowNearby = showNearby }).Validate());
+
+        Assert.Null(exception);
+    }
 }

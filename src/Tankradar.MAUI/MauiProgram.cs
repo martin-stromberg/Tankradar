@@ -69,6 +69,7 @@ public static class MauiProgram
             Environment.GetEnvironmentVariable,
             () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
 
+        builder.Services.AddTransient<NearbySectionViewModel>();
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();
         builder.Services.AddTransient<TankbookViewModel>();

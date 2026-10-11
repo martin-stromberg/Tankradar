@@ -29,11 +29,12 @@ public class DatabaseInitializerTests_FirstStart : IDisposable
         Assert.Contains("UserSettings", tables);
         Assert.Contains("FuelTypeSettings", tables);
         var history = Query(connection, "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId");
-        Assert.Equal(4, history.Count);
+        Assert.Equal(5, history.Count);
         Assert.EndsWith("_InitialCreate", history[0]);
         Assert.EndsWith("_AddFuelTypeSettings", history[1]);
         Assert.EndsWith("_AddPriceCache", history[2]);
         Assert.EndsWith("_AddFavorites", history[3]);
+        Assert.EndsWith("_AddNearbySetting", history[4]);
         Assert.Contains("Stations", tables);
         Assert.Contains("PriceEntries", tables);
     }
