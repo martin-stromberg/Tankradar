@@ -325,6 +325,42 @@ public sealed class TankbookE2EDriver
         return ReadTexts(automationId);
     }
 
+    /// <summary>
+    /// Liefert die AutomationId eines Elements der Auswertung einer Art.
+    /// </summary>
+    /// <param name="kindKey">Der Schlüssel der Art (<c>Fuel</c> oder <c>Electricity</c>).</param>
+    /// <param name="element">Der Name des Elements, z. B. <c>Average</c> oder <c>CostChartSummary</c>.</param>
+    /// <returns>Die AutomationId.</returns>
+    public static string StatisticsId(string kindKey, string element)
+    {
+        return $"TankbookEntries.Statistics.{kindKey}.{element}";
+    }
+
+    /// <summary>
+    /// Wartet, bis ein Element der Auswertung einer Art den erwarteten Text zeigt.
+    /// </summary>
+    /// <param name="kindKey">Der Schlüssel der Art.</param>
+    /// <param name="element">Der Name des Elements.</param>
+    /// <param name="expected">Der erwartete Text.</param>
+    public void WaitForStatistic(string kindKey, string element, string expected)
+    {
+        WaitForTexts(StatisticsId(kindKey, element), expected);
+    }
+
+    /// <summary>
+    /// Wartet, bis die Auswertung für die Art Kennzahlen zeigt (Durchschnitt, Kosten pro 100 km, Gesamtkosten) und prüft sie.
+    /// </summary>
+    /// <param name="kindKey">Der Schlüssel der Art.</param>
+    /// <param name="average">Der erwartete Durchschnittsverbrauch.</param>
+    /// <param name="costPer100Km">Die erwarteten Kosten pro 100 km.</param>
+    /// <param name="totalCost">Die erwarteten Gesamtkosten.</param>
+    public void WaitForStatistics(string kindKey, string average, string costPer100Km, string totalCost)
+    {
+        WaitForStatistic(kindKey, "Average", average);
+        WaitForStatistic(kindKey, "CostPer100Km", costPer100Km);
+        WaitForStatistic(kindKey, "TotalCost", totalCost);
+    }
+
     private void PressAtIndex(string automationId, Func<int> index, string description)
     {
         // Indexermittlung, Suche und Auslösen laufen gemeinsam im Wiederholungsblock: Baut sich die Liste zwischendurch neu auf, wird neu gesucht.

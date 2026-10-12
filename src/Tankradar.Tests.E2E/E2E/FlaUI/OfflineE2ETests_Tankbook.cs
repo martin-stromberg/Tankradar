@@ -83,15 +83,19 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
             var stored = TankbookTestDatabase.ReadEntries(DatabasePath);
             Assert.NotNull(stored[0].StationId);
             Assert.Null(stored[1].StationId);
+            Tankbook.WaitForStatistic("Fuel", "Average", "6,00 L/100 km");
+            Tankbook.WaitForStatistic("Fuel", "CostPer100Km", "11,15 € / 100 km");
 
             Tankbook.PressForEntry("TankbookEntry.Item.Edit", 0);
             Tankbook.Type("TankbookEntries.Form.Odometer", "11500");
             Tankbook.SaveEntryForm();
             Tankbook.WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 3,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            Tankbook.WaitForStatistic("Fuel", "Average", "3,00 L/100 km");
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
             Tankbook.Press("TankbookEntry.Item.DeleteConfirm");
             Tankbook.WaitForTexts("TankbookEntry.Item.Station", "Alpha Tankstelle");
+            Tankbook.WaitForStatistic("Fuel", "Average", "–");
             Assert.Equal(1, TankbookTestDatabase.CountEntries(DatabasePath));
         });
     }
