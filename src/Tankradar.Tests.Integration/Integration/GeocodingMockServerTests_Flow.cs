@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.Tests.Integration.Integration.Support;
 using Tankradar.TestSupport;
@@ -126,17 +127,21 @@ public class GeocodingMockServerTests_Flow : SearchMockServerTestBase
 
     /// <summary>
     /// Prüft in Echtzeit, dass zwei unmittelbar aufeinanderfolgende Auflösungen mindestens eine Sekunde Abstand haben (Nutzungsrichtlinie).
+    /// Gemessen wird clientseitig beim Absenden; 10 ms Toleranz decken die Timer-Auflösung ab.
     /// </summary>
     [Fact]
     public async Task Resolve_TwoQuickRequests_AreAtLeastOneSecondApart()
     {
-        var service = CreateGeocoding();
+        var timing = new RequestTimingHandler(new HttpClientHandler { AllowAutoRedirect = false });
+        var service = CreateGeocoding(handler: timing);
 
         await service.ResolveAsync("Berlin");
         await service.ResolveAsync("Oranienburg");
 
-        var times = Nominatim.RequestTimes;
+        var times = timing.SendTimes;
         Assert.Equal(2, times.Count);
-        Assert.True(times[1] - times[0] >= TimeSpan.FromMilliseconds(950), $"Abstand nur {(times[1] - times[0]).TotalMilliseconds} ms.");
+        var gap = Stopwatch.GetElapsedTime(times[0], times[1]);
+        Assert.True(gap >= TimeSpan.FromMilliseconds(990), $"Abstand nur {gap.TotalMilliseconds} ms.");
+        Assert.Equal(2, Nominatim.Requests);
     }
 }

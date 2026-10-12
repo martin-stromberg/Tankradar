@@ -1,0 +1,11 @@
+# Tankbuch
+
+Im Bereich **Tankbuch** verwalten Sie Ihre Fahrzeuge: Name, Kraftstoffart, Start-Kilometerstand und optional den Startverbrauch. Je Fahrzeug erfassen Sie Tank- und Ladevorgänge mit Datum, Tankstelle, Menge, Preis, Gesamtbetrag, Kilometerstand, Teilbetankung, Notiz und Belegfoto. Tankatlas berechnet daraus den Verbrauch pro 100 km. Sie können Vorgänge korrigieren und löschen. Alles wird nur auf diesem Gerät gespeichert und ist offline nutzbar.
+
+## Inhalt
+
+- [Beschreibung](beschreibung.md)
+- [Ablauf für Anwender](ablauf-anwender.md)
+- [Technischer Ablauf](ablauf-technisch.md)
+
+← [Zurück zur Übersicht](../index.md)

@@ -11,6 +11,7 @@ using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
 
@@ -57,12 +58,18 @@ public static class MauiProgram
         builder.Services.AddDbContextFactory<TankradarDbContext>((serviceProvider, options) =>
         {
             var dataDirectory = serviceProvider.GetRequiredService<IAppDataPathProvider>().GetDataDirectory();
-            options.UseSqlite($"Data Source={TankradarDbContext.GetDatabasePath(dataDirectory)}");
+            options.UseSqlite(TankradarDbContext.BuildConnectionString(TankradarDbContext.GetDatabasePath(dataDirectory)));
         });
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
         AddPriceServices(builder.Services);
         builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
+        builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
+        builder.Services.AddSingleton<IVehicleService, VehicleService>();
+        builder.Services.AddSingleton<ITankbookEntryService, TankbookEntryService>();
+        builder.Services.AddSingleton<IReceiptPhotoPicker>(_ => ReceiptPhotoPickerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiReceiptPhotoPicker()));
         AddGeocodingServices(builder.Services);
         AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
@@ -73,17 +80,22 @@ public static class MauiProgram
         builder.Services.AddTransient<FavoritesViewModel>();
         builder.Services.AddTransient<MapViewModel>();
         builder.Services.AddTransient<TankbookViewModel>();
+        builder.Services.AddTransient<TankbookEntriesViewModel>();
+        builder.Services.AddTransient<TankbookEntryFormViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();
         builder.Services.AddTransient<FavoriteGroupViewModel>();
+        builder.Services.AddSingleton<IScreenReaderAnnouncer, SemanticScreenReaderAnnouncer>();
         builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
         builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
+        builder.Services.AddSingleton<ITankbookNavigator, ShellTankbookNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
         builder.Services.AddTransient<MapPage>();
         builder.Services.AddTransient<TankbookPage>();
+        builder.Services.AddTransient<TankbookEntriesPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<StationDetailPage>();
         builder.Services.AddTransient<FavoriteGroupPage>();

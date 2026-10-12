@@ -164,6 +164,72 @@ namespace Tankradar.MAUI.Data.Migrations
                     b.ToTable("Stations", (string)null);
                 });
 
+            modelBuilder.Entity("Tankradar.MAUI.Data.TankbookEntryEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPartial")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Fuel");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OdometerKm")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Quantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("ReceiptPhotoFileName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StationName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("");
+
+                    b.Property<decimal>("TotalAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("UnitPrice")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(0m);
+
+                    b.Property<long>("VehicleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VehicleId", "OccurredAt");
+
+                    b.ToTable("TankbookEntries", (string)null);
+                });
+
             modelBuilder.Entity("Tankradar.MAUI.Data.UserSettingsEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -189,6 +255,38 @@ namespace Tankradar.MAUI.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Tankradar.MAUI.Data.VehicleEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FuelKind")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<decimal?>("StartConsumption")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StartOdometerKm")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Vehicles", (string)null);
                 });
 
             modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteEntryEntity", b =>
@@ -221,6 +319,17 @@ namespace Tankradar.MAUI.Data.Migrations
                     b.Navigation("Station");
                 });
 
+            modelBuilder.Entity("Tankradar.MAUI.Data.TankbookEntryEntity", b =>
+                {
+                    b.HasOne("Tankradar.MAUI.Data.VehicleEntity", "Vehicle")
+                        .WithMany("Entries")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Vehicle");
+                });
+
             modelBuilder.Entity("Tankradar.MAUI.Data.FavoriteGroupEntity", b =>
                 {
                     b.Navigation("Entries");
@@ -229,6 +338,11 @@ namespace Tankradar.MAUI.Data.Migrations
             modelBuilder.Entity("Tankradar.MAUI.Data.StationEntity", b =>
                 {
                     b.Navigation("PriceEntries");
+                });
+
+            modelBuilder.Entity("Tankradar.MAUI.Data.VehicleEntity", b =>
+                {
+                    b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618
         }

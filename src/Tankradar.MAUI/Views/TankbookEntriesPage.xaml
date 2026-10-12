@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:tankbook="clr-namespace:Tankradar.MAUI.Models.Tankbook"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
+             x:DataType="vm:TankbookEntriesViewModel"
+             x:Class="Tankradar.MAUI.Views.TankbookEntriesPage"
+             Title="{x:Static texts:TankbookEntryTexts.PageTitle}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:TankbookStyles />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
+
+            <!-- Kopf: Fahrzeug -->
+            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                <Label Text="{x:Static texts:TankbookEntryTexts.PageTitle}"
+                       Style="{StaticResource headline-lg}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                       SemanticProperties.HeadingLevel="Level1"
+                       AutomationId="TankbookEntriesPage.Headline" />
+                <Label Text="{Binding VehicleName}"
+                       IsVisible="{Binding HasVehicle}"
+                       Style="{StaticResource headline-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                       SemanticProperties.HeadingLevel="Level2"
+                       AutomationId="TankbookEntries.Vehicle" />
+                <Label Text="{Binding VehicleDetails}"
+                       IsVisible="{Binding HasVehicle}"
+                       Style="{StaticResource body-md}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="TankbookEntries.VehicleDetails" />
+                <Label Text="{x:Static texts:TankbookEntryTexts.Intro}"
+                       Style="{StaticResource body-sm}"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+            </VerticalStackLayout>
+
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="TankbookEntries.Status" />
+
+            <Button Text="{x:Static texts:TankbookEntryTexts.AddEntry}"
+                    Command="{Binding AddEntryCommand}"
+                    IsVisible="{Binding Form.IsClosed}"
+                    Style="{StaticResource TankbookButton}"
+                    SemanticProperties.Hint="{Binding AddEntryHint}"
+                    AutomationId="TankbookEntries.Add" />
+
+            <!-- Formular zum Erfassen und Korrigieren (Bereich in der Seite, kein Dialog) -->
+            <Border Style="{StaticResource TankbookCard}"
+                    BindingContext="{Binding Form}"
+                    x:DataType="vm:TankbookEntryFormViewModel"
+                    IsVisible="{Binding IsOpen}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding FormTitle}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="TankbookEntries.Form.Title" />
+
+                    <!-- Datum und Uhrzeit -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="{StaticResource space-sm}">
+                        <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
+                            <Label Text="{x:Static texts:TankbookEntryTexts.DateLabel}" Style="{StaticResource FieldLabel}" />
+                            <DatePicker Date="{Binding EntryDate}"
+                                        MaximumDate="{Binding MaximumDate}"
+                                        Format="dd.MM.yyyy"
+                                        MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                        SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.DateLabel}"
+                                        AutomationId="TankbookEntries.Form.Date" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="{StaticResource space-xs}">
+                            <Label Text="{x:Static texts:TankbookEntryTexts.TimeLabel}" Style="{StaticResource FieldLabel}" />
+                            <TimePicker Time="{Binding EntryTime}"
+                                        Format="HH:mm"
+                                        MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                        SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.TimeLabel}"
+                                        AutomationId="TankbookEntries.Form.Time" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Label Text="{Binding DateError}"
+                           IsVisible="{Binding HasDateError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.DateError" />
+
+                    <!-- Tankstelle: freier Name oder bekannte Tankstelle -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.StationLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasStationError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference StationEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Entry x:Name="StationEntry"
+                               Text="{Binding StationName}"
+                               Placeholder="{x:Static texts:TankbookEntryTexts.StationPlaceholder}"
+                               MaxLength="{x:Static tankbook:TankbookEntryLimits.MaxStationNameLength}"
+                               SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.StationLabel}"
+                               AutomationId="TankbookEntries.Form.Station" />
+                    </Border>
+                    <Label Text="{Binding StationError}"
+                           IsVisible="{Binding HasStationError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.StationError" />
+                    <Label Text="{x:Static texts:TankbookEntryTexts.KnownStationsLabel}"
+                           IsVisible="{Binding HasKnownStations}"
+                           Style="{StaticResource UnitLabel}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                IsVisible="{Binding HasKnownStations}"
+                                BindableLayout.ItemsSource="{Binding KnownStations}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource FuelKindChip}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Form.KnownStation.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <!-- Art: Chips bei Hybrid, sonst fester Text -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.KindLabel}" Style="{StaticResource FieldLabel}" />
+                    <Label Text="{Binding KindText}"
+                           IsVisible="{Binding ShowKindText}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="TankbookEntries.Form.KindText" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                IsVisible="{Binding ShowKindChoice}"
+                                BindableLayout.ItemsSource="{Binding KindOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource FuelKindChip}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Form.Kind.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <!-- Menge, Preis pro Einheit, Gesamtbetrag (zwei aus drei) -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.AmountsExplanation}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <Label Text="{x:Static texts:TankbookEntryTexts.QuantityLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasQuantityError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference QuantityEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="QuantityEntry"
+                                   Text="{Binding Quantity}"
+                                   Placeholder="z. B. 40,5"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.QuantityLabel}"
+                                   AutomationId="TankbookEntries.Form.Quantity" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding QuantityUnit}"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="TankbookEntries.Form.QuantityUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding QuantityError}"
+                           IsVisible="{Binding HasQuantityError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.QuantityError" />
+
+                    <Label Text="{Binding UnitPriceLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasUnitPriceError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference UnitPriceEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="UnitPriceEntry"
+                                   Text="{Binding UnitPrice}"
+                                   Placeholder="z. B. 1,859"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{Binding UnitPriceLabel}"
+                                   AutomationId="TankbookEntries.Form.UnitPrice" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding UnitPriceUnit}"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="TankbookEntries.Form.UnitPriceUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding UnitPriceError}"
+                           IsVisible="{Binding HasUnitPriceError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.UnitPriceError" />
+
+                    <Label Text="{x:Static texts:TankbookEntryTexts.TotalAmountLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasTotalAmountError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference TotalAmountEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="TotalAmountEntry"
+                                   Text="{Binding TotalAmount}"
+                                   Placeholder="z. B. 74,36"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.TotalAmountLabel}"
+                                   AutomationId="TankbookEntries.Form.TotalAmount" />
+                            <Label Grid.Column="1"
+                                   Text="€"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="TankbookEntries.Form.TotalAmountUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding TotalAmountError}"
+                           IsVisible="{Binding HasTotalAmountError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.TotalAmountError" />
+                    <Label Text="{Binding ComputedHint}"
+                           IsVisible="{Binding HasComputedHint}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{StaticResource ColorPrimaryTeal}"
+                           AutomationId="TankbookEntries.Form.ComputedHint" />
+
+                    <!-- Kilometerstand mit festem Suffix „km“ -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.OdometerLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasOdometerError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Border" x:DataType="Entry" Binding="{Binding Source={x:Reference EntryOdometerEntry}, Path=IsFocused}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorPrimaryTeal}" />
+                                <Setter Property="StrokeThickness" Value="2" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry x:Name="EntryOdometerEntry"
+                                   Text="{Binding Odometer}"
+                                   Placeholder="{Binding OdometerPlaceholder}"
+                                   Keyboard="Numeric"
+                                   MaxLength="12"
+                                   SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.OdometerLabel}"
+                                   AutomationId="TankbookEntries.Form.Odometer" />
+                            <Label Grid.Column="1"
+                                   Text="{x:Static texts:TankbookTexts.KilometerUnit}"
+                                   Style="{StaticResource UnitLabel}"
+                                   AutomationId="TankbookEntries.Form.OdometerUnit" />
+                        </Grid>
+                    </Border>
+                    <Label Text="{Binding OdometerError}"
+                           IsVisible="{Binding HasOdometerError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.OdometerError" />
+
+                    <!-- Teilbetankung -->
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                        <Switch Grid.Column="0"
+                                IsToggled="{Binding IsPartial}"
+                                VerticalOptions="Center"
+                                SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.PartialLabel}"
+                                AutomationId="TankbookEntries.Form.Partial" />
+                        <Label Grid.Column="1"
+                               Text="{x:Static texts:TankbookEntryTexts.PartialLabel}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               VerticalOptions="Center" />
+                    </Grid>
+
+                    <!-- Notiz -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.NoteLabel}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource UnitFieldBorder}">
+                        <Border.Triggers>
+                            <DataTrigger TargetType="Border" Binding="{Binding HasNoteError}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                        </Border.Triggers>
+                        <Editor Text="{Binding Note}"
+                                AutoSize="TextChanges"
+                                MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                MaxLength="{x:Static tankbook:TankbookEntryLimits.MaxNoteLength}"
+                                SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.NoteLabel}"
+                                AutomationId="TankbookEntries.Form.Note" />
+                    </Border>
+                    <Label Text="{Binding NoteError}"
+                           IsVisible="{Binding HasNoteError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.NoteError" />
+
+                    <!-- Belegfoto -->
+                    <Label Text="{x:Static texts:TankbookEntryTexts.PhotoLabel}" Style="{StaticResource FieldLabel}" />
+                    <Image Source="{Binding PhotoPreviewPath}"
+                           IsVisible="{Binding HasPhoto}"
+                           HeightRequest="160"
+                           Aspect="AspectFit"
+                           HorizontalOptions="Start"
+                           SemanticProperties.Description="{x:Static texts:TankbookEntryTexts.PhotoPreviewDescription}"
+                           AutomationId="TankbookEntries.Form.PhotoPreview" />
+                    <Button Text="{x:Static texts:TankbookEntryTexts.PickPhoto}"
+                            Command="{Binding PickPhotoCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            SemanticProperties.Hint="{x:Static texts:TankbookEntryTexts.PickPhotoHint}"
+                            AutomationId="TankbookEntries.Form.PickPhoto" />
+                    <Button Text="{x:Static texts:TankbookEntryTexts.CapturePhoto}"
+                            Command="{Binding CapturePhotoCommand}"
+                            IsVisible="{Binding IsCaptureSupported}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            SemanticProperties.Hint="{x:Static texts:TankbookEntryTexts.CapturePhotoHint}"
+                            AutomationId="TankbookEntries.Form.CapturePhoto" />
+                    <Button Text="{x:Static texts:TankbookEntryTexts.RemovePhoto}"
+                            Command="{Binding RemovePhotoCommand}"
+                            IsVisible="{Binding HasPhoto}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            TextColor="{StaticResource ColorErrorRed}"
+                            SemanticProperties.Hint="{x:Static texts:TankbookEntryTexts.RemovePhotoHint}"
+                            AutomationId="TankbookEntries.Form.RemovePhoto" />
+                    <Label Text="{Binding PhotoError}"
+                           IsVisible="{Binding HasPhotoError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.PhotoError" />
+
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Form.Status" />
+                    <Button Text="{x:Static texts:TankbookTexts.Save}"
+                            Command="{Binding SaveCommand}"
+                            Style="{StaticResource TankbookButton}"
+                            AutomationId="TankbookEntries.Form.Save" />
+                    <Button Text="{x:Static texts:TankbookTexts.Cancel}"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            SemanticProperties.Hint="{x:Static texts:TankbookTexts.CancelFormHint}"
+                            AutomationId="TankbookEntries.Form.Cancel" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="{x:Static texts:TankbookEntryTexts.EntriesHeading}"
+                   Style="{StaticResource headline-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   SemanticProperties.HeadingLevel="Level2" />
+
+            <Label Text="{x:Static texts:TankbookEntryTexts.NoEntries}"
+                   IsVisible="{Binding ShowEmptyHint}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="TankbookEntries.Empty" />
+
+            <!-- Vorgänge, neueste zuerst -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Entries}"
+                                 IsVisible="{Binding HasEntries}"
+                                 Spacing="{StaticResource space-sm}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TankbookEntryItemViewModel">
+                        <Border Style="{StaticResource TankbookCard}">
+                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                                    <Label Text="{Binding StationName}"
+                                           Style="{StaticResource headline-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="TankbookEntry.Item.Station" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding TotalText}"
+                                           Style="{StaticResource headline-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="TankbookEntry.Item.Total" />
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                                    <Label Text="{Binding DateText}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="TankbookEntry.Item.Date" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding UnitPriceText}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="TankbookEntry.Item.UnitPrice" />
+                                </Grid>
+                                <Label Text="{x:Static texts:TankbookEntryTexts.PartialBadge}"
+                                       IsVisible="{Binding IsPartial}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{StaticResource ColorTertiaryAmber}"
+                                       AutomationId="TankbookEntry.Item.Partial" />
+                                <Label Text="{Binding KindText}"
+                                       IsVisible="{Binding HasKindText}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="TankbookEntry.Item.Kind" />
+                                <Label Text="{Binding QuantityText}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       AutomationId="TankbookEntry.Item.Quantity" />
+                                <Label Text="{Binding DistanceText}"
+                                       IsVisible="{Binding HasDistance}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       AutomationId="TankbookEntry.Item.Distance" />
+                                <Label Text="{Binding ConsumptionText}"
+                                       Style="{StaticResource FieldLabel}"
+                                       AutomationId="TankbookEntry.Item.Consumption" />
+                                <Label Text="{Binding NoteText}"
+                                       IsVisible="{Binding HasNote}"
+                                       Style="{StaticResource body-sm}"
+                                       FontAttributes="Italic"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="TankbookEntry.Item.Note" />
+
+                                <Button Text="{Binding ReceiptButtonLabel}"
+                                        Command="{Binding ShowReceiptCommand}"
+                                        IsVisible="{Binding HasReceipt}"
+                                        Style="{StaticResource TankbookOutlineButton}"
+                                        SemanticProperties.Hint="{Binding ReceiptHint}"
+                                        AutomationId="TankbookEntry.Item.ShowReceipt" />
+                                <Image Source="{Binding ReceiptPath}"
+                                       IsVisible="{Binding IsReceiptImageVisible}"
+                                       HeightRequest="240"
+                                       Aspect="AspectFit"
+                                       HorizontalOptions="Start"
+                                       SemanticProperties.Description="{Binding ReceiptHint}"
+                                       AutomationId="TankbookEntry.Item.Receipt" />
+                                <Label Text="{x:Static texts:TankbookEntryTexts.ReceiptMissing}"
+                                       IsVisible="{Binding IsReceiptMissing}"
+                                       Style="{StaticResource FieldError}"
+                                       AutomationId="TankbookEntry.Item.ReceiptMissing" />
+
+                                <Button Text="{x:Static texts:TankbookTexts.Edit}"
+                                        Command="{Binding EditCommand}"
+                                        Style="{StaticResource TankbookOutlineButton}"
+                                        SemanticProperties.Hint="{Binding EntryHint}"
+                                        AutomationId="TankbookEntry.Item.Edit" />
+                                <Button Text="{x:Static texts:TankbookTexts.Delete}"
+                                        Command="{Binding DeleteCommand}"
+                                        Style="{StaticResource TankbookOutlineButton}"
+                                        TextColor="{StaticResource ColorErrorRed}"
+                                        SemanticProperties.Hint="{Binding EntryHint}"
+                                        AutomationId="TankbookEntry.Item.Delete" />
+
+                                <!-- Rückfrage vor dem Löschen -->
+                                <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
+                                    <Label Text="{Binding DeleteQuestion}"
+                                           Style="{StaticResource body-md}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="TankbookEntry.Item.DeleteQuestion" />
+                                    <Button Text="{x:Static texts:TankbookTexts.ConfirmDelete}"
+                                            Command="{Binding ConfirmDeleteCommand}"
+                                            Style="{StaticResource TankbookDangerButton}"
+                                            SemanticProperties.Hint="{Binding ConfirmDeleteHint}"
+                                            AutomationId="TankbookEntry.Item.DeleteConfirm" />
+                                    <Button Text="{x:Static texts:TankbookTexts.Cancel}"
+                                            Command="{Binding CancelDeleteCommand}"
+                                            Style="{StaticResource TankbookOutlineButton}"
+                                            SemanticProperties.Hint="{Binding CancelDeleteHint}"
+                                            AutomationId="TankbookEntry.Item.DeleteCancel" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</views:TankradarContentPage>

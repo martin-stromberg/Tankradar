@@ -1,4 +1,6 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Tankradar.MAUI.Models.Tankbook;
 
 namespace Tankradar.MAUI.Data;
 
@@ -52,6 +54,16 @@ public class TankradarDbContext : DbContext
     public DbSet<FavoriteEntryEntity> FavoriteEntries { get; set; } = null!;
 
     /// <summary>
+    /// Die Tabelle der Fahrzeuge des Tankbuchs.
+    /// </summary>
+    public DbSet<VehicleEntity> Vehicles { get; set; } = null!;
+
+    /// <summary>
+    /// Die Tabelle der Tank- und Ladevorgänge des Tankbuchs.
+    /// </summary>
+    public DbSet<TankbookEntryEntity> TankbookEntries { get; set; } = null!;
+
+    /// <summary>
     /// Ermittelt den vollständigen Pfad der Datenbankdatei.
     /// </summary>
     /// <param name="dataDirectory">Das App-Datenverzeichnis.</param>
@@ -59,6 +71,28 @@ public class TankradarDbContext : DbContext
     public static string GetDatabasePath(string dataDirectory)
     {
         return Path.Combine(dataDirectory, DatabaseFileName);
+    }
+
+    /// <summary>
+    /// Baut die Verbindungszeichenfolge der App: Fremdschlüssel sind ausdrücklich eingeschaltet (<c>Foreign Keys=True</c>),
+    /// damit die Kaskaden nicht vom Standard der SQLite-Bibliothek abhängen.
+    /// </summary>
+    /// <param name="databasePath">Der Pfad der Datenbankdatei.</param>
+    /// <param name="pooling"><see langword="false"/> schaltet das Verbindungspooling ab (Tests, die Dateien sofort löschen).</param>
+    /// <returns>Die Verbindungszeichenfolge.</returns>
+    public static string BuildConnectionString(string databasePath, bool pooling = true)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = databasePath,
+            ForeignKeys = true,
+        };
+        if (!pooling)
+        {
+            builder.Pooling = false;
+        }
+
+        return builder.ToString();
     }
 
     /// <inheritdoc />
@@ -130,6 +164,38 @@ public class TankradarDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.GroupId, e.StationId }).IsUnique();
             entity.HasIndex(e => e.StationId);
+        });
+
+        modelBuilder.Entity<VehicleEntity>(entity =>
+        {
+            entity.ToTable("Vehicles");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().UseCollation("NOCASE");
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.Property(e => e.FuelKind).IsRequired();
+            entity.Property(e => e.StartOdometerKm).IsRequired();
+            entity.Property(e => e.StartConsumption).HasColumnType("TEXT");
+            entity.Property(e => e.CreatedUtc).IsRequired();
+        });
+
+        modelBuilder.Entity<TankbookEntryEntity>(entity =>
+        {
+            entity.ToTable("TankbookEntries");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Vehicle)
+                .WithMany(v => v.Entries)
+                .HasForeignKey(e => e.VehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.VehicleId, e.OccurredAt });
+            entity.Property(e => e.CreatedUtc).IsRequired();
+            entity.Property(e => e.OccurredAt).IsRequired();
+            entity.Property(e => e.Kind).IsRequired().HasDefaultValue(nameof(TankbookEntryKind.Fuel));
+            entity.Property(e => e.Quantity).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.UnitPrice).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.TotalAmount).HasColumnType("TEXT").HasDefaultValue(0m);
+            entity.Property(e => e.OdometerKm).IsRequired();
+            entity.Property(e => e.IsPartial).HasDefaultValue(false);
+            entity.Property(e => e.StationName).IsRequired().HasDefaultValue(string.Empty);
         });
     }
 }

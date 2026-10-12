@@ -1,12 +1,13 @@
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Tankbook;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Integration.Integration.Support;
 
 /// <summary>
-/// Integrationsumgebung mit echter SQLite-Datei im isolierten Testdatenverzeichnis; räumt Verbindungen und Verzeichnis beim Freigeben auf.
+/// Integrationsumgebung mit echter SQLite-Datei im isolierten Testdatenverzeichnis; nutzt Verbindungen ohne Pool und löscht das Verzeichnis beim Freigeben.
 /// </summary>
 public sealed class TestDatabase : IDisposable
 {
@@ -32,12 +33,13 @@ public sealed class TestDatabase : IDisposable
 
     /// <summary>
     /// Erstellt eine neue Kontext-Factory auf der Datenbankdatei (simuliert einen frischen App-Start).
+    /// Die Verbindungen nutzen die Verbindungszeichenfolge der App (<c>Foreign Keys=True</c>), aber keinen Pool, damit kein Test die Verbindungen paralleler Testklassen global leeren muss.
     /// </summary>
     /// <returns>Die Factory.</returns>
     public IDbContextFactory<TankradarDbContext> CreateFactory()
     {
         var options = new DbContextOptionsBuilder<TankradarDbContext>()
-            .UseSqlite($"Data Source={DatabasePath}")
+            .UseSqlite(TankradarDbContext.BuildConnectionString(DatabasePath, pooling: false))
             .Options;
         return new FileDbContextFactory(options);
     }
@@ -53,11 +55,19 @@ public sealed class TestDatabase : IDisposable
     }
 
     /// <summary>
-    /// Gibt alle Verbindungen frei und löscht das Testdatenverzeichnis.
+    /// Erstellt die Ablage der Belegfotos im Datenverzeichnis dieser Umgebung.
+    /// </summary>
+    /// <returns>Die Ablage.</returns>
+    public ReceiptPhotoStore CreatePhotoStore()
+    {
+        return new ReceiptPhotoStore(new FixedPathProvider(DataDirectory), new NoOpProtector(), new RecordingLogger<ReceiptPhotoStore>());
+    }
+
+    /// <summary>
+    /// Löscht das Testdatenverzeichnis; ohne Pool sind alle Verbindungen nach dem Ende ihres Kontexts bereits geschlossen.
     /// </summary>
     public void Dispose()
     {
-        SqliteConnection.ClearAllPools();
         _dataContext.Dispose();
     }
 
@@ -99,6 +109,10 @@ public sealed class TestDatabase : IDisposable
     private sealed class NoOpProtector : IDatabaseFileProtector
     {
         public void Protect(string databasePath)
+        {
+        }
+
+        public void ProtectFile(string filePath)
         {
         }
     }

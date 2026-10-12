@@ -4,7 +4,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft die MVVM-Grundfunktionalität von <see cref="BaseViewModel"/> (Titel, IsBusy/IsNotBusy, PropertyChanged) anhand von <see cref="TankbookViewModel"/>.
+/// Prüft die MVVM-Grundfunktionalität von <see cref="BaseViewModel"/> (Titel, IsBusy/IsNotBusy, PropertyChanged) anhand eines schlichten Beispiel-ViewModels ohne Abhängigkeiten.
 /// </summary>
 public class BaseViewModelTests_PropertyBinding : BaseTest
 {
@@ -14,9 +14,9 @@ public class BaseViewModelTests_PropertyBinding : BaseTest
     [Fact]
     public void Constructor_SetsTitle()
     {
-        var viewModel = new TankbookViewModel();
+        var viewModel = new SampleViewModel();
 
-        Assert.Equal("Tankbuch", viewModel.Title);
+        Assert.Equal("Beispiel", viewModel.Title);
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ public class BaseViewModelTests_PropertyBinding : BaseTest
     [Fact]
     public void Constructor_StartsNotBusy()
     {
-        var viewModel = new TankbookViewModel();
+        var viewModel = new SampleViewModel();
 
         Assert.False(viewModel.IsBusy);
         Assert.True(viewModel.IsNotBusy);
@@ -37,14 +37,14 @@ public class BaseViewModelTests_PropertyBinding : BaseTest
     [Fact]
     public void SetIsBusy_RaisesPropertyChangedForIsBusyAndIsNotBusy()
     {
-        var viewModel = new TankbookViewModel();
+        var viewModel = new SampleViewModel();
         var raisedProperties = new List<string?>();
         viewModel.PropertyChanged += (_, e) => raisedProperties.Add(e.PropertyName);
 
         viewModel.IsBusy = true;
 
-        Assert.Contains(nameof(TankbookViewModel.IsBusy), raisedProperties);
-        Assert.Contains(nameof(TankbookViewModel.IsNotBusy), raisedProperties);
+        Assert.Contains(nameof(SampleViewModel.IsBusy), raisedProperties);
+        Assert.Contains(nameof(SampleViewModel.IsNotBusy), raisedProperties);
         Assert.True(viewModel.IsBusy);
         Assert.False(viewModel.IsNotBusy);
     }
@@ -55,12 +55,20 @@ public class BaseViewModelTests_PropertyBinding : BaseTest
     [Fact]
     public void SetTitle_SameValue_DoesNotRaisePropertyChanged()
     {
-        var viewModel = new TankbookViewModel();
+        var viewModel = new SampleViewModel();
         var raisedCount = 0;
         viewModel.PropertyChanged += (_, _) => raisedCount++;
 
         viewModel.Title = viewModel.Title;
 
         Assert.Equal(0, raisedCount);
+    }
+
+    private sealed class SampleViewModel : BaseViewModel
+    {
+        public SampleViewModel()
+        {
+            Title = "Beispiel";
+        }
     }
 }

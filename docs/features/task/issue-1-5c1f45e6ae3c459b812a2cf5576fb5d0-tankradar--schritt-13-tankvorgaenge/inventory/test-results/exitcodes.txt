@@ -1,0 +1,4 @@
+build_exit=0
+unit_exit=0
+integration_exit=0
+e2e_exit=0

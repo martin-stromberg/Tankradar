@@ -507,6 +507,12 @@ zeigen und dass das Tankbuch trotzdem voll nutzbar ist: Fahrzeug anlegen, Vorgan
 Verbrauch ansehen, Vorgang korrigieren und löschen. Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter
 `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 12:**
+
+- Löschrückfrage für Fahrzeuge: Die Zahl der mitzulöschenden Vorgänge beim Bestätigen erneut ermitteln (kommt zwischen Rückfrage und Bestätigung ein Vorgang hinzu, muss er in der Rückfrage genannt werden).
+- Fremdschlüssel ausdrücklich aktivieren (`Foreign Keys=True` in der Verbindungszeichenfolge), damit das Mitlöschen nicht vom Standard der SQLite-Bibliothek abhängt.
+- Barrierefreiheit (WCAG 2.5.3): Der vorgelesene Name der Schaltflächen „Ja, löschen“, „Fahrzeug und Vorgänge löschen“ und „Abbrechen“ (Fahrzeugformular) soll mit dem sichtbaren Text beginnen; Kontext in den Hint legen. Gleiches Muster für die neuen Schaltflächen dieses Schritts.
+
 **Abhängigkeiten:** 10, 11, 12
 
 **Betroffene Bereiche:** Tankbuch, Tankvorgänge, Verbrauchsberechnung, Belegfotos, Offline-Betrieb
@@ -530,6 +536,12 @@ Beispieldaten ab, einschließlich Monatsgrenzen, Teilbetankungen und Fahrzeugen 
 per FlaUI die Anzeige der Kennzahlen nach dem Erfassen von Vorgängen. Nach Abschluss wird ein
 startfähiger Windows-Zwischenstand unter `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root
 abgelegt (nicht committen).
+
+**Zusatz aus der Abnahme von Schritt 13:**
+
+- Anwenderhilfe Tankbuch: die in ADR 0009 dokumentierte Rundungsausnahme bei der Plausibilitätsprüfung (Betrag/Menge/Preis) nennen.
+- Hinweistext bei einer Teilbetankung vor dem ersten Vollvorgang präzisieren.
+- Optional: fehlende Tests für die Bildsignatur `mif1` (DetectExtension) und den Löschfehler-Zweig in `TankbookEntriesViewModel` ergänzen.
 
 **Abhängigkeiten:** 13
 

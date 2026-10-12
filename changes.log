@@ -1,3 +1,35 @@
+## 2026-10-11 — Tank- und Ladevorgänge erfassen (Tankradar Schritt 13, Version 0.1.17)
+
+- Je Fahrzeug öffnet „Tank- und Ladevorgänge“ eine eigene Seite: Vorgänge erfassen, korrigieren und nach Rückfrage löschen; Liste neueste zuerst mit Tankstelle, Gesamtbetrag, Datum, Preis pro Einheit, Menge, Strecke und Verbrauch pro 100 km (L bzw. kWh), Teilbetankung, Notiz und Belegfoto
+- Angaben: Datum und Uhrzeit (vorbelegt, nicht in der Zukunft), Tankstelle aus „Bekannte Tankstellen“ (Favoriten und bereits verwendete Namen) oder frei, Art nach Kraftstoffart (Hybrid wählbar), zwei aus drei Werten Menge/Preis/Gesamtbetrag mit Rechenhinweis und Abweichungsprüfung (0,02 €), Kilometerstand nicht unter Start und Vorgänger und nicht über dem Nachfolger
+- Verbrauch je Vollvorgang aus der Strecke seit dem vorherigen Vollvorgang; Teilbetankungen zählen beim nächsten Vollvorgang mit; Kraftstoff und Strom getrennt gerechnet
+- Belegfoto aus der Fotomediathek (bzw. Kamera), unverändert lokal unter Dateischutz abgelegt; Format wird zusätzlich am Dateiinhalt geprüft; mehrfaches Auslösen der Fotoauswahl gesperrt; nicht mehr verwendete Fotos werden entfernt
+- Start-Kilometerstand eines Fahrzeugs nicht über dem ersten Vorgang; Wechsel der Kraftstoffart mit Vorgängen erlaubt
+- Restpunkte aus Schritt 12: Neuzählung der Vorgänge beim Bestätigen der Fahrzeug-Löschung (neuer Vorgang wird vor dem Löschen genannt), `Foreign Keys=True` in der Verbindungszeichenfolge, WCAG 2.5.3 (vorgelesener Name = sichtbarer Text, Kontext im Hinweis; auch „Bearbeiten“ und „Löschen“ der Fahrzeugkarte)
+- Datenbankmigration `AddTankbookEntryDetails` (rein additiv, Datenübernahme für Bestandszeilen; Zeitpunkt als minutengenaue Ortszeit); iOS/MacCatalyst: Berechtigungstexte für Kamera und Fotos
+- Tests: Unit-, Integrations- und FlaUI-E2E-Tests (Erfassen und Verbrauch, Teilbetankung, Laden, Validierung, Korrigieren/Löschen, Belegfoto, Neustart, Offline-Szenario mit nicht erreichbarem Preisdienst)
+- Dokumentation: `docs/help/Tankbuch/`, `docs/adr/0009-tankbook-entries.md`
+
+## 2026-10-11 — Test: E2E-Eingaben vor dem Speichern abgesichert
+
+- FlaUI-E2E: Die Eingabe per UI-Automation (`SetValue`) ändert nur das native Feld; die Bindung ans MAUI-Modell folgt verzögert. Auf dem langsamen CI-Runner wurde „Speichern“ im Tankbuch-Test teils vor der Übernahme des Startverbrauchs ausgelöst (Fahrzeug ohne Startverbrauch). Gemeinsamer Helfer `SetFieldValue` (Tankbuch, Favoriten, Adresssuche) wechselt den Fokus und wartet auf den UI-Thread der App, bevor der Test weitermacht
+- Fehlermeldung von `WaitForTexts` zeigt den letzten lesbaren Stand statt einer leeren Liste
+
+## 2026-10-11 — Hotfix: Datenbank im iOS-Release-Build (TestFlight)
+
+- Im TestFlight-Build schlugen Favoriten, Einstellungen und Tankstellensuche fehl („… konnten nicht geladen werden“, „Die Änderung konnte nicht gespeichert werden.“): Der iOS-Release-Build läuft ohne JIT und mit Linker, EF Core benötigt aber Laufzeit-Codeerzeugung und Reflection
+- iOS: Interpreter für alle Assemblys (`MtouchInterpreter=all`; die Variante `-all` mit vollständiger AOT-Übersetzung überschritt das 60-Minuten-Limit des CI-Builds); App-Assembly, EF Core und Microsoft.Data.Sqlite werden vom Linker nicht gekürzt
+
+## 2026-10-11 — Fahrzeugverwaltung im Tankbuch (Tankradar Schritt 12, Version 0.1.16)
+
+- Der Bereich „Tankbuch“ verwaltet jetzt Fahrzeuge: anlegen, bearbeiten und löschen mit Name (eindeutig, ohne Beachtung der Groß- und Kleinschreibung), Kraftstoffart als feste Auswahl (Benzin, Diesel, Elektro, Hybrid), Start-Kilometerstand und optionalem Startverbrauch; Liste nach Namen mit „Kraftstoffart • Start … km • Startverbrauch …“, Hinweis bei leerer Liste
+- Eingabefelder mit festen Einheiten (`km`, `L/100 km`, bei Elektro `kWh/100 km`), Fokusrahmen in Teal; ungültige Eingaben (z. B. negativer Kilometerstand) werden feldbezogen gemeldet und nicht gespeichert
+- Löschen immer nach Rückfrage im Eintrag; hat das Fahrzeug Tank- oder Ladevorgänge, nennt die Rückfrage deren Zahl und das endgültige Mitlöschen („Fahrzeug und Vorgänge löschen“), Vorgänge anderer Fahrzeuge bleiben erhalten
+- Datenbankmigration `AddVehicles` (rein additiv): Tabellen `Vehicles` und `TankbookEntries` (minimal, Kaskade beim Löschen; Erfassung folgt in Schritt 13); alles lokal und offline, keine Netzwerkzugriffe, keine Namen im Protokoll
+- Anwenderhilfe: Aussage zum Suchcache der Startseite an das tatsächliche Verhalten angeglichen
+- Tests: Unit-, Integrations- und FlaUI-E2E-Tests der Fahrzeugverwaltung; Integrationstests ohne globales Leeren der SQLite-Verbindungspools (`Pooling=False`) und clientseitige Messung des Drosselungstests der Geokodierung (Restpunkte aus Schritt 11)
+- Dokumentation: `docs/help/Tankbuch/`, `docs/adr/0008-vehicle-management.md`
+
 ## 2026-10-11 — Startseite: Nachbesserung Runde 1 (Tankradar Schritt 11, Version 0.1.15)
 
 - Die Startseite zeigt Preise für alle Favoriten-Tankstellen: Die stille Kürzung auf 100 Kennungen ist entfernt (lokales Lesen ohne Grenze, Abruf weiterhin in Anfragen zu je 10 Kennungen mit Drosselung und 5-Minuten-Frist); Unit-Tests mit mehr als 100 Kennungen

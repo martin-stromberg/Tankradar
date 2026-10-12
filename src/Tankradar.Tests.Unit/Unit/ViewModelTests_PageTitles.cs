@@ -10,17 +10,38 @@ namespace Tankradar.Tests.Unit.Unit;
 public class ViewModelTests_PageTitles : BaseTest
 {
     /// <summary>
-    /// Prüft die Seitentitel aller ViewModels der Hauptnavigation.
+    /// Prüft den Seitentitel des <see cref="TankbookViewModel"/>, das den Fahrzeugdienst benötigt.
     /// </summary>
-    /// <param name="viewModelType">Der Typ des zu prüfenden ViewModels.</param>
-    /// <param name="expectedTitle">Der erwartete Seitentitel.</param>
-    [Theory]
-    [InlineData(typeof(TankbookViewModel), "Tankbuch")]
-    public void Constructor_SetsExpectedTitle(Type viewModelType, string expectedTitle)
+    [Fact]
+    public void TankbookViewModel_Constructor_SetsTitle()
     {
-        var viewModel = (BaseViewModel)Activator.CreateInstance(viewModelType)!;
+        using var vehicles = new VehicleFixture();
 
-        Assert.Equal(expectedTitle, viewModel.Title);
+        var viewModel = new TankbookViewModel(vehicles.Service, new FakeTankbookNavigator(), NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer());
+
+        Assert.Equal("Tankbuch", viewModel.Title);
+    }
+
+    /// <summary>
+    /// Prüft den Seitentitel des <see cref="TankbookEntriesViewModel"/> (Vorgänge eines Fahrzeugs).
+    /// </summary>
+    [Fact]
+    public void TankbookEntriesViewModel_Constructor_SetsTitle()
+    {
+        using var fixture = new TankbookEntryFixture();
+        var form = fixture.CreateForm(new FakeReceiptPhotoPicker(), new FakeScreenReaderAnnouncer(), new Tankradar.TestSupport.RecordingLogger<TankbookEntryFormViewModel>());
+
+        var viewModel = new TankbookEntriesViewModel(
+            fixture.Vehicles,
+            fixture.Service,
+            fixture.Photos,
+            form,
+            new FakeTankbookNavigator(),
+            new FakeScreenReaderAnnouncer(),
+            NullLogger<TankbookEntriesViewModel>.Instance);
+
+        Assert.Equal("Tank- und Ladevorgänge", viewModel.Title);
+        viewModel.OnAppearing();
     }
 
     /// <summary>

@@ -28,6 +28,8 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<!-- Bindungen mit Source (Fokusrahmen der Tankbuch-Eingabefelder über x:Reference) werden ebenfalls kompiliert (sonst Warnung XC0025). -->
+		<MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
@@ -57,6 +59,25 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</TargetPlatformMinVersion>
 	</PropertyGroup>
+
+	<!-- iOS-Release (TestFlight/App Store) läuft ohne JIT und mit Linker. EF Core erzeugt zur Laufzeit Code
+	     (Abfragen, Materialisierung) und findet Migrationen und Dienste per Reflection. Ohne Interpreter und
+	     mit gekürzten Assemblys schlägt deshalb schon die Datenbankinitialisierung fehl (Favoriten,
+	     Einstellungen und Preis-Cache nicht nutzbar). "all": Interpreter für alle Assemblys. Die Variante
+	     "-all" (alles AOT plus Interpreter) überschritt mit den unten ausgenommenen Assemblys das
+	     60-Minuten-Limit des CI-Builds. -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<MtouchInterpreter>all</MtouchInterpreter>
+	</PropertyGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<!-- Vom Linker ausnehmen: per Reflection genutzte Typen (Entitäten, Migrationen, EF-Core-Dienste). -->
+		<TrimmerRootAssembly Include="Tankradar.MAUI" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Relational" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Sqlite" />
+		<TrimmerRootAssembly Include="Microsoft.Data.Sqlite" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->

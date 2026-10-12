@@ -17,10 +17,21 @@ public class FakeDatabaseFileProtector : IDatabaseFileProtector
     /// </summary>
     public Action? OnProtect { get; set; }
 
+    /// <summary>
+    /// Die Pfade, für die <see cref="ProtectFile"/> aufgerufen wurde.
+    /// </summary>
+    public List<string> ProtectedFiles { get; } = [];
+
     /// <inheritdoc />
     public void Protect(string databasePath)
     {
         ProtectedPaths.Add(databasePath);
         OnProtect?.Invoke();
+    }
+
+    /// <inheritdoc />
+    public void ProtectFile(string filePath)
+    {
+        ProtectedFiles.Add(filePath);
     }
 }

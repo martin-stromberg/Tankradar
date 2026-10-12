@@ -52,7 +52,7 @@ flowchart TD
 
 Enum-Werte werden als Text (Enum-Name) gespeichert: `FuelType` (`SuperE5`, `SuperE10`, `Diesel`), `GpsUsage` (`Always`, `WhileInUse`, `Never`), `ResultView` (`List`, `Map`), `ResultSortOrder` (`Price`, `Distance`, `Name`). Die Namen sind ein Persistenzvertrag und durch Tests festgeschrieben. Standardwerte stehen im Code, nicht in Migrationen.
 
-Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`, `AddFuelTypeSettings`, `AddPriceCache`, `AddFavorites`, `AddNearbySetting`). `AddNearbySetting` ergänzt `UserSettings.ShowNearby` (`INTEGER NOT NULL`, Standard 0); bestehende Einstellungen bleiben erhalten. Neue Migration: `dotnet ef migrations add <Name> --project src/Tankradar.MAUI --framework net10.0-windows10.0.19041.0` (Design-Time-Fabrik `TankradarDbContextFactory`). Das Projekt hat mehrere Zielframeworks; ohne `--framework` bricht `dotnet ef` ab.
+Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`, `AddFuelTypeSettings`, `AddPriceCache`, `AddFavorites`, `AddNearbySetting`, `AddVehicles`). `AddNearbySetting` ergänzt `UserSettings.ShowNearby` (`INTEGER NOT NULL`, Standard 0); bestehende Einstellungen bleiben erhalten. `AddVehicles` legt die Tabellen des [Tankbuchs](../Tankbuch/ablauf-technisch.md) an (`Vehicles`, `TankbookEntries`), ohne bestehende Tabellen zu ändern. Neue Migration: `dotnet ef migrations add <Name> --project src/Tankradar.MAUI --framework net10.0-windows10.0.19041.0` (Design-Time-Fabrik `TankradarDbContextFactory`). Das Projekt hat mehrere Zielframeworks; ohne `--framework` bricht `dotnet ef` ab.
 
 ## Beteiligte Komponenten
 
