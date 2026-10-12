@@ -55,7 +55,9 @@ verlangt). Die Textzusammenfassung und die Monatsliste bleiben als Alternative f
 - **Monatskosten.** Σ Gesamtbetrag aller Vorgänge der Art, auch Teilbetankungen und solche vor dem ersten Vollvorgang, je
   Kalendermonat des Zeitpunkts (lokale Wanduhrzeit ohne Zeitzone, keine Umrechnung; 31.12. 23:59 gehört zum Dezember). Die Reihe
   läuft lückenlos vom Monat des ersten Vorgangs bis zum späteren aus letztem Vorgangsmonat und aktuellem Monat (`TimeProvider`);
-  Monate ohne Vorgang zeigen 0,00 €. Eine lückenlose Reihe hält Balkendiagramm und Liste ehrlich.
+  Monate ohne Vorgang zeigen 0,00 €. Eine lückenlose Reihe hält Balkendiagramm und Liste ehrlich. Die angezeigte Monatsliste ist auf
+  die neuesten 24 Monate begrenzt (`TankbookStatisticsLimits.MonthListMaxRows`, mit Hinweis), weil ein sehr weit zurückliegender
+  Vorgang sonst hunderte Zeilen erzeugt; Durchschnitt, Kosten pro 100 km und Gesamtkosten enthalten weiterhin alle Vorgänge.
 - **Diagrammarten und Zeitraum.** Verbrauchsverlauf: Liniendiagramm mit einem Punkt je berechnetem Vollvorgang. Kostenverlauf:
   Balkendiagramm der Monatskosten. Beide zeigen die letzten 12 Datenpunkte (`TankbookStatisticsLimits.ChartMaxPoints`); die
   Begrenzung betrifft nur die Zeichnung, Kennzahlen und Monatsliste enthalten alle Daten. Es gibt keinen Zeitraumfilter.
@@ -74,7 +76,10 @@ verlangt). Die Textzusammenfassung und die Monatsliste bleiben als Alternative f
   Erfassen, Korrigieren und Löschen aktualisiert.
 - **Barrierefreiheit.** Jedes Diagramm hat eine sichtbare Textzusammenfassung (z. B. „Verlauf, 3 Werte, zuletzt 6,00 L/100 km,
   niedrigster 5,80, höchster 6,20“), die das `GraphicsView` als `SemanticProperties.Description` erhält. Die Monatsliste ist
-  die Tabellenalternative zum Kostendiagramm. Überschriften tragen `SemanticProperties.HeadingLevel`.
+  die Tabellenalternative zum Kostendiagramm. Überschriften tragen `SemanticProperties.HeadingLevel`. Das Diagramm selbst erhält
+  nur eine kurze Beschreibung („Liniendiagramm des Verbrauchsverlaufs“), damit die Zusammenfassung nicht doppelt vorgelesen wird.
+  Beim Wechsel zwischen hellem und dunklem Erscheinungsbild zeichnen die Diagramme neu; überholte Ladevorgänge der Auswertung
+  werden verworfen.
 
 ## Abweichungen vom Designentwurf
 

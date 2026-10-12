@@ -23,7 +23,11 @@ public sealed class TankbookKindStatisticsViewModel
         CostPer100KmText = TankbookStatisticsTexts.FormatCostPer100Km(statistics.CostPer100Km);
         TotalCostText = TankbookEntryTexts.FormatAmount(statistics.TotalCost);
         Notice = statistics.AverageSource == TankbookAverageSource.None ? TankbookStatisticsTexts.TooFewEntriesNotice : null;
-        Months = statistics.Months.Select(month => new MonthlyCostRowViewModel(month, AutomationKey)).ToList();
+        Months = statistics.Months
+            .Take(TankbookStatisticsLimits.MonthListMaxRows)
+            .Select(month => new MonthlyCostRowViewModel(month, AutomationKey))
+            .ToList();
+        MonthsNotice = statistics.Months.Count > TankbookStatisticsLimits.MonthListMaxRows ? TankbookStatisticsTexts.MonthsLimitedNotice : null;
 
         var trend = statistics.ConsumptionTrend
             .Skip(Math.Max(0, statistics.ConsumptionTrend.Count - TankbookStatisticsLimits.ChartMaxPoints))
@@ -123,7 +127,20 @@ public sealed class TankbookKindStatisticsViewModel
     public string CostChartSummary { get; }
 
     /// <summary>
-    /// Die Monatszeilen, neuester Monat zuerst.
+    /// Hinweis, dass die Monatsliste gekürzt ist; <see langword="null"/>, wenn sie vollständig ist.
+    /// </summary>
+    public string? MonthsNotice { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Monatsliste gekürzt ist.
+    /// </summary>
+    public bool HasMonthsNotice
+    {
+        get { return MonthsNotice is { Length: > 0 }; }
+    }
+
+    /// <summary>
+    /// Die Monatszeilen, neuester Monat zuerst (höchstens <see cref="TankbookStatisticsLimits.MonthListMaxRows"/>).
     /// </summary>
     public IReadOnlyList<MonthlyCostRowViewModel> Months { get; }
 }

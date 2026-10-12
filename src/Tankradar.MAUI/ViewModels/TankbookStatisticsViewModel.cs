@@ -17,6 +17,7 @@ public sealed class TankbookStatisticsViewModel : BaseViewModel
     private readonly ILogger<TankbookStatisticsViewModel> _logger;
     private IReadOnlyList<TankbookKindStatisticsViewModel> _kinds = [];
     private string? _notice;
+    private int _loadVersion;
 
     /// <summary>
     /// Erstellt das ViewModel.
@@ -79,15 +80,21 @@ public sealed class TankbookStatisticsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Lädt die Auswertung eines Fahrzeugs.
+    /// Lädt die Auswertung eines Fahrzeugs. Das Ergebnis eines überholten Ladevorgangs (neuerer Aufruf oder <see cref="Reset"/>) wird verworfen.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
     /// <returns>Ein Task, der nach dem Laden abgeschlossen ist.</returns>
     public async Task LoadAsync(long vehicleId)
     {
+        var version = ++_loadVersion;
         try
         {
             var load = await _service.GetStatisticsAsync(vehicleId).ConfigureAwait(true);
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             if (load.Status != TankbookStatisticsStatus.Ok || load.Statistics is not { } statistics)
             {
                 Kinds = [];
@@ -100,6 +107,11 @@ public sealed class TankbookStatisticsViewModel : BaseViewModel
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             _logger.LogWarning("Die Auswertung konnte nicht geladen werden ({ExceptionType}).", ex.GetType().Name);
             Kinds = [];
             Notice = TankbookStatisticsTexts.LoadFailed;
@@ -112,6 +124,7 @@ public sealed class TankbookStatisticsViewModel : BaseViewModel
     /// </summary>
     public void Reset()
     {
+        _loadVersion++;
         Kinds = [];
         Notice = null;
     }

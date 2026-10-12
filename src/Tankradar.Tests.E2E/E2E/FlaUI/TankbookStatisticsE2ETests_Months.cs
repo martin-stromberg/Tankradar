@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
@@ -6,7 +8,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
 {
     /// <summary>
-    /// Prüft Dezember 2025 (23:59) und Januar 2026 (00:00) getrennt, den leeren November mit 0,00 € und die Gesamtkosten.
+    /// Prüft die Monatsgrenze (letzte Minute des Vormonats und erste Minute des Monats) mit getrennten Summen, den leeren Monat dazwischen mit 0,00 € und die Gesamtkosten.
     /// Die Reihe läuft bis zum aktuellen Monat; geprüft wird das Ende der Liste (älteste Monate).
     /// </summary>
     [Fact]
@@ -16,13 +18,24 @@ public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
         {
             OpenTankbook();
             CreateVehicle("Golf", "Diesel", "10000", string.Empty);
-            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", new DateTime(2025, 10, 15, 8, 0, 0), 10_500, 40m, 74.36m);
-            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", new DateTime(2025, 12, 31, 23, 59, 0), 11_000, 30m, 50m);
-            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", new DateTime(2026, 1, 1, 0, 0, 0), 11_500, 30m, 60m);
+            var current = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var oldest = current.AddMonths(-5);
+            var beforeBoundary = current.AddMonths(-3);
+            var afterBoundary = current.AddMonths(-2);
+            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", oldest.AddDays(14).AddHours(8), 10_500, 40m, 74.36m);
+            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", afterBoundary.AddMinutes(-1), 11_000, 30m, 50m);
+            TankbookTestDatabase.AddEntry(DatabasePath, "Golf", afterBoundary, 11_500, 30m, 60m);
 
             Tankbook.OpenEntries("Golf");
 
-            string[] oldestMonths = ["Januar 2026: 60,00 €", "Dezember 2025: 50,00 €", "November 2025: 0,00 €", "Oktober 2025: 74,36 €"];
+            var german = CultureInfo.GetCultureInfo("de-DE");
+            string[] oldestMonths =
+            [
+                $"{afterBoundary.ToString("MMMM yyyy", german)}: 60,00 €",
+                $"{beforeBoundary.ToString("MMMM yyyy", german)}: 50,00 €",
+                $"{current.AddMonths(-4).ToString("MMMM yyyy", german)}: 0,00 €",
+                $"{oldest.ToString("MMMM yyyy", german)}: 74,36 €",
+            ];
             Tankbook.WaitUntil(
                 () =>
                 {

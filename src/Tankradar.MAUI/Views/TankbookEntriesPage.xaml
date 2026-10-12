@@ -445,7 +445,7 @@
                                            SemanticProperties.HeadingLevel="Level4" />
                                     <charts:ChartGraphicsView Data="{Binding ConsumptionChart}"
                                                               HeightRequest="160"
-                                                              SemanticProperties.Description="{Binding ConsumptionChartSummary}"
+                                                              SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.ConsumptionChartDescription}"
                                                               AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.ConsumptionChart'}" />
                                     <Label Text="{Binding ConsumptionChartSummary}"
                                            Style="{StaticResource body-sm}"
@@ -457,7 +457,7 @@
                                            SemanticProperties.HeadingLevel="Level4" />
                                     <charts:ChartGraphicsView Data="{Binding CostChart}"
                                                               HeightRequest="160"
-                                                              SemanticProperties.Description="{Binding CostChartSummary}"
+                                                              SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.CostChartDescription}"
                                                               AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostChart'}" />
                                     <Label Text="{Binding CostChartSummary}"
                                            Style="{StaticResource body-sm}"
@@ -468,6 +468,11 @@
                                            Style="{StaticResource FieldLabel}"
                                            SemanticProperties.HeadingLevel="Level4"
                                            AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthsHeading'}" />
+                                    <Label Text="{Binding MonthsNotice}"
+                                           IsVisible="{Binding HasMonthsNotice}"
+                                           Style="{StaticResource body-sm}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthsNotice'}" />
                                     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Months}">
                                         <BindableLayout.ItemTemplate>
                                             <DataTemplate x:DataType="vm:MonthlyCostRowViewModel">

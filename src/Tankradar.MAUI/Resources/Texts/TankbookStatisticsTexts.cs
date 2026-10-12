@@ -81,6 +81,21 @@ public static class TankbookStatisticsTexts
     public const string CostChartHeading = "Kostenverlauf";
 
     /// <summary>
+    /// Kurze Beschreibung des Verbrauchsdiagramms für die Sprachausgabe (die Zusammenfassung steht im Text darunter).
+    /// </summary>
+    public const string ConsumptionChartDescription = "Liniendiagramm des Verbrauchsverlaufs";
+
+    /// <summary>
+    /// Kurze Beschreibung des Kostendiagramms für die Sprachausgabe (die Zusammenfassung steht im Text darunter).
+    /// </summary>
+    public const string CostChartDescription = "Balkendiagramm der Monatskosten";
+
+    /// <summary>
+    /// Hinweis, dass die Monatsliste gekürzt ist.
+    /// </summary>
+    public const string MonthsLimitedNotice = "Angezeigt werden die letzten 24 Monate; Durchschnitt und Gesamtkosten enthalten alle Vorgänge.";
+
+    /// <summary>
     /// Zusammenfassung eines Diagramms ohne Daten.
     /// </summary>
     public const string NoChartData = "Noch kein Verlauf: Es liegen keine berechneten Werte vor.";
