@@ -4,7 +4,7 @@
 
 ## Zweck
 
-Im Tankbuch verwalten Sie Ihre Fahrzeuge und erfassen je Fahrzeug die Tank- und Ladevorgänge. Tankatlas berechnet daraus den Verbrauch. Entscheidungen und Abweichungen vom Designentwurf: [ADR 0008](../../adr/0008-vehicle-management.md) (Fahrzeuge) und [ADR 0009](../../adr/0009-tankbook-entries.md) (Vorgänge).
+Im Tankbuch verwalten Sie Ihre Fahrzeuge und erfassen je Fahrzeug die Tank- und Ladevorgänge. Tankatlas berechnet daraus den Verbrauch und wertet Verbrauch und Kosten aus. Entscheidungen und Abweichungen vom Designentwurf: [ADR 0008](../../adr/0008-vehicle-management.md) (Fahrzeuge), [ADR 0009](../../adr/0009-tankbook-entries.md) (Vorgänge) und [ADR 0010](../../adr/0010-tankbook-statistics.md) (Auswertung).
 
 ## Fahrzeugliste
 
@@ -41,7 +41,7 @@ Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die n
 | Notiz | nein | höchstens 500 Zeichen |
 | Belegfoto | nein | JPG, PNG oder HEIC, höchstens 20 MB; Tankatlas prüft den Dateiinhalt |
 
-**Menge, Preis und Gesamtbetrag:** Zwei der drei Werte genügen; der dritte wird berechnet und unter den Feldern angezeigt („Ergibt 74,36 €“). Beim Speichern wird er ins leere Feld übernommen. Geben Sie alle drei an und weicht Menge × Preis um mehr als 0,02 € vom Gesamtbetrag ab, wird nicht gespeichert. Die Meldung nennt den rechnerischen Betrag, z. B. „Menge × Preis ergibt 74,36 €, nicht 75,00 €. Bitte prüfe die Werte.“ Bei Belegen mit Zusatzgebühren (z. B. einer Ladesitzung) geben Sie Menge und Gesamtbetrag an.
+**Menge, Preis und Gesamtbetrag:** Zwei der drei Werte genügen; der dritte wird berechnet und unter den Feldern angezeigt („Ergibt 74,36 €“). Beim Speichern wird er ins leere Feld übernommen. Geben Sie alle drei an und weicht Menge × Preis um mehr als 0,02 € vom Gesamtbetrag ab, wird nicht gespeichert. Die Meldung nennt den rechnerischen Betrag, z. B. „Menge × Preis ergibt 74,36 €, nicht 75,00 €. Bitte prüfe die Werte.“ Eine Ausnahme von der Toleranz: Als stimmig gilt auch ein Wert, der genau dem gerundeten Quotienten der beiden anderen entspricht. Gerundet wird der Gesamtbetrag auf 2, der Preis pro Einheit auf 3 und die Menge auf 2 Nachkommastellen. So lässt sich ein berechneter Preis auch bei großen Mengen beim Korrigieren wieder speichern. Bei Belegen mit Zusatzgebühren (z. B. einer Ladesitzung) geben Sie Menge und Gesamtbetrag an.
 
 **Bekannte Tankstellen:** Die Liste enthält Ihre Favoriten-Tankstellen und danach die Namen, die Sie bereits frei eingegeben haben (höchstens 30). Haben zwei Tankstellen denselben Namen, steht der Ort dahinter. Ändern Sie den Namen nach der Auswahl von Hand, gilt er als frei eingegeben.
 
@@ -49,10 +49,26 @@ Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die n
 
 - Der Verbrauch eines vollen Vorgangs ist (Menge + Mengen der Teilbetankungen seit dem vorherigen vollen Vorgang) / gefahrene Strecke × 100, in L/100 km bzw. kWh/100 km mit zwei Nachkommastellen.
 - Der erste volle Vorgang hat noch keinen Verbrauch („Noch kein Verbrauch: erster voller Vorgang“).
-- Eine Teilbetankung hat keinen eigenen Wert; ihre Menge zählt beim nächsten vollen Vorgang mit. Teilbetankungen vor dem ersten vollen Vorgang zählen nicht.
+- Eine Teilbetankung hat keinen eigenen Wert; ihre Menge zählt beim nächsten vollen Vorgang mit. Teilbetankungen vor dem ersten vollen Vorgang zählen nicht für den Verbrauch, ihre Kosten erscheinen aber in den Monatskosten. Im Formular steht dazu unter dem Schalter **Teilbetankung** ein Hinweis, solange der Schalter eingeschaltet ist.
 - Ohne gefahrene Strecke seit dem letzten vollen Vorgang gibt es keinen Wert.
 - Bei Hybridfahrzeugen werden Kraftstoff und Strom getrennt gerechnet.
 - Korrigieren oder löschen Sie einen Vorgang, werden die Verbrauchswerte sofort neu berechnet.
+
+## Auswertung
+
+Unter dem Formular zeigt die Seite **Tank- und Ladevorgänge** den Bereich **Auswertung** des Fahrzeugs. Hybridfahrzeuge haben je einen Block für **Kraftstoff** (L) und **Strom** (kWh); die Werte beider Arten werden nie vermischt. Fahrzeuge mit nur einer Art zeigen einen Block.
+
+- **Ø Verbrauch:** Summe der Mengen aller berechneten Intervalle geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen. Längere Strecken zählen dadurch stärker als kurze. Ein Intervall reicht von einem vollen Vorgang zum nächsten; die Mengen dazwischenliegender Teilbetankungen gehören dazu. Intervalle ohne Strecke gehen nicht ein.
+- **Kosten pro 100 km:** Summe der Kosten derselben Intervalle (voller Vorgang plus Teilbetankungen dazwischen) geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen.
+- **Gesamtkosten:** Summe der Gesamtbeträge aller Vorgänge der Art.
+- **Monatskosten:** Summe der Gesamtbeträge je Kalendermonat nach dem Datum des Vorgangs (Ortszeit; 31.12. 23:59 gehört zum Dezember, 01.01. 00:00 zum Januar). Teilbetankungen zählen immer mit, auch vor dem ersten vollen Vorgang. Die Liste reicht lückenlos vom ersten Vorgang bis zum aktuellen Monat; Monate ohne Vorgang erscheinen mit 0,00 €. Der neueste Monat steht oben.
+- **Diagramme:** Der **Verbrauchsverlauf** ist ein Liniendiagramm mit einem Punkt je berechnetem vollen Vorgang, der **Kostenverlauf** ein Balkendiagramm der Monatskosten. Beide zeigen höchstens die letzten 12 Werte; Kennzahlen und Monatsliste enthalten alle Daten. Ein einzelner Wert erscheint als einzelner Punkt bzw. Balken.
+
+**Wann erscheinen Werte?** Ø Verbrauch und Kosten pro 100 km erscheinen, sobald mindestens ein Intervall vorliegt, also bei zwei vollen Vorgängen derselben Art. Davor steht der Hinweis „Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt.“ und bei den Kosten „noch nicht berechenbar“.
+
+**Startverbrauch:** Haben Sie am Fahrzeug einen Startverbrauch hinterlegt, ersetzt er den Ø Verbrauch, solange noch kein Intervall vorliegt. Er ist als „Startverbrauch – noch keine zwei vollen Vorgänge“ gekennzeichnet und verschwindet, sobald der berechnete Wert vorliegt; beide werden nie gemischt. Er gilt nur für die Art, deren Einheit er trägt: bei Elektrofahrzeugen für Strom (kWh/100 km), sonst für Kraftstoff (L/100 km), bei Hybridfahrzeugen also nur für Kraftstoff. Für die Kosten pro 100 km gibt es keinen Ersatzwert.
+
+**Barrierefreiheit:** Jedes Diagramm hat eine sichtbare Textzusammenfassung, z. B. „Verlauf, 3 Werte, zuletzt 6,00 L/100 km, niedrigster 5,80, höchster 6,20“; die Sprachausgabe liest sie als Beschreibung des Diagramms vor. Die Monatsliste ist die Tabelle zum Kostendiagramm. Die Auswertung wird beim Öffnen sowie nach Erfassen, Korrigieren und Löschen eines Vorgangs neu berechnet; sie wird nicht gespeichert. Bei einem Ladefehler erscheint „Die Auswertung konnte nicht geladen werden.“, die Liste der Vorgänge bleibt nutzbar.
 
 ## Fehlermeldungen
 

@@ -1,3 +1,14 @@
+## 2026-10-12 — Verbrauchs- und Kostenauswertung (Tankradar Schritt 14, Version 0.1.18)
+
+- Je Fahrzeug zeigt die Seite „Tank- und Ladevorgänge“ den Bereich „Auswertung“: Ø Verbrauch (nach Strecke gewichtet), Kosten pro 100 km, Gesamtkosten und Monatskosten (lückenlose Monatsreihe bis zum aktuellen Monat, Monatsgrenzen nach lokaler Zeit), je Art (Kraftstoff/Strom) getrennt, bei Hybridfahrzeugen zwei Blöcke
+- Werte erscheinen ab einem berechneten Intervall (zwei volle Vorgänge); davor Hinweis, ein hinterlegter Startverbrauch wird als „Startverbrauch“ gekennzeichnet angezeigt; Teilbetankungen tragen Menge und Kosten zum nächsten Intervall bei
+- Verbrauchsverlauf (Liniendiagramm) und Kostenverlauf (Balkendiagramm der Monatskosten), letzte 12 Werte, mit Wert am Datenpunkt, Hell-/Dunkelmodus und Textzusammenfassung für die Sprachausgabe; selbst gezeichnet mit MAUI Graphics, keine neue Abhängigkeit (ADR 0010)
+- Werte werden beim Lesen berechnet und nicht gespeichert; keine Schemaänderung, keine Migration
+- Hilfetext: Rundungsausnahme der Zwei-aus-drei-Regel (Restpunkt aus Schritt 13) ergänzt; im Formular erklärt ein Hinweis unter dem Schalter „Teilbetankung“, was die Teilbetankung für Verbrauch und Kosten bedeutet
+- Nachgeholte Tests aus Schritt 13: `DetectExtension` (`mif1`, `msf1`, unbekannte Marke, zu kurze Datei, `heic`) und Löschfehler-Zweig der Vorgangsseite
+- Tests: Unit-, Integrations- und FlaUI-E2E-Tests (Kennzahlen, Schwelle und Startverbrauch, Kosten pro 100 km, Monatsgrenzen, Teilbetankung, Hybrid, Aktualisierung nach Korrigieren/Löschen, Neustart, Offline-Szenario, Diagrammgeometrie)
+- Dokumentation: `docs/help/Tankbuch/`, `docs/adr/0010-tankbook-statistics.md`
+
 ## 2026-10-11 — Tank- und Ladevorgänge erfassen (Tankradar Schritt 13, Version 0.1.17)
 
 - Je Fahrzeug öffnet „Tank- und Ladevorgänge“ eine eigene Seite: Vorgänge erfassen, korrigieren und nach Rückfrage löschen; Liste neueste zuerst mit Tankstelle, Gesamtbetrag, Datum, Preis pro Einheit, Menge, Strecke und Verbrauch pro 100 km (L bzw. kWh), Teilbetankung, Notiz und Belegfoto

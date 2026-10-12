@@ -27,6 +27,13 @@
 8. Optional **Foto auswählen** (bzw. **Foto aufnehmen**) für den Beleg.
 9. **Speichern** tippen. Der Vorgang erscheint oben in der Liste, ab dem zweiten vollen Vorgang mit Verbrauch.
 
+**Auswertung ansehen**
+
+1. In der Karte des Fahrzeugs **Tank- und Ladevorgänge** tippen.
+2. Unter dem Formular steht der Bereich **Auswertung**: **Ø Verbrauch**, **Kosten pro 100 km**, **Gesamtkosten**, der **Verbrauchsverlauf**, der **Kostenverlauf** und die **Monatskosten**. Bei Hybridfahrzeugen gibt es je einen Block für Kraftstoff und Strom.
+3. Mit weniger als zwei vollen Vorgängen erscheint ein Hinweis; ein hinterlegter Startverbrauch wird dann als „Startverbrauch“ gekennzeichnet angezeigt.
+4. Nach dem Erfassen, Korrigieren oder Löschen eines Vorgangs aktualisiert sich die Auswertung von selbst.
+
 **Vorgang korrigieren**
 
 1. Im Eintrag **Bearbeiten** tippen; das Formular **Vorgang bearbeiten** zeigt die gespeicherten Werte und das Foto.
