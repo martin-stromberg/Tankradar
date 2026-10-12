@@ -74,7 +74,7 @@ public static class BackupDatabasePreparer
             BackupFileCleanup.DeleteFile(databasePath + "-shm");
             return BackupResult.Ok;
         }
-        catch (DbException)
+        catch (Exception ex) when (ex is DbException or InvalidOperationException or FormatException or InvalidCastException)
         {
             return BackupResult.InvalidFile;
         }

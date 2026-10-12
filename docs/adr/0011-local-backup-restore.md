@@ -111,7 +111,7 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
   abweichen kann. Dieselbe Prüfung läuft schon beim Einspielen einer externen Datei (Entpacken ins Staging, Vorbereitung, Aufräumen):
   Eine solche Datei kommt gar nicht erst in die Liste, und die Meldung „gültige Sicherung“ erscheint erst danach. Getestet mit
   Integrations- und E2E-Tests für alle sechs Manipulationen bei gültigem Manifest und gültigen Prüfsummen. Nicht geprüft werden
-  Zeileninhalte (die Daten einer Sicherung gelten als Nutzerdaten) und Einschränkungen, die nur im Tabellentext stehen (etwa `CHECK`).
+  Zeileninhalte (die Daten einer Sicherung gelten als Nutzerdaten) und Einschränkungen, die nur im Tabellen- oder Indextext stehen (`CHECK`, `COLLATE`, `WHERE` eines Teilindex, Ausdrücke eines Ausdrucksindex); `WITHOUT ROWID` und `STRICT` werden verglichen. Solche Abweichungen könnten höchstens eine Wiederherstellung dauerhaft scheitern lassen, aber keine Daten löschen, weil Trigger erfasst werden. Der Aufwand beim Einspielen (Entpacken ins Staging, Referenz neu migrieren) ist bewusst in Kauf genommen.
 - **Dateinamen** für Löschen, Teilen und Wiederherstellen müssen dem Muster `tankatlas-backup-*.zip` entsprechen und dürfen
   keine Pfadanteile haben; sonst gilt die Sicherung als nicht gefunden.
 

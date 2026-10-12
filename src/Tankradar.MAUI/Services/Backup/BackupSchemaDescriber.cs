@@ -43,6 +43,7 @@ public static class BackupSchemaDescriber
 
         foreach (var table in tables)
         {
+            await AppendRowsAsync(connection, lines, "table " + table, "SELECT type, ncol, wr, strict FROM pragma_table_list WHERE schema = 'main' AND name = $name", table, cancellationToken).ConfigureAwait(false);
             await AppendRowsAsync(connection, lines, "column " + table, "SELECT cid, name, type, \"notnull\", dflt_value, pk, hidden FROM pragma_table_xinfo($name) ORDER BY cid", table, cancellationToken).ConfigureAwait(false);
             await AppendRowsAsync(connection, lines, "foreignkey " + table, "SELECT id, seq, \"table\", \"from\", \"to\", on_update, on_delete, \"match\" FROM pragma_foreign_key_list($name) ORDER BY id, seq", table, cancellationToken).ConfigureAwait(false);
 

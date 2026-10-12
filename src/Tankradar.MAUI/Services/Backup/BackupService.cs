@@ -463,7 +463,7 @@ public sealed class BackupService : IBackupService
             command.CommandText = "PRAGMA journal_mode=WAL";
             command.ExecuteNonQuery();
         }
-        catch (SqliteException ex)
+        catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning("Der WAL-Modus konnte nach der Wiederherstellung nicht gesetzt werden ({ExceptionType}).", ex.GetType().Name);
         }
