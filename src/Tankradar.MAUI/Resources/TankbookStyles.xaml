@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    x:Class="Tankradar.MAUI.Resources.TankbookStyles"
+                    x:ClassModifier="Internal">
+
+    <!-- Gemeinsame Stile der Tankbuch-Seiten (Fahrzeuge sowie Tank- und Ladevorgänge). -->
+    <Style x:Key="TankbookCard" TargetType="Border">
+        <Setter Property="Padding" Value="{StaticResource space-md}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 16" />
+    </Style>
+    <Style x:Key="TankbookButton" TargetType="Button">
+        <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="FontFamily" Value="InterSemibold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+        <Setter Property="TextColor" Value="White" />
+    </Style>
+    <Style x:Key="TankbookOutlineButton" TargetType="Button" BasedOn="{StaticResource TankbookButton}">
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+    </Style>
+    <Style x:Key="TankbookDangerButton" TargetType="Button" BasedOn="{StaticResource TankbookButton}">
+        <Setter Property="BackgroundColor" Value="{StaticResource ColorErrorRed}" />
+    </Style>
+    <Style x:Key="FuelKindChip" TargetType="Button" BasedOn="{StaticResource TankbookOutlineButton}">
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+    <Style x:Key="UnitFieldBorder" TargetType="Border">
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+    </Style>
+    <Style x:Key="FieldLabel" TargetType="Label">
+        <Setter Property="FontFamily" Value="InterSemibold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+    </Style>
+    <Style x:Key="FieldError" TargetType="Label" BasedOn="{StaticResource body-sm}">
+        <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
+    </Style>
+    <Style x:Key="UnitLabel" TargetType="Label" BasedOn="{StaticResource body-md}">
+        <Setter Property="VerticalOptions" Value="Center" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+    </Style>
+
+</ResourceDictionary>

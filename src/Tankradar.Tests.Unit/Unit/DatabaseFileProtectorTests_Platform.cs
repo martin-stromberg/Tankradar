@@ -22,4 +22,19 @@ public class DatabaseFileProtectorTests_Platform : BaseTest
         Assert.False(File.Exists(missingPath));
         Assert.False(Directory.Exists(Path.GetDirectoryName(missingPath)));
     }
+
+    /// <summary>
+    /// Prüft, dass der Schutz einer einzelnen Datei (Belegfoto) unter Windows weder eine Ausnahme noch eine Dateisystemänderung auslöst.
+    /// </summary>
+    [Fact]
+    public void ProtectFile_OnWindows_DoesNothingAndDoesNotThrow()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "receipts", "beleg.jpg");
+
+        var exception = Record.Exception(() => new DatabaseFileProtector(NullLogger<DatabaseFileProtector>.Instance).ProtectFile(missingPath));
+
+        Assert.Null(exception);
+        Assert.False(File.Exists(missingPath));
+        Assert.False(Directory.Exists(Path.GetDirectoryName(missingPath)));
+    }
 }

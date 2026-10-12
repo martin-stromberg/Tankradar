@@ -1,0 +1,73 @@
+using Tankradar.TestSupport;
+
+namespace Tankradar.Tests.E2E.E2E.FlaUI;
+
+/// <summary>
+/// E2E-Test des Belegfotos: Die Test-Fotoauswahl (<c>TANKATLAS_TEST_RECEIPT_PHOTO</c>) liefert eine zur Laufzeit erzeugte PNG-Datei; das Foto liegt lokal unter
+/// <c>receipts/</c>, „Beleg anzeigen“ blendet es ein, und das Löschen des Vorgangs entfernt die Datei.
+/// </summary>
+public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
+{
+    private static readonly string PhotoPath = Path.Combine(Path.GetTempPath(), "Tankradar.Tests.E2E", "beleg-" + Guid.NewGuid().ToString("N") + ".png");
+
+    /// <summary>
+    /// Erzeugt die Testdatei und startet die App mit der Test-Fotoauswahl.
+    /// </summary>
+    public TankbookEntriesE2ETests_Receipt()
+        : base(CreateEnvironment())
+    {
+    }
+
+    /// <summary>
+    /// Prüft Auswahl, Vorschau, Ablage, Anzeige und Löschen des Belegfotos.
+    /// </summary>
+    [Fact]
+    public void ReceiptPhoto_IsStoredShownAndDeletedWithEntry()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenTankbook();
+            CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+            Tankbook.OpenEntries("Golf");
+            Press("TankbookEntries.Add");
+            Assert.False(Exists("TankbookEntries.Form.CapturePhoto"));
+            Assert.Equal("Foto auswählen", WaitForAutomationId("TankbookEntries.Form.PickPhoto").Name);
+
+            Press("TankbookEntries.Form.PickPhoto");
+            WaitForAutomationId("TankbookEntries.Form.RemovePhoto");
+            WaitForAutomationId("TankbookEntries.Form.PhotoPreview");
+            Tankbook.FillEntryForm("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
+            Tankbook.SaveEntryForm();
+
+            var file = Assert.Single(TankbookTestDatabase.ListReceiptFiles(TestDataDirectory));
+            Assert.Matches("^[0-9a-f]{32}\\.png$", file);
+            Assert.Equal(file, Assert.Single(TankbookTestDatabase.ReadEntries(DatabasePath)).ReceiptPhotoFileName);
+            Assert.Equal(File.ReadAllBytes(PhotoPath), File.ReadAllBytes(Path.Combine(TestDataDirectory, "receipts", file)));
+
+            Assert.Equal("Beleg anzeigen", WaitForAutomationId("TankbookEntry.Item.ShowReceipt").Name);
+            Press("TankbookEntry.Item.ShowReceipt");
+            WaitForAutomationId("TankbookEntry.Item.Receipt");
+            WaitUntil(() => FindByAutomationId("TankbookEntry.Item.ShowReceipt")?.Name == "Beleg ausblenden", "Die Schaltfläche wechselt nicht zu „Beleg ausblenden“.");
+            Assert.False(Exists("TankbookEntry.Item.ReceiptMissing"));
+
+            Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
+            Press("TankbookEntry.Item.DeleteConfirm");
+            WaitForAutomationId("TankbookEntries.Empty");
+            Assert.Empty(TankbookTestDatabase.ListReceiptFiles(TestDataDirectory));
+        });
+    }
+
+    /// <inheritdoc />
+    protected override void Cleanup()
+    {
+        File.Delete(PhotoPath);
+        base.Cleanup();
+    }
+
+    private static Dictionary<string, string> CreateEnvironment()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(PhotoPath)!);
+        TankbookTestDatabase.WriteTestPng(PhotoPath);
+        return new Dictionary<string, string> { [TestDataPaths.TestReceiptPhotoEnvironmentVariable] = PhotoPath };
+    }
+}

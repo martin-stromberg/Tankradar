@@ -74,13 +74,14 @@ public class TankbookTextsTests_Labels : BaseTest
     /// Prüft die Beschreibungen der Schaltflächen eines Eintrags für die Sprachausgabe: Aktion und Fahrzeugname sind hörbar.
     /// </summary>
     [Fact]
-    public void ButtonDescriptions_NameActionAndVehicle()
+    public void ButtonHints_NameActionAndVehicle()
     {
-        Assert.Equal("Golf bearbeiten", TankbookTexts.FormatEditDescription("Golf"));
-        Assert.Equal("Golf löschen", TankbookTexts.FormatDeleteDescription("Golf"));
-        Assert.Equal("Ja, Fahrzeug „Golf“ löschen", TankbookTexts.FormatConfirmDeleteDescription("Golf", 0));
-        Assert.Equal("Fahrzeug „Golf“ und Vorgänge löschen", TankbookTexts.FormatConfirmDeleteDescription("Golf", 2));
-        Assert.Equal("Löschen von „Golf“ abbrechen", TankbookTexts.FormatCancelDeleteDescription("Golf"));
-        Assert.Equal("Formular schließen, ohne zu speichern", TankbookTexts.CancelFormDescription);
+        Assert.Equal("Fahrzeug „Golf“ endgültig löschen", TankbookTexts.FormatConfirmDeleteHint("Golf", 0));
+        Assert.Equal("Fahrzeug „Golf“ und 1 Tank- oder Ladevorgang endgültig löschen", TankbookTexts.FormatConfirmDeleteHint("Golf", 1));
+        Assert.Equal("Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen", TankbookTexts.FormatConfirmDeleteHint("Golf", 2));
+        Assert.Equal("Fahrzeug „Golf“ behalten", TankbookTexts.FormatCancelDeleteHint("Golf"));
+        Assert.Equal("Fahrzeug „Golf“", TankbookTexts.FormatVehicleHint("Golf"));
+        Assert.Equal("Formular schließen, ohne zu speichern", TankbookTexts.CancelFormHint);
+        Assert.Equal("Tank- und Ladevorgänge", TankbookTexts.Entries);
     }
 }

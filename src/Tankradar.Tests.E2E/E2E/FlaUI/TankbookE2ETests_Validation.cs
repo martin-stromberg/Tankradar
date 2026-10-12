@@ -55,4 +55,29 @@ public class TankbookE2ETests_Validation : TankbookE2ETestBase
             WaitForTexts("Tankbook.Vehicle.Name", "Golf");
         });
     }
+
+    /// <summary>
+    /// Prüft, dass bei einem Fahrzeug mit Vorgängen ein Start-Kilometerstand über dem ersten Vorgang als Feldfehler gemeldet und nicht gespeichert wird.
+    /// </summary>
+    [Fact]
+    public void StartOdometerAboveFirstEntry_ShowsOdometerError()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenTankbook();
+            CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+            TankbookTestDatabase.AddEntries(DatabasePath, "Golf", 1, firstOdometerKm: 10_500);
+
+            PressForVehicle("Tankbook.Vehicle.Edit", "Golf");
+            Type("Tankbook.Form.Odometer", "11000");
+            Press("Tankbook.Form.Save");
+
+            Assert.Equal(
+                "Der Start-Kilometerstand darf nicht über dem Kilometerstand des ersten Tank- oder Ladevorgangs liegen.",
+                WaitForAutomationId("Tankbook.Form.OdometerError").Name);
+            Assert.True(Exists("Tankbook.Form.Save"));
+            Press("Tankbook.Form.Cancel");
+            WaitForTexts("Tankbook.Vehicle.Details", "Diesel • Start 10.000 km");
+        });
+    }
 }

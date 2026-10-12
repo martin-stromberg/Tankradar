@@ -34,6 +34,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Foto eines Tankbelegs aufnehmen</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Foto eines Tankbelegs auswählen</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ermittlung von Tankstellen in der Nähe</string>
 	<key>XSAppIconAssets</key>

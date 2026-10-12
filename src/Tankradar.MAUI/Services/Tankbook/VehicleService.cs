@@ -8,7 +8,7 @@ using Tankradar.MAUI.Models.Tankbook;
 namespace Tankradar.MAUI.Services.Tankbook;
 
 /// <summary>
-/// EF-Core-Umsetzung von <see cref="IVehicleService"/> auf der lokalen SQLite-Datenbank (Tabellen <c>Vehicles</c> und <c>TankbookEntries</c>).
+/// EF-Core-Umsetzung von <see cref="IVehicleService"/> auf der lokalen SQLite-Datenbank (Tabellen <c>Vehicles</c> und <c>TankbookEntries</c>); beim Löschen eines Fahrzeugs werden auch die Belegfotos seiner Vorgänge entfernt.
 /// Fachliche Fehler werden als <see cref="VehicleResult"/> gemeldet; protokolliert werden nie Namen oder Werte.
 /// </summary>
 public sealed class VehicleService : IVehicleService
@@ -19,6 +19,7 @@ public sealed class VehicleService : IVehicleService
 
     private readonly IDbContextFactory<TankradarDbContext> _contextFactory;
     private readonly IDatabaseInitializer _initializer;
+    private readonly IReceiptPhotoStore _photoStore;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<VehicleService> _logger;
 
@@ -27,12 +28,19 @@ public sealed class VehicleService : IVehicleService
     /// </summary>
     /// <param name="contextFactory">Factory für Datenbankkontexte.</param>
     /// <param name="initializer">Stellt vor jedem Zugriff die Datenbankinitialisierung sicher.</param>
+    /// <param name="photoStore">Die Ablage der Belegfotos; die Fotos mitgelöschter Vorgänge werden nach dem Löschen entfernt.</param>
     /// <param name="timeProvider">Die Zeitquelle für die Zeitstempel.</param>
     /// <param name="logger">Der Logger.</param>
-    public VehicleService(IDbContextFactory<TankradarDbContext> contextFactory, IDatabaseInitializer initializer, TimeProvider timeProvider, ILogger<VehicleService> logger)
+    public VehicleService(
+        IDbContextFactory<TankradarDbContext> contextFactory,
+        IDatabaseInitializer initializer,
+        IReceiptPhotoStore photoStore,
+        TimeProvider timeProvider,
+        ILogger<VehicleService> logger)
     {
         _contextFactory = contextFactory;
         _initializer = initializer;
+        _photoStore = photoStore;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -112,6 +120,17 @@ public sealed class VehicleService : IVehicleService
             return VehicleResult.DuplicateName;
         }
 
+        // Der Start-Kilometerstand darf nicht über dem niedrigsten Kilometerstand der vorhandenen Vorgänge liegen.
+        var lowestEntryKm = await context.TankbookEntries.AsNoTracking()
+            .Where(e => e.VehicleId == vehicleId)
+            .Select(e => (int?)e.OdometerKm)
+            .MinAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (lowestEntryKm is { } lowest && input.StartOdometerKm > lowest)
+        {
+            return VehicleResult.StartOdometerAboveEntries;
+        }
+
         entity.Name = name;
         entity.FuelKind = input.FuelKind.ToString();
         entity.StartOdometerKm = input.StartOdometerKm;
@@ -127,19 +146,43 @@ public sealed class VehicleService : IVehicleService
     }
 
     /// <inheritdoc />
-    public async Task<VehicleResult> DeleteVehicleAsync(long vehicleId, CancellationToken cancellationToken = default)
+    public async Task<VehicleDeleteResult> DeleteVehicleAsync(long vehicleId, int expectedEntryCount, CancellationToken cancellationToken = default)
     {
-        await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        var entity = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken).ConfigureAwait(false);
-        if (entity is null)
+        List<string> photos;
+        await using (var context = await OpenAsync(cancellationToken).ConfigureAwait(false))
         {
-            return VehicleResult.VehicleNotFound;
+            // Zählen und Löschen in einer Transaktion: Ein inzwischen hinzugekommener Vorgang wird nicht stillschweigend mitgelöscht.
+            await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            var entity = await context.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken).ConfigureAwait(false);
+            if (entity is null)
+            {
+                return new VehicleDeleteResult(VehicleResult.VehicleNotFound, 0);
+            }
+
+            var entryCount = await context.TankbookEntries.CountAsync(e => e.VehicleId == vehicleId, cancellationToken).ConfigureAwait(false);
+            if (entryCount != expectedEntryCount)
+            {
+                return new VehicleDeleteResult(VehicleResult.EntryCountChanged, entryCount);
+            }
+
+            photos = await context.TankbookEntries.AsNoTracking()
+                .Where(e => e.VehicleId == vehicleId && e.ReceiptPhotoFileName != null)
+                .Select(e => e.ReceiptPhotoFileName!)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            // Die Vorgänge des Fahrzeugs löscht die Datenbank per ON DELETE CASCADE.
+            context.Vehicles.Remove(entity);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        // Die Vorgänge des Fahrzeugs löscht die Datenbank per ON DELETE CASCADE.
-        context.Vehicles.Remove(entity);
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        return VehicleResult.Ok;
+        foreach (var photo in photos)
+        {
+            _photoStore.Delete(photo);
+        }
+
+        return new VehicleDeleteResult(VehicleResult.Ok, expectedEntryCount);
     }
 
     private static async Task<bool> NameTakenAsync(TankradarDbContext context, string name, long? exceptVehicleId, CancellationToken cancellationToken)
@@ -176,10 +219,9 @@ public sealed class VehicleService : IVehicleService
 
     private Vehicle ToVehicle(VehicleEntity entity)
     {
-        if (!Enum.TryParse(entity.FuelKind, out VehicleFuelKind fuelKind) || !Enum.IsDefined(fuelKind))
+        if (!VehicleValidator.TryParseFuelKind(entity.FuelKind, out var fuelKind))
         {
             _logger.LogWarning("Unbekannte Kraftstoffart eines gespeicherten Fahrzeugs; es wird Benzin angenommen.");
-            fuelKind = VehicleFuelKind.Petrol;
         }
 
         return new Vehicle(entity.Id, entity.Name, fuelKind, entity.StartOdometerKm, entity.StartConsumption);

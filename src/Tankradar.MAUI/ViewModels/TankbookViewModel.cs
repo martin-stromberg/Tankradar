@@ -3,17 +3,20 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Tankbook;
 
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
 /// ViewModel für den Bereich „Tankbuch“: Fahrzeugverwaltung mit Liste, Formular zum Anlegen und Bearbeiten (in der Seite, mit feldbezogenen Fehlermeldungen)
-/// und Löschen nach einer Rückfrage im jeweiligen Eintrag, die vorhandene Tank- und Ladevorgänge ausdrücklich nennt. Protokolliert werden nie Namen oder Werte.
+/// und Löschen nach einer Rückfrage im jeweiligen Eintrag, die vorhandene Tank- und Ladevorgänge ausdrücklich nennt (beim Bestätigen neu gezählt);
+/// je Fahrzeug öffnet „Tank- und Ladevorgänge“ dessen Vorgänge. Protokolliert werden nie Namen oder Werte.
 /// </summary>
 public class TankbookViewModel : BaseViewModel
 {
     private readonly IVehicleService _service;
+    private readonly ITankbookNavigator _navigator;
     private readonly ILogger<TankbookViewModel> _logger;
     private readonly IScreenReaderAnnouncer _announcer;
     private readonly Command _saveCommand;
@@ -35,11 +38,13 @@ public class TankbookViewModel : BaseViewModel
     /// Erstellt das ViewModel mit dem Seitentitel „Tankbuch“.
     /// </summary>
     /// <param name="service">Der Fahrzeugdienst.</param>
+    /// <param name="navigator">Öffnet die Tank- und Ladevorgänge eines Fahrzeugs.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
     /// <param name="announcer">Sagt erscheinende Rückfragen und Fehlermeldungen über die Sprachausgabe an.</param>
-    public TankbookViewModel(IVehicleService service, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer)
+    public TankbookViewModel(IVehicleService service, ITankbookNavigator navigator, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer)
     {
         _service = service;
+        _navigator = navigator;
         _logger = logger;
         _announcer = announcer;
         Title = TankbookTexts.PageTitle;
@@ -348,6 +353,7 @@ public class TankbookViewModel : BaseViewModel
                 .Select(vehicle => new VehicleItemViewModel(
                     vehicle,
                     BeginEdit,
+                    OpenEntries,
                     item => LastTask = BeginDeleteAsync(item),
                     item => LastTask = DeleteAsync(item),
                     () => !IsSaving))
@@ -452,6 +458,10 @@ public class TankbookViewModel : BaseViewModel
                     NameError = TankbookTexts.DuplicateName;
                     _announcer.Announce(NameError);
                     break;
+                case VehicleResult.StartOdometerAboveEntries:
+                    OdometerError = TankbookTexts.StartOdometerAboveEntries;
+                    _announcer.Announce(OdometerError);
+                    break;
                 case VehicleResult.VehicleNotFound:
                     IsFormOpen = false;
                     StatusMessage = TankbookTexts.GetResultMessage(result);
@@ -508,15 +518,22 @@ public class TankbookViewModel : BaseViewModel
         IsSaving = true;
         try
         {
-            var result = await _service.DeleteVehicleAsync(item.Id).ConfigureAwait(true);
-            if (result is VehicleResult.Ok or VehicleResult.VehicleNotFound)
+            var result = await _service.DeleteVehicleAsync(item.Id, item.ShownEntryCount).ConfigureAwait(true);
+            switch (result.Result)
             {
-                item.HideDeleteConfirmation();
-                reload = true;
-            }
-            else
-            {
-                StatusMessage = TankbookTexts.GetResultMessage(result);
+                case VehicleResult.Ok:
+                case VehicleResult.VehicleNotFound:
+                    item.HideDeleteConfirmation();
+                    reload = true;
+                    break;
+                case VehicleResult.EntryCountChanged:
+                    // Inzwischen hinzugekommene Vorgänge werden in der Rückfrage genannt, bevor sie mitgelöscht werden.
+                    item.ShowDeleteConfirmation(result.EntryCount);
+                    _announcer.Announce(item.DeleteQuestion);
+                    break;
+                default:
+                    StatusMessage = TankbookTexts.GetResultMessage(result.Result);
+                    break;
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -551,5 +568,13 @@ public class TankbookViewModel : BaseViewModel
                 item.HideDeleteConfirmation();
             }
         }
+    }
+
+    private void OpenEntries(VehicleItemViewModel item)
+    {
+        IsFormOpen = false;
+        ClearFieldErrors();
+        CloseConfirmations(null);
+        LastTask = _navigator.OpenEntriesAsync(item.Id);
     }
 }

@@ -77,6 +77,7 @@ public class VehiclesMigrationTests_Upgrade : IDisposable
         Assert.Equal(StationId, (await context.FavoriteEntries.SingleAsync()).StationId);
         Assert.Empty(context.Vehicles);
         Assert.Empty(context.TankbookEntries);
+        Assert.Contains("OccurredAt", await QueryAsync(context, "PRAGMA table_info(TankbookEntries)", 1));
         var settings = await new SettingsService(factory, _database.CreateInitializer(factory)).LoadAsync();
         Assert.True(settings.ShowNearby);
     }

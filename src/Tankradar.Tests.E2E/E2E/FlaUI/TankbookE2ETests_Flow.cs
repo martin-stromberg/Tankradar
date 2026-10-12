@@ -21,12 +21,18 @@ public class TankbookE2ETests_Flow : TankbookE2ETestBase
             Assert.Equal("km", WaitForAutomationId("Tankbook.Form.OdometerUnit").Name);
             Assert.Equal("L/100 km", WaitForAutomationId("Tankbook.Form.ConsumptionUnit").Name);
             Assert.Equal("Ausgewählt", WaitForAutomationId("Tankbook.Form.FuelKind.Petrol").Properties.HelpText.ValueOrDefault);
+            Assert.Equal("Abbrechen", WaitForAutomationId("Tankbook.Form.Cancel").Name);
+            Assert.Equal("Formular schließen, ohne zu speichern", Tankbook.ReadHint("Tankbook.Form.Cancel"));
             FillVehicleForm("Golf", "Diesel", "84350", "5,4");
             SaveVehicleForm();
             WaitForTexts("Tankbook.Vehicle.Name", "Golf");
             WaitForTexts("Tankbook.Vehicle.Details", "Diesel • Start 84.350 km • Startverbrauch 5,4 L/100 km");
             Assert.False(Exists("Tankbook.Empty"));
 
+            Assert.Equal("Bearbeiten", WaitForAutomationId("Tankbook.Vehicle.Edit").Name);
+            Assert.Equal("Fahrzeug „Golf“", Tankbook.ReadHint("Tankbook.Vehicle.Edit"));
+            Assert.Equal("Löschen", WaitForAutomationId("Tankbook.Vehicle.Delete").Name);
+            Assert.Equal("Fahrzeug „Golf“", Tankbook.ReadHint("Tankbook.Vehicle.Delete"));
             PressForVehicle("Tankbook.Vehicle.Edit", "Golf");
             Assert.Equal("Fahrzeug bearbeiten", WaitForAutomationId("Tankbook.Form.Title").Name);
             Assert.Equal("Golf", WaitForAutomationId("Tankbook.Form.Name").Patterns.Value.Pattern.Value.Value);
@@ -43,7 +49,10 @@ public class TankbookE2ETests_Flow : TankbookE2ETestBase
 
             PressForVehicle("Tankbook.Vehicle.Delete", "Golf Variant");
             Assert.Equal("Fahrzeug „Golf Variant“ löschen?", WaitForAutomationId("Tankbook.Vehicle.DeleteQuestion").Name);
-            Assert.Equal("Ja, Fahrzeug „Golf Variant“ löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
+            Assert.Equal("Ja, löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
+            Assert.Equal("Fahrzeug „Golf Variant“ endgültig löschen", Tankbook.ReadHint("Tankbook.Vehicle.DeleteConfirm"));
+            Assert.Equal("Abbrechen", WaitForAutomationId("Tankbook.Vehicle.DeleteCancel").Name);
+            Assert.Equal("Fahrzeug „Golf Variant“ behalten", Tankbook.ReadHint("Tankbook.Vehicle.DeleteCancel"));
             Press("Tankbook.Vehicle.DeleteCancel");
             WaitUntil(() => !Exists("Tankbook.Vehicle.DeleteQuestion"), "Die Rückfrage blieb stehen.");
             WaitForTexts("Tankbook.Vehicle.Name", "Golf Variant");
