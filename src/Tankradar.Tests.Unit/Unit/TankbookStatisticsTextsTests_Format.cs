@@ -27,9 +27,9 @@ public class TankbookStatisticsTextsTests_Format : BaseTest
     [Fact]
     public void Format_MonthRow()
     {
-        Assert.Equal("Oktober 2026: 74,36 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2026, 10, 74.36m, 1)));
-        Assert.Equal("Februar 2028: 0,00 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2028, 2, 0m, 0)));
-        Assert.Equal("März 2026: 1.234,50 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2026, 3, 1234.5m, 4)));
+        Assert.Equal("Oktober 2026: 74,36 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2026, 10, 74.36m, 40m, 1)));
+        Assert.Equal("Februar 2028: 0,00 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2028, 2, 0m, 0m, 0)));
+        Assert.Equal("März 2026: 1.234,50 €", TankbookStatisticsTexts.FormatMonthRow(new MonthlyCostSummary(2026, 3, 1234.5m, 90m, 4)));
     }
 
     /// <summary>

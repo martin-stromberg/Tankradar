@@ -31,14 +31,14 @@ public static class TankbookStatisticsCalculator
             var ofKind = ordered.Where(overview => overview.Entry.Kind == kind).ToList();
             if (ofKind.Count > 0)
             {
-                kinds.Add(CalculateKind(kind, ofKind, kind == startKind ? vehicle.StartConsumption : null, today));
+                kinds.Add(CalculateKind(kind, ofKind, kind == startKind, vehicle.StartConsumption, today));
             }
         }
 
         return new TankbookStatistics(vehicle.Id, kinds);
     }
 
-    private static TankbookKindStatistics CalculateKind(TankbookEntryKind kind, List<TankbookEntryOverview> ofKind, decimal? startConsumption, DateTime today)
+    private static TankbookKindStatistics CalculateKind(TankbookEntryKind kind, List<TankbookEntryOverview> ofKind, bool isStartKind, decimal? vehicleStartConsumption, DateTime today)
     {
         var intervals = ofKind
             .Where(overview => overview.ConsumptionState == TankbookConsumptionState.Calculated
@@ -46,6 +46,7 @@ public static class TankbookStatisticsCalculator
                 && overview.IntervalQuantity is not null
                 && overview.IntervalCost is not null)
             .ToList();
+        var startConsumption = isStartKind ? vehicleStartConsumption : null;
         decimal? average = null;
         decimal? costPer100Km = null;
         var source = TankbookAverageSource.None;
@@ -71,6 +72,7 @@ public static class TankbookStatisticsCalculator
             average,
             source,
             costPer100Km,
+            isStartKind && vehicleStartConsumption is null,
             intervals.Count,
             distance,
             ofKind.Sum(overview => overview.Entry.TotalAmount),
@@ -82,7 +84,7 @@ public static class TankbookStatisticsCalculator
     {
         var sums = ofKind
             .GroupBy(overview => (overview.Entry.OccurredAt.Year, overview.Entry.OccurredAt.Month))
-            .ToDictionary(group => group.Key, group => (Cost: group.Sum(overview => overview.Entry.TotalAmount), Count: group.Count()));
+            .ToDictionary(group => group.Key, group => (Cost: group.Sum(overview => overview.Entry.TotalAmount), Quantity: group.Sum(overview => overview.Entry.Quantity), Count: group.Count()));
         var first = ofKind.Min(overview => overview.Entry.OccurredAt);
         var last = ofKind.Max(overview => overview.Entry.OccurredAt);
         var end = last > today ? last : today;
@@ -94,7 +96,7 @@ public static class TankbookStatisticsCalculator
             var year = index / 12;
             var month = index % 12 + 1;
             sums.TryGetValue((year, month), out var sum);
-            months.Add(new MonthlyCostSummary(year, month, sum.Cost, sum.Count));
+            months.Add(new MonthlyCostSummary(year, month, sum.Cost, sum.Quantity, sum.Count));
         }
 
         return months;

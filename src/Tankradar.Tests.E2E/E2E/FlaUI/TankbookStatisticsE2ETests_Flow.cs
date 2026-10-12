@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test der Auswertung: Zwei Vollvorgänge über das Formular ergeben Durchschnittsverbrauch, Kosten pro 100 km, Monatskosten und Diagramm-Zusammenfassungen.
+/// E2E-Test der Auswertung: Zwei Vollvorgänge über das Formular ergeben Durchschnittsverbrauch, Kosten pro 100 km, Monatskarte, Monatskosten und Diagramm-Zusammenfassungen.
 /// </summary>
 public class TankbookStatisticsE2ETests_Flow : TankbookE2ETestBase
 {
@@ -26,8 +26,12 @@ public class TankbookStatisticsE2ETests_Flow : TankbookE2ETestBase
             Tankbook.CreateEntry("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
             Tankbook.CreateEntry("Alpha Tankstelle", "30", "1,859", string.Empty, "11000");
 
-            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 € / 100 km", "130,13 €");
+            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
             Tankbook.WaitForStatistic("Fuel", "Heading", "Kraftstoff");
+            var monthName = DateTime.Now.ToString("MMMM", CultureInfo.GetCultureInfo("de-DE"));
+            Tankbook.WaitForStatistic("Fuel", "MonthAnalysisHeading", $"Monatsanalyse {DateTime.Now.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"))}");
+            Tankbook.WaitForStatistic("Fuel", "MonthCostLabel", $"Gesamtkosten {monthName}");
+            Tankbook.WaitForStatistic("Fuel", "MonthQuantity", "70,00 L getankt");
             Tankbook.WaitForStatistic("Fuel", "AverageSource", "Berechnet aus vollen Vorgängen");
             Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 6,00");
             Tankbook.WaitForStatistic("Fuel", "CostChartSummary", "Monatskosten, 1 Wert, zuletzt 130,13 €, niedrigster 130,13 €, höchster 130,13 €");

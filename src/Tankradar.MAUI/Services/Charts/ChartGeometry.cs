@@ -4,7 +4,7 @@ namespace Tankradar.MAUI.Services.Charts;
 
 /// <summary>
 /// Reine Layoutberechnung der Diagramme: Wertebereich, Koordinaten und Beschriftungsstellen. Die Zeichnung selbst
-/// (<c>LineChartDrawable</c>, <c>BarChartDrawable</c>) verwendet nur das Ergebnis.
+/// (<c>BarChartDrawable</c>) verwendet nur das Ergebnis.
 /// </summary>
 public static class ChartGeometry
 {
@@ -18,12 +18,24 @@ public static class ChartGeometry
     /// </summary>
     public const int MaxValueLabels = 6;
 
+    /// <summary>
+    /// Breite der Fläche eines Wertes bzw. einer Achsenbeschriftung; breiter als jeder vorkommende Text bei 11 pt.
+    /// </summary>
+    public const float TextAreaWidth = 60f;
+
+    /// <summary>
+    /// Höhe der Fläche eines Wertes bzw. einer Achsenbeschriftung.
+    /// </summary>
+    public const float TextAreaHeight = 16f;
+
+    private const float ValueOffset = 18f;
+    private const float LabelOffset = 4f;
     private const float PaddingLeft = 12f;
     private const float PaddingRight = 12f;
     private const float PaddingTop = 22f;
     private const float PaddingBottom = 26f;
     private const float BarWidthShare = 0.6f;
-    private const decimal LineMargin = 0.15m;
+    private const float MaxBarWidth = 44f;
 
     /// <summary>
     /// Berechnet das Layout eines Diagramms.
@@ -45,49 +57,61 @@ public static class ChartGeometry
             return new ChartLayout(plot, 0m, 1m, []);
         }
 
-        var (minimum, maximum) = GetRange(data.Kind, points);
+        var minimum = 0m;
+        var maximum = Math.Max(points.Max(point => point.Value), 0m);
+        if (maximum <= 0m)
+        {
+            maximum = 1m;
+        }
+
         var labelIndices = GetLabelIndices(points.Count);
         var items = new List<ChartItem>(points.Count);
+        var slot = plot.Width / points.Count;
+        var width = Math.Min(slot * BarWidthShare, MaxBarWidth);
         for (var index = 0; index < points.Count; index++)
         {
             var y = plot.Bottom - (float)((points[index].Value - minimum) / (maximum - minimum)) * plot.Height;
             var showValue = points.Count <= MaxValueLabels || index == points.Count - 1;
             var showLabel = labelIndices.Contains(index);
-            if (data.Kind == ChartKind.Bar)
-            {
-                var slot = plot.Width / points.Count;
-                var width = slot * BarWidthShare;
-                var centerX = plot.Left + slot * (index + 0.5f);
-                var bar = new RectF(centerX - width / 2f, y, width, plot.Bottom - y);
-                items.Add(new ChartItem(points[index], new PointF(centerX, y), bar, showValue, showLabel));
-            }
-            else
-            {
-                var x = points.Count == 1 ? plot.Left + plot.Width / 2f : plot.Left + plot.Width * index / (points.Count - 1);
-                items.Add(new ChartItem(points[index], new PointF(x, y), RectF.Zero, showValue, showLabel));
-            }
+            var centerX = plot.Left + slot * (index + 0.5f);
+            var bar = new RectF(centerX - width / 2f, y, width, plot.Bottom - y);
+            items.Add(new ChartItem(
+                points[index],
+                new PointF(centerX, y),
+                bar,
+                showValue,
+                showLabel,
+                PlaceText(centerX, y - ValueOffset, bounds),
+                PlaceText(centerX, plot.Bottom + LabelOffset, bounds),
+                index == points.Count - 1));
         }
 
         return new ChartLayout(plot, minimum, maximum, items);
     }
 
-    private static (decimal Minimum, decimal Maximum) GetRange(ChartKind kind, List<ChartPoint> points)
+    /// <summary>
+    /// Legt eine Textfläche mittig um die Stelle und schiebt sie in die Diagrammfläche, wenn sie über den Rand ragen würde.
+    /// </summary>
+    /// <param name="centerX">Die Mitte des Textes (Mitte des Balkens).</param>
+    /// <param name="top">Die Oberkante der Fläche.</param>
+    /// <param name="bounds">Die Diagrammfläche.</param>
+    /// <returns>Die Fläche mit Ausrichtung.</returns>
+    private static ChartTextArea PlaceText(float centerX, float top, RectF bounds)
     {
-        var lowest = points.Min(point => point.Value);
-        var highest = points.Max(point => point.Value);
-        if (kind == ChartKind.Bar)
+        var left = centerX - TextAreaWidth / 2f;
+        var alignment = HorizontalAlignment.Center;
+        if (left < bounds.Left)
         {
-            return (0m, highest > 0m ? highest : 1m);
+            left = bounds.Left;
+            alignment = HorizontalAlignment.Left;
+        }
+        else if (left + TextAreaWidth > bounds.Right)
+        {
+            left = bounds.Right - TextAreaWidth;
+            alignment = HorizontalAlignment.Right;
         }
 
-        if (highest == lowest)
-        {
-            var margin = Math.Max(Math.Abs(highest) * 0.1m, 1m);
-            return (lowest - margin, highest + margin);
-        }
-
-        var spread = (highest - lowest) * LineMargin;
-        return (lowest - spread, highest + spread);
+        return new ChartTextArea(new RectF(left, top, TextAreaWidth, TextAreaHeight), alignment);
     }
 
     private static HashSet<int> GetLabelIndices(int count)

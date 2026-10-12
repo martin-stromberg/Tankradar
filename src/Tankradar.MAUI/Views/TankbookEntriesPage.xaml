@@ -419,32 +419,90 @@
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                            AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.Notice'}" />
-                                    <Label Text="{x:Static texts:TankbookStatisticsTexts.AverageLabel}" Style="{StaticResource FieldLabel}" />
-                                    <Label Text="{Binding AverageText}"
-                                           Style="{StaticResource headline-md}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.Average'}" />
-                                    <Label Text="{Binding AverageSourceText}"
-                                           IsVisible="{Binding HasAverageSource}"
-                                           Style="{StaticResource body-sm}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.AverageSource'}" />
-                                    <Label Text="{x:Static texts:TankbookStatisticsTexts.CostPer100KmLabel}" Style="{StaticResource FieldLabel}" />
-                                    <Label Text="{Binding CostPer100KmText}"
-                                           Style="{StaticResource headline-md}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostPer100Km'}" />
-                                    <Label Text="{x:Static texts:TankbookStatisticsTexts.TotalCostLabel}" Style="{StaticResource FieldLabel}" />
-                                    <Label Text="{Binding TotalCostText}"
-                                           Style="{StaticResource headline-md}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.TotalCost'}" />
+                                    <!-- Kennzahlen als zweispaltiges Kachelraster (Entwurf: Ø Verbrauch, Kosten / 100 km) -->
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="{StaticResource space-sm}">
+                                        <Border Grid.Column="0" Style="{StaticResource StatisticsTile}">
+                                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                                <Label Text="{x:Static texts:TankbookStatisticsTexts.AverageLabel}"
+                                                       Style="{StaticResource body-sm}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                       SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.AverageLabelDescription}" />
+                                                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="End">
+                                                    <Label Text="{Binding AverageValueText}"
+                                                           Style="{StaticResource price-hero}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                                           Margin="0,0,4,0"
+                                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.Average'}" />
+                                                    <Label Text="{Binding AverageUnitText}"
+                                                           Style="{StaticResource body-sm}"
+                                                           FontFamily="InterSemibold"
+                                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                           Margin="0,0,0,4"
+                                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.AverageUnit'}" />
+                                                </FlexLayout>
+                                                <Label Text="{Binding AverageSourceText}"
+                                                       IsVisible="{Binding HasAverageSource}"
+                                                       Style="{StaticResource body-sm}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                       AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.AverageSource'}" />
+                                            </VerticalStackLayout>
+                                        </Border>
+                                        <Border Grid.Column="1" Style="{StaticResource StatisticsTile}">
+                                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                                <Label Text="{x:Static texts:TankbookStatisticsTexts.CostPer100KmLabel}"
+                                                       Style="{StaticResource body-sm}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                       SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.CostPer100KmLabelDescription}" />
+                                                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="End">
+                                                    <Label Text="{Binding CostPer100KmValueText}"
+                                                           Style="{StaticResource price-hero}"
+                                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                                           Margin="0,0,4,0"
+                                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostPer100Km'}" />
+                                                    <Label Text="{Binding CostPer100KmUnitText}"
+                                                           Style="{StaticResource body-sm}"
+                                                           FontFamily="InterSemibold"
+                                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                           Margin="0,0,0,4"
+                                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostPer100KmUnit'}" />
+                                                </FlexLayout>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Monatskarte (Entwurf: Monatsanalyse, Kosten des laufenden Monats mit getankter Menge) -->
+                                    <Label Text="{Binding MonthAnalysisHeading}"
+                                           Style="{StaticResource FieldLabel}"
+                                           SemanticProperties.HeadingLevel="Level4"
+                                           Margin="0,8,0,0"
+                                           AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthAnalysisHeading'}" />
+                                    <Border Style="{StaticResource StatisticsTile}">
+                                        <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                            <Label Text="{Binding MonthCostLabel}"
+                                                   Style="{StaticResource body-sm}"
+                                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                   AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthCostLabel'}" />
+                                            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center">
+                                                <Label Text="{Binding MonthCostText}"
+                                                       Style="{StaticResource price-hero}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                                       Margin="0,0,8,0"
+                                                       AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthCost'}" />
+                                                <Label Text="{Binding MonthQuantityText}"
+                                                       Style="{StaticResource label-code}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                                       AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthQuantity'}" />
+                                            </FlexLayout>
+                                        </VerticalStackLayout>
+                                    </Border>
 
                                     <Label Text="{x:Static texts:TankbookStatisticsTexts.ConsumptionChartHeading}"
                                            Style="{StaticResource FieldLabel}"
-                                           SemanticProperties.HeadingLevel="Level4" />
+                                           SemanticProperties.HeadingLevel="Level4"
+                                           Margin="0,8,0,0" />
                                     <charts:ChartGraphicsView Data="{Binding ConsumptionChart}"
-                                                              HeightRequest="160"
+                                                              IsVisible="{Binding ConsumptionChart.HasData}"
+                                                              HeightRequest="140"
                                                               SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.ConsumptionChartDescription}"
                                                               AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.ConsumptionChart'}" />
                                     <Label Text="{Binding ConsumptionChartSummary}"
@@ -454,9 +512,11 @@
 
                                     <Label Text="{x:Static texts:TankbookStatisticsTexts.CostChartHeading}"
                                            Style="{StaticResource FieldLabel}"
-                                           SemanticProperties.HeadingLevel="Level4" />
+                                           SemanticProperties.HeadingLevel="Level4"
+                                           Margin="0,8,0,0" />
                                     <charts:ChartGraphicsView Data="{Binding CostChart}"
-                                                              HeightRequest="160"
+                                                              IsVisible="{Binding CostChart.HasData}"
+                                                              HeightRequest="140"
                                                               SemanticProperties.Description="{x:Static texts:TankbookStatisticsTexts.CostChartDescription}"
                                                               AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostChart'}" />
                                     <Label Text="{Binding CostChartSummary}"
@@ -467,6 +527,7 @@
                                     <Label Text="{x:Static texts:TankbookStatisticsTexts.MonthsHeading}"
                                            Style="{StaticResource FieldLabel}"
                                            SemanticProperties.HeadingLevel="Level4"
+                                           Margin="0,8,0,0"
                                            AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthsHeading'}" />
                                     <Label Text="{Binding MonthsNotice}"
                                            IsVisible="{Binding HasMonthsNotice}"

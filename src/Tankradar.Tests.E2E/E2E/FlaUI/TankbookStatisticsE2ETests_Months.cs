@@ -8,7 +8,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
 {
     /// <summary>
-    /// Prüft die Monatsgrenze (letzte Minute des Vormonats und erste Minute des Monats) mit getrennten Summen, den leeren Monat dazwischen mit 0,00 € und die Gesamtkosten.
+    /// Prüft die Monatsgrenze (letzte Minute des Vormonats und erste Minute des Monats) mit getrennten Summen, den leeren Monat dazwischen mit 0,00 € und die Monatskarte des (leeren) laufenden Monats.
     /// Die Reihe läuft bis zum aktuellen Monat; geprüft wird das Ende der Liste (älteste Monate).
     /// </summary>
     [Fact]
@@ -43,7 +43,7 @@ public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
                     return rows.Count >= oldestMonths.Length && rows.Skip(rows.Count - oldestMonths.Length).SequenceEqual(oldestMonths);
                 },
                 $"Die Monatskosten zeigen nicht [{string.Join(" | ", oldestMonths)}] am Ende, gelesen: [{string.Join(" | ", ReadTexts("TankbookEntries.Statistics.Fuel.Month"))}].");
-            Tankbook.WaitForStatistic("Fuel", "TotalCost", "184,36 €");
+            Tankbook.WaitForStatistic("Fuel", "MonthCost", "0,00 €");
             Assert.All(
                 ReadTexts("TankbookEntries.Statistics.Fuel.Month").SkipLast(oldestMonths.Length),
                 text => Assert.EndsWith(": 0,00 €", text, StringComparison.Ordinal));

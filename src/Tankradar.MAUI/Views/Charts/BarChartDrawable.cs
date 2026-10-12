@@ -5,7 +5,7 @@ using Tankradar.MAUI.Services.Charts;
 namespace Tankradar.MAUI.Views.Charts;
 
 /// <summary>
-/// Zeichnet ein Balkendiagramm mit einem Balken je Wert anhand von <see cref="ChartGeometry"/>; die Achse beginnt bei 0.
+/// Zeichnet ein Balkendiagramm mit einem Balken je Wert anhand von <see cref="ChartGeometry"/>; die Achse beginnt bei 0, der letzte Balken ist hervorgehoben.
 /// </summary>
 public sealed class BarChartDrawable : IDrawable
 {
@@ -37,25 +37,31 @@ public sealed class BarChartDrawable : IDrawable
         canvas.StrokeSize = 1f;
         canvas.DrawLine(layout.Plot.Left, layout.Plot.Bottom, layout.Plot.Right, layout.Plot.Bottom);
 
-        canvas.FillColor = ChartPalette.Series(isDark);
         canvas.FontColor = ChartPalette.Text(isDark);
         canvas.FontSize = FontSize;
         foreach (var item in layout.Items)
         {
+            canvas.FillColor = item.IsLast ? ChartPalette.Series(isDark) : ChartPalette.SeriesMuted(isDark);
             if (item.Bar.Height > 0f)
             {
                 canvas.FillRoundedRectangle(item.Bar, CornerRadius);
             }
 
+            canvas.Font = item.IsLast ? Microsoft.Maui.Graphics.Font.DefaultBold : Microsoft.Maui.Graphics.Font.Default;
             if (item.ShowValue)
             {
-                canvas.DrawString(item.Source.ValueText, item.Point.X - 30f, item.Point.Y - 18f, 60f, 16f, HorizontalAlignment.Center, VerticalAlignment.Center);
+                DrawText(canvas, item.Source.ValueText, item.ValueArea);
             }
 
             if (item.ShowLabel)
             {
-                canvas.DrawString(item.Source.Label, item.Point.X - 30f, layout.Plot.Bottom + 4f, 60f, 16f, HorizontalAlignment.Center, VerticalAlignment.Center);
+                DrawText(canvas, item.Source.Label, item.LabelArea);
             }
         }
+    }
+
+    private static void DrawText(ICanvas canvas, string text, ChartTextArea area)
+    {
+        canvas.DrawString(text, area.Area.X, area.Area.Y, area.Area.Width, area.Area.Height, area.Alignment, VerticalAlignment.Center);
     }
 }

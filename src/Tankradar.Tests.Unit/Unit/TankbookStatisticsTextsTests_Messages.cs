@@ -27,7 +27,10 @@ public class TankbookStatisticsTextsTests_Messages : BaseTest
     {
         Assert.Equal("Auswertung", TankbookStatisticsTexts.Heading);
         Assert.Contains("mindestens zwei volle Vorgänge", TankbookStatisticsTexts.TooFewEntriesNotice, StringComparison.Ordinal);
-        Assert.Contains("Startverbrauch", TankbookStatisticsTexts.TooFewEntriesNotice, StringComparison.Ordinal);
+        Assert.DoesNotContain("Startverbrauch", TankbookStatisticsTexts.TooFewEntriesNotice, StringComparison.Ordinal);
+        Assert.Contains("Startverbrauch", TankbookStatisticsTexts.GetTooFewEntriesNotice(true), StringComparison.Ordinal);
+        Assert.StartsWith(TankbookStatisticsTexts.TooFewEntriesNotice, TankbookStatisticsTexts.GetTooFewEntriesNotice(true), StringComparison.Ordinal);
+        Assert.Equal(TankbookStatisticsTexts.TooFewEntriesNotice, TankbookStatisticsTexts.GetTooFewEntriesNotice(false));
         Assert.Equal("Die Auswertung konnte nicht geladen werden.", TankbookStatisticsTexts.LoadFailed);
         Assert.NotEmpty(TankbookStatisticsTexts.NoEntriesNotice);
     }

@@ -55,10 +55,10 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         var kind = Assert.Single(viewModel.Kinds);
         Assert.Equal("Fuel", kind.AutomationKey);
         Assert.Equal("Kraftstoff", kind.Heading);
-        Assert.Equal("6,00 L/100 km", kind.AverageText);
+        Assert.Equal("6,00 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
         Assert.Equal(TankbookStatisticsTexts.CalculatedSource, kind.AverageSourceText);
-        Assert.Equal("11,15 € / 100 km", kind.CostPer100KmText);
-        Assert.Equal("130,13 €", kind.TotalCostText);
+        Assert.Equal("11,15 €", $"{kind.CostPer100KmValueText} {kind.CostPer100KmUnitText}");
+        Assert.Equal("130,13 €", kind.MonthCostText);
         Assert.False(kind.HasNotice);
         Assert.Null(viewModel.Notice);
         Assert.False(viewModel.HasNotice);
@@ -81,9 +81,9 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         await viewModel.LoadAsync(vehicle.Id);
 
         Assert.Equal(["Fuel", "Electricity"], viewModel.Kinds.Select(kind => kind.AutomationKey));
-        Assert.Equal("6,00 L/100 km", viewModel.Kinds[0].AverageText);
+        Assert.Equal("6,00 L/100 km", $"{viewModel.Kinds[0].AverageValueText} {viewModel.Kinds[0].AverageUnitText}");
         Assert.Equal("Strom", viewModel.Kinds[1].Heading);
-        Assert.Equal("20,00 kWh/100 km", viewModel.Kinds[1].AverageText);
+        Assert.Equal("20,00 kWh/100 km", $"{viewModel.Kinds[1].AverageValueText} {viewModel.Kinds[1].AverageUnitText}");
     }
 
     /// <summary>
@@ -117,8 +117,8 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
 
         var kind = Assert.Single(viewModel.Kinds);
         Assert.Contains("mindestens zwei volle Vorgänge", kind.Notice, StringComparison.Ordinal);
-        Assert.Equal(TankbookStatisticsTexts.NoAverage, kind.AverageText);
-        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmText);
+        Assert.Equal(TankbookStatisticsTexts.NoAverage, kind.AverageValueText);
+        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);
         Assert.False(kind.HasAverageSource);
     }
 
@@ -136,11 +136,11 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         await viewModel.LoadAsync(vehicle.Id);
 
         var kind = Assert.Single(viewModel.Kinds);
-        Assert.Equal("5,40 L/100 km", kind.AverageText);
+        Assert.Equal("5,40 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
         Assert.Equal("Startverbrauch – noch keine zwei vollen Vorgänge", kind.AverageSourceText);
         Assert.True(kind.HasAverageSource);
         Assert.False(kind.HasNotice);
-        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmText);
+        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);
     }
 
     /// <summary>
@@ -193,9 +193,7 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         var kind = viewModel.Kinds.Single();
         Assert.Equal("Verlauf, 2 Werte, zuletzt 5,00 L/100 km, niedrigster 5,00, höchster 6,00", kind.ConsumptionChartSummary);
         Assert.StartsWith("Monatskosten, 1 Wert, zuletzt 176,61 €", kind.CostChartSummary, StringComparison.Ordinal);
-        Assert.Equal(ChartKind.Line, kind.ConsumptionChart.Kind);
         Assert.Equal(2, kind.ConsumptionChart.Points.Count);
-        Assert.Equal(ChartKind.Bar, kind.CostChart.Kind);
         Assert.True(kind.CostChart.HasData);
         Assert.Equal("L/100 km", kind.ConsumptionChart.Unit);
     }

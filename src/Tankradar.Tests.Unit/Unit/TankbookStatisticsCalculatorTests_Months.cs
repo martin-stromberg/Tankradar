@@ -32,6 +32,24 @@ public class TankbookStatisticsCalculatorTests_Months : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass je Monat auch die Summe der Mengen geführt wird (leerer Monat: 0).
+    /// </summary>
+    [Fact]
+    public void Months_SumsQuantityPerMonth()
+    {
+        var statistics = Statistics(
+        [
+            CreateAt(1, new DateTime(2026, 8, 10, 8, 0, 0), 10_000, 12.5m, 10m),
+            CreateAt(2, new DateTime(2026, 10, 2, 8, 0, 0), 10_300, 20m, 20m),
+            CreateAt(3, new DateTime(2026, 10, 3, 8, 0, 0), 10_600, 30.25m, 30m),
+        ]);
+
+        var months = statistics.Kinds.Single().Months.Select(month => (month.Month, month.TotalQuantity)).ToList();
+
+        Assert.Equal([(10, 50.25m), (9, 0m), (8, 12.5m)], months);
+    }
+
+    /// <summary>
     /// Prüft die Jahresgrenze: 31.12. 23:59 gehört zum Dezember, 01.01. 00:00 zum Januar.
     /// </summary>
     [Fact]

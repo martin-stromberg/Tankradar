@@ -18,13 +18,13 @@ public class TankbookStatisticsE2ETests_Persistence : TankbookE2ETestBase
             Tankbook.OpenEntries("Golf");
             Tankbook.CreateEntry("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
             Tankbook.CreateEntry("Alpha Tankstelle", "30", "1,859", string.Empty, "11000");
-            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 € / 100 km", "130,13 €");
+            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
 
             RestartApplication();
             OpenTankbook();
             Tankbook.OpenEntries("Golf");
 
-            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 € / 100 km", "130,13 €");
+            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
             Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 6,00");
             Tankbook.WaitForStatistic("Fuel", "CostChartSummary", "Monatskosten, 1 Wert, zuletzt 130,13 €, niedrigster 130,13 €, höchster 130,13 €");
         });

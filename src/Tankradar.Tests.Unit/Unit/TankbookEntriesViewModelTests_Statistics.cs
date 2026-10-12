@@ -22,9 +22,9 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
         await CreateViaFormAsync(viewModel, "30", "1,5", "45", "11000");
 
         var kind = Assert.Single(viewModel.Statistics.Kinds);
-        Assert.Equal("6,00 L/100 km", kind.AverageText);
-        Assert.Equal("9,00 € / 100 km", kind.CostPer100KmText);
-        Assert.Equal("105,00 €", kind.TotalCostText);
+        Assert.Equal("6,00 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
+        Assert.Equal("9,00 €", $"{kind.CostPer100KmValueText} {kind.CostPer100KmUnitText}");
+        Assert.Equal("105,00 €", kind.MonthCostText);
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
         await Fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(Fixture.Now.AddDays(-2), 10_500, 40m));
         await Fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(Fixture.Now.AddDays(-1), 11_000, 30m));
         var viewModel = await OpenAsync(vehicle.Id);
-        Assert.Equal("6,00 L/100 km", viewModel.Statistics.Kinds.Single().AverageText);
+        Assert.Equal("6,00 L/100 km", $"{viewModel.Statistics.Kinds.Single().AverageValueText} {viewModel.Statistics.Kinds.Single().AverageUnitText}");
 
         viewModel.Entries[0].EditCommand.Execute(null);
         viewModel.Form.Quantity = "40";
@@ -45,7 +45,7 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
         viewModel.Form.TotalAmount = "74,36";
         await PressFormAsync(viewModel, viewModel.Form.SaveCommand);
 
-        Assert.Equal("8,00 L/100 km", viewModel.Statistics.Kinds.Single().AverageText);
+        Assert.Equal("8,00 L/100 km", $"{viewModel.Statistics.Kinds.Single().AverageValueText} {viewModel.Statistics.Kinds.Single().AverageUnitText}");
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
 
         var kind = Assert.Single(viewModel.Statistics.Kinds);
         Assert.Single(viewModel.Entries);
-        Assert.Equal(MAUI.Resources.Texts.TankbookStatisticsTexts.TooFewEntriesNotice, kind.Notice);
+        Assert.Equal(MAUI.Resources.Texts.TankbookStatisticsTexts.GetTooFewEntriesNotice(true), kind.Notice);
     }
 
     /// <summary>

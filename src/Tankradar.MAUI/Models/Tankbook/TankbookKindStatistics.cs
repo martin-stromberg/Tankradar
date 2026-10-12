@@ -7,6 +7,7 @@ namespace Tankradar.MAUI.Models.Tankbook;
 /// <param name="AverageConsumption">Der Durchschnittsverbrauch pro 100 km; <see langword="null"/>, wenn es keinen gibt.</param>
 /// <param name="AverageSource">Die Herkunft des Durchschnittsverbrauchs.</param>
 /// <param name="CostPer100Km">Die Kosten pro 100 km in Euro; <see langword="null"/>, wenn kein berechnetes Intervall vorliegt.</param>
+/// <param name="OffersStartConsumption">Gibt an, ob für die Art ein Startverbrauch am Fahrzeug hinterlegt werden könnte: Die Art ist die Startart des Fahrzeugs und es ist noch keiner hinterlegt.</param>
 /// <param name="CalculatedIntervals">Die Zahl der berechneten Intervalle.</param>
 /// <param name="TotalDistanceKm">Die Summe der Strecken der berechneten Intervalle.</param>
 /// <param name="TotalCost">Die Summe der Gesamtbeträge aller Vorgänge der Art in Euro.</param>
@@ -18,6 +19,7 @@ public sealed record TankbookKindStatistics(
     decimal? AverageConsumption,
     TankbookAverageSource AverageSource,
     decimal? CostPer100Km,
+    bool OffersStartConsumption,
     int CalculatedIntervals,
     int TotalDistanceKm,
     decimal TotalCost,

@@ -26,7 +26,7 @@ public class TankbookStatisticsViewModelTests_Limits : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass bei weit zurückliegenden Vorgängen nur die letzten 24 Monate angezeigt werden, Gesamtkosten und Durchschnitt aber vollständig bleiben.
+    /// Prüft, dass bei weit zurückliegenden Vorgängen nur die letzten 24 Monate angezeigt werden, der Durchschnitt aber alle Vorgänge enthält und die Monatskarte den laufenden Monat zeigt.
     /// </summary>
     [Fact]
     public async Task Months_VeryOldEntries_ListIsLimitedButTotalsAreComplete()
@@ -42,8 +42,8 @@ public class TankbookStatisticsViewModelTests_Limits : BaseTest
         Assert.Equal(TankbookStatisticsLimits.MonthListMaxRows, kind.Months.Count);
         Assert.Equal(TankbookStatisticsTexts.MonthsLimitedNotice, kind.MonthsNotice);
         Assert.True(kind.HasMonthsNotice);
-        Assert.Equal("130,13 €", kind.TotalCostText);
-        Assert.Equal("6,00 L/100 km", kind.AverageText);
+        Assert.Equal("55,77 €", kind.MonthCostText);
+        Assert.Equal("6,00 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
         Assert.StartsWith("Oktober 2026:", kind.Months[0].Text, StringComparison.Ordinal);
     }
 
@@ -102,7 +102,7 @@ public class TankbookStatisticsViewModelTests_Limits : BaseTest
 
     private static TankbookKindStatistics Kind()
     {
-        return new TankbookKindStatistics(TankbookEntryKind.Fuel, 6m, TankbookAverageSource.Calculated, 9m, 1, 500, 100m, [], []);
+        return new TankbookKindStatistics(TankbookEntryKind.Fuel, 6m, TankbookAverageSource.Calculated, 9m, false, 1, 500, 100m, [], []);
     }
 
     private sealed class GatedStatisticsService : ITankbookStatisticsService

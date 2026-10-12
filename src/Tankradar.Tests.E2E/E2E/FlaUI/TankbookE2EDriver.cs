@@ -348,17 +348,28 @@ public sealed class TankbookE2EDriver
     }
 
     /// <summary>
-    /// Wartet, bis die Auswertung für die Art Kennzahlen zeigt (Durchschnitt, Kosten pro 100 km, Gesamtkosten) und prüft sie.
+    /// Wartet, bis die Auswertung für die Art Kennzahlen zeigt (Durchschnitt, Kosten pro 100 km, Kosten des laufenden Monats) und prüft sie.
+    /// Wert und Einheit der Kacheln stehen in getrennten Elementen; sie werden hier als ein Text mit Leerzeichen übergeben.
     /// </summary>
     /// <param name="kindKey">Der Schlüssel der Art.</param>
-    /// <param name="average">Der erwartete Durchschnittsverbrauch.</param>
-    /// <param name="costPer100Km">Die erwarteten Kosten pro 100 km.</param>
-    /// <param name="totalCost">Die erwarteten Gesamtkosten.</param>
-    public void WaitForStatistics(string kindKey, string average, string costPer100Km, string totalCost)
+    /// <param name="average">Der erwartete Durchschnittsverbrauch mit Einheit, z. B. „6,00 L/100 km“.</param>
+    /// <param name="costPer100Km">Die erwarteten Kosten pro 100 km mit Einheit, z. B. „11,15 €“.</param>
+    /// <param name="monthCost">Die erwarteten Kosten des laufenden Monats.</param>
+    public void WaitForStatistics(string kindKey, string average, string costPer100Km, string monthCost)
     {
-        WaitForStatistic(kindKey, "Average", average);
-        WaitForStatistic(kindKey, "CostPer100Km", costPer100Km);
-        WaitForStatistic(kindKey, "TotalCost", totalCost);
+        var (averageValue, averageUnit) = SplitValueAndUnit(average);
+        var (costValue, costUnit) = SplitValueAndUnit(costPer100Km);
+        WaitForStatistic(kindKey, "Average", averageValue);
+        WaitForStatistic(kindKey, "AverageUnit", averageUnit);
+        WaitForStatistic(kindKey, "CostPer100Km", costValue);
+        WaitForStatistic(kindKey, "CostPer100KmUnit", costUnit);
+        WaitForStatistic(kindKey, "MonthCost", monthCost);
+    }
+
+    private static (string Value, string Unit) SplitValueAndUnit(string text)
+    {
+        var separator = text.IndexOf(' ', StringComparison.Ordinal);
+        return (text[..separator], text[(separator + 1)..]);
     }
 
     private void PressAtIndex(string automationId, Func<int> index, string description)

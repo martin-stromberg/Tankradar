@@ -28,7 +28,32 @@ public static class TankbookStatisticsTexts
     /// <summary>
     /// Hinweis, wenn für den Verbrauch zu wenige volle Vorgänge vorliegen.
     /// </summary>
-    public const string TooFewEntriesNotice = "Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt. Alternativ kannst du am Fahrzeug einen Startverbrauch hinterlegen.";
+    public const string TooFewEntriesNotice = "Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt.";
+
+    /// <summary>
+    /// Zusatz zum Hinweis, wenn die Art die Startart des Fahrzeugs ist und noch kein Startverbrauch hinterlegt ist.
+    /// </summary>
+    public const string StartConsumptionHint = "Alternativ kannst du am Fahrzeug einen Startverbrauch hinterlegen.";
+
+    /// <summary>
+    /// Beschriftung der Monatskarte ohne Monat; der Monatsname folgt, z. B. „Gesamtkosten Oktober“.
+    /// </summary>
+    public const string MonthCostLabelPrefix = "Gesamtkosten";
+
+    /// <summary>
+    /// Überschrift der Monatskarte ohne Monat; Monat und Jahr folgen, z. B. „Monatsanalyse Oktober 2026“.
+    /// </summary>
+    public const string MonthAnalysisHeadingPrefix = "Monatsanalyse";
+
+    /// <summary>
+    /// Sprachausgabe der Kachel des Durchschnittsverbrauchs (die sichtbare Beschriftung enthält das Zeichen „Ø“).
+    /// </summary>
+    public const string AverageLabelDescription = "Durchschnittsverbrauch";
+
+    /// <summary>
+    /// Sprachausgabe der Kachel der Kosten pro 100 km (die sichtbare Beschriftung ist „Kosten / 100 km“).
+    /// </summary>
+    public const string CostPer100KmLabelDescription = "Kosten pro 100 km";
 
     /// <summary>
     /// Beschriftung des Durchschnittsverbrauchs.
@@ -38,12 +63,7 @@ public static class TankbookStatisticsTexts
     /// <summary>
     /// Beschriftung der Kosten pro 100 km.
     /// </summary>
-    public const string CostPer100KmLabel = "Kosten pro 100 km";
-
-    /// <summary>
-    /// Beschriftung der Gesamtkosten.
-    /// </summary>
-    public const string TotalCostLabel = "Gesamtkosten";
+    public const string CostPer100KmLabel = "Kosten / 100 km";
 
     /// <summary>
     /// Kennzeichnung eines aus vollen Vorgängen berechneten Durchschnitts.
@@ -73,7 +93,7 @@ public static class TankbookStatisticsTexts
     /// <summary>
     /// Überschrift des Verbrauchsverlaufs.
     /// </summary>
-    public const string ConsumptionChartHeading = "Verbrauchsverlauf";
+    public const string ConsumptionChartHeading = "Verbrauchsverlauf der letzten Vorgänge";
 
     /// <summary>
     /// Überschrift des Kostenverlaufs.
@@ -83,7 +103,7 @@ public static class TankbookStatisticsTexts
     /// <summary>
     /// Kurze Beschreibung des Verbrauchsdiagramms für die Sprachausgabe (die Zusammenfassung steht im Text darunter).
     /// </summary>
-    public const string ConsumptionChartDescription = "Liniendiagramm des Verbrauchsverlaufs";
+    public const string ConsumptionChartDescription = "Balkendiagramm des Verbrauchsverlaufs";
 
     /// <summary>
     /// Kurze Beschreibung des Kostendiagramms für die Sprachausgabe (die Zusammenfassung steht im Text darunter).
@@ -93,7 +113,7 @@ public static class TankbookStatisticsTexts
     /// <summary>
     /// Hinweis, dass die Monatsliste gekürzt ist.
     /// </summary>
-    public const string MonthsLimitedNotice = "Angezeigt werden die letzten 24 Monate; Durchschnitt und Gesamtkosten enthalten alle Vorgänge.";
+    public const string MonthsLimitedNotice = "Angezeigt werden die letzten 24 Monate; der Durchschnitt enthält alle Vorgänge.";
 
     /// <summary>
     /// Zusammenfassung eines Diagramms ohne Daten.
@@ -109,6 +129,69 @@ public static class TankbookStatisticsTexts
     public static string FormatAverage(decimal? value, TankbookEntryKind kind)
     {
         return value is { } consumption ? TankbookEntryTexts.FormatConsumption(consumption, kind) : NoAverage;
+    }
+
+    /// <summary>
+    /// Liefert den Hinweis bei zu wenigen vollen Vorgängen; der Verweis auf den Startverbrauch steht nur, wenn er für die Art etwas ändern würde.
+    /// </summary>
+    /// <param name="offersStartConsumption">Gibt an, ob die Art die Startart des Fahrzeugs ist und noch kein Startverbrauch hinterlegt ist.</param>
+    /// <returns>Der Text.</returns>
+    public static string GetTooFewEntriesNotice(bool offersStartConsumption)
+    {
+        return offersStartConsumption ? $"{TooFewEntriesNotice} {StartConsumptionHint}" : TooFewEntriesNotice;
+    }
+
+    /// <summary>
+    /// Formatiert den Zahlenwert des Durchschnittsverbrauchs ohne Einheit, z. B. „6,00“.
+    /// </summary>
+    /// <param name="value">Der Verbrauch; <see langword="null"/>, wenn es keinen gibt.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatAverageValue(decimal? value)
+    {
+        return value is { } consumption ? string.Create(German, $"{consumption:N2}") : NoAverage;
+    }
+
+    /// <summary>
+    /// Formatiert den Zahlenwert der Kosten pro 100 km ohne Einheit, z. B. „11,15“.
+    /// </summary>
+    /// <param name="value">Die Kosten; <see langword="null"/>, wenn sie noch nicht berechenbar sind.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatCostPer100KmValue(decimal? value)
+    {
+        return value is { } cost ? string.Create(German, $"{cost:N2}") : NoAverage;
+    }
+
+    /// <summary>
+    /// Formatiert die Beschriftung der Monatskarte, z. B. „Gesamtkosten Oktober“.
+    /// </summary>
+    /// <param name="month">Der Monat (1 bis 12).</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatMonthCostLabel(int month)
+    {
+        return $"{MonthCostLabelPrefix} {new DateTime(2000, month, 1).ToString("MMMM", German)}";
+    }
+
+    /// <summary>
+    /// Formatiert die Überschrift der Monatskarte, z. B. „Monatsanalyse Oktober 2026“.
+    /// </summary>
+    /// <param name="year">Das Jahr.</param>
+    /// <param name="month">Der Monat (1 bis 12).</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatMonthAnalysisHeading(int year, int month)
+    {
+        return $"{MonthAnalysisHeadingPrefix} {FormatMonthName(year, month)}";
+    }
+
+    /// <summary>
+    /// Formatiert die getankte bzw. geladene Menge des Monats, z. B. „98,50 L getankt“ oder „12,00 kWh geladen“.
+    /// </summary>
+    /// <param name="quantity">Die Menge.</param>
+    /// <param name="kind">Die Art.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatMonthQuantity(decimal quantity, TankbookEntryKind kind)
+    {
+        var verb = kind == TankbookEntryKind.Electricity ? "geladen" : "getankt";
+        return string.Create(German, $"{quantity:N2} {TankbookEntryTexts.GetQuantityUnit(kind)} {verb}");
     }
 
     /// <summary>

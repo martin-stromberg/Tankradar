@@ -23,8 +23,8 @@ public class TankbookStatisticsE2ETests_Hybrid : TankbookE2ETestBase
 
             Tankbook.OpenEntries("Auris");
 
-            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 € / 100 km", "130,13 €");
-            Tankbook.WaitForStatistics("Electricity", "20,00 kWh/100 km", "11,80 € / 100 km", "20,65 €");
+            Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
+            Tankbook.WaitForStatistics("Electricity", "20,00 kWh/100 km", "11,80 €", "20,65 €");
             Tankbook.WaitForStatistic("Fuel", "Heading", "Kraftstoff");
             Tankbook.WaitForStatistic("Electricity", "Heading", "Strom");
             Tankbook.WaitForStatistic("Electricity", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 20,00 kWh/100 km, niedrigster 20,00, höchster 20,00");
