@@ -70,6 +70,7 @@ Robustheit des Austauschs:
   und der nächste Start versucht es erneut.
 - Die Verschiebungen im Austausch werden bei `IOException`/`UnauthorizedAccessException` bis zu zwanzigmal im Abstand von 150 ms (rund drei Sekunden)
   wiederholt, jeweils nach `ClearAllPools()`.
+- Bekannte Einschränkung: Bricht eine Wiederherstellung nach dem Platzieren neuer Belegfotos ab und ist das Journal unlesbar (und gab es vorher kein Belegverzeichnis), bleiben die neuen Fotos neben dem alten Datenbestand liegen; es geht nichts verloren. Ein dauerhaft fehlschlagendes Zurücknehmen verzögert jeden Dienstaufruf um etwa drei Sekunden je Verschiebung und wird nur protokolliert.
 - Offen und bewusst akzeptiert: Es gibt keine gemeinsame Sperre zwischen `BackupService` und den übrigen Diensten, die über
   `IDbContextFactory` parallel Verbindungen öffnen. Hält eine solche Verbindung die Datei länger als die Wiederholungen, scheitert das
   Verschieben (Windows) und der Rollback gibt den alten Stand zurück (`Failed`); unter iOS kann eine Verbindung auf der verschobenen
