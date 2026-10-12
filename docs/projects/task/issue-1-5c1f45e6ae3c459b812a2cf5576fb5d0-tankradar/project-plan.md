@@ -537,6 +537,12 @@ per FlaUI die Anzeige der Kennzahlen nach dem Erfassen von Vorgängen. Nach Absc
 startfähiger Windows-Zwischenstand unter `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root
 abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 13:**
+
+- Anwenderhilfe Tankbuch: die in ADR 0009 dokumentierte Rundungsausnahme bei der Plausibilitätsprüfung (Betrag/Menge/Preis) nennen.
+- Hinweistext bei einer Teilbetankung vor dem ersten Vollvorgang präzisieren.
+- Optional: fehlende Tests für die Bildsignatur `mif1` (DetectExtension) und den Löschfehler-Zweig in `TankbookEntriesViewModel` ergänzen.
+
 **Abhängigkeiten:** 13
 
 **Betroffene Bereiche:** Tankbuch, Statistik, Diagramme
