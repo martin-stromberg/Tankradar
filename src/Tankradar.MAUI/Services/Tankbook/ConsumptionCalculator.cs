@@ -7,6 +7,7 @@ namespace Tankradar.MAUI.Services.Tankbook;
 /// Ein voller Vorgang mit einem vorherigen vollen Vorgang derselben Art erhält
 /// (Menge + Mengen der Teilbetankungen dazwischen) / gefahrene Strecke × 100, auf 2 Nachkommastellen gerundet.
 /// Teilbetankungen erhalten keinen eigenen Wert; Teilbetankungen vor dem ersten vollen Vorgang fließen nicht ein.
+/// Bei berechnetem Verbrauch werden zusätzlich Menge und Kosten des Intervalls (voller Vorgang plus Teilbetankungen dazwischen) geliefert.
 /// </summary>
 public static class ConsumptionCalculator
 {
@@ -23,6 +24,7 @@ public static class ConsumptionCalculator
         var ordered = entries.OrderBy(entry => entry, TankbookEntryOrder.Ascending).ToList();
         var lastFull = new Dictionary<TankbookEntryKind, TankbookEntry>();
         var partialSums = new Dictionary<TankbookEntryKind, decimal>();
+        var partialCosts = new Dictionary<TankbookEntryKind, decimal>();
         var result = new List<TankbookEntryOverview>(ordered.Count);
         foreach (var entry in ordered)
         {
@@ -31,6 +33,7 @@ public static class ConsumptionCalculator
                 if (lastFull.ContainsKey(entry.Kind))
                 {
                     partialSums[entry.Kind] = partialSums.GetValueOrDefault(entry.Kind) + entry.Quantity;
+                    partialCosts[entry.Kind] = partialCosts.GetValueOrDefault(entry.Kind) + entry.TotalAmount;
                 }
 
                 result.Add(new TankbookEntryOverview(entry, null, null, TankbookConsumptionState.Partial));
@@ -52,12 +55,14 @@ public static class ConsumptionCalculator
                 {
                     var quantity = entry.Quantity + partialSums.GetValueOrDefault(entry.Kind);
                     var consumption = Math.Round(quantity / distance * 100m, ConsumptionDecimals, MidpointRounding.AwayFromZero);
-                    result.Add(new TankbookEntryOverview(entry, distance, consumption, TankbookConsumptionState.Calculated));
+                    var cost = entry.TotalAmount + partialCosts.GetValueOrDefault(entry.Kind);
+                    result.Add(new TankbookEntryOverview(entry, distance, consumption, TankbookConsumptionState.Calculated, quantity, cost));
                 }
             }
 
             lastFull[entry.Kind] = entry;
             partialSums[entry.Kind] = 0m;
+            partialCosts[entry.Kind] = 0m;
         }
 
         return result;

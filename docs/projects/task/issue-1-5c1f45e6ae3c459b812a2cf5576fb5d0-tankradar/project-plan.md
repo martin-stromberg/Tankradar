@@ -577,6 +577,12 @@ ab, per FlaUI außerdem den Ablauf „Sicherung erstellen – Daten ändern – 
 wiederherstellen – Sicherung löschen". Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter
 `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 14:**
+
+- ADR 0010 ergänzen: Verbrauchsverlauf steht anders als im Entwurf nicht in der Monatskarte auf eigener Fläche, vorletzter Balken nicht abgestuft; Begründung „keine Symbole“ präzisieren (Symbole sind laut ADR 0004 als Vektorpfade möglich).
+- Kachelzahlen mit vier Stellen vor dem Komma (z. B. „9.989,00“) brechen bei 360–375 pt mitten in der Zahl um: Zahl nicht umbrechen lassen (z. B. Schrift verkleinern oder Einheit unter die Zahl).
+- Sichtprüfung der Auswertung (hell/dunkel, 360/390 pt) bei eingeschaltetem Bildschirm nachholen; sie war in der Abnahme nicht möglich.
+
 **Abhängigkeiten:** 11, 14
 
 **Betroffene Bereiche:** Sicherung, Wiederherstellung, Sicherungsverwaltung, Datenhaltung, Einstellungen, Fahrzeuge

@@ -35,6 +35,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     /// <param name="entryService">Der Dienst der Vorgänge.</param>
     /// <param name="photoStore">Die Ablage der Belegfotos (Anzeige der Belege).</param>
     /// <param name="form">Das Formular zum Erfassen und Korrigieren.</param>
+    /// <param name="statistics">Der Bereich „Auswertung“.</param>
     /// <param name="navigator">Schließt die Seite, wenn das Fahrzeug nicht mehr existiert.</param>
     /// <param name="announcer">Sagt Rückfragen und Meldungen über die Sprachausgabe an.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
@@ -43,6 +44,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         ITankbookEntryService entryService,
         IReceiptPhotoStore photoStore,
         TankbookEntryFormViewModel form,
+        TankbookStatisticsViewModel statistics,
         ITankbookNavigator navigator,
         IScreenReaderAnnouncer announcer,
         ILogger<TankbookEntriesViewModel> logger)
@@ -54,6 +56,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         _announcer = announcer;
         _logger = logger;
         Form = form;
+        Statistics = statistics;
         Form.Saved += OnFormSaved;
         Title = TankbookEntryTexts.PageTitle;
         LastTask = Task.CompletedTask;
@@ -69,6 +72,11 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     /// Das Formular zum Erfassen und Korrigieren.
     /// </summary>
     public TankbookEntryFormViewModel Form { get; }
+
+    /// <summary>
+    /// Der Bereich „Auswertung“ des Fahrzeugs.
+    /// </summary>
+    public TankbookStatisticsViewModel Statistics { get; }
 
     /// <summary>
     /// Das Fahrzeug; <see langword="null"/>, solange es nicht geladen ist.
@@ -234,6 +242,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     {
         _vehicleId = vehicleId;
         Form.Cancel();
+        Statistics.Reset();
         Vehicle = null;
         Entries = [];
         IsLoaded = false;
@@ -293,6 +302,8 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
             {
                 StatusMessage = null;
             }
+
+            await Statistics.LoadAsync(vehicleId).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

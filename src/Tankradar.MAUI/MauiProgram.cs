@@ -67,6 +67,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
         builder.Services.AddSingleton<IVehicleService, VehicleService>();
         builder.Services.AddSingleton<ITankbookEntryService, TankbookEntryService>();
+        builder.Services.AddSingleton<ITankbookStatisticsService, TankbookStatisticsService>();
         builder.Services.AddSingleton<IReceiptPhotoPicker>(_ => ReceiptPhotoPickerSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiReceiptPhotoPicker()));
@@ -82,6 +83,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookViewModel>();
         builder.Services.AddTransient<TankbookEntriesViewModel>();
         builder.Services.AddTransient<TankbookEntryFormViewModel>();
+        builder.Services.AddTransient<TankbookStatisticsViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();

@@ -91,6 +91,6 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
 
 ## Folgen
 
-- Schritt 14 wertet die Vorgänge aus (Monatsanalyse, Verlauf) und nutzt dafür `ConsumptionCalculator` und `TankbookEntryOrder`.
+- Schritt 14 wertet die Vorgänge aus (Monatsanalyse, Verlauf) und nutzt dafür `ConsumptionCalculator` und `TankbookEntryOrder` (siehe [ADR 0010](0010-tankbook-statistics.md)).
 - Schritt 15 (Sicherung) muss die Belegfotos aus `receipts/` mitsichern; die Vorgänge referenzieren sie nur per Dateinamen.
 - Unter Windows kann die Vorschau eines HEIC-Fotos ohne HEIF-Erweiterung leer bleiben; das Foto bleibt gespeichert.

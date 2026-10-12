@@ -22,7 +22,7 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 11 | Startseite mit Favoritengruppen und Bereich „In der Nähe" | 5, 6, 10 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-11-startseite` | Fertig |
 | 12 | Fahrzeugverwaltung im Tankbuch | 4 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-12-fahrzeuge` | Fertig |
 | 13 | Tank- und Ladevorgänge erfassen | 10, 11, 12 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-13-tankvorgaenge` | Fertig |
-| 14 | Verbrauchs- und Kostenauswertung | 13 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-14-auswertung` | Offen |
+| 14 | Verbrauchs- und Kostenauswertung | 13 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-14-auswertung` | Fertig |
 | 15 | Lokale Sicherung und Wiederherstellung | 11, 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15-sicherung` | Offen |
 | 16 | Export des Tankbuchs als CSV oder PDF | 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-16-export` | Offen |
 | 17 | Tankstellen entlang einer Route | 7, 9 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-17-route` | Offen |
