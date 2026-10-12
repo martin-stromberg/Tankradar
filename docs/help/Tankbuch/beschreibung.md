@@ -58,7 +58,7 @@ Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die n
 
 Unter dem Formular zeigt die Seite **Tank- und Ladevorgänge** den Bereich **Auswertung** des Fahrzeugs. Hybridfahrzeuge haben je einen Block für **Kraftstoff** (L) und **Strom** (kWh); die Werte beider Arten werden nie vermischt. Fahrzeuge mit nur einer Art zeigen einen Block.
 
-Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und **Kosten / 100 km**), der Karte **Monatsanalyse** mit den **Gesamtkosten des laufenden Monats** und der in diesem Monat getankten bzw. geladenen Menge (z. B. „81,55 €“ und „41,00 L getankt“), dem **Verbrauchsverlauf**, dem **Kostenverlauf** und der Liste der **Monatskosten**. Auf einem schmalen Bildschirm steht die Einheit unter der Zahl, wenn sie daneben nicht mehr Platz hat.
+Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und **Kosten / 100 km**), der Karte **Monatsanalyse** mit den **Gesamtkosten des laufenden Monats** und der in diesem Monat getankten bzw. geladenen Menge (z. B. „81,55 €“ und „41,00 L getankt“), dem **Verbrauchsverlauf**, dem **Kostenverlauf** und der Liste der **Monatskosten**. Auf einem schmalen Bildschirm steht die Einheit unter der Zahl, wenn sie daneben nicht mehr Platz hat. Die großen Zahlen bleiben dabei einzeilig; sehr lange Werte (z. B. „9.989,00“) werden in der Schrift etwas kleiner dargestellt, statt umzubrechen.
 
 - **Ø Verbrauch:** Summe der Mengen aller berechneten Intervalle geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen. Längere Strecken zählen dadurch stärker als kurze. Ein Intervall reicht von einem vollen Vorgang zum nächsten; die Mengen dazwischenliegender Teilbetankungen gehören dazu. Intervalle ohne Strecke gehen nicht ein.
 - **Kosten pro 100 km:** Summe der Kosten derselben Intervalle (voller Vorgang plus Teilbetankungen dazwischen) geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen.
@@ -90,7 +90,7 @@ Mit **Foto auswählen** übernehmen Sie ein Foto aus der Fotomediathek. Mit **Fo
 
 Vor dem Löschen fragt Tankatlas immer nach, direkt im Eintrag:
 
-- **Fahrzeug:** Ohne Vorgänge lautet die Frage „Fahrzeug „Name“ löschen?“ mit **Ja, löschen** und **Abbrechen**. Hat das Fahrzeug Vorgänge, nennt die Frage deren Zahl und sagt ausdrücklich, dass sie endgültig mitgelöscht werden; die Bestätigung heißt dann **Fahrzeug und Vorgänge löschen**. Beim Bestätigen zählt Tankatlas die Vorgänge erneut. Ist inzwischen ein Vorgang hinzugekommen, wird nichts gelöscht; die Frage nennt die neue Zahl und muss noch einmal bestätigt werden.
+- **Fahrzeug:** Ohne Vorgänge lautet die Frage „Fahrzeug „Name“ löschen?“ mit **Ja, löschen** und **Abbrechen**. Hat das Fahrzeug Vorgänge, nennt die Frage deren Zahl und sagt ausdrücklich, dass sie endgültig mitgelöscht werden; die Bestätigung heißt dann **Fahrzeug und Vorgänge löschen**. Die Frage rät außerdem: „Erstelle vorher in den Optionen eine Sicherung, wenn du die Vorgänge behalten möchtest.“ (siehe [Sicherung](../Sicherung/index.md)). Beim Bestätigen zählt Tankatlas die Vorgänge erneut. Ist inzwischen ein Vorgang hinzugekommen, wird nichts gelöscht; die Frage nennt die neue Zahl und muss noch einmal bestätigt werden.
 - **Vorgang:** „Vorgang vom 18.05.2026, 14:30 (Alpha Tankstelle) löschen? Das lässt sich nicht rückgängig machen.“ mit **Ja, löschen** und **Abbrechen**. Das Belegfoto wird mitgelöscht.
 
 ## Barrierefreiheit

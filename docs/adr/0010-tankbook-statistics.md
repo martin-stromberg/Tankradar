@@ -132,8 +132,14 @@ Der Entwurf `tankbuch_verbrauchsauswertung` (hell und dunkel) ist Grundlage und 
 - **Keine Benchmarklinie und kein Ziel („Ziel: 5,50 L“).** Im Datenmodell gibt es keinen Zielwert.
 - **Keine Trendzeilen gegenüber dem Vormonat** („-0,3 L ggü. Vormonat“, „Stabil“) und keine Plakette „Effizient“: Dafür gibt es
   keine fachliche Regel in der Anforderung.
-- **Keine Symbole** in Kacheln und Karte (Tank-, Münz- und Kalendersymbol des Entwurfs): Die App bindet keine Symbolschrift ein, und
-  eine neue Ressource wäre ohne Mehrwert für die Aussage; die Beschriftungen tragen die Information.
+- **Keine Symbole** in Kacheln und Karte (Tank-, Münz- und Kalendersymbol des Entwurfs). Symbole wären laut
+  [ADR 0004](0004-station-detail-design-deviations.md) als Vektorpfade ohne neue Ressource möglich; verzichtet wird, weil die
+  Information vollständig in den Beschriftungen steckt, die Symbole für die Sprachausgabe ohne Wert wären und die Kacheln
+  auf 360 pt Breite dichter würden.
+- **Verbrauchsverlauf nicht auf der Fläche der Monatskarte und ohne Abstufung.** Im Entwurf steht das Balkendiagramm innerhalb
+  der Monatskarte, und ältere Balken sind in mehreren Stufen abgeschwächt. Hier steht der Verlauf als eigener Abschnitt unter den
+  Kacheln (er zeigt Vorgänge, nicht den Monat), und es gibt nur zwei Zustände: letzter Balken in der Akzentfarbe, ältere Balken in
+  einer einheitlich helleren Farbe mit mindestens 3:1 Kontrast zur Fläche.
 - **Fahrzeug-Dropdown und „Aktives Fahrzeug“-Karte:** Das Fahrzeug bestimmt die Seite (ADR 0009).
 - **Achsenbeschriftung** steht mit Datum bzw. Monat unter höchstens vier Balken (der Entwurf nennt „Mär“, „Apr“ …); der
   Kostenverlauf (Monatskosten als Balken) und die Monatsliste kommen zusätzlich zum Entwurf, weil die Anforderung einen
@@ -147,3 +153,10 @@ Der Entwurf `tankbuch_verbrauchsauswertung` (hell und dunkel) ist Grundlage und 
   Kennzahlen und die Existenz der Diagramm-AutomationIds (ohne Werte deren Fehlen), die Geometrie samt Randausrichtung ist
   unit-getestet.
 - Eine Zeitzonen- oder Sommerzeitumstellung verschiebt keine Monatsgrenzen, weil Zeitpunkte als Wanduhrzeit gespeichert werden.
+- **Kachelzahlen ohne Umbruch (Schritt 15).** Die großen Zahlen der Kacheln stehen mit `LineBreakMode="NoWrap"` und verkleinern sich
+  nach Länge (`StatisticsTileFont`: bis 6 Zeichen 28 pt, 7 Zeichen 24 pt, 8 Zeichen 21 pt, darüber 18 pt), damit auch Werte
+  wie „9.989,00“ oder „14.984,00“ auf 360 bis 390 pt Breite einzeilig bleiben; die Einheit bricht weiter unter die Zahl. Der
+  Betrag der Monatskarte erhält `NoWrap`. Die Schriftgröße ist unit-getestet, die Einzeiligkeit per FlaUI
+  (`TankbookStatisticsE2ETests_TileNumbers`).
+- **Offen: Sichtprüfung.** Das Aussehen der Auswertung (Kacheln, Diagramme in Hell- und Dunkelmodus, Schriftanpassung) ist bisher
+  nur über Geometrie, Texte und AutomationIds geprüft, nicht visuell am Gerät. Sie bleibt Teil der Abnahme auf dem iPhone.
