@@ -219,8 +219,9 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
 
     private sealed class ThrowingStatisticsService : ITankbookStatisticsService
     {
-        public Task<TankbookStatisticsLoad> GetStatisticsAsync(long vehicleId, CancellationToken cancellationToken = default)
+        public async Task<TankbookStatisticsLoad> GetStatisticsAsync(long vehicleId, CancellationToken cancellationToken = default)
         {
+            await Task.Yield();
             throw new InvalidOperationException("Geheim 10500");
         }
     }
