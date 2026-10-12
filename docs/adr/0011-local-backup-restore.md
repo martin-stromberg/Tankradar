@@ -24,9 +24,16 @@ Eine Sicherung ist eine ZIP-Datei `tankatlas-backup-<JJJJMMTT-HHmmss>[-n].zip` i
 - `database/tankatlas.db`, ein konsistenter Schnappschuss,
 - `receipts/<Kennung>.<Endung>` für jedes gültige Belegfoto (Namensregeln von `ReceiptPhotoStore`).
 
-Die Datenbank wird mit dem SQLite-Online-Backup (`SqliteConnection.BackupDatabase`, Teil von `Microsoft.Data.Sqlite`) in eine
-temporäre Datei kopiert, nicht per Dateikopie. So ist der Stand auch bei laufender App und WAL-Modus konsistent. Das Archiv
-entsteht als `.tmp` und wird erst am Ende umbenannt; ein Fehler (Platte voll, Zugriff verweigert) hinterlässt keine halbe Datei.
+Die Datenbank wird mit `VACUUM INTO` in eine temporäre Datei geschrieben, nicht per Dateikopie. So ist der Stand auch bei
+laufender App und WAL-Modus konsistent. Anders als das Online-Backup (`BackupDatabase`) kopiert `VACUUM INTO` keine Seiten
+unverändert, sondern baut die Datenbank aus den lebenden Zeilen neu auf: Gelöschte Inhalte (zum Beispiel ein gelöschtes Fahrzeug
+oder dessen Notizen) bleiben nicht in freigegebenen Seiten lesbar. Das ist wichtig, weil Sicherungen unverschlüsselt geteilt werden
+können; ein Test sucht eine gelöschte Zeichenkette in der Sicherung. Das Archiv entsteht als `.tmp` und wird erst am Ende
+umbenannt; ein Fehler (Platte voll, Zugriff verweigert) hinterlässt keine halbe Datei.
+
+Die Erstellung prüft das fertige Archiv mit derselben Strukturprüfung wie die Wiederherstellung (Eintrags-, Größen- und
+Summengrenzen, zum Beispiel ein Belegfoto über `MaxReceiptPhotoBytes`). Überschreitet eine Sicherung diese Grenzen, wird sie nicht
+abgelegt (`Failed`), statt eine Datei zu erzeugen, die später abgelehnt würde.
 
 ### Umfang: Was nicht gesichert wird
 
@@ -52,10 +59,12 @@ So kann eine ältere App keine neuere Datenbank „verbiegen“, und eine neuere
 
 Alle fehleranfälligen Schritte laufen vor dem ersten Eingriff in die Livedaten: Validierung, Entpacken in
 `restore-staging/<Guid>/` (gleiches Volumen), Prüfsummen, `PRAGMA integrity_check`, Migration der Staging-Datenbank,
-`PRAGMA foreign_key_check`. Erst dann tauscht `RestoreSwap` aus, und zwar nur durch Umbenennen: Journal `restore.journal`
+Schemavergleich (siehe „Sicherheit der Eingabedatei“), `PRAGMA foreign_key_check`. Erst dann tauscht `RestoreSwap` aus, und zwar nur durch Umbenennen: Journal `restore.journal`
 schreiben, `ClearAllPools()`, Datenbank samt `-wal`/`-shm` und `receipts/` nach `restore-rollback/` verschieben, Staging-Stand
 an die Zielorte verschieben, Dateischutz anwenden, Journal löschen (Commit-Punkt). Bei jeder Ausnahme gibt der Rollback den alten
-Stand zurück. Stürzt der Prozess ab, nimmt `DatabaseInitializer` beim nächsten Start über `IRestoreRecovery` den Austausch anhand des
+Stand zurück. Die Datenbank kommt im Journalmodus `DELETE` an (damit keine fremden `-wal`/`-shm` mitkommen); nach dem Commit setzt
+`BackupService` einmal `PRAGMA journal_mode=WAL`, sodass die Datenbank wieder im WAL-Modus der Normalkonfiguration läuft (getestet am
+Dateikopf). Scheitert das, bleibt die Datenbank funktionsfähig im Modus `DELETE`. Stürzt der Prozess ab, nimmt `DatabaseInitializer` beim nächsten Start über `IRestoreRecovery` den Austausch anhand des
 Journals zurück und räumt verwaiste Verzeichnisse auf. Die Fehlerinjektion an jedem Schritt (Hook im Konstruktor von `RestoreSwap`)
 und ein simulierter Absturz sind integrationsgetestet.
 
@@ -65,6 +74,7 @@ Robustheit des Austauschs:
 - Existiert beim Start einer Wiederherstellung noch ein Journal (früherer Austausch nicht abgeschlossen und nicht zurückgenommen), nimmt
   `RestoreSwap` zuerst diesen Austausch zurück. Misslingt das, endet die Wiederherstellung mit `Failed`; `restore-rollback/` (die
   einzige Kopie des alten Stands) und das Journal bleiben erhalten und werden nie gelöscht, solange ein Journal besteht.
+- `RestoreSwap.Undo` gibt die Hauptdatei vor `-wal`/`-shm` zurück. Bricht ein Undo dazwischen ab, gilt die Hauptdatei beim nächsten Durchlauf nicht mehr als verschoben, und die bereits zurückgegebene `-wal` wird nicht als Rest der neuen Datenbank gelöscht (Test mit gesperrter `-wal`).
 - `RestoreSwap.Undo` löscht ohne lesbares Journal nie etwas, sondern gibt nur die Rücksicherung zurück; das Journal entsteht vor dem Rollback-Block, ein Schreibfehler löst kein Undo aus. Undo verschiebt über `MoveWithRetry`.
 - `RestoreRecovery` wirft bei erfolglosem Zurücknehmen eine `IOException`: Die Initialisierung scheitert (neuer Versuch möglich), `MigrateAsync` läuft nie auf dem Zwischenstand. Journal und Rücksicherung bleiben bestehen,
   und der nächste Start versucht es erneut.
@@ -92,6 +102,16 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
 - **Grenzen gegen Zip-Bomben** (`BackupLimits`): höchstens 20.000 Einträge, 2 GiB Gesamtgröße, 1 GiB Datenbank, 1 MiB Manifest,
   Foto höchstens `MaxReceiptPhotoBytes`; die tatsächlich gelesenen Bytes dürfen die deklarierte Größe nicht überschreiten.
 - **Prüfsummen** (SHA-256) aller Dateien und die Fotosignatur (`DetectExtension`) beim Import und beim Entpacken.
+  Prüfsummen schützen nur vor Beschädigung, nicht vor Manipulation: Wer eine Datei ändert, rechnet sie neu.
+- **Schemavergleich** (`BackupDatabasePreparer`, `BackupSchemaDescriber`): Nach der Migration der entpackten Datenbank wird deren Schema
+  mit einer frisch mit derselben Migrationskette angelegten Referenzdatenbank verglichen (Objekte aus `sqlite_master`, Spalten per
+  `pragma_table_xinfo`, Indizes samt Spalten, Fremdschlüssel; bei Triggern und Views zusätzlich der Text). Jede Abweichung (zusätzlicher
+  Trigger, zusätzliche View, fehlende oder zusätzliche Tabelle, Spalte oder Index) führt zu `InvalidFile`, bevor irgendetwas die
+  Livedaten berührt. Tabellen- und Indextext wird bewusst nicht verglichen, weil er je nach App-Version, die die Datenbank angelegt hat,
+  abweichen kann. Dieselbe Prüfung läuft schon beim Einspielen einer externen Datei (Entpacken ins Staging, Vorbereitung, Aufräumen):
+  Eine solche Datei kommt gar nicht erst in die Liste, und die Meldung „gültige Sicherung“ erscheint erst danach. Getestet mit
+  Integrations- und E2E-Tests für alle sechs Manipulationen bei gültigem Manifest und gültigen Prüfsummen. Nicht geprüft werden
+  Zeileninhalte (die Daten einer Sicherung gelten als Nutzerdaten) und Einschränkungen, die nur im Tabellentext stehen (etwa `CHECK`).
 - **Dateinamen** für Löschen, Teilen und Wiederherstellen müssen dem Muster `tankatlas-backup-*.zip` entsprechen und dürfen
   keine Pfadanteile haben; sonst gilt die Sicherung als nicht gefunden.
 
@@ -114,6 +134,14 @@ unverändert; `System.IO.Compression` und `System.Text.Json` gehören zur Laufze
 
 Hat ein Fahrzeug Vorgänge, ergänzt die Löschrückfrage den Satz „Erstelle vorher in den Optionen eine Sicherung, wenn du die
 Vorgänge behalten möchtest.“ Das verbindet den Bereich Tankbuch mit der neuen Funktion, ohne die Löschlogik zu ändern.
+
+### Ablage unter iOS und iCloud-Gerätebackup
+
+Das Verzeichnis `backups/` liegt unter `FileSystem.AppDataDirectory` (iOS: `Library`) und wird damit wie die Datenbank vom
+Gerätebackup des Systems (iCloud oder Computer) erfasst. Das ist keine Übertragung durch die App, sondern eine Einstellung des
+Anwenders am Gerät. Entscheidung: **Sicherungen werden nicht vom Gerätebackup ausgenommen.** Sie sind ein zusätzlicher Schutz (die
+Datenbank steckt ohnehin im Gerätebackup, die Sicherungen sind nicht sensibler), und ein Ausschluss über
+`NSUrl.SetResource(ExcludedFromBackup)` würde Sicherungen bei einem Gerätewechsel ohne Not verlieren. Die Hilfe nennt das.
 
 ## Abweichungen vom Designentwurf
 

@@ -35,11 +35,11 @@ Vor dem Überschreiben fragt Tankatlas im Eintrag nach und nennt Datum, App-Vers
 
 - **Löschen** fragt nach („Die Sicherungsdatei wird endgültig gelöscht. Deine aktuellen Daten bleiben unverändert.“) und entfernt nur die Sicherungsdatei.
 - **Teilen** öffnet die Systemfunktion zum Weitergeben oder Speichern (unter iOS „In Dateien sichern“, unter Windows der Freigabedialog). Tankatlas überträgt die Datei nicht selbst.
-- **Sicherung aus Datei einspielen** öffnet die Dateiauswahl. Eine gültige Datei wird geprüft und in die Liste übernommen („Die Datei ist eine gültige Sicherung und wurde in die Liste übernommen.“); anschließend erscheint gleich die Rückfrage zur Wiederherstellung. Ein Abbruch der Auswahl verändert nichts.
+- **Sicherung aus Datei einspielen** öffnet die Dateiauswahl. Eine gültige Datei wird vollständig geprüft (einschließlich der Datenbank) und in die Liste übernommen („Die Datei ist eine gültige Sicherung und wurde in die Liste übernommen.“); anschließend erscheint gleich die Rückfrage zur Wiederherstellung. Ein Abbruch der Auswahl verändert nichts.
 
 ## Datenschutz und Sicherheit
 
-Sicherungen entstehen nur auf Ihre Veranlassung und liegen nur auf diesem Gerät. **Die Dateien sind nicht verschlüsselt** und enthalten Fahrdaten und Belege. Eine geteilte oder gespeicherte Kopie liegt außerhalb des Dateischutzes der App; geben Sie sie nur an Orte, denen Sie vertrauen. Eingespielte Dateien werden streng geprüft (nur erlaubte Inhalte, Größen- und Prüfsummenkontrolle), bevor sie etwas verändern.
+Sicherungen entstehen nur auf Ihre Veranlassung und liegen nur auf diesem Gerät. **Die Dateien sind nicht verschlüsselt** und enthalten Fahrdaten und Belege. Eine geteilte oder gespeicherte Kopie liegt außerhalb des Dateischutzes der App; geben Sie sie nur an Orte, denen Sie vertrauen. Eingespielte Dateien werden streng geprüft (nur erlaubte Inhalte, Größen- und Prüfsummenkontrolle, die Datenbank muss dem Aufbau der App entsprechen), bevor sie etwas verändern; Dateien mit fremdem Datenbankaufbau, zusätzlichen Triggern oder Ansichten werden abgelehnt. Auf dem iPhone gehört der Ordner mit den Sicherungen wie die App-Daten zum Gerätebackup des Systems (iCloud oder Computer), sofern Sie dieses eingeschaltet haben; die App selbst überträgt nichts.
 
 ## Hinweis beim Löschen eines Fahrzeugs
 

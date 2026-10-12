@@ -51,6 +51,10 @@ public sealed class RestoreSwap
 
     private static readonly string[] DatabaseSuffixes = ["-wal", "-shm", string.Empty];
 
+    // Beim Zurücknehmen kommt die Hauptdatei zuerst zurück: Bricht ein Undo danach ab, gilt sie beim nächsten Mal nicht mehr als verschoben (kein Löschen der neuen Datenbank samt -wal),
+    // und eine bereits zurückgegebene -wal wird nicht von einem zweiten Durchlauf als Rest der neuen Datenbank gelöscht.
+    private static readonly string[] UndoSuffixes = [string.Empty, "-wal", "-shm"];
+
     private readonly string _dataDirectory;
     private readonly IDatabaseFileProtector _protector;
     private readonly Action<string>? _afterStep;
@@ -175,7 +179,7 @@ public sealed class RestoreSwap
         var removeNewDatabase = journal is not null && (mainMoved || !journal.HadDatabase);
         var removeNewReceipts = journal is not null && !receiptsMoved && !journal.HadReceipts;
 
-        foreach (var suffix in DatabaseSuffixes)
+        foreach (var suffix in UndoSuffixes)
         {
             var saved = Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix);
             var target = databasePath + suffix;

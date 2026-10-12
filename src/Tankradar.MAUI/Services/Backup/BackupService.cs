@@ -85,6 +85,15 @@ public sealed class BackupService : IBackupService
             var finalPath = GetUniquePath(directory, now);
             tempPath = finalPath + BackupFormat.TempExtension;
             await BackupArchiveWriter.WriteAsync(tempPath, snapshotPath, Path.Combine(dataDirectory, ReceiptPhotoStore.DirectoryName), header, cancellationToken).ConfigureAwait(false);
+
+            // Es wird keine Sicherung abgelegt, die die Wiederherstellung später ablehnen würde (Größen- und Mengengrenzen, Struktur).
+            var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
+            if (BackupArchiveValidator.Validate(tempPath, known).Result != BackupResult.Ok)
+            {
+                _logger.LogWarning("Die Sicherung überschreitet die Grenzen der Wiederherstellung und wird nicht abgelegt.");
+                return new BackupOutcome(BackupResult.Failed);
+            }
+
             File.Move(tempPath, finalPath);
             tempPath = null;
             _protector.ProtectFile(finalPath);
@@ -197,19 +206,14 @@ public sealed class BackupService : IBackupService
 
             var dataDirectory = _paths.GetDataDirectory();
             staging = Path.Combine(dataDirectory, BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var extracted = await BackupArchiveValidator.ExtractAsync(path, validation.Manifest, staging, cancellationToken).ConfigureAwait(false);
-            if (extracted != BackupResult.Ok)
+            var staged = await StageAsync(path, validation.Manifest, staging, cancellationToken).ConfigureAwait(false);
+            if (staged != BackupResult.Ok)
             {
-                return extracted;
-            }
-
-            var prepared = await PrepareDatabaseAsync(Path.Combine(staging, TankradarDbContext.DatabaseFileName), validation.Manifest, cancellationToken).ConfigureAwait(false);
-            if (prepared != BackupResult.Ok)
-            {
-                return prepared;
+                return staged;
             }
 
             new RestoreSwap(dataDirectory, _protector, _swapHook).Execute(staging);
+            RestoreWalMode(TankradarDbContext.GetDatabasePath(dataDirectory));
             _priceCache?.InvalidateCaches();
             return BackupResult.Ok;
         }
@@ -236,8 +240,10 @@ public sealed class BackupService : IBackupService
         }
 
         string? tempPath = null;
+        string? staging = null;
         try
         {
+            await _initializer.InitializeAsync().ConfigureAwait(false);
             var directory = GetBackupDirectory();
             Directory.CreateDirectory(directory);
             tempPath = Path.Combine(directory, "import-" + Guid.NewGuid().ToString("N") + BackupFormat.TempExtension);
@@ -253,9 +259,12 @@ public sealed class BackupService : IBackupService
                 return validation;
             }
 
-            if (await BackupArchiveValidator.VerifyContentAsync(tempPath, validation.Manifest, cancellationToken).ConfigureAwait(false) != BackupResult.Ok)
+            // Eine externe Datei gilt erst als gültige Sicherung, wenn auch ihre Datenbank die Prüfung der Wiederherstellung besteht (Prüfsummen, Migration, Schema).
+            staging = Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
+            var staged = await StageAsync(tempPath, validation.Manifest, staging, cancellationToken).ConfigureAwait(false);
+            if (staged != BackupResult.Ok)
             {
-                return new BackupOutcome(BackupResult.InvalidFile);
+                return new BackupOutcome(staged);
             }
 
             var finalPath = GetUniquePath(directory, DateTime.SpecifyKind(validation.Manifest.CreatedUtc, DateTimeKind.Utc));
@@ -272,6 +281,8 @@ public sealed class BackupService : IBackupService
         finally
         {
             BackupFileCleanup.DeleteFile(tempPath);
+            BackupFileCleanup.DeleteDirectory(staging);
+            BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
             _gate.Release();
         }
     }
@@ -406,11 +417,19 @@ public sealed class BackupService : IBackupService
     {
         var sourceConnection = TankradarDbContext.BuildConnectionString(databasePath, pooling: false);
         var targetConnection = new SqliteConnectionStringBuilder { DataSource = snapshotPath, Pooling = false }.ToString();
-        using var source = new SqliteConnection(sourceConnection);
+        using (var source = new SqliteConnection(sourceConnection))
+        {
+            source.Open();
+
+            // VACUUM INTO schreibt einen konsistenten, kompakten Schnappschuss nur mit den lebenden Seiten; gelöschte Inhalte aus freigegebenen Seiten gelangen nicht in die Datei (ADR 0011).
+            using var vacuum = source.CreateCommand();
+            vacuum.CommandText = "VACUUM INTO $path";
+            vacuum.Parameters.AddWithValue("$path", snapshotPath);
+            vacuum.ExecuteNonQuery();
+        }
+
         using var target = new SqliteConnection(targetConnection);
-        source.Open();
         target.Open();
-        source.BackupDatabase(target);
         using (var command = target.CreateCommand())
         {
             command.CommandText = "PRAGMA journal_mode=DELETE";
@@ -421,68 +440,33 @@ public sealed class BackupService : IBackupService
         return new BackupManifest { DatabaseMigration = info.Migration, Counts = info.Counts };
     }
 
-    private async Task<BackupResult> PrepareDatabaseAsync(string databasePath, BackupManifest manifest, CancellationToken cancellationToken)
+    private static async Task<BackupResult> StageAsync(string zipPath, BackupManifest manifest, string staging, CancellationToken cancellationToken)
     {
-        try
+        var extracted = await BackupArchiveValidator.ExtractAsync(zipPath, manifest, staging, cancellationToken).ConfigureAwait(false);
+        if (extracted != BackupResult.Ok)
         {
-            var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString();
-            await using (var connection = new SqliteConnection(connectionString))
-            {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                if (!await IsIntegrityOkAsync(connection, cancellationToken).ConfigureAwait(false))
-                {
-                    return BackupResult.InvalidFile;
-                }
-
-                await using var command = connection.CreateCommand();
-                command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId DESC LIMIT 1";
-                var latest = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
-                if (!string.Equals(latest, manifest.DatabaseMigration, StringComparison.Ordinal))
-                {
-                    return BackupResult.InvalidFile;
-                }
-            }
-
-            var options = new DbContextOptionsBuilder<TankradarDbContext>().UseSqlite(TankradarDbContext.BuildConnectionString(databasePath, pooling: false)).Options;
-            await using (var context = new TankradarDbContext(options))
-            {
-                await context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            await using (var connection = new SqliteConnection(connectionString))
-            {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                await using var check = connection.CreateCommand();
-                check.CommandText = "PRAGMA foreign_key_check";
-                await using (var reader = await check.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        return BackupResult.InvalidFile;
-                    }
-                }
-
-                await using var mode = connection.CreateCommand();
-                mode.CommandText = "PRAGMA journal_mode=DELETE";
-                await mode.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            BackupFileCleanup.DeleteFile(databasePath + "-wal");
-            BackupFileCleanup.DeleteFile(databasePath + "-shm");
-            return BackupResult.Ok;
+            return extracted;
         }
-        catch (SqliteException)
-        {
-            return BackupResult.InvalidFile;
-        }
+
+        var referenceDirectory = Path.Combine(Path.GetDirectoryName(staging)!, "reference-" + Guid.NewGuid().ToString("N"));
+        return await BackupDatabasePreparer.PrepareAsync(Path.Combine(staging, TankradarDbContext.DatabaseFileName), manifest, referenceDirectory, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task<bool> IsIntegrityOkAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    private void RestoreWalMode(string databasePath)
     {
-        await using var command = connection.CreateCommand();
-        command.CommandText = "PRAGMA integrity_check";
-        var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
-        return string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase);
+        // Die Datenbank kommt im Modus DELETE an (damit keine fremden -wal/-shm mitgeführt werden); die App arbeitet im WAL-Modus, der in der Datei erhalten bleibt.
+        try
+        {
+            using var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = databasePath, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString());
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA journal_mode=WAL";
+            command.ExecuteNonQuery();
+        }
+        catch (SqliteException ex)
+        {
+            _logger.LogWarning("Der WAL-Modus konnte nach der Wiederherstellung nicht gesetzt werden ({ExceptionType}).", ex.GetType().Name);
+        }
     }
 
     private static async Task<bool> CopyLimitedAsync(PickedBackupFile file, string targetPath, CancellationToken cancellationToken)
