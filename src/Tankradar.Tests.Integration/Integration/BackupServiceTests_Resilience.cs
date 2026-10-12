@@ -97,10 +97,10 @@ public class BackupServiceTests_Resilience : IDisposable
     }
 
     /// <summary>
-    /// Prüft, dass der Start mit einem nicht zurücknehmbaren Austausch nicht wirft und die Rücksicherung für den nächsten Start behält.
+    /// Prüft, dass der Start mit einem nicht zurücknehmbaren Austausch klar scheitert (keine Migration auf dem Zwischenstand) und die Rücksicherung für den nächsten Start behält.
     /// </summary>
     [Fact]
-    public async Task Recovery_WhenUndoFails_DoesNotThrowAndKeepsRollback()
+    public async Task Recovery_WhenUndoFails_ThrowsAndKeepsRollback()
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -115,10 +115,66 @@ public class BackupServiceTests_Resilience : IDisposable
         {
             var exception = Record.Exception(() => new RestoreRecovery().RecoverIfNeeded(_environment.DataDirectory));
 
-            Assert.Null(exception);
+            Assert.IsType<IOException>(exception);
             Assert.True(RestoreJournal.Exists(_environment.DataDirectory));
             Assert.True(File.Exists(saved));
         }
+
+        new RestoreRecovery().RecoverIfNeeded(_environment.DataDirectory);
+
+        Assert.Equal(["Golf", "Opel"], await _environment.GetVehicleNamesAsync());
+        Assert.False(RestoreJournal.Exists(_environment.DataDirectory));
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Undo ohne lesbares Journal den lebenden Bestand nie löscht.
+    /// </summary>
+    [Fact]
+    public async Task Undo_WithUnreadableJournal_KeepsLiveData()
+    {
+        var (_, _) = await SeedBackupAndAddVehicleAsync();
+        var before = _environment.Snapshot();
+        File.WriteAllText(RestoreJournal.GetPath(_environment.DataDirectory), "kein json");
+
+        new RestoreRecovery().RecoverIfNeeded(_environment.DataDirectory);
+
+        Assert.Equal(before, _environment.Snapshot());
+        Assert.Equal(["Golf", "Opel"], await _environment.GetVehicleNamesAsync());
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Undo ohne lesbares Journal die Rücksicherung zurückgibt, ohne zusätzlich etwas zu löschen.
+    /// </summary>
+    [Fact]
+    public async Task Undo_WithUnreadableJournal_ReturnsRollbackOnly()
+    {
+        var (_, _) = await SeedBackupAndAddVehicleAsync();
+        CreateInterruptedSwap();
+        File.WriteAllText(RestoreJournal.GetPath(_environment.DataDirectory), "kein json");
+
+        new RestoreRecovery().RecoverIfNeeded(_environment.DataDirectory);
+
+        Assert.Equal(["Golf", "Opel"], await _environment.GetVehicleNamesAsync());
+        Assert.True(File.Exists(Path.Combine(_environment.ReceiptsDirectory, BackupTestEnvironment.PhotoName)));
+        Assert.False(RestoreJournal.Exists(_environment.DataDirectory));
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Fehler beim Schreiben des Journals den Bestand unverändert lässt (kein Undo mit Löschen).
+    /// </summary>
+    [Fact]
+    public async Task Restore_WhenJournalWriteFails_KeepsLiveData()
+    {
+        var (service, name) = await SeedBackupAndAddVehicleAsync();
+        var before = _environment.Snapshot();
+        Directory.CreateDirectory(RestoreJournal.GetPath(_environment.DataDirectory) + BackupFormat.TempExtension);
+
+        var result = await service.RestoreAsync(name);
+
+        Assert.Equal(BackupResult.Failed, result);
+        Assert.Equal(before, _environment.Snapshot());
+        Assert.Equal(["Golf", "Opel"], await _environment.GetVehicleNamesAsync());
+        Assert.False(RestoreJournal.Exists(_environment.DataDirectory));
     }
 
     /// <summary>

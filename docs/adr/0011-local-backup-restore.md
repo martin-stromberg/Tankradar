@@ -65,8 +65,9 @@ Robustheit des Austauschs:
 - Existiert beim Start einer Wiederherstellung noch ein Journal (früherer Austausch nicht abgeschlossen und nicht zurückgenommen), nimmt
   `RestoreSwap` zuerst diesen Austausch zurück. Misslingt das, endet die Wiederherstellung mit `Failed`; `restore-rollback/` (die
   einzige Kopie des alten Stands) und das Journal bleiben erhalten und werden nie gelöscht, solange ein Journal besteht.
-- `RestoreRecovery` fängt jede Ausnahme beim Zurücknehmen ab: Der Start scheitert nie daran. Bleibt das Zurücknehmen erfolglos, bleiben
-  Journal und Rücksicherung bestehen, und der nächste Start versucht es erneut.
+- `RestoreSwap.Undo` löscht ohne lesbares Journal nie etwas, sondern gibt nur die Rücksicherung zurück; das Journal entsteht vor dem Rollback-Block, ein Schreibfehler löst kein Undo aus. Undo verschiebt über `MoveWithRetry`.
+- `RestoreRecovery` wirft bei erfolglosem Zurücknehmen eine `IOException`: Die Initialisierung scheitert (neuer Versuch möglich), `MigrateAsync` läuft nie auf dem Zwischenstand. Journal und Rücksicherung bleiben bestehen,
+  und der nächste Start versucht es erneut.
 - Die Verschiebungen im Austausch werden bei `IOException`/`UnauthorizedAccessException` bis zu zwanzigmal im Abstand von 150 ms (rund drei Sekunden)
   wiederholt, jeweils nach `ClearAllPools()`.
 - Offen und bewusst akzeptiert: Es gibt keine gemeinsame Sperre zwischen `BackupService` und den übrigen Diensten, die über

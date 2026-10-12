@@ -89,9 +89,12 @@ public sealed class RestoreSwap
 
         DeleteDirectoryIfExists(rollbackPath);
         Directory.CreateDirectory(rollbackPath);
+
+        // Das Journal entsteht vor dem ersten Verschieben und außerhalb des Rollback-Blocks: Scheitert das Schreiben, wurde noch nichts verändert,
+        // und es gibt nichts zurückzunehmen (ein Undo ohne Journal darf den lebenden Bestand nie anfassen).
+        RestoreJournal.Write(_dataDirectory, new RestoreJournal { HadDatabase = File.Exists(databasePath), HadReceipts = Directory.Exists(receiptsPath) });
         try
         {
-            RestoreJournal.Write(_dataDirectory, new RestoreJournal { HadDatabase = File.Exists(databasePath), HadReceipts = Directory.Exists(receiptsPath) });
             Step(StepJournal);
 
             foreach (var suffix in DatabaseSuffixes)
@@ -158,7 +161,6 @@ public sealed class RestoreSwap
     /// <param name="dataDirectory">Das Datenverzeichnis.</param>
     public static void Undo(string dataDirectory)
     {
-        SqliteConnection.ClearAllPools();
         var journal = RestoreJournal.Read(dataDirectory);
         var databasePath = TankradarDbContext.GetDatabasePath(dataDirectory);
         var receiptsPath = Path.Combine(dataDirectory, ReceiptPhotoStore.DirectoryName);
@@ -167,32 +169,42 @@ public sealed class RestoreSwap
 
         var mainMoved = File.Exists(Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName));
         var receiptsMoved = Directory.Exists(rollbackReceipts);
-        var hadDatabase = journal?.HadDatabase ?? mainMoved;
-        var hadReceipts = journal?.HadReceipts ?? receiptsMoved;
+
+        // Ohne lesbares Journal ist unbekannt, was vorhanden war: Dann wird nur zurückgegeben, was in der Rücksicherung liegt, und nie etwas gelöscht,
+        // das nicht dadurch ersetzt wird. Mit Journal werden neu platzierte Dateien entfernt, wenn vorher nichts da war.
+        var removeNewDatabase = journal is not null && (mainMoved || !journal.HadDatabase);
+        var removeNewReceipts = journal is not null && !receiptsMoved && !journal.HadReceipts;
 
         foreach (var suffix in DatabaseSuffixes)
         {
             var saved = Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix);
-            if (File.Exists(saved))
+            var target = databasePath + suffix;
+            MoveWithRetry(() =>
             {
-                File.Delete(databasePath + suffix);
-                File.Move(saved, databasePath + suffix);
-            }
-            else if (mainMoved || !hadDatabase)
-            {
-                File.Delete(databasePath + suffix);
-            }
+                if (File.Exists(saved))
+                {
+                    File.Delete(target);
+                    File.Move(saved, target);
+                }
+                else if (removeNewDatabase)
+                {
+                    File.Delete(target);
+                }
+            });
         }
 
-        if (receiptsMoved)
+        MoveWithRetry(() =>
         {
-            DeleteDirectoryIfExists(receiptsPath);
-            Directory.Move(rollbackReceipts, receiptsPath);
-        }
-        else if (!hadReceipts)
-        {
-            DeleteDirectoryIfExists(receiptsPath);
-        }
+            if (receiptsMoved)
+            {
+                DeleteDirectoryIfExists(receiptsPath);
+                Directory.Move(rollbackReceipts, receiptsPath);
+            }
+            else if (removeNewReceipts)
+            {
+                DeleteDirectoryIfExists(receiptsPath);
+            }
+        });
 
         RestoreJournal.Delete(dataDirectory);
         BackupFileCleanup.DeleteDirectory(rollbackPath);

@@ -22,9 +22,11 @@ public sealed class RestoreRecovery : IRestoreRecovery
             {
                 RestoreSwap.Undo(dataDirectory);
             }
-            catch (Exception)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Der Start darf daran nicht scheitern. Journal und Rücksicherung bleiben bestehen; der nächste Start versucht es erneut.
+                // Die Migration darf nicht auf dem Zwischenstand laufen (sie legte sonst eine leere Datenbank an, die der nächste Start überschreibt).
+                // Journal und Rücksicherung bleiben bestehen; die Initialisierung scheitert und kann erneut versucht werden, der nächste Start versucht es ebenfalls.
+                throw new IOException("Die unterbrochene Wiederherstellung konnte nicht zurückgenommen werden. Die Daten bleiben gesichert; bitte die App neu starten.", ex);
             }
         }
 
