@@ -5,6 +5,7 @@ using Microsoft.Maui.LifecycleEvents;
 #endif
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.Services.Favorites;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
@@ -71,6 +72,14 @@ public static class MauiProgram
         builder.Services.AddSingleton<IReceiptPhotoPicker>(_ => ReceiptPhotoPickerSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiReceiptPhotoPicker()));
+        builder.Services.AddSingleton<IRestoreRecovery, RestoreRecovery>();
+        builder.Services.AddSingleton<IBackupService, BackupService>();
+        builder.Services.AddSingleton<IBackupFilePicker>(_ => BackupFilePickerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiBackupFilePicker()));
+        builder.Services.AddSingleton<IBackupSharer>(_ => BackupSharerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiBackupSharer()));
         AddGeocodingServices(builder.Services);
         AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
@@ -85,6 +94,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookEntryFormViewModel>();
         builder.Services.AddTransient<TankbookStatisticsViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddTransient<BackupViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();
         builder.Services.AddTransient<FavoriteGroupViewModel>();
@@ -184,5 +194,6 @@ public static class MauiProgram
         services.AddSingleton<INetworkStatusSource, MauiNetworkStatusSource>();
         services.AddSingleton<IConnectionMonitor, ConnectionMonitor>();
         services.AddSingleton<IFuelPriceService, FuelPriceService>();
+        services.AddSingleton<IPriceCacheInvalidator>(provider => (FuelPriceService)provider.GetRequiredService<IFuelPriceService>());
     }
 }

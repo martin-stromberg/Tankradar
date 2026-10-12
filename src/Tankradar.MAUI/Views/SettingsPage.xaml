@@ -4,12 +4,17 @@
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
              x:DataType="vm:SettingsViewModel"
              x:Class="Tankradar.MAUI.Views.SettingsPage"
              Title="Optionen"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
     <views:TankradarContentPage.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:TankbookStyles />
+            </ResourceDictionary.MergedDictionaries>
         <Style x:Key="SettingsCard" TargetType="Border">
             <Setter Property="Padding" Value="{StaticResource space-md}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
@@ -28,6 +33,7 @@
             <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
         </Style>
+        </ResourceDictionary>
     </views:TankradarContentPage.Resources>
 
     <ScrollView>
@@ -174,6 +180,110 @@
                                              IsChecked="{Binding IsSelected}"
                                              Style="{StaticResource SettingsRadio}"
                                              AutomationId="{Binding AutomationKey, StringFormat='Settings.Sort.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasBackup}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding Backup}" x:DataType="vm:BackupViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Settings.Backup.Heading" />
+                    <Label Text="{Binding Hint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Backup.Hint" />
+                    <Button Text="{Binding CreateText}"
+                            Command="{Binding CreateCommand}"
+                            Style="{StaticResource TankbookButton}"
+                            AutomationId="Settings.Backup.Create" />
+                    <Button Text="{Binding ImportText}"
+                            Command="{Binding ImportCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Settings.Backup.Import" />
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Backup.Status" />
+                    <Label Text="{Binding EmptyText}"
+                           IsVisible="{Binding IsEmpty}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Backup.Empty" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Spacing="{StaticResource space-sm}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BackupItemViewModel">
+                                <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                    <Label Text="{Binding Title}"
+                                           Style="{StaticResource body-lg}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Title'}" />
+                                    <Label Text="{Binding SizeText}"
+                                           Style="{StaticResource body-sm}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Size'}" />
+                                    <FlexLayout Wrap="Wrap">
+                                        <Button Text="{Binding RestoreText}"
+                                                Command="{Binding RestoreCommand}"
+                                                Style="{StaticResource TankbookButton}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding RestoreHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Restore'}" />
+                                        <Button Text="{Binding ShareText}"
+                                                Command="{Binding ShareCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding ShareHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Share'}" />
+                                        <Button Text="{Binding DeleteText}"
+                                                Command="{Binding DeleteCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                TextColor="{StaticResource ColorErrorRed}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding DeleteHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Delete'}" />
+                                    </FlexLayout>
+
+                                    <!-- Rückfrage vor der Wiederherstellung -->
+                                    <VerticalStackLayout IsVisible="{Binding IsConfirmingRestore}" Spacing="{StaticResource space-sm}">
+                                        <Label Text="{Binding RestoreQuestion}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreQuestion'}" />
+                                        <Button Text="{Binding ConfirmRestoreText}"
+                                                Command="{Binding ConfirmRestoreCommand}"
+                                                Style="{StaticResource TankbookDangerButton}"
+                                                SemanticProperties.Hint="{Binding RestoreHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreConfirm'}" />
+                                        <Button Text="{Binding CancelText}"
+                                                Command="{Binding CancelRestoreCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreCancel'}" />
+                                    </VerticalStackLayout>
+
+                                    <!-- Rückfrage vor dem Löschen -->
+                                    <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
+                                        <Label Text="{Binding DeleteQuestion}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteQuestion'}" />
+                                        <Button Text="{Binding ConfirmDeleteText}"
+                                                Command="{Binding ConfirmDeleteCommand}"
+                                                Style="{StaticResource TankbookDangerButton}"
+                                                SemanticProperties.Hint="{Binding DeleteHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteConfirm'}" />
+                                        <Button Text="{Binding CancelText}"
+                                                Command="{Binding CancelDeleteCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteCancel'}" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
                     </VerticalStackLayout>

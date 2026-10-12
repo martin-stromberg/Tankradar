@@ -26,11 +26,18 @@ public class SettingsViewModel : BaseViewModel
     /// <param name="settingsService">Dienst zum Laden und Speichern der Einstellungen.</param>
     /// <param name="logger">Logger für Lade- und Speicherfehler.</param>
     /// <param name="dataSource">Die Karte „Datenquelle“ (Quellenangabe und Preisdienst-Prüfung); optional, damit die Einstellungen auch ohne Preisdienst nutzbar sind.</param>
-    public SettingsViewModel(ISettingsService settingsService, ILogger<SettingsViewModel> logger, DataSourceViewModel? dataSource = null)
+    /// <param name="backup">Die Karte „Sicherung“; optional, damit die Einstellungen auch ohne Sicherungsdienst nutzbar sind. Nach einer Wiederherstellung werden die Einstellungen neu geladen.</param>
+    public SettingsViewModel(ISettingsService settingsService, ILogger<SettingsViewModel> logger, DataSourceViewModel? dataSource = null, BackupViewModel? backup = null)
     {
         _settingsService = settingsService;
         _logger = logger;
         DataSource = dataSource;
+        Backup = backup;
+        if (backup is not null)
+        {
+            backup.Restored += OnBackupRestored;
+        }
+
         Title = "Optionen";
 
         var defaults = AppSettings.CreateDefault();
@@ -53,6 +60,16 @@ public class SettingsViewModel : BaseViewModel
     /// Gibt an, ob die Karte „Datenquelle“ angezeigt wird.
     /// </summary>
     public bool HasDataSource => DataSource is not null;
+
+    /// <summary>
+    /// Die Karte „Sicherung“; <see langword="null"/>, wenn kein Sicherungsdienst eingebunden ist.
+    /// </summary>
+    public BackupViewModel? Backup { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Karte „Sicherung“ angezeigt wird.
+    /// </summary>
+    public bool HasBackup => Backup is not null;
 
     /// <summary>
     /// Die Spritsorten in der aktuellen Reihenfolge.
@@ -185,6 +202,7 @@ public class SettingsViewModel : BaseViewModel
     public override void OnAppearing()
     {
         DataSource?.OnAppearing();
+        Backup?.OnAppearing();
         _ = LoadAsync();
     }
 
@@ -227,6 +245,11 @@ public class SettingsViewModel : BaseViewModel
             IsBusy = false;
             _gate.Release();
         }
+    }
+
+    private void OnBackupRestored(object? sender, EventArgs e)
+    {
+        _ = LoadAsync();
     }
 
     private List<ChoiceOptionViewModel<TValue>> CreateOptions<TValue>(Func<TValue, string> labelOf)
