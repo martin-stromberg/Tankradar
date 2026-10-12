@@ -71,7 +71,7 @@ Speicherlücke; ein verwaistes Abonnement entfernt sich beim nächsten Wechsel s
   Monate ohne Vorgang zeigen 0,00 €. Eine lückenlose Reihe hält Balkendiagramm und Liste ehrlich. Die angezeigte Monatsliste ist auf
   die neuesten 24 Monate begrenzt (`TankbookStatisticsLimits.MonthListMaxRows`, mit Hinweis), weil ein sehr weit zurückliegender
   Vorgang sonst hunderte Zeilen erzeugt; Durchschnitt und Kosten pro 100 km enthalten weiterhin alle Vorgänge.
-- **Monatskarte.** „Gesamtkosten <Monat>“ zeigt die Kosten des laufenden Monats (der neueste Eintrag der Monatsreihe) und die in
+- **Monatskarte.** „Gesamtkosten <Monat>“ zeigt die Kosten des laufenden Monats (der neueste Eintrag der Monatsreihe; das ist der Monat von „heute“, außer ein Vorgang innerhalb der Zukunftstoleranz liegt im Folgemonat) und die in
   diesem Monat getankte bzw. geladene Menge („98,50 L getankt“, bei Strom „kWh geladen“). Dazu führt `MonthlyCostSummary` die
   Summe der Mengen. Ohne Vorgang im laufenden Monat stehen dort 0,00 € und 0,00 L bzw. kWh. Die Gesamtsumme über alle Monate
   (`TankbookKindStatistics.TotalCost`) bleibt im Modell, wird aber nicht mehr angezeigt, weil der Entwurf sie nicht vorsieht.

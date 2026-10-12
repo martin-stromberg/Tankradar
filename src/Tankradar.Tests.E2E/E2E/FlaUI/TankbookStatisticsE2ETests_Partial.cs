@@ -6,7 +6,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class TankbookStatisticsE2ETests_Partial : TankbookE2ETestBase
 {
     /// <summary>
-    /// Prüft (20 L + 10 L) auf 500 km = 6,00 L/100 km und (37,18 € + 18,59 €) auf 500 km = 11,15 € pro 100 km; die Gesamtkosten enthalten alle drei Vorgänge.
+    /// Prüft (20 L + 10 L) auf 500 km = 6,00 L/100 km und (37,18 € + 18,59 €) auf 500 km = 11,15 € pro 100 km; die Kosten des laufenden Monats enthalten alle drei Vorgänge.
     /// </summary>
     [Fact]
     public void PartialBetweenFullEntries_CountsQuantityAndCost()

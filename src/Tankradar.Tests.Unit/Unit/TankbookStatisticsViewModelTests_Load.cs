@@ -41,7 +41,7 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
     }
 
     /// <summary>
-    /// Prüft Durchschnitt, Kosten pro 100 km, Gesamtkosten und Herkunft.
+    /// Prüft Durchschnitt, Kosten pro 100 km, Monatskosten und Herkunft.
     /// </summary>
     [Fact]
     public async Task Load_ShowsAverageCostAndSource()

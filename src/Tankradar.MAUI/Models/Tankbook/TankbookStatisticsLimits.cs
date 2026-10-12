@@ -16,7 +16,7 @@ public static class TankbookStatisticsLimits
     public const int ConsumptionChartMaxPoints = 6;
 
     /// <summary>
-    /// Höchstzahl der angezeigten Zeilen der Monatsliste (die neuesten Monate); Kennzahlen und Gesamtkosten enthalten alle Daten.
+    /// Höchstzahl der angezeigten Zeilen der Monatsliste (die neuesten Monate); Kennzahlen und Durchschnitt enthalten alle Daten.
     /// </summary>
     public const int MonthListMaxRows = 24;
 }

@@ -107,7 +107,7 @@ public static class ChartGeometry
         }
         else if (left + TextAreaWidth > bounds.Right)
         {
-            left = bounds.Right - TextAreaWidth;
+            left = Math.Max(bounds.Left, bounds.Right - TextAreaWidth);
             alignment = HorizontalAlignment.Right;
         }
 
