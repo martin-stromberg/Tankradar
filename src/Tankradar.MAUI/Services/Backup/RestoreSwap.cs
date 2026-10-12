@@ -46,6 +46,9 @@ public sealed class RestoreSwap
     /// </summary>
     public const string StepBeforeCommit = "before-commit";
 
+    private const int MoveAttempts = 5;
+    private const int MoveRetryDelayMilliseconds = 100;
+
     private static readonly string[] DatabaseSuffixes = ["-wal", "-shm", string.Empty];
 
     private readonly string _dataDirectory;
@@ -77,23 +80,27 @@ public sealed class RestoreSwap
         var rollbackPath = Path.Combine(_dataDirectory, BackupFormat.RollbackDirectoryName);
         var rollbackReceipts = Path.Combine(rollbackPath, ReceiptPhotoStore.DirectoryName);
 
-        if (Directory.Exists(rollbackPath))
+        if (RestoreJournal.Exists(_dataDirectory))
         {
-            Directory.Delete(rollbackPath, recursive: true);
+            // Ein früherer Austausch wurde nicht abgeschlossen und konnte nicht zurückgenommen werden: Die Rücksicherung ist dann die einzige Kopie des alten Stands.
+            // Sie darf nicht gelöscht werden; scheitert auch dieses Zurücknehmen, bricht die Wiederherstellung ab, und Journal und Rücksicherung bleiben erhalten.
+            Undo(_dataDirectory);
         }
 
+        DeleteDirectoryIfExists(rollbackPath);
         Directory.CreateDirectory(rollbackPath);
         try
         {
             RestoreJournal.Write(_dataDirectory, new RestoreJournal { HadDatabase = File.Exists(databasePath), HadReceipts = Directory.Exists(receiptsPath) });
             Step(StepJournal);
 
-            SqliteConnection.ClearAllPools();
             foreach (var suffix in DatabaseSuffixes)
             {
                 if (File.Exists(databasePath + suffix))
                 {
-                    File.Move(databasePath + suffix, Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix));
+                    var source = databasePath + suffix;
+                    var target = Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix);
+                    MoveWithRetry(() => File.Move(source, target));
                 }
             }
 
@@ -101,18 +108,18 @@ public sealed class RestoreSwap
 
             if (Directory.Exists(receiptsPath))
             {
-                Directory.Move(receiptsPath, rollbackReceipts);
+                MoveWithRetry(() => Directory.Move(receiptsPath, rollbackReceipts));
             }
 
             Step(StepReceiptsMoved);
 
-            File.Move(Path.Combine(stagingDirectory, TankradarDbContext.DatabaseFileName), databasePath);
+            MoveWithRetry(() => File.Move(Path.Combine(stagingDirectory, TankradarDbContext.DatabaseFileName), databasePath));
             Step(StepDatabasePlaced);
 
             var stagedReceipts = Path.Combine(stagingDirectory, ReceiptPhotoStore.DirectoryName);
             if (Directory.Exists(stagedReceipts))
             {
-                Directory.Move(stagedReceipts, receiptsPath);
+                MoveWithRetry(() => Directory.Move(stagedReceipts, receiptsPath));
             }
 
             Step(StepReceiptsPlaced);
@@ -136,8 +143,8 @@ public sealed class RestoreSwap
         }
 
         RestoreJournal.Delete(_dataDirectory);
-        DeleteDirectoryQuietly(rollbackPath);
-        DeleteDirectoryQuietly(stagingDirectory);
+        BackupFileCleanup.DeleteDirectory(rollbackPath);
+        BackupFileCleanup.DeleteDirectory(stagingDirectory);
     }
 
     /// <summary>
@@ -183,7 +190,7 @@ public sealed class RestoreSwap
         }
 
         RestoreJournal.Delete(dataDirectory);
-        DeleteDirectoryQuietly(rollbackPath);
+        BackupFileCleanup.DeleteDirectory(rollbackPath);
     }
 
     private static void TryUndo(string dataDirectory)
@@ -206,15 +213,25 @@ public sealed class RestoreSwap
         }
     }
 
-    private static void DeleteDirectoryQuietly(string path)
+    /// <summary>
+    /// Führt eine Verschiebung aus und wiederholt sie kurz, wenn eine parallel geöffnete Datenbankverbindung die Datei noch festhält. Vor jedem Versuch werden die
+    /// Verbindungspools geleert. Ein darüber hinaus bestehender paralleler Zugriff führt zum Rollback (Ergebnis <c>Failed</c>); siehe ADR 0011.
+    /// </summary>
+    /// <param name="move">Die Verschiebung.</param>
+    private static void MoveWithRetry(Action move)
     {
-        try
+        for (var attempt = 1; ; attempt++)
         {
-            DeleteDirectoryIfExists(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Aufräumen ist nicht kritisch; verwaiste Verzeichnisse entfernt der nächste Start.
+            SqliteConnection.ClearAllPools();
+            try
+            {
+                move();
+                return;
+            }
+            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException) && attempt < MoveAttempts)
+            {
+                Thread.Sleep(MoveRetryDelayMilliseconds);
+            }
         }
     }
 

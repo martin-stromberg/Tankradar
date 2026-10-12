@@ -13,8 +13,6 @@ namespace Tankradar.MAUI.Services.Backup;
 /// </summary>
 public static class BackupArchiveValidator
 {
-    private const int BufferSize = 81_920;
-
     /// <summary>
     /// Prüft, ob ein Eintragsname erlaubt ist: <c>manifest.json</c>, <c>database/tankatlas.db</c> oder <c>receipts/&lt;gültiger Fotoname&gt;</c>.
     /// </summary>
@@ -218,7 +216,7 @@ public static class BackupArchiveValidator
 
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 bool copied;
-                await using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, BufferSize, useAsync: true))
+                await using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None, BackupLimits.BufferSize, useAsync: true))
                 {
                     copied = await CopyVerifiedAsync(entry, file, output, cancellationToken).ConfigureAwait(false);
                 }
@@ -248,7 +246,7 @@ public static class BackupArchiveValidator
         using var buffer = new MemoryStream();
         using (var stream = entry.Open())
         {
-            var chunk = new byte[BufferSize];
+            var chunk = new byte[BackupLimits.BufferSize];
             int read;
             while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
             {
@@ -354,7 +352,7 @@ public static class BackupArchiveValidator
         long size = 0;
         await using (var source = entry.Open())
         {
-            var buffer = new byte[BufferSize];
+            var buffer = new byte[BackupLimits.BufferSize];
             int read;
             while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {

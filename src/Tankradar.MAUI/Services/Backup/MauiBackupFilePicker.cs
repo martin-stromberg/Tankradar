@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Backup;
+using Tankradar.MAUI.Resources.Texts;
 
 namespace Tankradar.MAUI.Services.Backup;
 
@@ -18,7 +19,7 @@ public sealed class MauiBackupFilePicker : IBackupFilePicker
     /// <inheritdoc />
     public async Task<PickedBackupFile?> PickAsync(CancellationToken cancellationToken = default)
     {
-        var result = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = "Sicherung auswählen", FileTypes = ZipType }).ConfigureAwait(true);
+        var result = await FilePicker.Default.PickAsync(new PickOptions { PickerTitle = BackupTexts.PickerTitle, FileTypes = ZipType }).ConfigureAwait(true);
         return result is null ? null : new PickedBackupFile(result.FileName, result.OpenReadAsync);
     }
 }

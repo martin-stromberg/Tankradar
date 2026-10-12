@@ -33,7 +33,7 @@ public sealed class RestoreJournal
     }
 
     /// <summary>
-    /// Schreibt das Journal (zuerst in eine temporäre Datei, dann durch Umbenennen).
+    /// Schreibt das Journal (zuerst in eine temporäre Datei, die auf den Datenträger geschrieben wird, dann durch Umbenennen).
     /// </summary>
     /// <param name="dataDirectory">Das Datenverzeichnis.</param>
     /// <param name="journal">Der Inhalt.</param>
@@ -42,7 +42,12 @@ public sealed class RestoreJournal
         ArgumentNullException.ThrowIfNull(journal);
         var path = GetPath(dataDirectory);
         var temp = path + BackupFormat.TempExtension;
-        File.WriteAllBytes(temp, JsonSerializer.SerializeToUtf8Bytes(journal));
+        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            stream.Write(JsonSerializer.SerializeToUtf8Bytes(journal));
+            stream.Flush(flushToDisk: true);
+        }
+
         File.Move(temp, path, overwrite: true);
     }
 

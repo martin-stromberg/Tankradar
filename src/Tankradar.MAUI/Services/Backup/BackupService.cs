@@ -14,8 +14,6 @@ namespace Tankradar.MAUI.Services.Backup;
 /// </summary>
 public sealed class BackupService : IBackupService
 {
-    private const int BufferSize = 81_920;
-
     private static readonly string[] CountTables = ["Vehicles", "TankbookEntries", "FavoriteGroups", "FavoriteEntries", "Stations", "PriceEntries"];
 
     private readonly IDbContextFactory<TankradarDbContext> _contextFactory;
@@ -99,8 +97,8 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
-            DeleteFileQuietly(tempPath);
-            DeleteDirectoryQuietly(workDirectory);
+            BackupFileCleanup.DeleteFile(tempPath);
+            BackupFileCleanup.DeleteDirectory(workDirectory);
             _gate.Release();
         }
     }
@@ -121,9 +119,19 @@ public sealed class BackupService : IBackupService
             var list = new List<BackupFileInfo>();
             foreach (var path in Directory.EnumerateFiles(directory))
             {
-                if (BackupFormat.IsValidFileName(Path.GetFileName(path)))
+                if (!BackupFormat.IsValidFileName(Path.GetFileName(path)))
+                {
+                    continue;
+                }
+
+                try
                 {
                     list.Add(ReadInfo(path));
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // Eine Datei, die gerade verschwindet oder gesperrt ist, darf die Liste nicht verhindern.
+                    _logger.LogWarning("Eine Sicherung konnte nicht gelesen werden ({ExceptionType}).", ex.GetType().Name);
                 }
             }
 
@@ -212,8 +220,8 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
-            DeleteDirectoryQuietly(staging);
-            DeleteDirectoryQuietly(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
+            BackupFileCleanup.DeleteDirectory(staging);
+            BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
             _gate.Release();
         }
     }
@@ -263,7 +271,7 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
-            DeleteFileQuietly(tempPath);
+            BackupFileCleanup.DeleteFile(tempPath);
             _gate.Release();
         }
     }
@@ -351,12 +359,12 @@ public sealed class BackupService : IBackupService
         {
             foreach (var path in Directory.EnumerateFiles(directory, "*" + BackupFormat.TempExtension))
             {
-                DeleteFileQuietly(path);
+                BackupFileCleanup.DeleteFile(path);
             }
 
             foreach (var path in Directory.EnumerateDirectories(directory, BackupFormat.WorkDirectoryPrefix + "*"))
             {
-                DeleteDirectoryQuietly(path);
+                BackupFileCleanup.DeleteDirectory(path);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -459,8 +467,8 @@ public sealed class BackupService : IBackupService
                 await mode.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            DeleteFileQuietly(databasePath + "-wal");
-            DeleteFileQuietly(databasePath + "-shm");
+            BackupFileCleanup.DeleteFile(databasePath + "-wal");
+            BackupFileCleanup.DeleteFile(databasePath + "-shm");
             return BackupResult.Ok;
         }
         catch (SqliteException)
@@ -480,8 +488,8 @@ public sealed class BackupService : IBackupService
     private static async Task<bool> CopyLimitedAsync(PickedBackupFile file, string targetPath, CancellationToken cancellationToken)
     {
         await using var source = await file.OpenReadAsync().ConfigureAwait(false);
-        await using var target = new FileStream(targetPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, BufferSize, useAsync: true);
-        var buffer = new byte[BufferSize];
+        await using var target = new FileStream(targetPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, BackupLimits.BufferSize, useAsync: true);
+        var buffer = new byte[BackupLimits.BufferSize];
         long total = 0;
         int read;
         while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
@@ -496,45 +504,6 @@ public sealed class BackupService : IBackupService
         }
 
         return total > 0;
-    }
-
-    private static void DeleteFileQuietly(string? path)
-    {
-        if (path is null)
-        {
-            return;
-        }
-
-        try
-        {
-            File.Delete(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Aufräumen ist nicht kritisch.
-        }
-    }
-
-    private static void DeleteDirectoryQuietly(string? path, bool onlyIfEmpty = false)
-    {
-        if (path is null || !Directory.Exists(path))
-        {
-            return;
-        }
-
-        try
-        {
-            if (onlyIfEmpty && Directory.EnumerateFileSystemEntries(path).Any())
-            {
-                return;
-            }
-
-            Directory.Delete(path, recursive: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Aufräumen ist nicht kritisch.
-        }
     }
 
     private sealed class HeaderInfo

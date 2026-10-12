@@ -18,18 +18,20 @@ public sealed class RestoreRecovery : IRestoreRecovery
 
         if (RestoreJournal.Exists(dataDirectory))
         {
-            RestoreSwap.Undo(dataDirectory);
+            try
+            {
+                RestoreSwap.Undo(dataDirectory);
+            }
+            catch (Exception)
+            {
+                // Der Start darf daran nicht scheitern. Journal und Rücksicherung bleiben bestehen; der nächste Start versucht es erneut.
+            }
         }
 
-        DeleteDirectory(Path.Combine(dataDirectory, BackupFormat.StagingDirectoryName));
-        DeleteDirectory(Path.Combine(dataDirectory, BackupFormat.RollbackDirectoryName));
-    }
-
-    private static void DeleteDirectory(string path)
-    {
-        if (Directory.Exists(path))
+        BackupFileCleanup.DeleteDirectory(Path.Combine(dataDirectory, BackupFormat.StagingDirectoryName));
+        if (!RestoreJournal.Exists(dataDirectory))
         {
-            Directory.Delete(path, recursive: true);
+            BackupFileCleanup.DeleteDirectory(Path.Combine(dataDirectory, BackupFormat.RollbackDirectoryName));
         }
     }
 }

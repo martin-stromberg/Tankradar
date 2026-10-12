@@ -6,6 +6,11 @@ namespace Tankradar.MAUI.Models.Backup;
 public static class BackupLimits
 {
     /// <summary>
+    /// Puffergröße beim Kopieren und Archivieren von Dateien in Bytes.
+    /// </summary>
+    public const int BufferSize = 81_920;
+
+    /// <summary>
     /// Höchstzahl der Einträge eines Archivs.
     /// </summary>
     public const int MaxEntries = 20_000;

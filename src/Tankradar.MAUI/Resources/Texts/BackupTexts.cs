@@ -11,6 +11,11 @@ public static class BackupTexts
     private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-DE");
 
     /// <summary>
+    /// Titel des Dateiauswahldialogs beim Einspielen einer Sicherung.
+    /// </summary>
+    public const string PickerTitle = "Sicherung auswählen";
+
+    /// <summary>
     /// Überschrift der Karte.
     /// </summary>
     public const string Heading = "Sicherung";

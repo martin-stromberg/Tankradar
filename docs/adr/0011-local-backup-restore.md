@@ -59,6 +59,23 @@ Stand zurück. Stürzt der Prozess ab, nimmt `DatabaseInitializer` beim nächste
 Journals zurück und räumt verwaiste Verzeichnisse auf. Die Fehlerinjektion an jedem Schritt (Hook im Konstruktor von `RestoreSwap`)
 und ein simulierter Absturz sind integrationsgetestet.
 
+Robustheit des Austauschs:
+
+- Das Journal wird mit `Flush(true)` auf den Datenträger geschrieben, bevor etwas verschoben wird.
+- Existiert beim Start einer Wiederherstellung noch ein Journal (früherer Austausch nicht abgeschlossen und nicht zurückgenommen), nimmt
+  `RestoreSwap` zuerst diesen Austausch zurück. Misslingt das, endet die Wiederherstellung mit `Failed`; `restore-rollback/` (die
+  einzige Kopie des alten Stands) und das Journal bleiben erhalten und werden nie gelöscht, solange ein Journal besteht.
+- `RestoreRecovery` fängt jede Ausnahme beim Zurücknehmen ab: Der Start scheitert nie daran. Bleibt das Zurücknehmen erfolglos, bleiben
+  Journal und Rücksicherung bestehen, und der nächste Start versucht es erneut.
+- Die Verschiebungen im Austausch werden bei `IOException`/`UnauthorizedAccessException` bis zu fünfmal im Abstand von 100 ms
+  wiederholt, jeweils nach `ClearAllPools()`.
+- Offen und bewusst akzeptiert: Es gibt keine gemeinsame Sperre zwischen `BackupService` und den übrigen Diensten, die über
+  `IDbContextFactory` parallel Verbindungen öffnen. Hält eine solche Verbindung die Datei länger als die Wiederholungen, scheitert das
+  Verschieben (Windows) und der Rollback gibt den alten Stand zurück (`Failed`); unter iOS kann eine Verbindung auf der verschobenen
+  Datei weiterarbeiten. Die Oberfläche sperrt während der Arbeit die Schaltflächen, und der Preisdienst-Zwischenspeicher wird
+  verworfen (`IPriceCacheInvalidator`). Weitere Singletons mit Zwischenspeichern wurden nicht gefunden, aber nicht systematisch
+  geprüft. Eine App-weite Lesen/Schreiben-Sperre wäre die vollständige Lösung.
+
 Es läuft höchstens eine verändernde Operation gleichzeitig (`SemaphoreSlim`, sonst `Busy`); die Oberfläche sperrt während der
 Arbeit alle Schaltflächen.
 

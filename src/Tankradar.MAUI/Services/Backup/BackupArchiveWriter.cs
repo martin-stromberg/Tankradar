@@ -10,8 +10,6 @@ namespace Tankradar.MAUI.Services.Backup;
 /// </summary>
 public static class BackupArchiveWriter
 {
-    private const int BufferSize = 81_920;
-
     /// <summary>
     /// Schreibt das Archiv in die angegebene Datei.
     /// </summary>
@@ -45,7 +43,7 @@ public static class BackupArchiveWriter
             },
         };
 
-        await using var file = new FileStream(zipPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, BufferSize, useAsync: true);
+        await using var file = new FileStream(zipPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, BackupLimits.BufferSize, useAsync: true);
         using var archive = new ZipArchive(file, ZipArchiveMode.Create, leaveOpen: false);
 
         manifest.Files.Add(await AddFileAsync(archive, BackupFormat.DatabaseEntryName, snapshotDatabasePath, CompressionLevel.Optimal, cancellationToken).ConfigureAwait(false));
@@ -85,9 +83,9 @@ public static class BackupArchiveWriter
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         long size = 0;
         await using (var target = entry.Open())
-        await using (var source = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, BufferSize, useAsync: true))
+        await using (var source = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, BackupLimits.BufferSize, useAsync: true))
         {
-            var buffer = new byte[BufferSize];
+            var buffer = new byte[BackupLimits.BufferSize];
             int read;
             while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
             {
