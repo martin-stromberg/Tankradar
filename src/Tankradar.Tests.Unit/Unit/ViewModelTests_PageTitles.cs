@@ -36,6 +36,7 @@ public class ViewModelTests_PageTitles : BaseTest
             fixture.Service,
             fixture.Photos,
             form,
+            fixture.CreateStatistics(new FakeScreenReaderAnnouncer(), new Tankradar.TestSupport.RecordingLogger<TankbookStatisticsViewModel>()),
             new FakeTankbookNavigator(),
             new FakeScreenReaderAnnouncer(),
             NullLogger<TankbookEntriesViewModel>.Instance);

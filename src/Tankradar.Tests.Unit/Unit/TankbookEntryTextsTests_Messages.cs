@@ -77,4 +77,15 @@ public class TankbookEntryTextsTests_Messages : BaseTest
             Assert.Contains(texts, text => text.Length > 0);
         }
     }
+
+    /// <summary>
+    /// Prüft, dass der Hinweis zur Teilbetankung den ersten vollen Vorgang und die Kosten nennt.
+    /// </summary>
+    [Fact]
+    public void PartialHint_MentionsFirstFullEntryAndCosts()
+    {
+        Assert.Contains("erst ab dem ersten vollen Vorgang", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
+        Assert.Contains("fließt in den nächsten vollen Vorgang ein", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
+        Assert.Contains("Monatskosten", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
+    }
 }
