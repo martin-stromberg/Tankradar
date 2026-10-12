@@ -63,8 +63,8 @@ public class TankbookTextsTests_Labels : BaseTest
     /// <param name="expected">Die erwartete Rückfrage.</param>
     [Theory]
     [InlineData(0, "Fahrzeug „Golf“ löschen?")]
-    [InlineData(1, "Fahrzeug „Golf“ löschen? Dabei wird auch der zugehörige Tank- oder Ladevorgang endgültig gelöscht. Das lässt sich nicht rückgängig machen.")]
-    [InlineData(3, "Fahrzeug „Golf“ löschen? Dabei werden auch die 3 zugehörigen Tank- und Ladevorgänge endgültig gelöscht. Das lässt sich nicht rückgängig machen.")]
+    [InlineData(1, "Fahrzeug „Golf“ löschen? Dabei wird auch der zugehörige Tank- oder Ladevorgang endgültig gelöscht. Das lässt sich nicht rückgängig machen. Erstelle vorher in den Optionen eine Sicherung, wenn du die Vorgänge behalten möchtest.")]
+    [InlineData(3, "Fahrzeug „Golf“ löschen? Dabei werden auch die 3 zugehörigen Tank- und Ladevorgänge endgültig gelöscht. Das lässt sich nicht rückgängig machen. Erstelle vorher in den Optionen eine Sicherung, wenn du die Vorgänge behalten möchtest.")]
     public void FormatDeleteQuestion_ByEntryCount(int count, string expected)
     {
         Assert.Equal(expected, TankbookTexts.FormatDeleteQuestion("Golf", count));

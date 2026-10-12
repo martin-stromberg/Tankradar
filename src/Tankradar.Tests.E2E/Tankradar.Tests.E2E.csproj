@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\TestSupport\BackupTestArchive.cs" Link="TestSupport\BackupTestArchive.cs" />
     <Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
     <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
     <Compile Include="..\TestSupport\E2EStartupPolicy.cs" Link="TestSupport\E2EStartupPolicy.cs" />
