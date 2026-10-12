@@ -161,6 +161,38 @@ public class BackupServiceTests_Resilience : IDisposable
     }
 
     /// <summary>
+    /// Prüft, dass eine Wiederherstellung gelingt, wenn eine gepoolte Verbindung noch -wal/-shm hält und diese erst beim Leeren der Pools verschwinden.
+    /// </summary>
+    [Fact]
+    public async Task Restore_WithPooledConnectionHoldingWal_Succeeds()
+    {
+        await _environment.SeedAsync(Photo);
+        var created = await _environment.CreateService().CreateAsync();
+        var databasePath = TankradarDbContext.GetDatabasePath(_environment.DataDirectory);
+        await using (var context = _environment.CreateFactory().CreateDbContext())
+        {
+            context.Vehicles.Add(new VehicleEntity { Name = "Opel", FuelKind = "Petrol", CreatedUtc = DateTime.UtcNow });
+            await context.SaveChangesAsync();
+        }
+
+        using (var pooled = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=" + databasePath + ";Pooling=True"))
+        {
+            pooled.Open();
+            using var command = pooled.CreateCommand();
+            command.CommandText = "PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS WalProbe (Id INTEGER); INSERT INTO WalProbe VALUES (1);";
+            command.ExecuteNonQuery();
+        }
+
+        Assert.True(File.Exists(databasePath + "-wal"));
+        var service = _environment.CreateService();
+        var result = await service.RestoreAsync(created.File!.FileName);
+
+        Assert.Equal(BackupResult.Ok, result);
+        Assert.Equal(["Golf"], await _environment.GetVehicleNamesAsync());
+        Assert.True(File.Exists(databasePath));
+    }
+
+    /// <summary>
     /// Prüft, dass eine gesperrte Sicherungsdatei die Liste nicht verhindert.
     /// </summary>
     [Fact]

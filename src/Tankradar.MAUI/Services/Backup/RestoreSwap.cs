@@ -46,8 +46,8 @@ public sealed class RestoreSwap
     /// </summary>
     public const string StepBeforeCommit = "before-commit";
 
-    private const int MoveAttempts = 5;
-    private const int MoveRetryDelayMilliseconds = 100;
+    private const int MoveAttempts = 20;
+    private const int MoveRetryDelayMilliseconds = 150;
 
     private static readonly string[] DatabaseSuffixes = ["-wal", "-shm", string.Empty];
 
@@ -96,12 +96,17 @@ public sealed class RestoreSwap
 
             foreach (var suffix in DatabaseSuffixes)
             {
-                if (File.Exists(databasePath + suffix))
+                var source = databasePath + suffix;
+                var target = Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix);
+
+                // Das Leeren der Verbindungspools schließt die letzte Verbindung; SQLite entfernt dabei -wal und -shm. Existenz daher erst nach dem Leeren prüfen.
+                MoveWithRetry(() =>
                 {
-                    var source = databasePath + suffix;
-                    var target = Path.Combine(rollbackPath, TankradarDbContext.DatabaseFileName + suffix);
-                    MoveWithRetry(() => File.Move(source, target));
-                }
+                    if (File.Exists(source))
+                    {
+                        File.Move(source, target);
+                    }
+                });
             }
 
             Step(StepDatabaseMoved);

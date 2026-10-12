@@ -67,7 +67,7 @@ Robustheit des Austauschs:
   einzige Kopie des alten Stands) und das Journal bleiben erhalten und werden nie gelöscht, solange ein Journal besteht.
 - `RestoreRecovery` fängt jede Ausnahme beim Zurücknehmen ab: Der Start scheitert nie daran. Bleibt das Zurücknehmen erfolglos, bleiben
   Journal und Rücksicherung bestehen, und der nächste Start versucht es erneut.
-- Die Verschiebungen im Austausch werden bei `IOException`/`UnauthorizedAccessException` bis zu fünfmal im Abstand von 100 ms
+- Die Verschiebungen im Austausch werden bei `IOException`/`UnauthorizedAccessException` bis zu zwanzigmal im Abstand von 150 ms (rund drei Sekunden)
   wiederholt, jeweils nach `ClearAllPools()`.
 - Offen und bewusst akzeptiert: Es gibt keine gemeinsame Sperre zwischen `BackupService` und den übrigen Diensten, die über
   `IDbContextFactory` parallel Verbindungen öffnen. Hält eine solche Verbindung die Datei länger als die Wiederholungen, scheitert das
