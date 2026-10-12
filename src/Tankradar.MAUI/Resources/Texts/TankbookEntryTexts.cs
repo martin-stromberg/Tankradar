@@ -101,6 +101,11 @@ public static class TankbookEntryTexts
     public const string PartialLabel = "Teilbetankung – nicht voll getankt bzw. geladen";
 
     /// <summary>
+    /// Hinweis im Formular, solange „Teilbetankung“ aktiv ist.
+    /// </summary>
+    public const string PartialHint = "Der Verbrauch wird erst ab dem ersten vollen Vorgang berechnet. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; Teilbetankungen vor dem ersten vollen Vorgang zählen nicht für den Verbrauch, ihre Kosten erscheinen aber in den Monatskosten.";
+
+    /// <summary>
     /// Kennzeichnung einer Teilbetankung in der Liste.
     /// </summary>
     public const string PartialBadge = "Teilbetankung";

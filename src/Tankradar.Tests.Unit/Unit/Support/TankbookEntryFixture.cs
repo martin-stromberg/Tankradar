@@ -30,6 +30,7 @@ public sealed class TankbookEntryFixture : IDisposable
 
         Vehicles = new VehicleService(Factory, new NoOpDatabaseInitializer(), Photos, Clock, VehicleLogger);
         Service = CreateService();
+        Statistics = new TankbookStatisticsService(Vehicles, Service, Clock);
     }
 
     /// <summary>
@@ -73,6 +74,11 @@ public sealed class TankbookEntryFixture : IDisposable
     public TankbookEntryService Service { get; }
 
     /// <summary>
+    /// Der Auswertungsdienst.
+    /// </summary>
+    public TankbookStatisticsService Statistics { get; }
+
+    /// <summary>
     /// Die aktuelle lokale Zeit der Testuhr, minutengenau.
     /// </summary>
     public DateTime Now
@@ -99,6 +105,17 @@ public sealed class TankbookEntryFixture : IDisposable
     public TankbookEntryFormViewModel CreateForm(FakeReceiptPhotoPicker picker, FakeScreenReaderAnnouncer announcer, RecordingLogger<TankbookEntryFormViewModel> logger)
     {
         return new TankbookEntryFormViewModel(Service, Photos, picker, Clock, announcer, logger);
+    }
+
+    /// <summary>
+    /// Erstellt das ViewModel der Auswertung auf dem Auswertungsdienst dieser Umgebung.
+    /// </summary>
+    /// <param name="announcer">Die Ansage.</param>
+    /// <param name="logger">Der Logger.</param>
+    /// <returns>Das ViewModel.</returns>
+    public TankbookStatisticsViewModel CreateStatistics(FakeScreenReaderAnnouncer announcer, RecordingLogger<TankbookStatisticsViewModel> logger)
+    {
+        return new TankbookStatisticsViewModel(Statistics, announcer, logger);
     }
 
     /// <summary>

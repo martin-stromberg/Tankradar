@@ -58,6 +58,41 @@ public static class TankbookTestDatabase
     }
 
     /// <summary>
+    /// Fügt dem Fahrzeug mit dem Namen einen Vorgang mit frei wählbarer Art, Menge, Gesamtbetrag und Zeitpunkt hinzu (Alpha Tankstelle bzw. Zuhause; der Preis pro Einheit wird berechnet).
+    /// </summary>
+    /// <param name="databasePath">Der Pfad der Datenbankdatei der App.</param>
+    /// <param name="vehicleName">Der Name des Fahrzeugs.</param>
+    /// <param name="occurredAt">Der Zeitpunkt (lokale Wanduhrzeit, minutengenau).</param>
+    /// <param name="odometerKm">Der Kilometerstand.</param>
+    /// <param name="quantity">Die Menge in Litern bzw. kWh.</param>
+    /// <param name="totalAmount">Der Gesamtbetrag in Euro.</param>
+    /// <param name="isPartial">Gibt an, ob es eine Teilbetankung ist.</param>
+    /// <param name="kind">Die Art (<c>Fuel</c> oder <c>Electricity</c>).</param>
+    public static void AddEntry(string databasePath, string vehicleName, DateTime occurredAt, int odometerKm, decimal quantity, decimal totalAmount, bool isPartial = false, string kind = "Fuel")
+    {
+        using var connection = Open(databasePath);
+        using var lookup = connection.CreateCommand();
+        lookup.CommandText = "SELECT Id FROM Vehicles WHERE Name = $name";
+        lookup.Parameters.AddWithValue("$name", vehicleName);
+        var vehicleId = lookup.ExecuteScalar() ?? throw new InvalidOperationException("Das Fahrzeug fehlt in der Testdatenbank.");
+        using var insert = connection.CreateCommand();
+        insert.CommandText =
+            "INSERT INTO TankbookEntries (VehicleId, CreatedUtc, OccurredAt, Kind, Quantity, UnitPrice, TotalAmount, OdometerKm, IsPartial, StationName) "
+            + "VALUES ($vehicleId, $created, $occurred, $kind, $quantity, $unitPrice, $total, $odometer, $partial, $station)";
+        insert.Parameters.AddWithValue("$vehicleId", vehicleId);
+        insert.Parameters.AddWithValue("$created", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+        insert.Parameters.AddWithValue("$occurred", occurredAt.ToString("yyyy-MM-dd HH:mm:00", CultureInfo.InvariantCulture));
+        insert.Parameters.AddWithValue("$kind", kind);
+        insert.Parameters.AddWithValue("$quantity", quantity.ToString(CultureInfo.InvariantCulture));
+        insert.Parameters.AddWithValue("$unitPrice", Math.Round(totalAmount / quantity, 3, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture));
+        insert.Parameters.AddWithValue("$total", totalAmount.ToString(CultureInfo.InvariantCulture));
+        insert.Parameters.AddWithValue("$odometer", odometerKm);
+        insert.Parameters.AddWithValue("$partial", isPartial ? 1 : 0);
+        insert.Parameters.AddWithValue("$station", kind == "Electricity" ? "Zuhause" : "Alpha Tankstelle");
+        insert.ExecuteNonQuery();
+    }
+
+    /// <summary>
     /// Zählt alle Vorgänge in der Testdatenbank.
     /// </summary>
     /// <param name="databasePath">Der Pfad der Datenbankdatei der App.</param>

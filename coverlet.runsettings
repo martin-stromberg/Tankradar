@@ -11,7 +11,7 @@
         <Configuration>
           <Format>cobertura</Format>
           <Include>[Tankradar.MAUI]*</Include>
-          <ExcludeByFile>**/obj/**,**/*.g.cs,**/*.g.i.cs,**/Platforms/**,**/*.xaml.cs,**/MauiProgram.cs,**/*AutoInitializer.cs,**/Views/TankradarContentPage.cs</ExcludeByFile>
+          <ExcludeByFile>**/obj/**,**/*.g.cs,**/*.g.i.cs,**/Platforms/**,**/*.xaml.cs,**/MauiProgram.cs,**/*AutoInitializer.cs,**/Views/TankradarContentPage.cs,**/Views/Charts/**</ExcludeByFile>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>
       </DataCollector>

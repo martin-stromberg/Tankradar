@@ -409,7 +409,29 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     public bool IsPartial
     {
         get => _isPartial;
-        set => SetProperty(ref _isPartial, value);
+        set
+        {
+            if (SetProperty(ref _isPartial, value))
+            {
+                OnPropertyChanged(nameof(ShowPartialHint));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob der Hinweis zur Teilbetankung angezeigt wird (solange „Teilbetankung“ aktiv ist).
+    /// </summary>
+    public bool ShowPartialHint
+    {
+        get { return IsPartial; }
+    }
+
+    /// <summary>
+    /// Der Hinweis zur Teilbetankung.
+    /// </summary>
+    public string PartialHintText
+    {
+        get { return TankbookEntryTexts.PartialHint; }
     }
 
     /// <summary>
