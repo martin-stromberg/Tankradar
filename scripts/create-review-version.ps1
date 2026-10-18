@@ -71,6 +71,18 @@ if (Test-Path $versionDir) {
 
 New-Item -ItemType Directory -Path $versionDir -Force | Out-Null
 
+# MAUI leitet die Versionsangabe der App (AppInfo.Version) aus dem zwischengespeicherten Package.appxmanifest unter obj/.../resizetizer/m ab.
+# Dieses Ziel laeuft inkrementell und beruecksichtigt eine geaenderte Eigenschaft ApplicationDisplayVersion nicht; die App wuerde sonst
+# weiter die Version eines frueheren Builds (z. B. 0.1.0.1) melden. Deshalb wird der Zwischenstand vor dem Publish entfernt und neu erzeugt.
+$releaseObjDir = Join-Path $repoRoot "src\Tankradar.MAUI\obj\Release\$targetFramework"
+if (Test-Path $releaseObjDir) {
+    Get-ChildItem -Path $releaseObjDir -Recurse -Directory -Filter "resizetizer" -ErrorAction SilentlyContinue | ForEach-Object {
+        $manifestDir = Join-Path $_.FullName "m"
+        if (Test-Path $manifestDir) { Remove-Item -Path $manifestDir -Recurse -Force }
+    }
+    Get-ChildItem -Path $releaseObjDir -Recurse -File -Filter "mauimanifest.stamp" -ErrorAction SilentlyContinue | Remove-Item -Force
+}
+
 Write-Host "Fuehre Windows-Release-Build aus (dotnet publish, Framework $targetFramework) ..."
 & dotnet publish $mauiProject -c Release -f $targetFramework -p:Version=$Version -p:InformationalVersion=$Version -p:ApplicationDisplayVersion=$Version
 
@@ -79,6 +91,22 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Der Release-Build ist fehlgeschlagen (Exit-Code $LASTEXITCODE). Es wurde kein Zwischenstand erzeugt."
     exit $LASTEXITCODE
 }
+
+# Pruefung: Die vom Build erzeugten Assembly-Metadaten muessen die Zwischenstandsversion tragen (AppInfo.Version = <Version>.<ApplicationVersion>),
+# denn diese Angabe zeigt die App an und schreibt sie in das Manifest einer Sicherung.
+$assemblyInfoFiles = Get-ChildItem -Path $releaseObjDir -Recurse -File -Filter "Tankradar.MAUI.AssemblyInfo.cs" -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -like "*win-x64*" }
+$reportedVersion = $null
+foreach ($file in $assemblyInfoFiles) {
+    $match = Select-String -Path $file.FullName -Pattern 'Microsoft\.Maui\.ApplicationModel\.AppInfo\.Version", "([^"]+)"' | Select-Object -First 1
+    if ($match) { $reportedVersion = $match.Matches[0].Groups[1].Value }
+}
+if (-not $reportedVersion -or -not $reportedVersion.StartsWith("$Version.")) {
+    Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Error "Die App wuerde die Version '$reportedVersion' melden statt '$Version'. Es wurde kein Zwischenstand erzeugt."
+    exit 1
+}
+Write-Host "Die App meldet die Version $reportedVersion."
 
 $publishDir = Join-Path $repoRoot "src\Tankradar.MAUI\bin\Release\$targetFramework\win-x64\publish"
 
