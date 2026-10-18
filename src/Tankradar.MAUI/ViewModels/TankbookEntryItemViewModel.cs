@@ -164,6 +164,14 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Die Kennzeichnung der Teilbetankung („Teilbetankung“ bzw. „Teilladung“ bei Strom).
+    /// </summary>
+    public string PartialBadgeText
+    {
+        get { return TankbookEntryTexts.GetPartialBadge(Overview.Entry.Kind); }
+    }
+
+    /// <summary>
     /// Die Art („Kraftstoff“ oder „Strom“); leer, wenn sie sich aus dem Fahrzeug ergibt.
     /// </summary>
     public string KindText { get; }

@@ -371,12 +371,13 @@ public static class BackupDatabasePreparer
 
     private static async Task<bool> HasOversizedTextAsync(SqliteConnection reference, CancellationToken cancellationToken)
     {
-        // Tabellen- und Spaltennamen stammen aus der festen Liste der App; geprüft wird die bereits in die Referenz kopierte Fassung (Länge in Zeichen).
+        // Tabellen- und Spaltennamen stammen aus der festen Liste der App; geprüft wird die bereits in die Referenz kopierte Fassung (Länge in Zeichen und, gegen eingebettete NUL-Zeichen, in UTF-8-Bytes).
         foreach (var (table, column, maxLength) in BackupTextLimits.Columns)
         {
             await using var command = reference.CreateCommand();
-            command.CommandText = $"SELECT 1 FROM {Quote(table)} WHERE length({Quote(column)}) > $max LIMIT 1";
+            command.CommandText = $"SELECT 1 FROM {Quote(table)} WHERE length({Quote(column)}) > $max OR length(CAST({Quote(column)} AS BLOB)) > $maxBytes LIMIT 1";
             command.Parameters.AddWithValue("$max", maxLength);
+            command.Parameters.AddWithValue("$maxBytes", maxLength * 4);
             if (await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) is not null)
             {
                 return true;

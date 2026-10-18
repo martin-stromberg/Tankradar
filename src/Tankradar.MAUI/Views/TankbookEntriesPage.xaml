@@ -597,7 +597,7 @@
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                            AutomationId="TankbookEntry.Item.UnitPrice" />
                                 </Grid>
-                                <Label Text="{x:Static texts:TankbookEntryTexts.PartialBadge}"
+                                <Label Text="{Binding PartialBadgeText}"
                                        IsVisible="{Binding IsPartial}"
                                        Style="{StaticResource body-sm}"
                                        TextColor="{StaticResource ColorTertiaryAmber}"

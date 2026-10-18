@@ -183,7 +183,7 @@ public sealed class TankbookEntryService : ITankbookEntryService
             .Where(item => item.Display.Length > 0)
             .OrderBy(item => item.Display, GermanOrder)
             .ThenBy(item => item.Row.Place ?? string.Empty, GermanOrder)
-            .Select(item => new KnownStation(item.Row.StationId, item.Display, string.IsNullOrWhiteSpace(item.Row.Place) ? null : item.Row.Place.Trim(), GetDetail(item.Row.CustomName, item.Row.Brand, item.Row.Name, item.Row.Street, item.Row.HouseNumber)))
+            .Select(item => new KnownStation(item.Row.StationId, item.Display, string.IsNullOrWhiteSpace(item.Row.Place) ? null : item.Row.Place.Trim(), GetDetail(item.Row.CustomName, item.Row.Brand, item.Row.Name, item.Row.Street, item.Row.HouseNumber), GetAddress(item.Row.Street, item.Row.HouseNumber)))
             .ToList();
 
         var favoriteNames = new HashSet<string>(favorites.Select(station => station.Name), StringComparer.OrdinalIgnoreCase);
@@ -211,6 +211,11 @@ public sealed class TankbookEntryService : ITankbookEntryService
             return subName;
         }
 
+        return GetAddress(street, houseNumber);
+    }
+
+    private static string? GetAddress(string? street, string? houseNumber)
+    {
         var address = $"{street?.Trim()} {houseNumber?.Trim()}".Trim();
         return address.Length > 0 ? address : null;
     }

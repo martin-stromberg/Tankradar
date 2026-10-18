@@ -24,7 +24,7 @@ die [Detailansicht](0004-station-detail-design-deviations.md) und die [Sicherung
   derselben Marke im selben Ort denselben Anzeigenamen hätten (vor 15a hießen sie nach dem Quellnamen, z. B. „JET BERLIN HAUPTSTR. 1“),
   trägt `KnownStation` ein Unterscheidungsmerkmal (`Detail`: der Stammdatenname, sonst Straße und Hausnummer). Nur bei gleicher
   Beschriftung (Groß-/Kleinschreibung unbeachtet) wird es mit „ · “ angehängt („JET · JET BERLIN HAUPTSTR. 1“); bleibt die Beschriftung
-  trotzdem gleich, kommt der Ort dazu. Die Beschriftung steht auch in der Sprachausgabe. Übernommen wird als Name des Vorgangs weiterhin
+  trotzdem gleich, kommt der Ort dazu, zuletzt die Adresse (`KnownStation.Address`). Die Beschriftung steht auch in der Sprachausgabe. Übernommen wird als Name des Vorgangs weiterhin
   nur der Anzeigename (Momentaufnahme, ADR 0009); die Zuordnung zur Tankstelle läuft über die Kennung. Die zweite Zeile unter jedem
   Chip entfällt bewusst: Sie würde die Chipleiste auf kleinen Bildschirmen unruhig machen, und die Unterscheidung ist nur bei Namensgleichheit nötig.
   Die Beschreibung der Kartenmarkierung für die Sprachausgabe nennt zusätzlich die Adresse („JET, Hauptstraße 1, 10115 Berlin, Super E5 …“).
@@ -66,6 +66,6 @@ die [Detailansicht](0004-station-detail-design-deviations.md) und die [Sicherung
 - Bei einem eigenen Namen steht darunter der Stammdatenname, nicht die Marke. So bleibt die zweite Zeile kurz; die Marke ist in
   der Detailansicht nach dem Entfernen des eigenen Namens wieder zu sehen.
 - Ändert die Quelle Name oder Marke einer Tankstelle, folgt die Anzeige beim nächsten Abruf; der eigene Name bleibt.
-- Die Hinweise im Tankbuch sprechen bei Strom vom Akku statt vom Tank; der Hinweis zum eigenen Namen nennt, dass er nur auf dem
+- Die Hinweise im Tankbuch sprechen bei Strom vom Akku statt vom Tank und von Teilladung statt Teilbetankung; der Hinweis zum eigenen Namen nennt, dass er nur auf dem
   Gerät gespeichert, aber Teil der Sicherung ist.
 - Zukünftige Anzeigeorte (z. B. Route in Schritt 17) müssen `StationInfo.DisplayName`/`SubName` bzw. `StationNaming` verwenden.

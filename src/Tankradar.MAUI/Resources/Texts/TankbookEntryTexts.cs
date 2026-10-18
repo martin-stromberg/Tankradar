@@ -126,6 +126,21 @@ public static class TankbookEntryTexts
     public const string PartialBadge = "Teilbetankung";
 
     /// <summary>
+    /// Kennzeichnung einer Teilladung (Strom) in der Liste.
+    /// </summary>
+    public const string ElectricPartialBadge = "Teilladung";
+
+    /// <summary>
+    /// Liefert die Kennzeichnung einer Teilbetankung in der Liste passend zur Art.
+    /// </summary>
+    /// <param name="kind">Die Art.</param>
+    /// <returns>Der Text.</returns>
+    public static string GetPartialBadge(TankbookEntryKind kind)
+    {
+        return kind == TankbookEntryKind.Electricity ? ElectricPartialBadge : PartialBadge;
+    }
+
+    /// <summary>
     /// Beschriftung der Notiz.
     /// </summary>
     public const string NoteLabel = "Notiz, optional";
@@ -383,7 +398,7 @@ public static class TankbookEntryTexts
         {
             TankbookConsumptionState.Calculated when overview.Consumption is { } consumption && overview.IsFromStart => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)} ({FromStartLabel})",
             TankbookConsumptionState.Calculated when overview.Consumption is { } consumption => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)}",
-            TankbookConsumptionState.Partial => "Teilbetankung: zählt beim nächsten vollen Vorgang mit",
+            TankbookConsumptionState.Partial => $"{GetPartialBadge(overview.Entry.Kind)}: zählt beim nächsten vollen Vorgang mit",
             TankbookConsumptionState.NoPreviousFullEntry => "Noch kein Verbrauch: erster voller Vorgang",
             TankbookConsumptionState.NoDistance when overview.IsFromStart => "Kein Verbrauch: keine Strecke seit dem Startstand",
             TankbookConsumptionState.NoDistance => "Kein Verbrauch: keine Strecke seit dem letzten vollen Vorgang",
@@ -495,7 +510,7 @@ public static class TankbookEntryTexts
 
     /// <summary>
     /// Liefert die Beschriftungen der bekannten Tankstellen. Gleichnamige Tankstellen werden zuerst durch den Stammdatennamen bzw. die Straße,
-    /// bei weiterer Gleichheit zusätzlich durch den Ort unterscheidbar gemacht.
+    /// bei weiterer Gleichheit zusätzlich durch den Ort und zuletzt durch die Adresse unterscheidbar gemacht.
     /// </summary>
     /// <param name="stations">Die bekannten Tankstellen.</param>
     /// <returns>Je Tankstelle die Beschriftung, in derselben Reihenfolge.</returns>
@@ -523,6 +538,15 @@ public static class TankbookEntryTexts
             if (stillDuplicated.Contains(labels[i]))
             {
                 labels[i] = FormatKnownStationLabel(stations[i], true);
+            }
+        }
+
+        var lastDuplicated = GetDuplicates(labels);
+        for (var i = 0; i < labels.Length; i++)
+        {
+            if (lastDuplicated.Contains(labels[i]) && !string.IsNullOrWhiteSpace(stations[i].Address) && !labels[i].Contains(stations[i].Address!, StringComparison.OrdinalIgnoreCase))
+            {
+                labels[i] = $"{labels[i]} · {stations[i].Address!.Trim()}";
             }
         }
 

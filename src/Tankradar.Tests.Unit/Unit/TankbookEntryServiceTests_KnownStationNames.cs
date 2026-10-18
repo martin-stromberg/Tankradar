@@ -63,7 +63,7 @@ public class TankbookEntryServiceTests_KnownStationNames : BaseTest
         Assert.Equal(
             [
                 new KnownStation("00000002-0000-4000-8000-000000000000", "JET", "Berlin", "JET BERLIN HAUPTSTR. 1"),
-                new KnownStation("00000003-0000-4000-8000-000000000000", "JET", "Berlin", "Nebenweg 22"),
+                new KnownStation("00000003-0000-4000-8000-000000000000", "JET", "Berlin", "Nebenweg 22", "Nebenweg 22"),
             ],
             stations);
     }

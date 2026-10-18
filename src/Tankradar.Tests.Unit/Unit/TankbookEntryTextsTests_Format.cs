@@ -98,4 +98,29 @@ public class TankbookEntryTextsTests_Format : BaseTest
                 new KnownStation("c", "JET", "Potsdam", "Ring 2"),
             ]));
     }
+
+    /// <summary>
+    /// Prüft, dass bei gleichem Namen, Ort und Stammdatennamen zuletzt die Adresse unterscheidet.
+    /// </summary>
+    [Fact]
+    public void KnownStationLabels_LastStageUsesAddress()
+    {
+        Assert.Equal(
+            ["Shell · Shell (Berlin) · Weg 1", "Shell · Shell (Berlin) · Ring 2"],
+            TankbookEntryTexts.FormatKnownStationLabels(
+            [
+                new KnownStation("a", "Shell", "Berlin", "Shell", "Weg 1"),
+                new KnownStation("b", "Shell", "Berlin", "Shell", "Ring 2"),
+            ]));
+    }
+
+    /// <summary>
+    /// Prüft die Kennzeichnung und die Statuszeile einer Teilladung bei Strom.
+    /// </summary>
+    [Fact]
+    public void PartialBadge_ElectricityIsPartialCharge()
+    {
+        Assert.Equal("Teilbetankung", TankbookEntryTexts.GetPartialBadge(TankbookEntryKind.Fuel));
+        Assert.Equal("Teilladung", TankbookEntryTexts.GetPartialBadge(TankbookEntryKind.Electricity));
+    }
 }

@@ -97,13 +97,13 @@ if ($LASTEXITCODE -ne 0) {
 $assemblyInfoFiles = Get-ChildItem -Path $releaseObjDir -Recurse -File -Filter "Tankradar.MAUI.AssemblyInfo.cs" -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -like "*win-x64*" }
 $reportedVersion = $null
-foreach ($file in $assemblyInfoFiles) {
+foreach ($file in ($assemblyInfoFiles | Sort-Object LastWriteTime)) {
     $match = Select-String -Path $file.FullName -Pattern 'Microsoft\.Maui\.ApplicationModel\.AppInfo\.Version", "([^"]+)"' | Select-Object -First 1
     if ($match) { $reportedVersion = $match.Matches[0].Groups[1].Value }
 }
 if (-not $reportedVersion -or -not $reportedVersion.StartsWith("$Version.")) {
     Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Error "Die App wuerde die Version '$reportedVersion' melden statt '$Version'. Es wurde kein Zwischenstand erzeugt."
+    Write-Error "Die App wuerde die Version '$reportedVersion' melden statt '$Version'. Es wurde kein Zwischenstand erzeugt. Bitte src\Tankradar.MAUI\obj\Release loeschen und erneut versuchen."
     exit 1
 }
 Write-Host "Die App meldet die Version $reportedVersion."

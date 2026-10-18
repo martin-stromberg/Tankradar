@@ -127,6 +127,11 @@ public enum BackupTamper
     /// Tankstellenname eines Vorgangs mit 200.000 Zeichen.
     /// </summary>
     HugeEntryStationName,
+
+    /// <summary>
+    /// Eigener Anzeigename als BLOB mit 200.000 Bytes statt als Text.
+    /// </summary>
+    HugeBlobCustomName,
 }
 
 /// <summary>
@@ -169,6 +174,7 @@ public static class BackupTestTampering
             BackupTamper.HugeGroupName => "UPDATE FavoriteGroups SET Name = " + Huge,
             BackupTamper.HugeEntryNote => "UPDATE TankbookEntries SET Note = " + Huge,
             BackupTamper.HugeEntryStationName => "UPDATE TankbookEntries SET StationName = " + Huge,
+            BackupTamper.HugeBlobCustomName => "UPDATE Stations SET CustomName = zeroblob(200000)",
             _ => throw new ArgumentOutOfRangeException(nameof(tamper)),
         };
     }
@@ -182,7 +188,8 @@ public static class BackupTestTampering
     {
         return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry or BackupTamper.DuplicateName or BackupTamper.ViewAsTable
             or BackupTamper.OversizedCustomName or BackupTamper.HugeCustomName or BackupTamper.HugeStationName or BackupTamper.HugeBrand or BackupTamper.HugeGroupName
-            or BackupTamper.HugeEntryNote or BackupTamper.HugeEntryStationName;
+            or BackupTamper.HugeEntryNote or BackupTamper.HugeEntryStationName
+            or BackupTamper.HugeBlobCustomName;
     }
 
     /// <summary>

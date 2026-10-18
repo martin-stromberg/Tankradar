@@ -11,7 +11,7 @@ namespace Tankradar.Tests.Unit.Unit;
 public class E2EInputPolicyTests_NoFocus : BaseTest
 {
     private static readonly Regex Forbidden = new(
-        @"\.Focus\s*\(|\.SetForeground\s*\(|SetForegroundWindow|SetFocus|Keyboard\.|Mouse\.|SendKeys|SendInput|keybd_event|mouse_event|\.Click\s*\(|\.DoubleClick\s*\(|\.RightClick\s*\(|TypeSimultaneously",
+        @"\.Focus\s*\(|\.SetForeground\s*\(|SetForegroundWindow|SetFocus|Keyboard\.|Mouse\.|SendKeys|SendInput|keybd_event|mouse_event|\.Click\s*\(|\.DoubleClick\s*\(|\.RightClick\s*\(|TypeSimultaneously|ShowWindow|SetActiveWindow|BringWindowToTop|SwitchToThisWindow|AttachThreadInput|InputSimulator|\.Hover\s*\(|\.Drag\w*\s*\(|using\s+static\s+[\w.]*(Keyboard|Mouse)",
         RegexOptions.Compiled);
 
     private static string SourceRoot([CallerFilePath] string path = "")
@@ -27,10 +27,7 @@ public class E2EInputPolicyTests_NoFocus : BaseTest
     public void E2ESources_NeverUseFocusKeyboardOrMouse()
     {
         var directory = Path.Combine(SourceRoot(), "Tankradar.Tests.E2E");
-        if (!Directory.Exists(directory))
-        {
-            return;
-        }
+        Assert.True(Directory.Exists(directory), $"Das E2E-Verzeichnis fehlt: {directory}");
 
         var files = Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
@@ -46,7 +43,7 @@ public class E2EInputPolicyTests_NoFocus : BaseTest
             {
                 lineNumber++;
                 var code = line.TrimStart();
-                if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith("///", StringComparison.Ordinal))
+                if (code.StartsWith("//", StringComparison.Ordinal) || code.StartsWith("*", StringComparison.Ordinal) || code.StartsWith("/*", StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -68,10 +65,7 @@ public class E2EInputPolicyTests_NoFocus : BaseTest
     public void OffscreenWindow_IsNotActivatable()
     {
         var file = Path.Combine(SourceRoot(), "Tankradar.MAUI", "Platforms", "Windows", "OffscreenWindow.cs");
-        if (!File.Exists(file))
-        {
-            return;
-        }
+        Assert.True(File.Exists(file), $"Die Datei fehlt: {file}");
 
         var text = File.ReadAllText(file);
         Assert.Contains("WsExNoActivate", text, StringComparison.Ordinal);
