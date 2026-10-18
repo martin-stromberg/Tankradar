@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Data;
+using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Tankbook;
 
 namespace Tankradar.MAUI.Services.Tankbook;
@@ -53,7 +54,15 @@ public sealed class TankbookEntryService : ITankbookEntryService
         }
 
         var entries = await LoadEntriesAsync(context, vehicleId, null, cancellationToken).ConfigureAwait(false);
-        return ConsumptionCalculator.Calculate(entries).Reverse().ToList();
+        var vehicle = await context.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken).ConfigureAwait(false);
+        if (vehicle is null)
+        {
+            return ConsumptionCalculator.Calculate(entries).Reverse().ToList();
+        }
+
+        // Der Start-Kilometerstand ist die Basis des ersten vollen Vorgangs der Startart (Elektrofahrzeug: Strom, sonst Kraftstoff).
+        var startKind = ParseFuelKind(vehicle.FuelKind) == VehicleFuelKind.Electric ? TankbookEntryKind.Electricity : TankbookEntryKind.Fuel;
+        return ConsumptionCalculator.Calculate(entries, vehicle.StartOdometerKm, startKind).Reverse().ToList();
     }
 
     /// <inheritdoc />
@@ -164,16 +173,17 @@ public sealed class TankbookEntryService : ITankbookEntryService
         await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
         var favoriteRows = await context.FavoriteEntries.AsNoTracking()
             .Where(f => f.Station != null)
-            .Select(f => new { f.StationId, f.Station!.Name, f.Station.Place })
+            .Select(f => new { f.StationId, f.Station!.Name, f.Station.Brand, f.Station.CustomName, f.Station.Place })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         var favorites = favoriteRows
             .GroupBy(row => row.StationId, StringComparer.Ordinal)
             .Select(group => group.First())
-            .Where(row => !string.IsNullOrWhiteSpace(row.Name))
-            .OrderBy(row => row.Name, GermanOrder)
-            .ThenBy(row => row.Place ?? string.Empty, GermanOrder)
-            .Select(row => new KnownStation(row.StationId, row.Name.Trim(), string.IsNullOrWhiteSpace(row.Place) ? null : row.Place.Trim()))
+            .Select(row => (Row: row, Display: StationNaming.GetPrimary(row.CustomName, row.Brand, row.Name)))
+            .Where(item => item.Display.Length > 0)
+            .OrderBy(item => item.Display, GermanOrder)
+            .ThenBy(item => item.Row.Place ?? string.Empty, GermanOrder)
+            .Select(item => new KnownStation(item.Row.StationId, item.Display, string.IsNullOrWhiteSpace(item.Row.Place) ? null : item.Row.Place.Trim()))
             .ToList();
 
         var favoriteNames = new HashSet<string>(favorites.Select(station => station.Name), StringComparer.OrdinalIgnoreCase);

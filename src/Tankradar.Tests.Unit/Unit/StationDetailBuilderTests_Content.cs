@@ -30,19 +30,19 @@ public class StationDetailBuilderTests_Content : BaseTest
     }
 
     /// <summary>
-    /// Prüft Name, Marke, Adresse, Entfernung und Öffnungsstatus.
+    /// Prüft Marke als Name, Stammdatenname klein darunter, Adresse, Entfernung und Öffnungsstatus.
     /// </summary>
     [Fact]
     public void Build_ShowsNameBrandAddressDistanceAndStatus()
     {
         var item = StationDetailBuilder.Build(Station(Now, (FuelType.Diesel, 1.699m)), SearchTestData.AllFuels, 1.84, Now);
 
-        Assert.Equal("Alpha Tankstelle", item.Name);
-        Assert.Equal("ALPHA", item.BrandText);
+        Assert.Equal("ALPHA", item.Name);
+        Assert.Equal("Alpha Tankstelle", item.SubNameText);
         Assert.Equal("Hauptstraße 1, 10115 Berlin", item.AddressText);
         Assert.Equal("1,8 km", item.DistanceText);
         Assert.Equal("Geöffnet", item.OpeningStatusText);
-        Assert.True(item.HasBrand && item.HasAddress && item.HasDistance && item.HasOpeningStatus);
+        Assert.True(item.HasSubName && item.HasAddress && item.HasDistance && item.HasOpeningStatus);
     }
 
     /// <summary>

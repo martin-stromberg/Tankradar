@@ -619,6 +619,11 @@
                                 <Label Text="{Binding ConsumptionText}"
                                        Style="{StaticResource FieldLabel}"
                                        AutomationId="TankbookEntry.Item.Consumption" />
+                                <Label Text="{Binding ConsumptionNote}"
+                                       IsVisible="{Binding HasConsumptionNote}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="TankbookEntry.Item.ConsumptionNote" />
                                 <Label Text="{Binding NoteText}"
                                        IsVisible="{Binding HasNote}"
                                        Style="{StaticResource body-sm}"

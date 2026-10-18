@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test der Auswertung: Korrigieren und Löschen eines Vorgangs ändern die Werte; nach dem Löschen fällt die Auswertung auf den Hinweis zurück.
+/// E2E-Test der Auswertung: Korrigieren und Löschen eines Vorgangs ändern die Werte; nach dem Löschen bleibt der gekennzeichnete Wert ab Startstand.
 /// </summary>
 public class TankbookStatisticsE2ETests_Update : TankbookE2ETestBase
 {
@@ -29,10 +29,11 @@ public class TankbookStatisticsE2ETests_Update : TankbookE2ETestBase
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
             Press("TankbookEntry.Item.DeleteConfirm");
 
-            Tankbook.WaitForStatistic("Fuel", "Average", "–");
-            Tankbook.WaitForStatistic("Fuel", "CostPer100KmUnit", "noch nicht berechenbar");
+            Tankbook.WaitForStatistic("Fuel", "Average", "8,00");
+            Tankbook.WaitForStatistic("Fuel", "AverageSource", "Ab Startstand – angenommen wird ein voller Tank beim Start");
+            Tankbook.WaitForStatistic("Fuel", "CostPer100Km", "14,87");
             Tankbook.WaitForStatistic("Fuel", "MonthCost", "74,36 €");
-            Assert.StartsWith("Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt.", WaitForAutomationId("TankbookEntries.Statistics.Fuel.Notice").Name, StringComparison.Ordinal);
+            Assert.False(Exists("TankbookEntries.Statistics.Fuel.Notice"));
         });
     }
 }

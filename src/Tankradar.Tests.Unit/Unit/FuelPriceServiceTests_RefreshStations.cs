@@ -231,5 +231,15 @@ public class FuelPriceServiceTests_RefreshStations : FuelPriceServiceTestBase
         {
             return Task.FromException(new InvalidOperationException("Speichern fehlgeschlagen."));
         }
+
+        public Task<IReadOnlyDictionary<string, string>> GetCustomNamesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+        {
+            return inner.GetCustomNamesAsync(stationIds, cancellationToken);
+        }
+
+        public Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+        {
+            return inner.SetCustomNameAsync(stationId, name, cancellationToken);
+        }
     }
 }

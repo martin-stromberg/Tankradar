@@ -26,7 +26,7 @@ public sealed class TankbookKindStatisticsViewModel
         CostPer100KmValueText = TankbookStatisticsTexts.FormatCostPer100KmValue(statistics.CostPer100Km);
         CostPer100KmValueFontSize = StatisticsTileFont.SizeFor(CostPer100KmValueText);
         CostPer100KmUnitText = statistics.CostPer100Km is null ? TankbookStatisticsTexts.NotCalculable : "€";
-        Notice = statistics.AverageSource == TankbookAverageSource.None ? TankbookStatisticsTexts.GetTooFewEntriesNotice(statistics.OffersStartConsumption) : null;
+        Notice = statistics.AverageSource == TankbookAverageSource.None ? TankbookStatisticsTexts.GetTooFewEntriesNotice(statistics.OffersStartConsumption, statistics.IsStartKind) : null;
         var currentMonth = statistics.Months.Count > 0 ? statistics.Months[0] : null;
         MonthAnalysisHeading = currentMonth is null ? string.Empty : TankbookStatisticsTexts.FormatMonthAnalysisHeading(currentMonth.Year, currentMonth.Month);
         MonthCostLabel = currentMonth is null ? string.Empty : TankbookStatisticsTexts.FormatMonthCostLabel(currentMonth.Month);

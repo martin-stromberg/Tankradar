@@ -25,9 +25,9 @@ public class TankbookEntriesE2ETests_Partial : TankbookE2ETestBase
                 "TankbookEntry.Item.Consumption",
                 "Verbrauch 6,00 L/100 km",
                 "Teilbetankung: zählt beim nächsten vollen Vorgang mit",
-                "Noch kein Verbrauch: erster voller Vorgang");
+                "Verbrauch 8,00 L/100 km (ab Startstand)");
             WaitForTexts("TankbookEntry.Item.Partial", "Teilbetankung");
-            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 500 km");
+            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 500 km", "Strecke 500 km");
             Assert.Equal([false, true, false], TankbookTestDatabase.ReadEntries(DatabasePath).Select(entry => entry.IsPartial));
         });
     }

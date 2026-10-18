@@ -72,7 +72,7 @@ if (Test-Path $versionDir) {
 New-Item -ItemType Directory -Path $versionDir -Force | Out-Null
 
 Write-Host "Fuehre Windows-Release-Build aus (dotnet publish, Framework $targetFramework) ..."
-& dotnet publish $mauiProject -c Release -f $targetFramework -p:Version=$Version
+& dotnet publish $mauiProject -c Release -f $targetFramework -p:Version=$Version -p:InformationalVersion=$Version -p:ApplicationDisplayVersion=$Version
 
 if ($LASTEXITCODE -ne 0) {
     Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue

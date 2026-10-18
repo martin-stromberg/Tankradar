@@ -16,6 +16,61 @@ public static class DetailTexts
     public const string OpenDetails = "Details";
 
     /// <summary>
+    /// Überschrift der Karte zum eigenen Anzeigenamen.
+    /// </summary>
+    public const string CustomNameHeading = "Eigener Name";
+
+    /// <summary>
+    /// Erklärung zum eigenen Anzeigenamen.
+    /// </summary>
+    public const string CustomNameHint = "Der eigene Name gilt nur auf diesem Gerät und ersetzt überall die Marke und den Namen der Tankstelle.";
+
+    /// <summary>
+    /// Beschriftung des Eingabefelds für den eigenen Anzeigenamen.
+    /// </summary>
+    public const string CustomNameLabel = "Eigener Name";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Speichern des eigenen Anzeigenamens.
+    /// </summary>
+    public const string CustomNameSave = "Namen speichern";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Entfernen des eigenen Anzeigenamens.
+    /// </summary>
+    public const string CustomNameRemove = "Eigenen Namen entfernen";
+
+    /// <summary>
+    /// Rückmeldung nach dem Speichern des eigenen Anzeigenamens.
+    /// </summary>
+    public const string CustomNameSaved = "Der eigene Name wurde gespeichert.";
+
+    /// <summary>
+    /// Rückmeldung nach dem Entfernen des eigenen Anzeigenamens.
+    /// </summary>
+    public const string CustomNameRemoved = "Der eigene Name wurde entfernt.";
+
+    /// <summary>
+    /// Fehlermeldung, wenn der eigene Anzeigename nicht gespeichert werden konnte.
+    /// </summary>
+    public const string CustomNameFailed = "Der eigene Name konnte nicht gespeichert werden.";
+
+    /// <summary>
+    /// Fehlermeldung, wenn die Tankstelle lokal noch nicht gespeichert ist.
+    /// </summary>
+    public const string CustomNameUnknownStation = "Der eigene Name kann erst vergeben werden, wenn die Tankstelle geladen ist.";
+
+    /// <summary>
+    /// Liefert die Fehlermeldung bei zu langem eigenen Anzeigenamen.
+    /// </summary>
+    /// <param name="maxLength">Die höchste zulässige Länge.</param>
+    /// <returns>Die Meldung.</returns>
+    public static string FormatCustomNameTooLong(int maxLength)
+    {
+        return $"Der eigene Name darf höchstens {maxLength} Zeichen lang sein.";
+    }
+
+    /// <summary>
     /// Überschrift der Preise.
     /// </summary>
     public const string PricesHeading = "Kraftstoffe";

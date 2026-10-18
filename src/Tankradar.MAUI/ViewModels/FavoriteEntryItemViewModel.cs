@@ -28,6 +28,7 @@ public sealed class FavoriteEntryItemViewModel : BaseViewModel
         GroupId = entry.GroupId;
         StationId = entry.StationId;
         StationName = entry.StationName;
+        SubName = entry.SubName;
         AddressText = entry.AddressText;
         Note = entry.Note ?? string.Empty;
         Priority = entry.Priority;
@@ -55,6 +56,16 @@ public sealed class FavoriteEntryItemViewModel : BaseViewModel
     /// Der Name der Tankstelle.
     /// </summary>
     public string StationName { get; }
+
+    /// <summary>
+    /// Der klein darunter angezeigte Stammdatenname; leer, wenn er dem Namen entspricht.
+    /// </summary>
+    public string SubName { get; }
+
+    /// <summary>
+    /// Gibt an, ob der Stammdatenname angezeigt wird.
+    /// </summary>
+    public bool HasSubName => SubName.Length > 0;
 
     /// <summary>
     /// Die Adresse in einer Zeile; leer, wenn die Quelle keine liefert.

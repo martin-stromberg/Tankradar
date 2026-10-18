@@ -53,7 +53,7 @@ public static class HomeOverviewBuilder
     {
         if (!stations.TryGetValue(favorite.StationId, out var station))
         {
-            var unknown = new StationListItem(favorite.StationId, favorite.StationName, null, string.Empty, [], false, false, string.Empty, favorite.AddressText);
+            var unknown = new StationListItem(favorite.StationId, favorite.StationName, null, string.Empty, [], false, false, string.Empty, favorite.AddressText, SubName: favorite.SubName);
             return new HomeStation(unknown, favorite.Note, favorite.Priority);
         }
 

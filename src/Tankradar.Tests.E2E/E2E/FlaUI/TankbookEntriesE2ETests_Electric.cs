@@ -26,7 +26,7 @@ public class TankbookEntriesE2ETests_Electric : TankbookE2ETestBase
             Tankbook.SaveEntryForm();
             Tankbook.CreateEntry("Zuhause", "33", "0,59", string.Empty, "5400");
 
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 16,50 kWh/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 16,50 kWh/100 km", "Verbrauch 20,00 kWh/100 km (ab Startstand)");
             WaitForTexts("TankbookEntry.Item.UnitPrice", "0,59 €/kWh", "0,59 €/kWh");
             WaitForTexts("TankbookEntry.Item.Quantity", "Menge 33,00 kWh", "Menge 40,00 kWh");
             WaitForTexts("TankbookEntry.Item.Station", "Zuhause", "Zuhause");

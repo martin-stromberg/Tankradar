@@ -16,8 +16,8 @@ public sealed record OpeningHoursLine(string DayText, string TimeText, string Di
 /// und werden in der Oberfläche ausgeblendet, nie durch Platzhalter ersetzt.
 /// </summary>
 /// <param name="Id">Die Kennung der Tankstelle.</param>
-/// <param name="Name">Der Name.</param>
-/// <param name="BrandText">Die Marke; leer, wenn die Quelle keine liefert oder sie dem Namen entspricht.</param>
+/// <param name="Name">Der prominent angezeigte Name: eigener Anzeigename, sonst Marke, sonst Name der Quelle.</param>
+/// <param name="SubNameText">Der klein darunter angezeigte Stammdatenname der Quelle; leer, wenn er dem <paramref name="Name"/> entspricht.</param>
 /// <param name="AddressText">Die Adresszeile; leer, wenn die Quelle keine Adresse liefert.</param>
 /// <param name="DistanceText">Die Entfernung als Text; leer, wenn unbekannt.</param>
 /// <param name="OpeningStatusText">Der Öffnungsstatus („Geöffnet“ oder „Geschlossen“); leer, wenn die Quelle ihn nicht liefert.</param>
@@ -26,11 +26,12 @@ public sealed record OpeningHoursLine(string DayText, string TimeText, string Di
 /// <param name="IsAutomatedStation">Gibt an, ob der Hinweis „Automatentankstelle“ gilt.</param>
 /// <param name="OpeningHours">Die Öffnungszeiten; leer, wenn die Quelle keine liefert oder sie zu alt sind.</param>
 /// <param name="OpeningHoursAgeText">Das Alter der Öffnungszeiten („Stand: vor X Min.“); leer, wenn keine Öffnungszeiten angezeigt werden.</param>
+/// <param name="CustomName">Der eigene Anzeigename des Anwenders; leer, wenn keiner vergeben ist.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationDetailItem(
     string Id,
     string Name,
-    string BrandText,
+    string SubNameText,
     string AddressText,
     string DistanceText,
     string OpeningStatusText,
@@ -38,12 +39,18 @@ public sealed record StationDetailItem(
     bool HasUnconfirmedPrice,
     bool IsAutomatedStation,
     IReadOnlyList<OpeningHoursLine> OpeningHours,
-    string OpeningHoursAgeText)
+    string OpeningHoursAgeText,
+    string CustomName = "")
 {
     /// <summary>
-    /// Gibt an, ob eine Marke angezeigt wird.
+    /// Gibt an, ob der Stammdatenname klein unter dem Namen angezeigt wird.
     /// </summary>
-    public bool HasBrand => BrandText.Length > 0;
+    public bool HasSubName => SubNameText.Length > 0;
+
+    /// <summary>
+    /// Gibt an, ob der Anwender einen eigenen Anzeigenamen vergeben hat.
+    /// </summary>
+    public bool HasCustomName => CustomName.Length > 0;
 
     /// <summary>
     /// Gibt an, ob eine Adresse vorliegt.

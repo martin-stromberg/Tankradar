@@ -336,6 +336,11 @@
                                            VerticalOptions="Center"
                                            AutomationId="Search.Station.Distance" />
                                 </Grid>
+                                <Label Text="{Binding SubName}"
+                                       IsVisible="{Binding HasSubName}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="Search.Station.SubName" />
                                 <Label Text="{Binding AddressText}"
                                        IsVisible="{Binding HasAddress}"
                                        Style="{StaticResource body-md}"

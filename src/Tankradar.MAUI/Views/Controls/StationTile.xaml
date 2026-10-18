@@ -44,6 +44,12 @@
                            Style="{StaticResource headline-md}"
                            FontSize="16"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label x:Name="SubNameLabel"
+                           Text="{Binding SubName}"
+                           IsVisible="{Binding HasSubName}"
+                           Style="{StaticResource body-sm}"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
                     <Label x:Name="AddressLabel"
                            Text="{Binding AddressText}"
                            IsVisible="{Binding HasAddress}"

@@ -5,6 +5,7 @@
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
              xmlns:search="clr-namespace:Tankradar.MAUI.Models.Search"
+             xmlns:pricing="clr-namespace:Tankradar.MAUI.Models.Pricing"
              xmlns:fav="clr-namespace:Tankradar.MAUI.Models.Favorites"
              xmlns:shapes="clr-namespace:Microsoft.Maui.Controls.Shapes;assembly=Microsoft.Maui.Controls"
              x:DataType="vm:StationDetailViewModel"
@@ -103,15 +104,6 @@
                             <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center">
                                 <Border Style="{StaticResource DetailChip}"
                                         Margin="0,0,8,4"
-                                        BackgroundColor="{AppThemeBinding Light=#190F766E, Dark=#33006C49}"
-                                        IsVisible="{Binding HasBrand}">
-                                    <Label Text="{Binding BrandText}"
-                                           Style="{StaticResource body-sm}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
-                                           AutomationId="Detail.Brand" />
-                                </Border>
-                                <Border Style="{StaticResource DetailChip}"
-                                        Margin="0,0,8,4"
                                         BackgroundColor="#6FFBBE"
                                         IsVisible="{Binding HasLivePrices}">
                                     <Label Text="{Binding PriceStatusText}"
@@ -142,6 +134,11 @@
                                    Style="{StaticResource headline-lg}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                    AutomationId="Detail.Name" />
+                            <Label Text="{Binding SubNameText}"
+                                   IsVisible="{Binding HasSubName}"
+                                   Style="{StaticResource body-sm}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                   AutomationId="Detail.SubName" />
                             <Label Text="{Binding AddressText}"
                                    IsVisible="{Binding HasAddress}"
                                    Style="{StaticResource body-md}"
@@ -274,6 +271,38 @@
                                    Style="{StaticResource body-sm}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                    AutomationId="Detail.OpeningHoursAge" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Karte "Eigener Name": eigener Anzeigename der Tankstelle (lokal gespeichert, überall bevorzugt) -->
+                    <Border Style="{StaticResource DetailCard}">
+                        <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                            <Label Text="{x:Static texts:DetailTexts.CustomNameHeading}"
+                                   Style="{StaticResource headline-md}"
+                                   SemanticProperties.HeadingLevel="Level2"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                            <Label Text="{x:Static texts:DetailTexts.CustomNameHint}"
+                                   Style="{StaticResource body-sm}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                            <Entry Text="{Binding CustomNameInput}"
+                                   Placeholder="{x:Static texts:DetailTexts.CustomNameLabel}"
+                                   MaxLength="{x:Static pricing:StationNaming.MaxCustomNameLength}"
+                                   SemanticProperties.Description="{x:Static texts:DetailTexts.CustomNameLabel}"
+                                   AutomationId="Detail.CustomName.Input" />
+                            <Label Text="{Binding CustomNameMessage}"
+                                   IsVisible="{Binding HasCustomNameMessage}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   AutomationId="Detail.CustomName.Message" />
+                            <Button Text="{x:Static texts:DetailTexts.CustomNameSave}"
+                                    Command="{Binding SaveCustomNameCommand}"
+                                    Style="{StaticResource DetailActionButton}"
+                                    AutomationId="Detail.CustomName.Save" />
+                            <Button Text="{x:Static texts:DetailTexts.CustomNameRemove}"
+                                    Command="{Binding RemoveCustomNameCommand}"
+                                    IsVisible="{Binding HasCustomName}"
+                                    Style="{StaticResource DetailActionButton}"
+                                    AutomationId="Detail.CustomName.Remove" />
                         </VerticalStackLayout>
                     </Border>
 

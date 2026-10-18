@@ -103,7 +103,7 @@ public static class TankbookEntryTexts
     /// <summary>
     /// Hinweis im Formular, solange „Teilbetankung“ aktiv ist.
     /// </summary>
-    public const string PartialHint = "Der Verbrauch wird erst ab dem ersten vollen Vorgang berechnet. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; Teilbetankungen vor dem ersten vollen Vorgang zählen nicht für den Verbrauch, ihre Kosten erscheinen aber in den Monatskosten.";
+    public const string PartialHint = "Der Verbrauch wird beim ersten vollen Vorgang ab dem Start-Kilometerstand des Fahrzeugs berechnet, angenommen wird ein voller Tank beim Start, danach zwischen vollen Vorgängen. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; ihre Kosten erscheinen auch in den Monatskosten.";
 
     /// <summary>
     /// Kennzeichnung einer Teilbetankung in der Liste.
@@ -331,6 +331,27 @@ public static class TankbookEntryTexts
     }
 
     /// <summary>
+    /// Kennzeichnung eines Verbrauchs, der ab dem Start-Kilometerstand berechnet wurde.
+    /// </summary>
+    public const string FromStartLabel = "ab Startstand";
+
+    /// <summary>
+    /// Hinweis, der die Annahme hinter einem Verbrauch ab Startstand erklärt.
+    /// </summary>
+    public const string FromStartNote = "Ab Startstand berechnet: Angenommen wird, dass der Tank beim Start voll war. Teilbetankungen davor zählen mit.";
+
+    /// <summary>
+    /// Liefert den Hinweis zur Annahme hinter einem Verbrauch ab Startstand.
+    /// </summary>
+    /// <param name="overview">Der Vorgang mit Berechnungsergebnis.</param>
+    /// <returns>Der Hinweis; leer, wenn der Verbrauch nicht ab dem Startstand berechnet wurde.</returns>
+    public static string GetConsumptionNote(TankbookEntryOverview overview)
+    {
+        ArgumentNullException.ThrowIfNull(overview);
+        return overview.IsFromStart && overview.ConsumptionState == TankbookConsumptionState.Calculated ? FromStartNote : string.Empty;
+    }
+
+    /// <summary>
     /// Liefert die Verbrauchszeile eines Eintrags: den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“, oder den Grund, warum es keinen gibt.
     /// </summary>
     /// <param name="overview">Der Vorgang mit Berechnungsergebnis.</param>
@@ -340,9 +361,11 @@ public static class TankbookEntryTexts
         ArgumentNullException.ThrowIfNull(overview);
         return overview.ConsumptionState switch
         {
+            TankbookConsumptionState.Calculated when overview.Consumption is { } consumption && overview.IsFromStart => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)} ({FromStartLabel})",
             TankbookConsumptionState.Calculated when overview.Consumption is { } consumption => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)}",
             TankbookConsumptionState.Partial => "Teilbetankung: zählt beim nächsten vollen Vorgang mit",
             TankbookConsumptionState.NoPreviousFullEntry => "Noch kein Verbrauch: erster voller Vorgang",
+            TankbookConsumptionState.NoDistance when overview.IsFromStart => "Kein Verbrauch: keine Strecke seit dem Startstand",
             TankbookConsumptionState.NoDistance => "Kein Verbrauch: keine Strecke seit dem letzten vollen Vorgang",
             _ => string.Empty,
         };

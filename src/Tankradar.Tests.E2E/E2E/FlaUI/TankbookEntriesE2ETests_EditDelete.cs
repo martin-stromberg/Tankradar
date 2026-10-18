@@ -18,7 +18,7 @@ public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
             Tankbook.OpenEntries("Golf");
             Tankbook.CreateEntry("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
             Tankbook.CreateEntry("Alpha Tankstelle", "30", "1,859", string.Empty, "11000");
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
 
             Assert.Equal("Bearbeiten", Tankbook.FindAllOrdered("TankbookEntry.Item.Edit")[0].Name);
             var hint = Tankbook.FindAllOrdered("TankbookEntry.Item.Edit")[0].Properties.HelpText.ValueOrDefault ?? string.Empty;
@@ -31,8 +31,8 @@ public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
             Assert.Equal("30,00", WaitForAutomationId("TankbookEntries.Form.Quantity").Patterns.Value.Pattern.Value.Value);
             Type("TankbookEntries.Form.Odometer", "11500");
             Tankbook.SaveEntryForm();
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 3,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
-            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 1.000 km");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 3,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
+            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 1.000 km", "Strecke 500 km");
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
             var question = WaitForAutomationId("TankbookEntry.Item.DeleteQuestion").Name;
@@ -49,7 +49,7 @@ public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
             Press("TankbookEntry.Item.DeleteConfirm");
-            WaitForTexts("TankbookEntry.Item.Consumption", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 8,00 L/100 km (ab Startstand)");
             Assert.Equal([10_500], TankbookTestDatabase.ReadEntries(DatabasePath).Select(entry => entry.OdometerKm));
         });
     }

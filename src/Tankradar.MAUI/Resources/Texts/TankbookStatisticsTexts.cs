@@ -31,6 +31,11 @@ public static class TankbookStatisticsTexts
     public const string TooFewEntriesNotice = "Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt.";
 
     /// <summary>
+    /// Hinweis, wenn für die Startart noch kein voller Vorgang vorliegt (der Start-Kilometerstand liefert die Basis des ersten).
+    /// </summary>
+    public const string TooFewStartEntriesNotice = "Für den Verbrauch wird mindestens ein voller Vorgang benötigt.";
+
+    /// <summary>
     /// Zusatz zum Hinweis, wenn die Art die Startart des Fahrzeugs ist und noch kein Startverbrauch hinterlegt ist.
     /// </summary>
     public const string StartConsumptionHint = "Alternativ kannst du am Fahrzeug einen Startverbrauch hinterlegen.";
@@ -71,9 +76,14 @@ public static class TankbookStatisticsTexts
     public const string CalculatedSource = "Berechnet aus vollen Vorgängen";
 
     /// <summary>
+    /// Kennzeichnung eines Durchschnitts, der allein aus dem ersten Intervall ab dem Start-Kilometerstand stammt.
+    /// </summary>
+    public const string FromStartSource = "Ab Startstand – angenommen wird ein voller Tank beim Start";
+
+    /// <summary>
     /// Kennzeichnung des Startverbrauchs als Ersatzwert.
     /// </summary>
-    public const string StartConsumptionSource = "Startverbrauch – noch keine zwei vollen Vorgänge";
+    public const string StartConsumptionSource = "Startverbrauch – noch kein voller Vorgang";
 
     /// <summary>
     /// Text, wenn die Kosten pro 100 km noch nicht berechnet werden können.
@@ -135,10 +145,12 @@ public static class TankbookStatisticsTexts
     /// Liefert den Hinweis bei zu wenigen vollen Vorgängen; der Verweis auf den Startverbrauch steht nur, wenn er für die Art etwas ändern würde.
     /// </summary>
     /// <param name="offersStartConsumption">Gibt an, ob die Art die Startart des Fahrzeugs ist und noch kein Startverbrauch hinterlegt ist.</param>
+    /// <param name="isStartKind">Gibt an, ob die Art die Startart des Fahrzeugs ist (ein voller Vorgang genügt).</param>
     /// <returns>Der Text.</returns>
-    public static string GetTooFewEntriesNotice(bool offersStartConsumption)
+    public static string GetTooFewEntriesNotice(bool offersStartConsumption, bool isStartKind = false)
     {
-        return offersStartConsumption ? $"{TooFewEntriesNotice} {StartConsumptionHint}" : TooFewEntriesNotice;
+        var notice = isStartKind ? TooFewStartEntriesNotice : TooFewEntriesNotice;
+        return offersStartConsumption ? $"{notice} {StartConsumptionHint}" : notice;
     }
 
     /// <summary>
@@ -214,6 +226,7 @@ public static class TankbookStatisticsTexts
         return source switch
         {
             TankbookAverageSource.Calculated => CalculatedSource,
+            TankbookAverageSource.FromStart => FromStartSource,
             TankbookAverageSource.StartConsumption => StartConsumptionSource,
             _ => string.Empty,
         };

@@ -9,6 +9,7 @@ namespace Tankradar.MAUI.Models.Tankbook;
 /// <param name="ConsumptionState">Der Zustand der Berechnung.</param>
 /// <param name="IntervalQuantity">Die Menge des Intervalls (voller Vorgang plus dazwischenliegende Teilbetankungen); nur bei berechnetem Verbrauch belegt.</param>
 /// <param name="IntervalCost">Die Kosten des Intervalls in Euro (voller Vorgang plus dazwischenliegende Teilbetankungen); nur bei berechnetem Verbrauch belegt.</param>
+/// <param name="IsFromStart">Gibt an, ob als Ausgangsbasis der Start-Kilometerstand des Fahrzeugs diente (erster voller Vorgang der Startart; Annahme: Tank beim Start voll).</param>
 /// <returns>Der Wert.</returns>
 public sealed record TankbookEntryOverview(
     TankbookEntry Entry,
@@ -16,4 +17,5 @@ public sealed record TankbookEntryOverview(
     decimal? Consumption,
     TankbookConsumptionState ConsumptionState,
     decimal? IntervalQuantity = null,
-    decimal? IntervalCost = null);
+    decimal? IntervalCost = null,
+    bool IsFromStart = false);

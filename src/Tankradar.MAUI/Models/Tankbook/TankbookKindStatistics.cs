@@ -13,6 +13,7 @@ namespace Tankradar.MAUI.Models.Tankbook;
 /// <param name="TotalCost">Die Summe der Gesamtbeträge aller Vorgänge der Art in Euro.</param>
 /// <param name="Months">Die lückenlose Monatsreihe, neuester Monat zuerst.</param>
 /// <param name="ConsumptionTrend">Die Verbrauchswerte der berechneten Vorgänge, ältester zuerst.</param>
+/// <param name="IsStartKind">Gibt an, ob die Art die Startart des Fahrzeugs ist (Kraftstoff, bei Elektrofahrzeugen Strom): Für sie genügt ein voller Vorgang, weil der Start-Kilometerstand die Basis liefert.</param>
 /// <returns>Der Wert.</returns>
 public sealed record TankbookKindStatistics(
     TankbookEntryKind Kind,
@@ -24,4 +25,5 @@ public sealed record TankbookKindStatistics(
     int TotalDistanceKm,
     decimal TotalCost,
     IReadOnlyList<MonthlyCostSummary> Months,
-    IReadOnlyList<TrendPoint> ConsumptionTrend);
+    IReadOnlyList<TrendPoint> ConsumptionTrend,
+    bool IsStartKind = false);
