@@ -18,7 +18,7 @@ namespace Tankradar.MAUI.Services.Backup;
 /// </summary>
 public static class BackupDatabasePreparer
 {
-    private const int BatchSize = 500;
+    private const int CancellationCheckInterval = 500;
 
     /// <summary>
     /// Bereitet die Datenbank vor: Integritätsprüfung und Migrationsstand der Sicherung (nur lesend), Referenz auf diesem Stand anlegen, Daten kopieren, Fremdschlüsselprüfung,
@@ -56,7 +56,6 @@ public static class BackupDatabasePreparer
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
             BackupFileCleanup.DeleteDirectory(workDirectory);
         }
     }
@@ -122,7 +121,6 @@ public static class BackupDatabasePreparer
             return new BackupPreparation(BackupResult.InvalidFile);
         }
 
-        SqliteConnection.ClearAllPools();
         BackupFileCleanup.DeleteFile(referencePath + "-wal");
         BackupFileCleanup.DeleteFile(referencePath + "-shm");
         BackupFileCleanup.DeleteFile(databasePath + "-wal");
@@ -204,7 +202,7 @@ public static class BackupDatabasePreparer
             }
 
             await insert.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            if (++rows % BatchSize == 0)
+            if (++rows % CancellationCheckInterval == 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
             }

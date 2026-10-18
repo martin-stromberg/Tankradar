@@ -123,8 +123,8 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
      ihren Ids (es gibt dadurch keinen manipulierten Zähler; ein früher gelöschter, höherer Id-Wert kann wiederverwendet werden, was hier unschädlich ist).
   4. `foreign_key_check`; danach Migration der Referenz auf den aktuellen Stand (Datenübernahmen der Migrationen laufen auf den kopierten
      Daten in dieser sauberen Datenbank); `integrity_check` und `foreign_key_check` erneut.
-  5. Jede Entität wird einmal über Entity Framework gelesen (`AsNoTracking`, gestreamt): ungültige Datums-, Zahlen- und Wahrheitswerte
-     (`FormatException` u. a.) führen zu `InvalidFile`. Zusätzlich müssen die Enum-Zeichenketten, die die App nur gültig schreibt
+  5. Jede Entität wird einmal über Entity Framework gelesen (`AsNoTracking`, gestreamt): ungültige Datums- und Dezimalwerte
+     (`FormatException` u. a.) führen zu `InvalidFile`; Text in Ganzzahl- oder Wahrheitswertspalten liest SQLite ohne Ausnahme als 0 bzw. wahr und wird daher nicht erkannt. Zusätzlich müssen die Enum-Zeichenketten, die die App nur gültig schreibt
      (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. Weitere Grenzwerte (Längen,
      Kilometerstände) werden nicht geprüft, weil die App sie nur bei der Eingabe durchsetzt und gespeicherte Altdaten nicht daran misst.
      Einstellungen mit unbekannten Werten fängt die App beim Lesen selbst ab (Rückfall auf Standardwerte).
@@ -135,7 +135,7 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
 
   Gewählt wurde die Referenz **auf dem alten Migrationsstand** statt die Sicherungsdatenbank selbst zu migrieren: So bleibt die Quelle
   schreibgeschützt, es gibt keine Sperrtabelle der Quelle, auf die EF warten könnte, und fremde Trigger oder Views können bei den
-  Datenmigrationen (`UPDATE` in `AddTankbookEntryDetails`) nie feuern. Die Kosten sind eine zweite Migration der Referenz für ältere Stände.
+  Datenmigrationen (`UPDATE` in `AddTankbookEntryDetails`) nie feuern. Die Kosten sind eine zweite Migration der Referenz für ältere Stände und ein zusätzlicher Speicherbedarf von etwa der Größe der Datenbank im Staging (es gibt keine Vorabprüfung des freien Platzes; Platzmangel führt zu `Failed`).
   Tabellen und Spalten werden aus der Referenz abgeleitet; neue Migrationen werden daher ohne Änderung am Neuaufbau erfasst (der
   Wächtertest `Create_DatabaseHasOnlyKnownTables` bleibt für den Umfang der Sicherung).
   Dieselbe Vorbereitung läuft schon beim Einspielen einer externen Datei (Entpacken ins Staging, Neuaufbau, Aufräumen), bei der Rückfrage (nur die

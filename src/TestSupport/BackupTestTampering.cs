@@ -79,6 +79,16 @@ public enum BackupTamper
     UnknownFuelKind,
 
     /// <summary>
+    /// Der eindeutige Fahrzeugname ist doppelt vorhanden (eindeutiger Index entfernt).
+    /// </summary>
+    DuplicateName,
+
+    /// <summary>
+    /// Eine Tabelle der App ist durch eine View gleichen Namens ersetzt.
+    /// </summary>
+    ViewAsTable,
+
+    /// <summary>
     /// Ein Vorgang verweist auf ein nicht vorhandenes Fahrzeug.
     /// </summary>
     OrphanEntry,
@@ -113,6 +123,8 @@ public static class BackupTestTampering
             BackupTamper.MissingColumn => "ALTER TABLE Vehicles DROP COLUMN StartConsumption",
             BackupTamper.InvalidDate => "UPDATE Vehicles SET CreatedUtc = 'kein Datum'",
             BackupTamper.UnknownFuelKind => "UPDATE Vehicles SET FuelKind = 'Plutonium'",
+            BackupTamper.DuplicateName => "DROP INDEX IX_Vehicles_Name; INSERT INTO Vehicles (Name, FuelKind, StartOdometerKm, CreatedUtc) VALUES ('GOLF', 'Petrol', 0, '2026-10-11 09:00:00')",
+            BackupTamper.ViewAsTable => "DROP TABLE TankbookEntries; CREATE VIEW TankbookEntries AS SELECT 1 AS Id",
             BackupTamper.OrphanEntry => "UPDATE TankbookEntries SET VehicleId = 99",
             _ => throw new ArgumentOutOfRangeException(nameof(tamper)),
         };
@@ -125,7 +137,7 @@ public static class BackupTestTampering
     /// <returns><see langword="true"/>, wenn die Datei abgelehnt werden muss.</returns>
     public static bool IsRejected(BackupTamper tamper)
     {
-        return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry;
+        return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry or BackupTamper.DuplicateName or BackupTamper.ViewAsTable;
     }
 
     /// <summary>

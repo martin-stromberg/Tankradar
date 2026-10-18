@@ -122,6 +122,25 @@ public class BackupServiceTests_Schema : IDisposable
     }
 
     /// <summary>
+    /// Prüft, dass ein Abbruch durch den Aufrufer die Wiederherstellung beendet, ohne Bestand, Staging oder Journal zu verändern.
+    /// </summary>
+    [Fact]
+    public async Task Restore_CancelledByCaller_KeepsLiveDataAndLeavesNoLeftovers()
+    {
+        await _environment.SeedAsync(Photo);
+        var created = await _environment.CreateService().CreateAsync();
+        var before = _environment.Snapshot();
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _environment.CreateService().RestoreAsync(created.File!.FileName, cancelled.Token));
+
+        Assert.Equal(before, _environment.Snapshot());
+        Assert.False(Directory.Exists(Path.Combine(_environment.DataDirectory, BackupFormat.StagingDirectoryName)));
+        Assert.False(RestoreJournal.Exists(_environment.DataDirectory));
+    }
+
+    /// <summary>
     /// Prüft, dass eine unveränderte, gültige Datei weiterhin eingespielt wird.
     /// </summary>
     [Fact]
