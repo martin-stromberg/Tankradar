@@ -1,107 +1,333 @@
 using System.Data.Common;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Backup;
+using Tankradar.MAUI.Models.Favorites;
+using Tankradar.MAUI.Models.Tankbook;
 
 namespace Tankradar.MAUI.Services.Backup;
 
 /// <summary>
-/// Prüft und migriert die entpackte Datenbank einer Sicherung, bevor sie die Livedaten ersetzen darf. Eine externe Datei gilt als nicht vertrauenswürdig:
-/// Neben der Integrität und dem Migrationsstand muss das Schema nach der Migration exakt dem einer frisch angelegten Datenbank entsprechen,
-/// jede Abweichung (fremde oder fehlende Tabellen und Spalten, zusätzliche Indizes, Trigger oder Views) lässt die Datei scheitern.
+/// Baut aus der entpackten Datenbank einer Sicherung eine neue, saubere Datenbank auf. Eine externe Datei gilt als nicht vertrauenswürdig:
+/// Ihre Objekte (Trigger, Views, Einschränkungen, Indizes, Kollationen, Zähltabelle, Migrationssperre, sonstige Tabellen) werden nie übernommen.
+/// Stattdessen entsteht mit der Migrationskette der App eine frische Referenzdatenbank (auf dem Migrationsstand der Sicherung); die Sicherungsdatenbank wird nur gelesen,
+/// ihre Zeilen werden tabellenweise mit expliziten Spaltenlisten hineinkopiert, danach wird die Referenz auf den aktuellen Stand migriert und geprüft.
 /// </summary>
 public static class BackupDatabasePreparer
 {
+    private const int BatchSize = 500;
+
     /// <summary>
-    /// Bereitet die Datenbank vor: Integritätsprüfung, Migrationsstand laut Manifest, Migration auf den aktuellen Stand, Schemavergleich mit einer frisch migrierten Referenz,
-    /// Fremdschlüsselprüfung. Die Datenbank bleibt im Journalmodus <c>DELETE</c> und ohne <c>-wal</c>/<c>-shm</c>.
+    /// Bereitet die Datenbank vor: Integritätsprüfung und Migrationsstand der Sicherung (nur lesend), Referenz auf diesem Stand anlegen, Daten kopieren, Fremdschlüsselprüfung,
+    /// Migration auf den aktuellen Stand, Prüfung (<c>integrity_check</c>, <c>foreign_key_check</c>, jede Entität einmal über Entity Framework gelesen) und Zählung.
+    /// Bei Erfolg ersetzt die fertige Datenbank (Journalmodus <c>DELETE</c>, ohne <c>-wal</c>/<c>-shm</c>) die Datei unter <paramref name="databasePath"/>.
     /// </summary>
     /// <param name="databasePath">Der Pfad der entpackten Datenbank.</param>
     /// <param name="manifest">Das geprüfte Manifest.</param>
-    /// <param name="referenceDirectory">Ein Arbeitsverzeichnis für die Referenzdatenbank; es wird angelegt und am Ende gelöscht.</param>
+    /// <param name="workDirectory">Ein Arbeitsverzeichnis für die Referenzdatenbank; es wird angelegt und am Ende gelöscht.</param>
+    /// <param name="timeout">Die Höchstdauer der gesamten Vorbereitung.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
-    /// <returns><see cref="BackupResult.Ok"/> oder <see cref="BackupResult.InvalidFile"/>.</returns>
-    public static async Task<BackupResult> PrepareAsync(string databasePath, BackupManifest manifest, string referenceDirectory, CancellationToken cancellationToken = default)
+    /// <returns><see cref="BackupResult.Ok"/> mit den Zählwerten, <see cref="BackupResult.InvalidFile"/> bei einer unbrauchbaren Datenbank oder <see cref="BackupResult.Failed"/>
+    /// bei einer Zeitüberschreitung oder einem Fehler außerhalb der Datei (z. B. Speicher voll).</returns>
+    public static async Task<BackupPreparation> PrepareAsync(string databasePath, BackupManifest manifest, string workDirectory, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        limit.CancelAfter(timeout);
         try
         {
-            var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Mode = SqliteOpenMode.ReadWrite, Pooling = false }.ToString();
-            await using (var connection = new SqliteConnection(connectionString))
-            {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                if (!await IsIntegrityOkAsync(connection, cancellationToken).ConfigureAwait(false))
-                {
-                    return BackupResult.InvalidFile;
-                }
-
-                await using var command = connection.CreateCommand();
-                command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId DESC LIMIT 1";
-                var latest = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
-                if (!string.Equals(latest, manifest.DatabaseMigration, StringComparison.Ordinal))
-                {
-                    return BackupResult.InvalidFile;
-                }
-            }
-
-            await MigrateAsync(databasePath, cancellationToken).ConfigureAwait(false);
-
-            if (!await HasCurrentSchemaAsync(databasePath, referenceDirectory, cancellationToken).ConfigureAwait(false))
-            {
-                return BackupResult.InvalidFile;
-            }
-
-            await using (var connection = new SqliteConnection(connectionString))
-            {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                await using var check = connection.CreateCommand();
-                check.CommandText = "PRAGMA foreign_key_check";
-                await using (var reader = await check.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        return BackupResult.InvalidFile;
-                    }
-                }
-
-                await using var mode = connection.CreateCommand();
-                mode.CommandText = "PRAGMA journal_mode=DELETE";
-                await mode.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            BackupFileCleanup.DeleteFile(databasePath + "-wal");
-            BackupFileCleanup.DeleteFile(databasePath + "-shm");
-            return BackupResult.Ok;
+            Directory.CreateDirectory(workDirectory);
+            return await BuildAsync(databasePath, manifest, workDirectory, limit.Token).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is DbException or InvalidOperationException or FormatException or InvalidCastException)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return BackupResult.InvalidFile;
+            return new BackupPreparation(BackupResult.Failed);
         }
-    }
-
-    private static async Task MigrateAsync(string databasePath, CancellationToken cancellationToken)
-    {
-        var options = new DbContextOptionsBuilder<TankradarDbContext>().UseSqlite(TankradarDbContext.BuildConnectionString(databasePath, pooling: false)).Options;
-        await using var context = new TankradarDbContext(options);
-        await context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private static async Task<bool> HasCurrentSchemaAsync(string databasePath, string referenceDirectory, CancellationToken cancellationToken)
-    {
-        try
+        catch (SqliteException ex) when (IsEnvironmentError(ex))
         {
-            Directory.CreateDirectory(referenceDirectory);
-            var referencePath = Path.Combine(referenceDirectory, TankradarDbContext.DatabaseFileName);
-            await MigrateAsync(referencePath, cancellationToken).ConfigureAwait(false);
-            var expected = await BackupSchemaDescriber.DescribeAsync(referencePath, cancellationToken).ConfigureAwait(false);
-            var actual = await BackupSchemaDescriber.DescribeAsync(databasePath, cancellationToken).ConfigureAwait(false);
-            return expected.SequenceEqual(actual, StringComparer.Ordinal);
+            return new BackupPreparation(BackupResult.Failed);
+        }
+        catch (Exception ex) when (ex is DbException or InvalidOperationException or FormatException or InvalidCastException or OverflowException or ArgumentException)
+        {
+            return new BackupPreparation(BackupResult.InvalidFile);
         }
         finally
         {
-            BackupFileCleanup.DeleteDirectory(referenceDirectory);
+            SqliteConnection.ClearAllPools();
+            BackupFileCleanup.DeleteDirectory(workDirectory);
         }
+    }
+
+    private static async Task<BackupPreparation> BuildAsync(string databasePath, BackupManifest manifest, string workDirectory, CancellationToken cancellationToken)
+    {
+        var referencePath = Path.Combine(workDirectory, TankradarDbContext.DatabaseFileName);
+        var sourceConnectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString();
+
+        // Die Sicherungsdatenbank wird ausschließlich gelesen und nie migriert; eine Zeile in ihrer Migrationssperre kann deshalb nichts blockieren.
+        await using (var source = new SqliteConnection(sourceConnectionString))
+        {
+            await source.OpenAsync(cancellationToken).ConfigureAwait(false);
+            if (!await IsIntegrityOkAsync(source, cancellationToken).ConfigureAwait(false)
+                || !string.Equals(await ReadLatestMigrationAsync(source, cancellationToken).ConfigureAwait(false), manifest.DatabaseMigration, StringComparison.Ordinal))
+            {
+                return new BackupPreparation(BackupResult.InvalidFile);
+            }
+        }
+
+        try
+        {
+            await MigrateAsync(referencePath, manifest.DatabaseMigration, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Die Referenz entsteht nur aus der App selbst; scheitert sie, liegt es nie an der Datei.
+            return new BackupPreparation(BackupResult.Failed);
+        }
+
+        // Fremdschlüssel sind beim Kopieren aus; sie werden danach gesammelt mit foreign_key_check geprüft (Reihenfolge der Tabellen spielt so keine Rolle).
+        var referenceConnectionString = new SqliteConnectionStringBuilder { DataSource = referencePath, Mode = SqliteOpenMode.ReadWrite, Pooling = false, ForeignKeys = false }.ToString();
+        await using (var reference = new SqliteConnection(referenceConnectionString))
+        await using (var source = new SqliteConnection(sourceConnectionString))
+        {
+            await reference.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await source.OpenAsync(cancellationToken).ConfigureAwait(false);
+            if (!await CopyTablesAsync(source, reference, cancellationToken).ConfigureAwait(false)
+                || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false))
+            {
+                return new BackupPreparation(BackupResult.InvalidFile);
+            }
+        }
+
+        await MigrateAsync(referencePath, null, cancellationToken).ConfigureAwait(false);
+
+        await using (var reference = new SqliteConnection(referenceConnectionString))
+        {
+            await reference.OpenAsync(cancellationToken).ConfigureAwait(false);
+            if (!await IsIntegrityOkAsync(reference, cancellationToken).ConfigureAwait(false) || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false))
+            {
+                return new BackupPreparation(BackupResult.InvalidFile);
+            }
+
+            await using var mode = reference.CreateCommand();
+            mode.CommandText = "PRAGMA journal_mode=DELETE";
+            await mode.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        var counts = await ReadAllEntitiesAsync(referencePath, cancellationToken).ConfigureAwait(false);
+        if (counts is null)
+        {
+            return new BackupPreparation(BackupResult.InvalidFile);
+        }
+
+        SqliteConnection.ClearAllPools();
+        BackupFileCleanup.DeleteFile(referencePath + "-wal");
+        BackupFileCleanup.DeleteFile(referencePath + "-shm");
+        BackupFileCleanup.DeleteFile(databasePath + "-wal");
+        BackupFileCleanup.DeleteFile(databasePath + "-shm");
+        File.Move(referencePath, databasePath, overwrite: true);
+        return new BackupPreparation(BackupResult.Ok, counts);
+    }
+
+    private static async Task MigrateAsync(string databasePath, string? targetMigration, CancellationToken cancellationToken)
+    {
+        var options = new DbContextOptionsBuilder<TankradarDbContext>().UseSqlite(TankradarDbContext.BuildConnectionString(databasePath, pooling: false)).Options;
+        await using var context = new TankradarDbContext(options);
+        if (targetMigration is null)
+        {
+            await context.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        await context.GetService<IMigrator>().MigrateAsync(targetMigration, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<bool> CopyTablesAsync(SqliteConnection source, SqliteConnection reference, CancellationToken cancellationToken)
+    {
+        // Tabellen und Spalten stammen aus der Referenz (der App selbst), nie aus der Sicherung; deren Tabellenobjekte werden nur nach Namen gesucht.
+        var tables = await ReadStringsAsync(
+            reference,
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' AND name NOT LIKE '\\_\\_EFMigrations%' ESCAPE '\\' ORDER BY name",
+            null,
+            cancellationToken).ConfigureAwait(false);
+
+        await using var transaction = (SqliteTransaction)await reference.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var table in tables)
+        {
+            var columns = await ReadStringsAsync(reference, "SELECT name FROM pragma_table_xinfo($name) WHERE hidden = 0 ORDER BY cid", table, cancellationToken).ConfigureAwait(false);
+            var present = await ReadStringsAsync(source, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = $name", table, cancellationToken).ConfigureAwait(false);
+            if (columns.Count == 0 || present.Count != 1)
+            {
+                return false;
+            }
+
+            var sourceColumns = await ReadStringsAsync(source, "SELECT name FROM pragma_table_xinfo($name) WHERE hidden = 0", table, cancellationToken).ConfigureAwait(false);
+            if (columns.Any(column => !sourceColumns.Contains(column, StringComparer.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            await CopyTableAsync(source, reference, transaction, table, columns, cancellationToken).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    private static async Task CopyTableAsync(SqliteConnection source, SqliteConnection reference, SqliteTransaction transaction, string table, List<string> columns, CancellationToken cancellationToken)
+    {
+        var list = string.Join(", ", columns.Select(Quote));
+        await using var select = source.CreateCommand();
+        select.CommandText = $"SELECT {list} FROM {Quote(table)}";
+        await using var insert = reference.CreateCommand();
+        insert.Transaction = transaction;
+        insert.CommandText = $"INSERT INTO {Quote(table)} ({list}) VALUES ({string.Join(", ", columns.Select((_, index) => "$p" + index))})";
+        var parameters = new List<SqliteParameter>();
+        for (var index = 0; index < columns.Count; index++)
+        {
+            // Ohne festen Typ: Der Speichertyp (Ganzzahl, Gleitkomma, Text, Blob, NULL) folgt dem gelesenen Wert.
+            var parameter = insert.CreateParameter();
+            parameter.ParameterName = "$p" + index;
+            insert.Parameters.Add(parameter);
+            parameters.Add(parameter);
+        }
+
+        await using var reader = await select.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        var rows = 0;
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            for (var index = 0; index < parameters.Count; index++)
+            {
+                parameters[index].Value = reader.GetValue(index);
+            }
+
+            await insert.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            if (++rows % BatchSize == 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+        }
+    }
+
+    private static async Task<BackupManifestCounts?> ReadAllEntitiesAsync(string databasePath, CancellationToken cancellationToken)
+    {
+        // Jede Entität wird einmal über Entity Framework gelesen: ungültige Datums-, Zahlen- und Enum-Werte würden sonst erst in der laufenden App auffallen.
+        // Geprüft werden nur Werte, die die App selbst nur gültig schreibt.
+        var options = new DbContextOptionsBuilder<TankradarDbContext>().UseSqlite(TankradarDbContext.BuildConnectionString(databasePath, pooling: false)).Options;
+        await using var context = new TankradarDbContext(options);
+        await foreach (var item in context.UserSettings.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            _ = item;
+        }
+
+        await foreach (var item in context.FuelTypeSettings.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            _ = item;
+        }
+
+        var counts = new BackupManifestCounts();
+        await foreach (var item in context.Stations.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            _ = item;
+            counts.Stations++;
+        }
+
+        await foreach (var item in context.PriceEntries.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            _ = item;
+            counts.Prices++;
+        }
+
+        await foreach (var item in context.FavoriteGroups.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            _ = item;
+            counts.Groups++;
+        }
+
+        await foreach (var entry in context.FavoriteEntries.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            if (!IsDefined<FavoritePriority>(entry.Priority))
+            {
+                return null;
+            }
+
+            counts.Favorites++;
+        }
+
+        await foreach (var vehicle in context.Vehicles.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            if (!IsDefined<VehicleFuelKind>(vehicle.FuelKind))
+            {
+                return null;
+            }
+
+            counts.Vehicles++;
+        }
+
+        await foreach (var entry in context.TankbookEntries.AsNoTracking().AsAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            if (!IsDefined<TankbookEntryKind>(entry.Kind))
+            {
+                return null;
+            }
+
+            counts.Entries++;
+        }
+
+        return counts;
+    }
+
+    private static bool IsDefined<TEnum>(string value)
+        where TEnum : struct, Enum
+    {
+        return Enum.TryParse<TEnum>(value, out var parsed) && Enum.IsDefined(parsed);
+    }
+
+    private static bool IsEnvironmentError(SqliteException ex)
+    {
+        // SQLITE_IOERR (10), SQLITE_FULL (13), SQLITE_CANTOPEN (14): Speicher voll oder Dateisystemfehler, nicht der Inhalt der Datei.
+        return ex.SqliteErrorCode is 10 or 13 or 14;
+    }
+
+    private static string Quote(string identifier)
+    {
+        return "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+    }
+
+    private static async Task<List<string>> ReadStringsAsync(SqliteConnection connection, string sql, string? name, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        if (name is not null)
+        {
+            command.Parameters.AddWithValue("$name", name);
+        }
+
+        var values = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            values.Add(reader.GetString(0));
+        }
+
+        return values;
+    }
+
+    private static async Task<string?> ReadLatestMigrationAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId DESC LIMIT 1";
+        return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
+    }
+
+    private static async Task<bool> HasForeignKeyViolationAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA foreign_key_check";
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        return await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task<bool> IsIntegrityOkAsync(SqliteConnection connection, CancellationToken cancellationToken)

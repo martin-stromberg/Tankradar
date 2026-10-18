@@ -78,14 +78,15 @@ public sealed class BackupTestEnvironment : IDisposable
     /// Erstellt den Dienst; <paramref name="swapHook"/> dient der Fehlerinjektion beim Austausch.
     /// </summary>
     /// <param name="swapHook">Wird nach jedem Schritt des Austauschs aufgerufen; optional.</param>
+    /// <param name="prepareTimeout">Die Höchstdauer der Datenbankprüfung; optional.</param>
     /// <returns>Der Dienst.</returns>
-    public BackupService CreateService(Action<string>? swapHook = null)
+    public BackupService CreateService(Action<string>? swapHook = null, TimeSpan? prepareTimeout = null)
     {
         var factory = _database.CreateFactory();
         var paths = new Paths(DataDirectory);
         var protector = new RecordingProtector(this);
         var initializer = new DatabaseInitializer(factory, paths, protector, new RestoreRecovery());
-        return new BackupService(factory, paths, protector, initializer, TimeProvider.System, new RecordingLogger<BackupService>(), new CacheCounter(this), swapHook);
+        return new BackupService(factory, paths, protector, initializer, TimeProvider.System, new RecordingLogger<BackupService>(), new CacheCounter(this), swapHook, prepareTimeout);
     }
 
     /// <summary>

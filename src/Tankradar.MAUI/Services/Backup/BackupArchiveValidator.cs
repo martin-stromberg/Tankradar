@@ -188,9 +188,10 @@ public static class BackupArchiveValidator
     /// <param name="zipPath">Der Pfad der Datei.</param>
     /// <param name="manifest">Das zuvor geprüfte Manifest.</param>
     /// <param name="stagingDirectory">Das Zielverzeichnis (wird angelegt).</param>
+    /// <param name="databaseOnly"><see langword="true"/> entpackt nur die Datenbank (für die Rückfrage vor der Wiederherstellung, die die Fotos nicht braucht).</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns><see cref="BackupResult.Ok"/> oder <see cref="BackupResult.InvalidFile"/>.</returns>
-    public static async Task<BackupResult> ExtractAsync(string zipPath, BackupManifest manifest, string stagingDirectory, CancellationToken cancellationToken = default)
+    public static async Task<BackupResult> ExtractAsync(string zipPath, BackupManifest manifest, string stagingDirectory, bool databaseOnly = false, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         var root = Path.GetFullPath(stagingDirectory) + Path.DirectorySeparatorChar;
@@ -201,6 +202,11 @@ public static class BackupArchiveValidator
             using var archive = ZipFile.OpenRead(zipPath);
             foreach (var file in manifest.Files)
             {
+                if (databaseOnly && file.Path != BackupFormat.DatabaseEntryName)
+                {
+                    continue;
+                }
+
                 var entry = archive.GetEntry(file.Path);
                 var target = GetTargetPath(stagingDirectory, file.Path);
                 if (entry is null || target is null || !Path.GetFullPath(target).StartsWith(root, StringComparison.OrdinalIgnoreCase))

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace Tankradar.TestSupport;
 
 /// <summary>
-/// Die Art der Schemamanipulation an der Datenbank einer Sicherung.
+/// Die Art der Manipulation an der Datenbank einer Sicherung.
 /// </summary>
 public enum BackupTamper
 {
@@ -14,14 +14,34 @@ public enum BackupTamper
     Trigger,
 
     /// <summary>
+    /// Wie <see cref="Trigger"/>, aber mit dem für SQLite reservierten Namenspräfix <c>sqlite_</c>.
+    /// </summary>
+    PrefixedTrigger,
+
+    /// <summary>
     /// Zusätzliche View.
     /// </summary>
     View,
 
     /// <summary>
-    /// Eine Tabelle der App fehlt.
+    /// Zusätzliche <c>CHECK</c>-Einschränkung an <c>Vehicles</c>, die das nächste neue Fahrzeug scheitern lässt.
     /// </summary>
-    MissingTable,
+    ExtraCheck,
+
+    /// <summary>
+    /// Autoinkrement-Zähler von <c>Vehicles</c> auf den Höchstwert gesetzt.
+    /// </summary>
+    ManipulatedSequence,
+
+    /// <summary>
+    /// Eine Zeile in der Migrationssperre (ließ früher die Migration endlos warten).
+    /// </summary>
+    MigrationLockRow,
+
+    /// <summary>
+    /// Die Kollation <c>NOCASE</c> ist aus dem Tabellentext von <c>Vehicles</c> entfernt.
+    /// </summary>
+    RemovedCollation,
 
     /// <summary>
     /// Eine Tabelle der App hat eine zusätzliche Spalte.
@@ -37,6 +57,31 @@ public enum BackupTamper
     /// Zusätzlicher Index auf einer Tabelle der App.
     /// </summary>
     ExtraIndex,
+
+    /// <summary>
+    /// Eine Tabelle der App fehlt.
+    /// </summary>
+    MissingTable,
+
+    /// <summary>
+    /// Eine Spalte einer Tabelle der App fehlt.
+    /// </summary>
+    MissingColumn,
+
+    /// <summary>
+    /// Ungültiger Datumswert in <c>Vehicles.CreatedUtc</c>.
+    /// </summary>
+    InvalidDate,
+
+    /// <summary>
+    /// Unbekannte Kraftstoffart eines Fahrzeugs.
+    /// </summary>
+    UnknownFuelKind,
+
+    /// <summary>
+    /// Ein Vorgang verweist auf ein nicht vorhandenes Fahrzeug.
+    /// </summary>
+    OrphanEntry,
 }
 
 /// <summary>
@@ -51,16 +96,36 @@ public static class BackupTestTampering
     /// <returns>Die Anweisung.</returns>
     public static string GetSql(BackupTamper tamper)
     {
+        const string Evil = "AFTER INSERT ON Vehicles BEGIN DELETE FROM TankbookEntries; END";
         return tamper switch
         {
-            BackupTamper.Trigger => "CREATE TRIGGER evil_trigger AFTER INSERT ON Vehicles BEGIN DELETE FROM TankbookEntries; END",
+            BackupTamper.Trigger => "CREATE TRIGGER evil_trigger " + Evil,
+            BackupTamper.PrefixedTrigger => "PRAGMA writable_schema=ON; INSERT INTO sqlite_master (type, name, tbl_name, rootpage, sql) VALUES ('trigger', 'sqlite_evil', 'Vehicles', 0, 'CREATE TRIGGER sqlite_evil " + Evil + "')",
             BackupTamper.View => "CREATE VIEW evil_view AS SELECT Id, Name FROM Vehicles",
-            BackupTamper.MissingTable => "DROP TABLE TankbookEntries",
+            BackupTamper.ExtraCheck => "PRAGMA writable_schema=ON; UPDATE sqlite_master SET sql = substr(sql, 1, length(sql) - 1) || ', CHECK (Id < 2))' WHERE type = 'table' AND name = 'Vehicles'",
+            BackupTamper.ManipulatedSequence => "UPDATE sqlite_sequence SET seq = 9223372036854775807 WHERE name = 'Vehicles'",
+            BackupTamper.MigrationLockRow => "INSERT INTO __EFMigrationsLock (Id, Timestamp) VALUES (1, '2026-10-12 12:00:00')",
+            BackupTamper.RemovedCollation => "PRAGMA writable_schema=ON; UPDATE sqlite_master SET sql = replace(sql, 'COLLATE NOCASE', '') WHERE type = 'table' AND name = 'Vehicles'",
             BackupTamper.ExtraColumn => "ALTER TABLE Vehicles ADD COLUMN EvilColumn TEXT",
             BackupTamper.ExtraTable => "CREATE TABLE EvilTable (Id INTEGER PRIMARY KEY, Payload TEXT)",
             BackupTamper.ExtraIndex => "CREATE INDEX evil_index ON Vehicles (Name)",
+            BackupTamper.MissingTable => "DROP TABLE TankbookEntries",
+            BackupTamper.MissingColumn => "ALTER TABLE Vehicles DROP COLUMN StartConsumption",
+            BackupTamper.InvalidDate => "UPDATE Vehicles SET CreatedUtc = 'kein Datum'",
+            BackupTamper.UnknownFuelKind => "UPDATE Vehicles SET FuelKind = 'Plutonium'",
+            BackupTamper.OrphanEntry => "UPDATE TankbookEntries SET VehicleId = 99",
             _ => throw new ArgumentOutOfRangeException(nameof(tamper)),
         };
+    }
+
+    /// <summary>
+    /// Gibt an, ob die Manipulation die Datei unbrauchbar macht (Ablehnung) oder ob ihre Wirkung beim Neuaufbau der Datenbank verloren geht (saubere Übernahme der Daten).
+    /// </summary>
+    /// <param name="tamper">Die Art der Manipulation.</param>
+    /// <returns><see langword="true"/>, wenn die Datei abgelehnt werden muss.</returns>
+    public static bool IsRejected(BackupTamper tamper)
+    {
+        return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry;
     }
 
     /// <summary>
@@ -92,7 +157,7 @@ public static class BackupTestTampering
         try
         {
             File.WriteAllBytes(path, database);
-            using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString()))
+            using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Pooling = false, ForeignKeys = false }.ToString()))
             {
                 connection.Open();
                 using var read = connection.CreateCommand();

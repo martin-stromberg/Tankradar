@@ -24,6 +24,7 @@ public sealed class BackupService : IBackupService
     private readonly ILogger<BackupService> _logger;
     private readonly IPriceCacheInvalidator? _priceCache;
     private readonly Action<string>? _swapHook;
+    private readonly TimeSpan _prepareTimeout;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     /// <summary>
@@ -37,6 +38,7 @@ public sealed class BackupService : IBackupService
     /// <param name="logger">Der Logger.</param>
     /// <param name="priceCache">Verwirft nach der Wiederherstellung die Zwischenspeicher des Preisdienstes; optional.</param>
     /// <param name="swapHook">Fehlerinjektion für Tests: wird nach jedem Schritt des Austauschs aufgerufen; optional.</param>
+    /// <param name="prepareTimeout">Die Höchstdauer der Prüfung und Aufbereitung der Datenbank einer Sicherung; <see langword="null"/> verwendet <see cref="BackupLimits.PrepareTimeoutSeconds"/>.</param>
     public BackupService(
         IDbContextFactory<TankradarDbContext> contextFactory,
         IAppDataPathProvider paths,
@@ -45,7 +47,8 @@ public sealed class BackupService : IBackupService
         TimeProvider timeProvider,
         ILogger<BackupService> logger,
         IPriceCacheInvalidator? priceCache = null,
-        Action<string>? swapHook = null)
+        Action<string>? swapHook = null,
+        TimeSpan? prepareTimeout = null)
     {
         _contextFactory = contextFactory;
         _paths = paths;
@@ -55,6 +58,7 @@ public sealed class BackupService : IBackupService
         _logger = logger;
         _priceCache = priceCache;
         _swapHook = swapHook;
+        _prepareTimeout = prepareTimeout ?? TimeSpan.FromSeconds(BackupLimits.PrepareTimeoutSeconds);
     }
 
     /// <inheritdoc />
@@ -164,18 +168,43 @@ public sealed class BackupService : IBackupService
             return new BackupOutcome(BackupResult.NotFound);
         }
 
+        if (!_gate.Wait(0, CancellationToken.None))
+        {
+            return new BackupOutcome(BackupResult.Busy);
+        }
+
+        string? staging = null;
         try
         {
             var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
             var outcome = BackupArchiveValidator.Validate(path, known);
-            return outcome.Result is BackupResult.Ok or BackupResult.TooNew
-                ? outcome with { File = ReadInfo(path) }
-                : outcome;
+            if (outcome.Result != BackupResult.Ok || outcome.Manifest is null)
+            {
+                return outcome.Result is BackupResult.TooNew ? outcome with { File = ReadInfo(path) } : outcome;
+            }
+
+            // Die Zählwerte der Rückfrage stammen aus der geprüften Datenbank, nicht aus dem Manifest (das eine präparierte Datei beliebig beschreiben kann).
+            staging = Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
+            var staged = await StageAsync(path, outcome.Manifest, staging, databaseOnly: true, cancellationToken).ConfigureAwait(false);
+            if (staged.Result != BackupResult.Ok || staged.Counts is null)
+            {
+                return new BackupOutcome(staged.Result);
+            }
+
+            staged.Counts.Photos = outcome.Manifest.Files.Count(file => file.Path.StartsWith(BackupFormat.ReceiptEntryPrefix, StringComparison.Ordinal));
+            outcome.Manifest.Counts = staged.Counts;
+            return outcome with { File = ReadInfo(path) };
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Die Sicherung konnte nicht geprüft werden ({ExceptionType}).", ex.GetType().Name);
             return new BackupOutcome(BackupResult.Failed);
+        }
+        finally
+        {
+            BackupFileCleanup.DeleteDirectory(staging);
+            BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
+            _gate.Release();
         }
     }
 
@@ -206,10 +235,10 @@ public sealed class BackupService : IBackupService
 
             var dataDirectory = _paths.GetDataDirectory();
             staging = Path.Combine(dataDirectory, BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var staged = await StageAsync(path, validation.Manifest, staging, cancellationToken).ConfigureAwait(false);
-            if (staged != BackupResult.Ok)
+            var staged = await StageAsync(path, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
+            if (staged.Result != BackupResult.Ok)
             {
-                return staged;
+                return staged.Result;
             }
 
             new RestoreSwap(dataDirectory, _protector, _swapHook).Execute(staging);
@@ -261,10 +290,10 @@ public sealed class BackupService : IBackupService
 
             // Eine externe Datei gilt erst als gültige Sicherung, wenn auch ihre Datenbank die Prüfung der Wiederherstellung besteht (Prüfsummen, Migration, Schema).
             staging = Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var staged = await StageAsync(tempPath, validation.Manifest, staging, cancellationToken).ConfigureAwait(false);
-            if (staged != BackupResult.Ok)
+            var staged = await StageAsync(tempPath, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
+            if (staged.Result != BackupResult.Ok)
             {
-                return new BackupOutcome(staged);
+                return new BackupOutcome(staged.Result);
             }
 
             var finalPath = GetUniquePath(directory, DateTime.SpecifyKind(validation.Manifest.CreatedUtc, DateTimeKind.Utc));
@@ -440,16 +469,22 @@ public sealed class BackupService : IBackupService
         return new BackupManifest { DatabaseMigration = info.Migration, Counts = info.Counts };
     }
 
-    private static async Task<BackupResult> StageAsync(string zipPath, BackupManifest manifest, string staging, CancellationToken cancellationToken)
+    private async Task<BackupPreparation> StageAsync(string zipPath, BackupManifest manifest, string staging, bool databaseOnly, CancellationToken cancellationToken)
     {
-        var extracted = await BackupArchiveValidator.ExtractAsync(zipPath, manifest, staging, cancellationToken).ConfigureAwait(false);
-        if (extracted != BackupResult.Ok)
-        {
-            return extracted;
-        }
+        // Entpacken und Aufbereiten laufen auf einem Hintergrundthread; die Aufbereitung bricht nach der Höchstdauer ab, das Entpacken ist durch die Größengrenzen beschränkt.
+        return await Task.Run(
+            async () =>
+            {
+                var extracted = await BackupArchiveValidator.ExtractAsync(zipPath, manifest, staging, databaseOnly, cancellationToken).ConfigureAwait(false);
+                if (extracted != BackupResult.Ok)
+                {
+                    return new BackupPreparation(extracted);
+                }
 
-        var referenceDirectory = Path.Combine(Path.GetDirectoryName(staging)!, "reference-" + Guid.NewGuid().ToString("N"));
-        return await BackupDatabasePreparer.PrepareAsync(Path.Combine(staging, TankradarDbContext.DatabaseFileName), manifest, referenceDirectory, cancellationToken).ConfigureAwait(false);
+                var workDirectory = Path.Combine(Path.GetDirectoryName(staging)!, "reference-" + Guid.NewGuid().ToString("N"));
+                return await BackupDatabasePreparer.PrepareAsync(Path.Combine(staging, TankradarDbContext.DatabaseFileName), manifest, workDirectory, _prepareTimeout, cancellationToken).ConfigureAwait(false);
+            },
+            cancellationToken).ConfigureAwait(false);
     }
 
     private void RestoreWalMode(string databasePath)

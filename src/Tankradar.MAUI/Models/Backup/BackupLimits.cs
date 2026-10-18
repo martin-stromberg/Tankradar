@@ -29,4 +29,9 @@ public static class BackupLimits
     /// Höchstgröße des entpackten Manifests in Bytes (1 MiB).
     /// </summary>
     public const long MaxManifestBytes = 1L * 1024 * 1024;
+
+    /// <summary>
+    /// Höchstdauer der Prüfung und Aufbereitung der Datenbank einer Sicherung in Sekunden (zwei Minuten); danach bricht der Vorgang ab, ohne den Bestand zu verändern.
+    /// </summary>
+    public const int PrepareTimeoutSeconds = 120;
 }

@@ -6,8 +6,8 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.Integration.Integration;
 
 /// <summary>
-/// Prüft, dass eine Sicherung mit präparierter oder fremder Datenbank (gültiges Manifest, gültige Prüfsummen) beim Wiederherstellen und beim Einspielen abgelehnt wird
-/// und der Bestand unverändert bleibt: zusätzlicher Trigger, zusätzliche View, fehlende Tabelle, zusätzliche Spalte, zusätzliche Tabelle, zusätzlicher Index.
+/// Prüft, dass eine Sicherung mit unbrauchbarer Datenbank (gültiges Manifest, gültige Prüfsummen) beim Wiederherstellen und beim Einspielen abgelehnt wird
+/// und der Bestand unverändert bleibt: fehlende Tabelle oder Spalte, ungültiges Datum, unbekannte Kraftstoffart, Vorgang ohne Fahrzeug, Zeitüberschreitung.
 /// </summary>
 public class BackupServiceTests_Schema : IDisposable
 {
@@ -16,14 +16,14 @@ public class BackupServiceTests_Schema : IDisposable
     private readonly BackupTestEnvironment _environment = new();
 
     /// <summary>
-    /// Alle Arten der Schemamanipulation für die Theorien.
+    /// Alle Manipulationen, die zur Ablehnung führen müssen.
     /// </summary>
-    public static TheoryData<BackupTamper> Tampers
+    public static TheoryData<BackupTamper> RejectedTampers
     {
         get
         {
             var data = new TheoryData<BackupTamper>();
-            foreach (var tamper in Enum.GetValues<BackupTamper>())
+            foreach (var tamper in Enum.GetValues<BackupTamper>().Where(BackupTestTampering.IsRejected))
             {
                 data.Add(tamper);
             }
@@ -49,12 +49,12 @@ public class BackupServiceTests_Schema : IDisposable
     }
 
     /// <summary>
-    /// Prüft, dass die Wiederherstellung einer manipulierten Datenbank mit <see cref="BackupResult.InvalidFile"/> scheitert und Datenbank, Fotos und Zwischenspeicher unberührt bleiben.
+    /// Prüft, dass die Wiederherstellung einer unbrauchbaren Datenbank mit <see cref="BackupResult.InvalidFile"/> scheitert und Datenbank, Fotos und Zwischenspeicher unberührt bleiben.
     /// </summary>
     /// <param name="tamper">Die Art der Manipulation.</param>
     [Theory]
-    [MemberData(nameof(Tampers))]
-    public async Task Restore_TamperedSchema_IsRejected_AndKeepsLiveData(BackupTamper tamper)
+    [MemberData(nameof(RejectedTampers))]
+    public async Task Restore_UnusableDatabase_IsRejected_AndKeepsLiveData(BackupTamper tamper)
     {
         var archive = await CreateTamperedArchiveAsync(tamper, "tankatlas-backup-20261001-100000.zip");
         await using (var context = _environment.CreateFactory().CreateDbContext())
@@ -65,7 +65,7 @@ public class BackupServiceTests_Schema : IDisposable
 
         var before = _environment.Snapshot();
 
-        var result = await _environment.CreateService().RestoreAsync(Path.GetFileName(archive));
+        var result = await _environment.CreateService().RestoreAsync(Path.GetFileName(archive)).WaitAsync(TimeSpan.FromSeconds(60));
 
         Assert.Equal(BackupResult.InvalidFile, result);
         Assert.Equal(before, _environment.Snapshot());
@@ -76,12 +76,12 @@ public class BackupServiceTests_Schema : IDisposable
     }
 
     /// <summary>
-    /// Prüft, dass schon das Einspielen einer manipulierten Datei mit <see cref="BackupResult.InvalidFile"/> scheitert, nichts in die Liste gelangt und kein Rest bleibt.
+    /// Prüft, dass schon das Einspielen einer unbrauchbaren Datei mit <see cref="BackupResult.InvalidFile"/> scheitert, nichts in die Liste gelangt und kein Rest bleibt.
     /// </summary>
     /// <param name="tamper">Die Art der Manipulation.</param>
     [Theory]
-    [MemberData(nameof(Tampers))]
-    public async Task Import_TamperedSchema_IsRejected_WithoutLeftovers(BackupTamper tamper)
+    [MemberData(nameof(RejectedTampers))]
+    public async Task Import_UnusableDatabase_IsRejected_WithoutLeftovers(BackupTamper tamper)
     {
         var archive = await CreateTamperedArchiveAsync(tamper, "tankatlas-backup-20261001-100000.zip");
         var external = Path.Combine(_environment.DataDirectory, "extern.zip");
@@ -89,7 +89,7 @@ public class BackupServiceTests_Schema : IDisposable
         var before = _environment.Snapshot();
         var service = _environment.CreateService();
 
-        var outcome = await service.ImportAsync(Pick(external));
+        var outcome = await service.ImportAsync(Pick(external)).WaitAsync(TimeSpan.FromSeconds(60));
 
         Assert.Equal(BackupResult.InvalidFile, outcome.Result);
         Assert.Null(outcome.File);
@@ -100,7 +100,29 @@ public class BackupServiceTests_Schema : IDisposable
     }
 
     /// <summary>
-    /// Prüft, dass eine unveränderte, gültige Datei weiterhin eingespielt wird (kein Fehlalarm des Schemavergleichs).
+    /// Prüft, dass die Prüfung nach der Höchstdauer abbricht: Ergebnis <see cref="BackupResult.Failed"/>, Bestand und Dateisystem unverändert, kein Rest.
+    /// </summary>
+    [Fact]
+    public async Task Restore_PrepareTimeout_FailsWithoutChangingLiveData()
+    {
+        await _environment.SeedAsync(Photo);
+        var created = await _environment.CreateService().CreateAsync();
+        var before = _environment.Snapshot();
+        var service = _environment.CreateService(prepareTimeout: TimeSpan.Zero);
+
+        var result = await service.RestoreAsync(created.File!.FileName).WaitAsync(TimeSpan.FromSeconds(60));
+        var inspected = await service.InspectAsync(created.File.FileName).WaitAsync(TimeSpan.FromSeconds(60));
+
+        Assert.Equal(BackupResult.Failed, result);
+        Assert.Equal(BackupResult.Failed, inspected.Result);
+        Assert.Equal(before, _environment.Snapshot());
+        Assert.False(Directory.Exists(Path.Combine(_environment.DataDirectory, BackupFormat.StagingDirectoryName)));
+        Assert.False(RestoreJournal.Exists(_environment.DataDirectory));
+        Assert.Equal(0, _environment.CacheInvalidations);
+    }
+
+    /// <summary>
+    /// Prüft, dass eine unveränderte, gültige Datei weiterhin eingespielt wird.
     /// </summary>
     [Fact]
     public async Task Import_UntamperedFile_IsAccepted()
@@ -122,7 +144,7 @@ public class BackupServiceTests_Schema : IDisposable
     /// Prüft, dass eine Datei mit unbrauchbarer Datenbank (Zufallsbytes, gültige Prüfsummen) schon beim Einspielen abgelehnt wird und nicht erst beim Wiederherstellen.
     /// </summary>
     [Fact]
-    public async Task Import_UnusableDatabase_IsRejectedBeforeEnteringTheList()
+    public async Task Import_UnusableDatabaseBytes_AreRejectedBeforeEnteringTheList()
     {
         await _environment.SeedAsync(Photo);
         var external = Path.Combine(_environment.DataDirectory, "garbage.zip");
