@@ -158,7 +158,17 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="automationId">Die AutomationId des Chips.</param>
     protected void SelectChip(string automationId)
     {
-        var chip = WaitForAutomationId(automationId);
+        SelectChip(WaitForAutomationId(automationId), automationId);
+    }
+
+    /// <summary>
+    /// Wählt den bereits gefundenen Chip aus und wartet, bis er als ausgewählt gilt. Die Suche im UI-Baum entfällt; sinnvoll bei sehr großem Baum
+    /// (viele Treffer), in dem eine Suche über den ganzen Fensterbaum in einen UIA-Timeout laufen kann.
+    /// </summary>
+    /// <param name="chip">Das Element des Chips (vorab gefunden).</param>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    protected void SelectChip(AutomationElement chip, string automationId)
+    {
         chip.Patterns.Invoke.Pattern.Invoke();
 
         // Zuerst am bereits gefundenen Element prüfen (kein Durchsuchen des ganzen UI-Baums); erst danach, falls das Element neu aufgebaut wurde, per Suche.
