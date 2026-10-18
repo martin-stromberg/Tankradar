@@ -31,6 +31,8 @@
                        SemanticProperties.HeadingLevel="Level1"
                        AutomationId="TankbookEntriesPage.Headline" />
                 <Label Text="{Binding VehicleName}"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
                        IsVisible="{Binding HasVehicle}"
                        Style="{StaticResource headline-md}"
                        TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
@@ -128,6 +130,7 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="vm:IChoiceOption">
                                 <Button Text="{Binding Label}"
+                                        LineBreakMode="TailTruncation"
                                         Command="{Binding SelectCommand}"
                                         Style="{StaticResource FuelKindChip}"
                                         SemanticProperties.Hint="{Binding SelectionHint}"

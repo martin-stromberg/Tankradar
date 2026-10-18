@@ -26,7 +26,7 @@ Die Einheiten stehen fest rechts im Eingabefeld und wechseln mit der gewählten 
 
 ## Tank- und Ladevorgänge
 
-Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
+Die Seite **Tank- und Ladevorgänge** (bei Strom heißt die Kennzeichnung einer nicht vollen Ladung „Teilladung“ statt „Teilbetankung“) zeigt die Vorgänge eines Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
 
 | Angabe | Pflicht | Regeln |
 |--------|---------|--------|
