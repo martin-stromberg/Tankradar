@@ -57,11 +57,11 @@
                 <Border Style="{StaticResource GroupCard}">
                     <VerticalStackLayout Spacing="{StaticResource space-sm}">
                         <VerticalStackLayout IsVisible="{Binding IsNotEditing}" Spacing="{StaticResource space-xs}">
-                            <Label Text="{Binding Name}"
+                            <Label Text="{Binding Name}" MaxLines="2" LineBreakMode="TailTruncation"
                                    Style="{StaticResource headline-lg}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                    AutomationId="FavoriteGroup.Name" />
-                            <Label Text="{Binding Description}"
+                            <Label Text="{Binding Description}" MaxLines="4" LineBreakMode="TailTruncation"
                                    IsVisible="{Binding HasDescription}"
                                    Style="{StaticResource body-md}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
@@ -130,7 +130,7 @@
                         <DataTemplate x:DataType="vm:FavoriteEntryItemViewModel">
                             <Border Style="{StaticResource GroupCard}">
                                 <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                                    <Label Text="{Binding StationName}"
+                                    <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
                                            Style="{StaticResource headline-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="FavoriteGroup.Entry.Name">
@@ -138,12 +138,12 @@
                                             <TapGestureRecognizer Command="{Binding OpenCommand}" />
                                         </Label.GestureRecognizers>
                                     </Label>
-                                    <Label Text="{Binding SubName}"
+                                    <Label Text="{Binding SubName}" MaxLines="2" LineBreakMode="TailTruncation"
                                            IsVisible="{Binding HasSubName}"
                                            Style="{StaticResource body-sm}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                            AutomationId="FavoriteGroup.Entry.SubName" />
-                                    <Label Text="{Binding AddressText}"
+                                    <Label Text="{Binding AddressText}" MaxLines="2" LineBreakMode="TailTruncation"
                                            IsVisible="{Binding HasAddress}"
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
@@ -152,7 +152,7 @@
                                            Style="{StaticResource body-sm}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
                                            AutomationId="FavoriteGroup.Entry.Priority" />
-                                    <Label Text="{Binding Note}"
+                                    <Label Text="{Binding Note}" MaxLines="6" LineBreakMode="TailTruncation"
                                            IsVisible="{Binding HasNote}"
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"

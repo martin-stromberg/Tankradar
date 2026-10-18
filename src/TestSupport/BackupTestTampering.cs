@@ -92,6 +92,41 @@ public enum BackupTamper
     /// Ein Vorgang verweist auf ein nicht vorhandenes Fahrzeug.
     /// </summary>
     OrphanEntry,
+
+    /// <summary>
+    /// Eigener Anzeigename einer Tankstelle mit 61 Zeichen (eins über der Grenze der App).
+    /// </summary>
+    OversizedCustomName,
+
+    /// <summary>
+    /// Eigener Anzeigename einer Tankstelle mit 200.000 Zeichen (ließ die App bei „Vorgang erfassen“ abstürzen).
+    /// </summary>
+    HugeCustomName,
+
+    /// <summary>
+    /// Name einer Tankstelle mit 200.000 Zeichen.
+    /// </summary>
+    HugeStationName,
+
+    /// <summary>
+    /// Marke einer Tankstelle mit 200.000 Zeichen.
+    /// </summary>
+    HugeBrand,
+
+    /// <summary>
+    /// Name einer Favoriten-Gruppe mit 200.000 Zeichen.
+    /// </summary>
+    HugeGroupName,
+
+    /// <summary>
+    /// Notiz eines Vorgangs mit 200.000 Zeichen.
+    /// </summary>
+    HugeEntryNote,
+
+    /// <summary>
+    /// Tankstellenname eines Vorgangs mit 200.000 Zeichen.
+    /// </summary>
+    HugeEntryStationName,
 }
 
 /// <summary>
@@ -106,6 +141,7 @@ public static class BackupTestTampering
     /// <returns>Die Anweisung.</returns>
     public static string GetSql(BackupTamper tamper)
     {
+        const string Huge = "replace(hex(zeroblob(100000)), '0', 'x')";
         const string Evil = "AFTER INSERT ON Vehicles BEGIN DELETE FROM TankbookEntries; END";
         return tamper switch
         {
@@ -126,6 +162,13 @@ public static class BackupTestTampering
             BackupTamper.DuplicateName => "DROP INDEX IX_Vehicles_Name; INSERT INTO Vehicles (Name, FuelKind, StartOdometerKm, CreatedUtc) VALUES ('GOLF', 'Petrol', 0, '2026-10-11 09:00:00')",
             BackupTamper.ViewAsTable => "DROP TABLE TankbookEntries; CREATE VIEW TankbookEntries AS SELECT 1 AS Id",
             BackupTamper.OrphanEntry => "UPDATE TankbookEntries SET VehicleId = 99",
+            BackupTamper.OversizedCustomName => "UPDATE Stations SET CustomName = substr(replace(hex(zeroblob(31)), '0', 'x'), 1, 61)",
+            BackupTamper.HugeCustomName => "UPDATE Stations SET CustomName = " + Huge,
+            BackupTamper.HugeStationName => "UPDATE Stations SET Name = " + Huge,
+            BackupTamper.HugeBrand => "UPDATE Stations SET Brand = " + Huge,
+            BackupTamper.HugeGroupName => "UPDATE FavoriteGroups SET Name = " + Huge,
+            BackupTamper.HugeEntryNote => "UPDATE TankbookEntries SET Note = " + Huge,
+            BackupTamper.HugeEntryStationName => "UPDATE TankbookEntries SET StationName = " + Huge,
             _ => throw new ArgumentOutOfRangeException(nameof(tamper)),
         };
     }
@@ -137,7 +180,9 @@ public static class BackupTestTampering
     /// <returns><see langword="true"/>, wenn die Datei abgelehnt werden muss.</returns>
     public static bool IsRejected(BackupTamper tamper)
     {
-        return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry or BackupTamper.DuplicateName or BackupTamper.ViewAsTable;
+        return tamper is BackupTamper.MissingTable or BackupTamper.MissingColumn or BackupTamper.InvalidDate or BackupTamper.UnknownFuelKind or BackupTamper.OrphanEntry or BackupTamper.DuplicateName or BackupTamper.ViewAsTable
+            or BackupTamper.OversizedCustomName or BackupTamper.HugeCustomName or BackupTamper.HugeStationName or BackupTamper.HugeBrand or BackupTamper.HugeGroupName
+            or BackupTamper.HugeEntryNote or BackupTamper.HugeEntryStationName;
     }
 
     /// <summary>

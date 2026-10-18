@@ -81,9 +81,14 @@ public static class TankbookStatisticsTexts
     public const string FromStartSource = "Ab Startstand – angenommen wird ein voller Tank beim Start";
 
     /// <summary>
+    /// Kennzeichnung eines Durchschnitts, der allein aus dem ersten Intervall ab dem Start-Kilometerstand stammt, bei Strom.
+    /// </summary>
+    public const string ElectricFromStartSource = "Ab Startstand – angenommen wird ein voller Akku beim Start";
+
+    /// <summary>
     /// Kennzeichnung des Startverbrauchs als Ersatzwert.
     /// </summary>
-    public const string StartConsumptionSource = "Startverbrauch – noch kein voller Vorgang";
+    public const string StartConsumptionSource = "Startverbrauch – noch keine Strecke aus vollen Vorgängen";
 
     /// <summary>
     /// Text, wenn die Kosten pro 100 km noch nicht berechnet werden können.
@@ -220,13 +225,14 @@ public static class TankbookStatisticsTexts
     /// Liefert die Kennzeichnung der Herkunft des Durchschnittsverbrauchs.
     /// </summary>
     /// <param name="source">Die Herkunft.</param>
+    /// <param name="kind">Die Art; bei Strom ist von einem vollen Akku statt einem vollen Tank die Rede.</param>
     /// <returns>Der Text; leer bei <see cref="TankbookAverageSource.None"/>.</returns>
-    public static string GetSourceText(TankbookAverageSource source)
+    public static string GetSourceText(TankbookAverageSource source, TankbookEntryKind kind = TankbookEntryKind.Fuel)
     {
         return source switch
         {
             TankbookAverageSource.Calculated => CalculatedSource,
-            TankbookAverageSource.FromStart => FromStartSource,
+            TankbookAverageSource.FromStart => kind == TankbookEntryKind.Electricity ? ElectricFromStartSource : FromStartSource,
             TankbookAverageSource.StartConsumption => StartConsumptionSource,
             _ => string.Empty,
         };

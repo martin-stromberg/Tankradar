@@ -68,5 +68,34 @@ public class TankbookEntryTextsTests_Format : BaseTest
         Assert.Equal("Alpha Tankstelle", TankbookEntryTexts.FormatKnownStationLabel(new KnownStation("id", "Alpha Tankstelle", "Berlin"), false));
         Assert.Equal("Alpha Tankstelle (Berlin)", TankbookEntryTexts.FormatKnownStationLabel(new KnownStation("id", "Alpha Tankstelle", "Berlin"), true));
         Assert.Equal("Zuhause", TankbookEntryTexts.FormatKnownStationLabel(new KnownStation(null, "Zuhause", null), true));
+        Assert.Equal("JET · Hauptstr. 1", TankbookEntryTexts.FormatKnownStationLabel(new KnownStation("id", "JET", "Berlin", "Hauptstr. 1"), false));
+        Assert.Equal("JET · Hauptstr. 1 (Berlin)", TankbookEntryTexts.FormatKnownStationLabel(new KnownStation("id", "JET", "Berlin", "Hauptstr. 1"), true));
+    }
+
+    /// <summary>
+    /// Prüft, dass gleichnamige bekannte Tankstellen zuerst durch das Unterscheidungsmerkmal, dann zusätzlich durch den Ort unterscheidbar werden.
+    /// </summary>
+    [Fact]
+    public void KnownStationLabels_DisambiguateByDetailThenPlace()
+    {
+        Assert.Equal(
+            ["Alpha", "Zuhause"],
+            TankbookEntryTexts.FormatKnownStationLabels([new KnownStation("a", "Alpha", "Berlin", "Weg 1"), new KnownStation("b", "Zuhause", "Berlin")]));
+        Assert.Equal(
+            ["JET · JET BERLIN HAUPTSTR. 1", "JET · JET BERLIN NEBENWEG 22", "Shell"],
+            TankbookEntryTexts.FormatKnownStationLabels(
+            [
+                new KnownStation("a", "JET", "Berlin", "JET BERLIN HAUPTSTR. 1"),
+                new KnownStation("b", "JET", "Berlin", "JET BERLIN NEBENWEG 22"),
+                new KnownStation("c", "Shell", "Berlin", "Weg 1"),
+            ]));
+        Assert.Equal(
+            ["JET · Weg 1 (Berlin)", "JET · Weg 1 (Potsdam)", "JET · Ring 2"],
+            TankbookEntryTexts.FormatKnownStationLabels(
+            [
+                new KnownStation("a", "JET", "Berlin", "Weg 1"),
+                new KnownStation("b", "JET", "Potsdam", "Weg 1"),
+                new KnownStation("c", "JET", "Potsdam", "Ring 2"),
+            ]));
     }
 }

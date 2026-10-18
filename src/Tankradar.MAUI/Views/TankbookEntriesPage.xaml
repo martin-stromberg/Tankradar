@@ -576,7 +576,7 @@
                         <Border Style="{StaticResource TankbookCard}">
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                                    <Label Text="{Binding StationName}"
+                                    <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
                                            Style="{StaticResource headline-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="TankbookEntry.Item.Station" />
@@ -624,7 +624,7 @@
                                        Style="{StaticResource body-sm}"
                                        TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                        AutomationId="TankbookEntry.Item.ConsumptionNote" />
-                                <Label Text="{Binding NoteText}"
+                                <Label Text="{Binding NoteText}" MaxLines="6" LineBreakMode="TailTruncation"
                                        IsVisible="{Binding HasNote}"
                                        Style="{StaticResource body-sm}"
                                        FontAttributes="Italic"

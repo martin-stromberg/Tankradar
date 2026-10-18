@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
 namespace Tankradar.TestSupport;
@@ -46,6 +45,16 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public const string StationZeta = "66666666-6666-4666-8666-666666666666";
 
+    /// <summary>
+    /// Kennung der ersten Teststation der Marke „JET“ (nur nach <see cref="AddSameBrandStations"/> vorhanden): Name „JET BERLIN HAUPTSTR. 1“.
+    /// </summary>
+    public const string StationJetMain = "77777777-7777-4777-8777-777777777777";
+
+    /// <summary>
+    /// Kennung der zweiten Teststation der Marke „JET“ im selben Ort (nur nach <see cref="AddSameBrandStations"/> vorhanden): Name „JET BERLIN NEBENWEG 22“.
+    /// </summary>
+    public const string StationJetSide = "88888888-8888-4888-8888-888888888888";
+
     private const double MaxRadiusKm = 25;
     private const double DefaultLatitude = 52.52;
     private const double DefaultLongitude = 13.405;
@@ -58,7 +67,7 @@ public sealed class MockTankerkoenigServer : IDisposable
     ];
 
     private readonly List<MockStation> _generated = [];
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
     private readonly CancellationTokenSource _stop = new();
@@ -79,14 +88,8 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public MockTankerkoenigServer()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-
+        _listener = LoopbackHttpListener.Start(out var port);
         BaseUrl = new Uri($"http://127.0.0.1:{port}/json/");
-        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        _listener.Start();
         _loop = Task.Run(RunAsync);
     }
 
@@ -196,6 +199,22 @@ public sealed class MockTankerkoenigServer : IDisposable
             if (_generated.All(station => station.Id != StationZeta))
             {
                 _generated.Add(new MockStation(StationZeta, "Klaus Heinrich", "Westfalen", "Zetastraße", "6", "10117", "Berlin", 52.5230, 13.4080, 1.839m, 1.779m, 1.679m, true, "Mo-So", "00:00:00", "24:00:00"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fügt dem Mock die Tankstellen <see cref="StationJetMain"/> und <see cref="StationJetSide"/> hinzu: zwei Tankstellen derselben Marke „JET“ im selben Ort,
+    /// deren Quellname die Straße enthält (wie bei vielen echten Tankstellen); der Anzeigename ist bei beiden „JET“.
+    /// </summary>
+    public void AddSameBrandStations()
+    {
+        lock (_gate)
+        {
+            if (_generated.All(station => station.Id != StationJetMain))
+            {
+                _generated.Add(new MockStation(StationJetMain, "JET BERLIN HAUPTSTR. 1", "JET", "Hauptstraße", "1", "10115", "Berlin", 52.5210, 13.4060, 1.849m, 1.789m, 1.689m, true, "Mo-So", "00:00:00", "24:00:00"));
+                _generated.Add(new MockStation(StationJetSide, "JET BERLIN NEBENWEG 22", "JET", "Nebenweg", "22", "10115", "Berlin", 52.5215, 13.4065, 1.859m, 1.799m, 1.699m, true, "Mo-So", "00:00:00", "24:00:00"));
             }
         }
     }

@@ -116,7 +116,9 @@ public static class BackupDatabasePreparer
         await using (var reference = new SqliteConnection(referenceConnectionString))
         {
             await reference.OpenAsync(cancellationToken).ConfigureAwait(false);
-            if (!await IsIntegrityOkAsync(reference, cancellationToken).ConfigureAwait(false) || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false))
+            if (!await IsIntegrityOkAsync(reference, cancellationToken).ConfigureAwait(false)
+                || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false)
+                || await HasOversizedTextAsync(reference, cancellationToken).ConfigureAwait(false))
             {
                 return new BackupPreparation(BackupResult.InvalidFile);
             }
@@ -365,6 +367,23 @@ public static class BackupDatabasePreparer
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId DESC LIMIT 1";
         return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
+    }
+
+    private static async Task<bool> HasOversizedTextAsync(SqliteConnection reference, CancellationToken cancellationToken)
+    {
+        // Tabellen- und Spaltennamen stammen aus der festen Liste der App; geprüft wird die bereits in die Referenz kopierte Fassung (Länge in Zeichen).
+        foreach (var (table, column, maxLength) in BackupTextLimits.Columns)
+        {
+            await using var command = reference.CreateCommand();
+            command.CommandText = $"SELECT 1 FROM {Quote(table)} WHERE length({Quote(column)}) > $max LIMIT 1";
+            command.Parameters.AddWithValue("$max", maxLength);
+            if (await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static async Task<bool> HasForeignKeyViolationAsync(SqliteConnection connection, CancellationToken cancellationToken)

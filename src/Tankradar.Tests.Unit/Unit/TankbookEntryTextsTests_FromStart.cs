@@ -70,7 +70,7 @@ public class TankbookEntryTextsTests_FromStart : BaseTest
     {
         Assert.Equal(TankbookStatisticsTexts.FromStartSource, TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.FromStart));
         Assert.Contains("Ab Startstand", TankbookStatisticsTexts.FromStartSource, StringComparison.Ordinal);
-        Assert.Equal("Startverbrauch – noch kein voller Vorgang", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.StartConsumption));
+        Assert.Equal("Startverbrauch – noch keine Strecke aus vollen Vorgängen", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.StartConsumption));
         Assert.Equal(TankbookStatisticsTexts.TooFewStartEntriesNotice, TankbookStatisticsTexts.GetTooFewEntriesNotice(false, true));
         Assert.Equal($"{TankbookStatisticsTexts.TooFewStartEntriesNotice} {TankbookStatisticsTexts.StartConsumptionHint}", TankbookStatisticsTexts.GetTooFewEntriesNotice(true, true));
         Assert.Equal(TankbookStatisticsTexts.TooFewEntriesNotice, TankbookStatisticsTexts.GetTooFewEntriesNotice(false));
@@ -89,5 +89,21 @@ public class TankbookEntryTextsTests_FromStart : BaseTest
 
         Assert.StartsWith(TankbookStatisticsTexts.TooFewStartEntriesNotice, fuel.Notice, StringComparison.Ordinal);
         Assert.Equal(TankbookStatisticsTexts.TooFewEntriesNotice, electricity.Notice);
+    }
+
+    /// <summary>
+    /// Prüft, dass die Hinweise bei Strom von Akku und Teilladung statt von Tank und Teilbetankung sprechen.
+    /// </summary>
+    [Fact]
+    public void Texts_ElectricityTalksAboutBattery()
+    {
+        Assert.Equal(TankbookEntryTexts.PartialHint, TankbookEntryTexts.GetPartialHint(TankbookEntryKind.Fuel));
+        Assert.Equal(TankbookEntryTexts.ElectricPartialHint, TankbookEntryTexts.GetPartialHint(TankbookEntryKind.Electricity));
+        Assert.DoesNotContain("Tank", TankbookEntryTexts.ElectricPartialHint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tank", TankbookEntryTexts.ElectricFromStartNote, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tank", TankbookStatisticsTexts.ElectricFromStartSource, StringComparison.Ordinal);
+        Assert.Equal(TankbookStatisticsTexts.ElectricFromStartSource, TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.FromStart, TankbookEntryKind.Electricity));
+        var electric = new TankbookEntryOverview(Create(1, 10_500, 30m) with { Kind = TankbookEntryKind.Electricity }, 500, 6m, TankbookConsumptionState.Calculated, 30m, 45m, true);
+        Assert.Equal(TankbookEntryTexts.ElectricFromStartNote, TankbookEntryTexts.GetConsumptionNote(electric));
     }
 }

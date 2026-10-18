@@ -41,17 +41,23 @@
                 <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
                     <Label x:Name="NameLabel"
                            Text="{Binding Name}"
+                           MaxLines="2"
+                           LineBreakMode="TailTruncation"
                            Style="{StaticResource headline-md}"
                            FontSize="16"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                     <Label x:Name="SubNameLabel"
                            Text="{Binding SubName}"
+                           MaxLines="2"
+                           LineBreakMode="TailTruncation"
                            IsVisible="{Binding HasSubName}"
                            Style="{StaticResource body-sm}"
                            FontSize="12"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
                     <Label x:Name="AddressLabel"
                            Text="{Binding AddressText}"
+                           MaxLines="2"
+                           LineBreakMode="TailTruncation"
                            IsVisible="{Binding HasAddress}"
                            Style="{StaticResource body-sm}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
@@ -142,6 +148,8 @@
 
             <Label x:Name="NoteLabel"
                    Text="{Binding Note}"
+                   MaxLines="6"
+                   LineBreakMode="TailTruncation"
                    IsVisible="{Binding HasNote}"
                    Style="{StaticResource body-md}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />

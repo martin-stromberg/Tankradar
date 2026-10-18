@@ -34,6 +34,7 @@
     <Compile Include="..\TestSupport\MockTankerkoenigServer.cs" Link="TestSupport\MockTankerkoenigServer.cs" />
     <Compile Include="..\TestSupport\MockNominatimServer.cs" Link="TestSupport\MockNominatimServer.cs" />
     <Compile Include="..\TestSupport\MockTileServer.cs" Link="TestSupport\MockTileServer.cs" />
+    <Compile Include="..\TestSupport\LoopbackHttpListener.cs" Link="TestSupport\LoopbackHttpListener.cs" />
   </ItemGroup>
 
 </Project>

@@ -23,7 +23,7 @@ public static class DetailTexts
     /// <summary>
     /// Erklärung zum eigenen Anzeigenamen.
     /// </summary>
-    public const string CustomNameHint = "Der eigene Name gilt nur auf diesem Gerät und ersetzt überall die Marke und den Namen der Tankstelle.";
+    public const string CustomNameHint = "Der eigene Name wird nur auf diesem Gerät gespeichert, ersetzt überall die Marke und den Namen der Tankstelle und bleibt bei jedem Preisabruf erhalten. Er ist Teil der Sicherung.";
 
     /// <summary>
     /// Beschriftung des Eingabefelds für den eigenen Anzeigenamen.

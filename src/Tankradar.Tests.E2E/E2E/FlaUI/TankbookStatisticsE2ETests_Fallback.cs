@@ -47,7 +47,7 @@ public class TankbookStatisticsE2ETests_Fallback : TankbookE2ETestBase
             Tankbook.OpenEntries("Start");
             Tankbook.WaitForStatistic("Fuel", "Average", "5,40");
             Tankbook.WaitForStatistic("Fuel", "AverageUnit", "L/100 km");
-            Tankbook.WaitForStatistic("Fuel", "AverageSource", "Startverbrauch – noch kein voller Vorgang");
+            Tankbook.WaitForStatistic("Fuel", "AverageSource", "Startverbrauch – noch keine Strecke aus vollen Vorgängen");
             Tankbook.WaitForStatistic("Fuel", "CostPer100KmUnit", "noch nicht berechenbar");
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.Notice"));
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.ConsumptionChart"));

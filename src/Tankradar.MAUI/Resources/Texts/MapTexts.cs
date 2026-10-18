@@ -166,19 +166,21 @@ public static class MapTexts
     }
 
     /// <summary>
-    /// Formatiert die Beschreibung einer Markierung für Bedienhilfen („Alpha, Super E5 1,859 Euro pro Liter“).
+    /// Formatiert die Beschreibung einer Markierung für Bedienhilfen („Alpha, Hauptstraße 1, Super E5 1,859 Euro pro Liter“).
     /// </summary>
     /// <param name="name">Der Name der Tankstelle.</param>
     /// <param name="fuelLabel">Der Name der Spritsorte.</param>
     /// <param name="spokenPrice">Der Preis als gesprochener Text; leer, wenn kein Preis vorliegt.</param>
+    /// <param name="address">Die Adresse zur Unterscheidung gleichnamiger Tankstellen; leer, wenn keine bekannt ist.</param>
     /// <returns>Der Text.</returns>
-    public static string FormatMarkerDescription(string name, string fuelLabel, string spokenPrice)
+    public static string FormatMarkerDescription(string name, string fuelLabel, string spokenPrice, string address = "")
     {
+        var title = address.Length > 0 ? $"{name}, {address}" : name;
         if (fuelLabel.Length == 0)
         {
-            return name;
+            return title;
         }
 
-        return spokenPrice.Length > 0 ? $"{name}, {fuelLabel} {spokenPrice}" : $"{name}, kein Preis für {fuelLabel}";
+        return spokenPrice.Length > 0 ? $"{title}, {fuelLabel} {spokenPrice}" : $"{title}, kein Preis für {fuelLabel}";
     }
 }

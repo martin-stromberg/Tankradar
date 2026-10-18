@@ -121,4 +121,45 @@ public class FavoritesE2ETests_DisplayName : HomeE2ETestBase
             WaitForText("Favorites.Station.Name", Brand);
         });
     }
+
+    /// <summary>
+    /// Prüft, dass zwei Tankstellen derselben Marke im selben Ort in der Tankbuch-Auswahl unterscheidbar bleiben (Stammdatenname hinter der Marke).
+    /// </summary>
+    [Fact]
+    public void SameBrandStations_StayDistinguishableInTankbookChoice()
+    {
+        RunWithDiagnostics(() =>
+        {
+            Server.AddSameBrandStations();
+            for (var number = 0; number < 2; number++)
+            {
+                OpenSearch();
+                Submit();
+                WaitUntil(() => ReadTexts("Search.Station.Name").Count(name => name == "JET") == 2, "Die Ergebnisliste zeigt nicht beide Tankstellen der Marke JET.");
+                var index = ReadTexts("Search.Station.Name").Select((name, position) => (name, position)).Where(item => item.name == "JET").ElementAt(number).position;
+                FindAllOrdered("Search.Station.Open")[index].Patterns.Invoke.Pattern.Invoke();
+                WaitUntil(() => FindByAutomationId("Detail.Name")?.Name == "JET", "Die Detailansicht zeigt nicht 'JET'.");
+                WaitForAutomationId("Detail.Favorites.Add");
+                if (number == 0)
+                {
+                    AddToNewGroup("Heimat", "Heimat");
+                }
+                else
+                {
+                    Press("Detail.Favorites.Add");
+                    PressNamed("Detail.Favorites.Pick", "Heimat");
+                    WaitForTexts("Detail.Favorites.Group", "Heimat");
+                }
+
+                LeaveDetail();
+            }
+
+            Tankbook.OpenTankbook();
+            Tankbook.CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+            Tankbook.OpenEntries("Golf");
+            Tankbook.Press("TankbookEntries.Add");
+            var chips = new[] { Tankbook.WaitFor("TankbookEntries.Form.KnownStation.0").Name, Tankbook.WaitFor("TankbookEntries.Form.KnownStation.1").Name };
+            Assert.Equal(["JET · JET BERLIN HAUPTSTR. 1", "JET · JET BERLIN NEBENWEG 22"], chips.Order(StringComparer.Ordinal));
+        });
+    }
 }

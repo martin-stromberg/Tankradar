@@ -233,6 +233,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
                 OnPropertyChanged(nameof(QuantityUnit));
                 OnPropertyChanged(nameof(UnitPriceUnit));
                 OnPropertyChanged(nameof(UnitPriceLabel));
+                OnPropertyChanged(nameof(PartialHintText));
                 UpdateComputedHint();
             }
         }
@@ -431,7 +432,7 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     /// </summary>
     public string PartialHintText
     {
-        get { return TankbookEntryTexts.PartialHint; }
+        get { return TankbookEntryTexts.GetPartialHint(SelectedKind); }
     }
 
     /// <summary>
@@ -793,15 +794,9 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
     public void SetKnownStations(IReadOnlyList<KnownStation> stations)
     {
         ArgumentNullException.ThrowIfNull(stations);
-        var nameCounts = stations
-            .GroupBy(station => station.Name, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+        var labels = TankbookEntryTexts.FormatKnownStationLabels(stations);
         KnownStations = stations
-            .Select((station, index) => new KnownStationOptionViewModel(
-                station,
-                TankbookEntryTexts.FormatKnownStationLabel(station, nameCounts[station.Name] > 1),
-                index,
-                OnKnownStationSelected))
+            .Select((station, index) => new KnownStationOptionViewModel(station, labels[index], index, OnKnownStationSelected))
             .ToList();
         MarkSelectedStation();
     }

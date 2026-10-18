@@ -22,7 +22,7 @@ public sealed class TankbookKindStatisticsViewModel
         AverageValueText = TankbookStatisticsTexts.FormatAverageValue(statistics.AverageConsumption);
         AverageValueFontSize = StatisticsTileFont.SizeFor(AverageValueText);
         AverageUnitText = TankbookEntryTexts.GetConsumptionUnit(kind);
-        AverageSourceText = TankbookStatisticsTexts.GetSourceText(statistics.AverageSource);
+        AverageSourceText = TankbookStatisticsTexts.GetSourceText(statistics.AverageSource, kind);
         CostPer100KmValueText = TankbookStatisticsTexts.FormatCostPer100KmValue(statistics.CostPer100Km);
         CostPer100KmValueFontSize = StatisticsTileFont.SizeFor(CostPer100KmValueText);
         CostPer100KmUnitText = statistics.CostPer100Km is null ? TankbookStatisticsTexts.NotCalculable : "€";

@@ -128,11 +128,11 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     }
 
     /// <summary>
-    /// Trägt den Text per UI-Automation in das Eingabefeld ein, wartet, bis das native Feld ihn meldet, und stellt sicher, dass die App den Wert übernommen hat,
+    /// Trägt den Text per UI-Automation (ValuePattern) in das Eingabefeld ein, wartet, bis das native Feld ihn meldet, und stellt sicher, dass die App den Wert übernommen hat,
     /// bevor der Test weiterarbeitet. SetValue ändert nur das native Feld; das Ereignis, über das MAUI die Bindung ans Modell aktualisiert, wird vom UI-Thread
-    /// verzögert zugestellt. Ein sofort folgendes Speichern oder Suchen sähe auf einem langsamen Rechner noch den alten Modellwert. Daher wird der Fokus wie bei
-    /// einem Nutzer vom Feld wegbewegt und der UI-Thread der App mehrfach nacheinander angesprochen: Jede UIA-Anfrage wird in dessen Nachrichtenschleife
-    /// bearbeitet und kommt erst nach den bereits eingereihten Änderungsereignissen an die Reihe.
+    /// verzögert zugestellt. Ein sofort folgendes Speichern oder Suchen sähe auf einem langsamen Rechner noch den alten Modellwert. Daher wird der UI-Thread der App
+    /// mehrfach nacheinander angesprochen: Jede UIA-Anfrage wird in dessen Nachrichtenschleife bearbeitet und kommt erst nach den bereits eingereihten
+    /// Änderungsereignissen an die Reihe. Es gibt bewusst keinen Fokuswechsel und keine Tastatureingabe: Das Testfenster darf nie den Tastaturfokus des Anwenders übernehmen.
     /// </summary>
     /// <param name="automationId">Die AutomationId des Eingabefelds.</param>
     /// <param name="text">Der Text.</param>
@@ -144,21 +144,13 @@ public abstract class SettingsE2ETestBase : E2ETestBase
             () => FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault == text,
             $"Das Feld '{automationId}' enthält nicht '{text}'.");
 
-        // Fokus von Feld zu Feld wechseln und den UI-Thread abwarten, bis die Änderungsereignisse abgearbeitet sind.
-        try
-        {
-            field.Focus();
-            field.Parent?.Focus();
-        }
-        catch (Exception ex) when (ex is global::FlaUI.Core.Exceptions.ElementNotAvailableException or global::FlaUI.Core.Exceptions.PropertyNotSupportedException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            // Der Fokuswechsel ist nur eine Hilfe; fehlt er, bleibt die Zustellungsprüfung unten.
-        }
-
-        for (var round = 0; round < 5; round++)
+        // Synchronisation über UIA-Roundtrips zum UI-Thread der App (kein Fokuswechsel): Die Abfragen der Eigenschaften werden erst nach den bereits
+        // eingereihten Änderungsereignissen beantwortet.
+        for (var round = 0; round < 8; round++)
         {
             _ = FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault;
-            Thread.Sleep(60);
+            _ = MainWindow.Properties.Name.ValueOrDefault;
+            Thread.Sleep(50);
         }
     }
 

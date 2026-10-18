@@ -173,7 +173,7 @@ public sealed class TankbookEntryService : ITankbookEntryService
         await using var context = await OpenAsync(cancellationToken).ConfigureAwait(false);
         var favoriteRows = await context.FavoriteEntries.AsNoTracking()
             .Where(f => f.Station != null)
-            .Select(f => new { f.StationId, f.Station!.Name, f.Station.Brand, f.Station.CustomName, f.Station.Place })
+            .Select(f => new { f.StationId, f.Station!.Name, f.Station.Brand, f.Station.CustomName, f.Station.Place, f.Station.Street, f.Station.HouseNumber })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         var favorites = favoriteRows
@@ -183,7 +183,7 @@ public sealed class TankbookEntryService : ITankbookEntryService
             .Where(item => item.Display.Length > 0)
             .OrderBy(item => item.Display, GermanOrder)
             .ThenBy(item => item.Row.Place ?? string.Empty, GermanOrder)
-            .Select(item => new KnownStation(item.Row.StationId, item.Display, string.IsNullOrWhiteSpace(item.Row.Place) ? null : item.Row.Place.Trim()))
+            .Select(item => new KnownStation(item.Row.StationId, item.Display, string.IsNullOrWhiteSpace(item.Row.Place) ? null : item.Row.Place.Trim(), GetDetail(item.Row.CustomName, item.Row.Brand, item.Row.Name, item.Row.Street, item.Row.HouseNumber)))
             .ToList();
 
         var favoriteNames = new HashSet<string>(favorites.Select(station => station.Name), StringComparer.OrdinalIgnoreCase);
@@ -201,6 +201,18 @@ public sealed class TankbookEntryService : ITankbookEntryService
             .Select(name => new KnownStation(null, name, null));
 
         return favorites.Concat(used).Take(TankbookEntryLimits.MaxKnownStations).ToList();
+    }
+
+    private static string? GetDetail(string? customName, string? brand, string name, string? street, string? houseNumber)
+    {
+        var subName = StationNaming.GetSecondary(customName, brand, name);
+        if (subName.Length > 0)
+        {
+            return subName;
+        }
+
+        var address = $"{street?.Trim()} {houseNumber?.Trim()}".Trim();
+        return address.Length > 0 ? address : null;
     }
 
     private static TankbookEntrySaveResult? CheckOdometer(int vehicleStartKm, IReadOnlyList<TankbookEntry> others, TankbookEntry candidate)

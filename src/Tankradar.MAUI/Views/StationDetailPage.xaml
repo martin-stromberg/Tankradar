@@ -130,11 +130,11 @@
                                            AutomationId="Detail.Hint.Unconfirmed" />
                                 </Border>
                             </FlexLayout>
-                            <Label Text="{Binding Name}"
+                            <Label Text="{Binding Name}" MaxLines="3" LineBreakMode="TailTruncation"
                                    Style="{StaticResource headline-lg}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                    AutomationId="Detail.Name" />
-                            <Label Text="{Binding SubNameText}"
+                            <Label Text="{Binding SubNameText}" MaxLines="3" LineBreakMode="TailTruncation"
                                    IsVisible="{Binding HasSubName}"
                                    Style="{StaticResource body-sm}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
@@ -333,7 +333,7 @@
                                                     Margin="0,0,8,4"
                                                     Padding="12,6"
                                                     BackgroundColor="{AppThemeBinding Light=#190F766E, Dark=#33006C49}">
-                                                <Label Text="{Binding Name}"
+                                                <Label Text="{Binding Name}" MaxLines="3" LineBreakMode="TailTruncation"
                                                        Style="{StaticResource body-md}"
                                                        FontAttributes="Bold"
                                                        TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"

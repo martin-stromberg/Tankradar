@@ -156,7 +156,7 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
 
         var kind = Assert.Single(viewModel.Kinds);
         Assert.Equal("5,40 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
-        Assert.Equal("Startverbrauch – noch kein voller Vorgang", kind.AverageSourceText);
+        Assert.Equal("Startverbrauch – noch keine Strecke aus vollen Vorgängen", kind.AverageSourceText);
         Assert.True(kind.HasAverageSource);
         Assert.False(kind.HasNotice);
         Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);

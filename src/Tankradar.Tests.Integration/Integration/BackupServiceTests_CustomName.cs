@@ -85,6 +85,28 @@ public class BackupServiceTests_CustomName : IDisposable
         Assert.Equal(["Altwagen"], await _environment.GetVehicleNamesAsync());
     }
 
+    /// <summary>
+    /// Prüft, dass ein eigener Name genau an der Grenze von 60 Zeichen wiederhergestellt wird (die Ablehnung darüber prüfen die Schema-Tests).
+    /// </summary>
+    [Fact]
+    public async Task Restore_CustomNameAtLimit_IsAccepted()
+    {
+        await _environment.SeedAsync(Photo);
+        var longName = new string('x', MAUI.Models.Pricing.StationNaming.MaxCustomNameLength);
+        await using (var context = _environment.CreateFactory().CreateDbContext())
+        {
+            (await context.Stations.SingleAsync()).CustomName = longName;
+            await context.SaveChangesAsync();
+        }
+
+        var service = _environment.CreateService();
+        var created = await service.CreateAsync();
+
+        Assert.Equal(BackupResult.Ok, await service.RestoreAsync(created.File!.FileName));
+        await using var check = _environment.CreateFactory().CreateDbContext();
+        Assert.Equal(longName, (await check.Stations.SingleAsync()).CustomName);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {
