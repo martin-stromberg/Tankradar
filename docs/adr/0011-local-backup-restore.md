@@ -50,16 +50,17 @@ Zwischenspeicher.
 - `databaseMigration` ist eine Migration der App: erlaubt. Ist sie unbekannt und lexikografisch größer als die letzte bekannte
   (Migrations-IDs tragen einen Zeitstempel und sind ordenbar): „zu neu“; sonst unbekannt und kleiner: ungültig.
 - Die tatsächliche Migrationshistorie der enthaltenen Datenbank muss zum Manifest passen.
-- Ältere Stände werden im Staging mit `MigrateAsync` auf den aktuellen Stand gebracht (integrationsgetestet mit einer bis
-  `AddVehicles` migrierten und befüllten Datenbank).
+- Ältere Stände werden nicht in der Sicherungsdatenbank migriert, sondern in einer frisch angelegten Referenzdatenbank auf dem
+  Migrationsstand der Sicherung neu aufgebaut und danach migriert (siehe „Sicherheit der Eingabedatei“). Integrationsgetestet mit einer
+  bis `AddVehicles` und einer bis `AddFavorites` (Schema der Version 0.1.14) migrierten, befüllten Datenbank.
 
 So kann eine ältere App keine neuere Datenbank „verbiegen“, und eine neuere App liest ältere Sicherungen.
 
 ### Atomarität und Wiederaufnahme
 
 Alle fehleranfälligen Schritte laufen vor dem ersten Eingriff in die Livedaten: Validierung, Entpacken in
-`restore-staging/<Guid>/` (gleiches Volumen), Prüfsummen, `PRAGMA integrity_check`, Migration der Staging-Datenbank,
-Schemavergleich (siehe „Sicherheit der Eingabedatei“), `PRAGMA foreign_key_check`. Erst dann tauscht `RestoreSwap` aus, und zwar nur durch Umbenennen: Journal `restore.journal`
+`restore-staging/<Guid>/` (gleiches Volumen), Prüfsummen, Neuaufbau der Datenbank aus einer frisch migrierten Referenz samt `PRAGMA integrity_check`,
+`PRAGMA foreign_key_check` und Lesen aller Entitäten (siehe „Sicherheit der Eingabedatei“); die fertige Referenzdatenbank ersetzt im Staging die entpackte Datei. Erst dann tauscht `RestoreSwap` aus, und zwar nur durch Umbenennen: Journal `restore.journal`
 schreiben, `ClearAllPools()`, Datenbank samt `-wal`/`-shm` und `receipts/` nach `restore-rollback/` verschieben, Staging-Stand
 an die Zielorte verschieben, Dateischutz anwenden, Journal löschen (Commit-Punkt). Bei jeder Ausnahme gibt der Rollback den alten
 Stand zurück. Die Datenbank kommt im Journalmodus `DELETE` an (damit keine fremden `-wal`/`-shm` mitkommen); nach dem Commit setzt
@@ -103,15 +104,53 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
   Foto höchstens `MaxReceiptPhotoBytes`; die tatsächlich gelesenen Bytes dürfen die deklarierte Größe nicht überschreiten.
 - **Prüfsummen** (SHA-256) aller Dateien und die Fotosignatur (`DetectExtension`) beim Import und beim Entpacken.
   Prüfsummen schützen nur vor Beschädigung, nicht vor Manipulation: Wer eine Datei ändert, rechnet sie neu.
-- **Schemavergleich** (`BackupDatabasePreparer`, `BackupSchemaDescriber`): Nach der Migration der entpackten Datenbank wird deren Schema
-  mit einer frisch mit derselben Migrationskette angelegten Referenzdatenbank verglichen (Objekte aus `sqlite_master`, Spalten per
-  `pragma_table_xinfo`, Indizes samt Spalten, Fremdschlüssel; bei Triggern und Views zusätzlich der Text). Jede Abweichung (zusätzlicher
-  Trigger, zusätzliche View, fehlende oder zusätzliche Tabelle, Spalte oder Index) führt zu `InvalidFile`, bevor irgendetwas die
-  Livedaten berührt. Tabellen- und Indextext wird bewusst nicht verglichen, weil er je nach App-Version, die die Datenbank angelegt hat,
-  abweichen kann. Dieselbe Prüfung läuft schon beim Einspielen einer externen Datei (Entpacken ins Staging, Vorbereitung, Aufräumen):
-  Eine solche Datei kommt gar nicht erst in die Liste, und die Meldung „gültige Sicherung“ erscheint erst danach. Getestet mit
-  Integrations- und E2E-Tests für alle sechs Manipulationen bei gültigem Manifest und gültigen Prüfsummen. Nicht geprüft werden
-  Zeileninhalte (die Daten einer Sicherung gelten als Nutzerdaten) und Einschränkungen, die nur im Tabellen- oder Indextext stehen (`CHECK`, `COLLATE`, `WHERE` eines Teilindex, Ausdrücke eines Ausdrucksindex); `WITHOUT ROWID` und `STRICT` werden verglichen. Solche Abweichungen könnten höchstens eine Wiederherstellung dauerhaft scheitern lassen, aber keine Daten löschen, weil Trigger erfasst werden. Der Aufwand beim Einspielen (Entpacken ins Staging, Referenz neu migrieren) ist bewusst in Kauf genommen.
+- **Neuaufbau statt Schemavergleich** (`BackupDatabasePreparer`): Ein Vergleich des Schemas (Objekte, Spalten, Indizes, Trigger)
+  hat sich als unzureichend erwiesen. Er übersah Trigger mit dem für SQLite reservierten Namenspräfix `sqlite_`, Einschränkungen im
+  Tabellentext (`CHECK`), den Inhalt von `sqlite_sequence`, ungültige Zeileninhalte und eine Zeile in `__EFMigrationsLock` (EF Core wartet
+  dann in `MigrateAsync` ohne Zeitlimit). Deshalb übernimmt die App aus der Sicherung nur noch Daten, nie Schemaobjekte:
+  1. Die Sicherungsdatenbank wird nur gelesen (`Mode=ReadOnly`): `integrity_check`, die letzte Zeile von `__EFMigrationsHistory` muss
+     zum Manifest passen. Sie wird nie migriert und nie beschrieben; eine Zeile in ihrer Migrationssperre kann nichts blockieren,
+     ein Trigger kann nie feuern.
+  2. Im Arbeitsverzeichnis entsteht eine **Referenzdatenbank** mit der Migrationskette der App, und zwar bis zur Migration laut Manifest
+     (`IMigrator.MigrateAsync(Zielmigration)`). Sie hat damit genau das Schema, das die Sicherung nach Angabe des Manifests haben muss.
+     Scheitert ihre Anlage (zum Beispiel Speicher voll), lautet das Ergebnis `Failed`, nicht `InvalidFile`.
+  3. Für jede Tabelle der Referenz (ohne `sqlite_*` und `__EFMigrations*`) werden die Zeilen mit ausdrücklichen Spaltenlisten
+     (Namen aus der Referenz, in Anführungszeichen) und parametrisierten `INSERT`-Anweisungen kopiert, in einer Transaktion, mit
+     abgeschalteten Fremdschlüsseln. Fehlt in der Sicherung eine Tabelle oder eine Spalte der Referenz, oder verletzt eine Zeile eine
+     Bedingung der Referenz (`NOT NULL`, eindeutiger Index), ist die Datei ungültig. Zusätzliche Tabellen, Spalten,
+     Indizes, Trigger, Views, Kollationen und Einschränkungen der Sicherung werden **nicht übernommen und nicht abgelehnt**: Sie haben
+     nach dem Neuaufbau keine Wirkung. Auch `sqlite_sequence` wird nicht übernommen, sondern ergibt sich beim Einfügen der Zeilen mit
+     ihren Ids (es gibt dadurch keinen manipulierten Zähler; ein früher gelöschter, höherer Id-Wert kann wiederverwendet werden, was hier unschädlich ist).
+  4. `foreign_key_check`; danach Migration der Referenz auf den aktuellen Stand (Datenübernahmen der Migrationen laufen auf den kopierten
+     Daten in dieser sauberen Datenbank); `integrity_check` und `foreign_key_check` erneut.
+  5. Jede Entität wird einmal über Entity Framework gelesen (`AsNoTracking`, gestreamt): ungültige Datums-, Zahlen- und Wahrheitswerte
+     (`FormatException` u. a.) führen zu `InvalidFile`. Zusätzlich müssen die Enum-Zeichenketten, die die App nur gültig schreibt
+     (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. Weitere Grenzwerte (Längen,
+     Kilometerstände) werden nicht geprüft, weil die App sie nur bei der Eingabe durchsetzt und gespeicherte Altdaten nicht daran misst.
+     Einstellungen mit unbekannten Werten fängt die App beim Lesen selbst ab (Rückfall auf Standardwerte).
+  6. Erst die so aufgebaute Referenzdatenbank (Journalmodus `DELETE`, ohne `-wal`/`-shm`) ersetzt im Staging die entpackte Datei und
+     wird per `RestoreSwap` (Journal und Rollback) eingespielt. Die **Zählwerte der Rückfrage** (Fahrzeuge, Vorgänge, Gruppen, Favoriten,
+     Stationen, Preisstände) werden aus dieser geprüften Datenbank gezählt; die Zahl der Fotos stammt aus der Dateiliste des Manifests,
+     deren Dateien beim Wiederherstellen per Prüfsumme geprüft werden. Zählwerte im Manifest werden nie angezeigt.
+
+  Gewählt wurde die Referenz **auf dem alten Migrationsstand** statt die Sicherungsdatenbank selbst zu migrieren: So bleibt die Quelle
+  schreibgeschützt, es gibt keine Sperrtabelle der Quelle, auf die EF warten könnte, und fremde Trigger oder Views können bei den
+  Datenmigrationen (`UPDATE` in `AddTankbookEntryDetails`) nie feuern. Die Kosten sind eine zweite Migration der Referenz für ältere Stände.
+  Tabellen und Spalten werden aus der Referenz abgeleitet; neue Migrationen werden daher ohne Änderung am Neuaufbau erfasst (der
+  Wächtertest `Create_DatabaseHasOnlyKnownTables` bleibt für den Umfang der Sicherung).
+  Dieselbe Vorbereitung läuft schon beim Einspielen einer externen Datei (Entpacken ins Staging, Neuaufbau, Aufräumen), bei der Rückfrage (nur die
+  Datenbank wird entpackt) und bei der Wiederherstellung: Eine unbrauchbare Datei kommt gar nicht erst in die Liste, und die Meldung
+  „gültige Sicherung“ erscheint erst danach.
+  Die gesamte Vorbereitung hat eine Höchstdauer (`BackupLimits.PrepareTimeoutSeconds`, zwei Minuten); danach endet sie mit `Failed`, der Bestand bleibt
+  unverändert, Staging und Referenz werden entfernt, und die Oberfläche gibt die Schaltflächen wieder frei (Test mit Zeitlimit 0). Das
+  Abbruchsignal wird zwischen den Anweisungen und Zeilen geprüft; eine einzelne SQLite-Anweisung ist nicht unterbrechbar, ihre
+  Dauer ist aber durch die Größengrenzen der Datenbank beschränkt.
+  Getestet mit Integrations- und E2E-Tests bei gültigem Manifest und gültigen Prüfsummen: Trigger (auch mit Präfix `sqlite_`), View, zusätzlicher `CHECK`,
+  manipulierte `sqlite_sequence`, Zeile in `__EFMigrationsLock`, entfernte Kollation, zusätzliche Spalte, Tabelle und Index (alle ohne Wirkung,
+  App danach benutzbar, Daten vollständig, Schema gleich dem einer frischen Datenbank); fehlende Tabelle oder Spalte, ungültiges Datum, unbekannte
+  Kraftstoffart und Vorgang ohne Fahrzeug (abgelehnt, Bestand unverändert).
+  Bekannte Grenze: Daten gelten als Nutzerdaten. Werte, die weder ein Schema noch die Entitäten verletzen, aber unsinnig sind (zum Beispiel ein
+  Kilometerstand von 0 oder ein erfundener Tankstellenname), werden übernommen; das betrifft nur den Anwender selbst.
 - **Dateinamen** für Löschen, Teilen und Wiederherstellen müssen dem Muster `tankatlas-backup-*.zip` entsprechen und dürfen
   keine Pfadanteile haben; sonst gilt die Sicherung als nicht gefunden.
 

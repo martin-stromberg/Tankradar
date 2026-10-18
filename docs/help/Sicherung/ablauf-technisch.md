@@ -35,7 +35,7 @@
 
 1. `BackupArchiveValidator.Validate`: Eintragsnamen (Zip-Slip), Grenzen, Manifest, Dateiliste = Einträge, Versionsregeln → `InvalidFile` oder `TooNew`.
 2. Entpacken ins Staging mit eigener Kopierschleife, Größenzählung und SHA-256-Vergleich; Fotos zusätzlich `DetectExtension`.
-3. `BackupDatabasePreparer` prüft die Staging-Datenbank (ohne Pool): `integrity_check`, Migrationshistorie gegen Manifest, `MigrateAsync`, Schemavergleich mit einer frisch migrierten Referenzdatenbank (`BackupSchemaDescriber`; Abweichung → `InvalidFile`), `foreign_key_check`.
+3. `BackupDatabasePreparer` baut die Datenbank neu auf (ohne Pool, Höchstdauer `BackupLimits.PrepareTimeoutSeconds`): Die entpackte Datenbank wird nur gelesen (`integrity_check`, Migrationshistorie gegen Manifest). Eine frische Referenzdatenbank wird mit `IMigrator` bis zur Migration des Manifests angelegt; die Zeilen aller App-Tabellen werden mit ausdrücklichen Spaltenlisten parametrisiert hineinkopiert (fehlende Tabelle oder Spalte → `InvalidFile`; Trigger, Views, `CHECK`, Indizes, `sqlite_sequence`, `__EFMigrationsLock` und fremde Tabellen werden nie übernommen). Danach `foreign_key_check`, `MigrateAsync` auf den aktuellen Stand, `integrity_check`, jede Entität einmal über EF gelesen (Datum, Zahlen, Enum-Werte → `InvalidFile`) und gezählt. Die fertige Referenz ersetzt die Staging-Datei. Zeitüberschreitung oder Fehler außerhalb der Datei (Speicher voll) → `Failed`. Die Rückfrage (`InspectAsync`) entpackt nur die Datenbank, führt dieselbe Vorbereitung aus und liefert die Zählwerte daraus.
 4. `RestoreSwap.Execute`: Journal, `ClearAllPools()`, alten Stand nach `restore-rollback/`, neuen Stand an die Zielorte, `Protect`/`ProtectFile`, Journal löschen (Commit), Aufräumen. Bei jeder Ausnahme: neue Dateien entfernen, alte zurück, Journal löschen, Ergebnis `Failed`.
 5. Nach Erfolg `PRAGMA journal_mode=WAL` auf der neuen Datenbank, dann `IPriceCacheInvalidator.InvalidateCaches()`; `BackupViewModel` löst `Restored` aus, `SettingsViewModel` lädt die Einstellungen neu, die übrigen Seiten laden in `OnAppearing`.
 
@@ -43,7 +43,7 @@ Stürzt der Prozess zwischen Schritt 4 und dem Commit ab, ruft `DatabaseInitiali
 
 ## Importieren, Löschen, Teilen
 
-- **Import:** Kopie nach `backups/import-<Guid>.tmp` (mit Größengrenze), Strukturprüfung, Entpacken ins Staging und dieselbe Datenbankprüfung wie beim Wiederherstellen (Prüfsummen, Migration, Schemavergleich), Aufräumen des Staging, dann Umbenennen in `tankatlas-backup-<Zeitstempel des Manifests>.zip` (bei Kollision Zähler). Fehler entfernen die `.tmp`-Datei.
+- **Import:** Kopie nach `backups/import-<Guid>.tmp` (mit Größengrenze), Strukturprüfung, Entpacken ins Staging und dieselbe Datenbankprüfung wie beim Wiederherstellen (Prüfsummen, Neuaufbau und Prüfung der Datenbank), Aufräumen des Staging, dann Umbenennen in `tankatlas-backup-<Zeitstempel des Manifests>.zip` (bei Kollision Zähler). Fehler entfernen die `.tmp`-Datei.
 - **Löschen und Teilen:** `GetFullPath` lässt nur Namen nach dem Muster `tankatlas-backup-*.zip` ohne Pfadanteile zu; sonst `NotFound`.
 
 ## Ergebnisse

@@ -32,7 +32,7 @@ Tippen Sie beim Eintrag auf **Teilen** und wählen Sie im Systemdialog das Ziel,
 
 1. Tippen Sie auf **Sicherung aus Datei einspielen** und wählen Sie die ZIP-Datei.
 2. Ist sie gültig (einschließlich ihrer Datenbank), erscheint sie in der Liste, und die Rückfrage zur Wiederherstellung öffnet sich gleich. Sie können sie bestätigen oder später über **Wiederherstellen** nutzen.
-3. Ist sie ungültig, beschädigt, manipuliert (zum Beispiel mit fremdem Datenbankaufbau) oder aus einer neueren Version, erscheint eine Meldung; Ihre Daten und die Liste bleiben unverändert.
+3. Ist sie ungültig, beschädigt, unbrauchbar (zum Beispiel mit fehlenden Tabellen oder ungültigen Werten) oder aus einer neueren Version, erscheint eine Meldung; Ihre Daten und die Liste bleiben unverändert.
 
 ## Beispiele
 
