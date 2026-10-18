@@ -22,6 +22,7 @@ public class TankbookE2ETests_DeleteWithEntries : TankbookE2ETestBase
             PressForVehicle("Tankbook.Vehicle.Delete", "Golf");
 
             Assert.Contains("2 zugehörigen Tank- und Ladevorgänge endgültig gelöscht", WaitForAutomationId("Tankbook.Vehicle.DeleteQuestion").Name, StringComparison.Ordinal);
+            Assert.Contains("Erstelle vorher in den Optionen eine Sicherung, wenn du die Vorgänge behalten möchtest.", WaitForAutomationId("Tankbook.Vehicle.DeleteQuestion").Name, StringComparison.Ordinal);
             Assert.Equal("Fahrzeug und Vorgänge löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
             Assert.Equal("Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen", Tankbook.ReadHint("Tankbook.Vehicle.DeleteConfirm"));
             Press("Tankbook.Vehicle.DeleteConfirm");

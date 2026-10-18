@@ -430,6 +430,8 @@
                                                 <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="End">
                                                     <Label Text="{Binding AverageValueText}"
                                                            Style="{StaticResource price-hero}"
+                                                           FontSize="{Binding AverageValueFontSize}"
+                                                           LineBreakMode="NoWrap"
                                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                                            Margin="0,0,4,0"
                                                            AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.Average'}" />
@@ -456,6 +458,8 @@
                                                 <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="End">
                                                     <Label Text="{Binding CostPer100KmValueText}"
                                                            Style="{StaticResource price-hero}"
+                                                           FontSize="{Binding CostPer100KmValueFontSize}"
+                                                           LineBreakMode="NoWrap"
                                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                                            Margin="0,0,4,0"
                                                            AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.CostPer100Km'}" />
@@ -485,6 +489,7 @@
                                             <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center">
                                                 <Label Text="{Binding MonthCostText}"
                                                        Style="{StaticResource price-hero}"
+                                                       LineBreakMode="NoWrap"
                                                        TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                                        Margin="0,0,8,0"
                                                        AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Statistics.{0}.MonthCost'}" />

@@ -11,6 +11,11 @@ public static class TankbookTexts
     private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-DE");
 
     /// <summary>
+    /// Hinweis in der Löschrückfrage eines Fahrzeugs mit Vorgängen, dass sich vorher eine Sicherung erstellen lässt.
+    /// </summary>
+    public const string BackupAdvice = "Erstelle vorher in den Optionen eine Sicherung, wenn du die Vorgänge behalten möchtest.";
+
+    /// <summary>
     /// Titel des Bereichs „Tankbuch“.
     /// </summary>
     public const string PageTitle = "Tankbuch";
@@ -293,8 +298,8 @@ public static class TankbookTexts
         return entryCount switch
         {
             <= 0 => question,
-            1 => $"{question} Dabei wird auch der zugehörige Tank- oder Ladevorgang endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
-            _ => string.Create(German, $"{question} Dabei werden auch die {entryCount} zugehörigen Tank- und Ladevorgänge endgültig gelöscht. Das lässt sich nicht rückgängig machen."),
+            1 => $"{question} Dabei wird auch der zugehörige Tank- oder Ladevorgang endgültig gelöscht. Das lässt sich nicht rückgängig machen. {BackupAdvice}",
+            _ => string.Create(German, $"{question} Dabei werden auch die {entryCount} zugehörigen Tank- und Ladevorgänge endgültig gelöscht. Das lässt sich nicht rückgängig machen. {BackupAdvice}"),
         };
     }
 

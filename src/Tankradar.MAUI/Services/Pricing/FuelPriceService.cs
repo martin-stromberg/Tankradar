@@ -57,7 +57,7 @@ public interface IFuelPriceService
 /// <summary>
 /// Standardumsetzung von <see cref="IFuelPriceService"/>.
 /// </summary>
-public sealed class FuelPriceService : IFuelPriceService
+public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
 {
     private const double ProbeLatitude = 52.5200;
     private const double ProbeLongitude = 13.4050;
@@ -296,6 +296,13 @@ public sealed class FuelPriceService : IFuelPriceService
             _logger.LogError("Die abgerufenen Preise konnten nicht lokal gespeichert werden ({ExceptionType}).", ex.GetType().Name);
             return false;
         }
+    }
+
+    /// <inheritdoc />
+    public void InvalidateCaches()
+    {
+        _searchCache.Clear();
+        _refreshed.Clear();
     }
 
     /// <summary>

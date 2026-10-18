@@ -52,5 +52,6 @@
 **Fahrzeug löschen**
 
 1. In der Karte des Fahrzeugs **Löschen** tippen.
+   Hat das Fahrzeug Vorgänge, rät die Rückfrage, vorher in den Optionen eine Sicherung zu erstellen (siehe [Sicherung](../Sicherung/index.md)).
 2. Die Rückfrage lesen. Nennt sie Tank- oder Ladevorgänge, werden diese samt Belegfotos mitgelöscht.
 3. **Ja, löschen** bzw. **Fahrzeug und Vorgänge löschen** tippen, oder **Abbrechen**, um das Fahrzeug zu behalten. Ist seit dem Öffnen der Rückfrage ein Vorgang hinzugekommen, nennt die Rückfrage die neue Zahl; bestätigen Sie dann erneut.

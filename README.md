@@ -10,7 +10,13 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Stand: Entwicklungsschritt 14 umgesetzt (Version 0.1.18): Verbrauchs- und Kostenauswertung je Fahrzeug auf der Seite
+Stand: Entwicklungsschritt 15 umgesetzt (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
+„Sicherung“) – Sicherung auf Wunsch als ZIP (Datenbank-Schnappschuss, Belegfotos, Manifest mit Prüfsummen), Liste mit Datum und
+Größe, Wiederherstellen nach Rückfrage (vollständige Prüfung, atomarer Austausch mit Rollback und Wiederaufnahme nach Absturz),
+Löschen nach Rückfrage, Teilen/Speichern über die Systemfunktion und Einspielen einer externen Datei; ältere Sicherungen werden
+migriert, zu neue, ungültige und manipulierte Dateien abgelehnt; Hinweis zur Sicherung in der Löschrückfrage von Fahrzeugen mit
+Vorgängen; Kachelzahlen der Auswertung ohne Umbruch. Details unter [`docs/help/Sicherung/`](docs/help/Sicherung/index.md),
+[ADR 0011](docs/adr/0011-local-backup-restore.md). Zuvor Schritt 14: Verbrauchs- und Kostenauswertung je Fahrzeug auf der Seite
 „Tank- und Ladevorgänge“ – Kacheln Ø Verbrauch (nach Strecke gewichtet) und Kosten / 100 km, Monatsanalyse mit Kosten und Menge
 des laufenden Monats, Verbrauchsverlauf (Balkendiagramm der letzten 6 Vorgänge), Kostenverlauf (Monatskosten) und Monatsliste,
 je Art (Kraftstoff/Strom) getrennt, mit Startverbrauch als gekennzeichnetem Ersatzwert; selbst gezeichnete Diagramme (MAUI
@@ -60,6 +66,7 @@ src/
     Views/                           XAML-Seiten der vier Hauptbereiche
     Services/                        AppConfiguration u. a. Dienste
     Services/Pricing/                Tankerkönig-Client, Preis-Cache, Verbindungserkennung, API-Schlüssel
+    Services/Backup/                 Lokale Sicherung und Wiederherstellung (Archiv, Validierung, Austausch mit Rollback)
     Resources/DesignSystem.xaml      Zentrales Design-System (Farben, Typografie, Spacing, ...)
     Resources/Raw/appsettings.json   Konfigurationsdatei (Bundle-ID)
     Platforms/                       Plattformspezifischer Code (iOS, Windows, Android, MacCatalyst)
@@ -168,6 +175,8 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
 
 - `TANKATLAS_TEST_LOCATION` – fester Standort im Format `breite,länge` mit Dezimalpunkt (z. B. `52.5200,13.4050`);
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
+- `TANKATLAS_TEST_BACKUP_IMPORT` – Pfad einer Sicherungsdatei, die „Sicherung aus Datei einspielen“ ohne Systemdialog liefert
+  (ohne Wert gilt die Auswahl als abgebrochen); „Teilen“ kopiert im Testmodus nach `<Datenverzeichnis>/test-shared/`,
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
 
@@ -244,6 +253,11 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
   Simulator/Gerät) ist hier jedoch nicht durchführbar und muss auf einem Mac bzw. über CI erfolgen.
   Für Build, Simulator, Gerät und TestFlight-Upload (auch von Windows per Pair to Mac) gibt es
   `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md).
+- **Sicherungen sind unverschlüsselt:** Sie enthalten Fahrdaten und Belege; eine geteilte oder gespeicherte Kopie liegt außerhalb
+  des Dateischutzes der App ([ADR 0011](docs/adr/0011-local-backup-restore.md)).
+- **Sichtprüfung offen:** Das Aussehen der Auswertung (Kacheln, Diagramme) und der Karte „Sicherung“ sowie das Verhalten des
+  Teilen-Blatts und der Dateiauswahl unter iOS sind ohne Gerät nur über Tests (Texte, Geometrie, Testdoppel) abgesichert und
+  bleiben Teil der Abnahme.
 - **Android/MacCatalyst:** Das MAUI-Standardtemplate legt zusätzlich zu iOS und Windows auch
   Android- und MacCatalyst-Ziele an. Diese sind für Schritt 1 nicht erforderlich, aber unschädlich
   und bauen erfolgreich mit.

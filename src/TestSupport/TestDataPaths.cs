@@ -41,6 +41,11 @@ public static class TestDataPaths
     public const string TestReceiptPhotoEnvironmentVariable = "TANKATLAS_TEST_RECEIPT_PHOTO";
 
     /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus den Pfad der Sicherungsdatei vorgibt, die die Test-Dateiauswahl zum Einspielen liefert.
+    /// </summary>
+    public const string TestBackupImportEnvironmentVariable = "TANKATLAS_TEST_BACKUP_IMPORT";
+
+    /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus die Fensterbetriebsart der App vorgibt (<see cref="TestWindowOffscreen"/> oder <see cref="TestWindowForeground"/>).
     /// </summary>
     public const string TestWindowEnvironmentVariable = "TANKATLAS_TEST_WINDOW";

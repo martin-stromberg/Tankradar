@@ -82,6 +82,7 @@ public class TankbookViewModelTests_Delete : BaseTest
         await PressAsync(viewModel, item.DeleteCommand);
 
         Assert.Contains("2 zugehörigen Tank- und Ladevorgänge endgültig gelöscht", item.DeleteQuestion, StringComparison.Ordinal);
+        Assert.Contains("Erstelle vorher in den Optionen eine Sicherung", item.DeleteQuestion, StringComparison.Ordinal);
         Assert.Equal("Fahrzeug und Vorgänge löschen", item.ConfirmDeleteLabel);
 
         await PressAsync(viewModel, item.ConfirmDeleteCommand);
