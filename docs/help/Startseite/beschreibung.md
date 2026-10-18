@@ -14,7 +14,7 @@ Jede Favoritengruppe erscheint mit Name, Beschreibung (falls vorhanden) und der 
 
 Zu jeder Tankstelle zeigt die Kachel:
 
-- den **Namen**, bei hinterlegter Notiz auch die Notiz,
+- den **Namen** (Ihr eigener Name, sonst die Marke, sonst der Name der Quelle; der Name der Quelle steht klein darunter, wenn er abweicht), bei hinterlegter Notiz auch die Notiz,
 - die **Entfernung**, nur wenn Ihr Standort ermittelt werden darf und verfügbar ist,
 - die **Preise der in den Optionen gewählten Spritsorten** in der dort festgelegten Reihenfolge, je Preis mit Alter („vor X Min.“); ab 60 Minuten ist die Altersangabe amberfarben markiert,
 - die Hinweise **Preis unbestätigt** und **Automatentankstelle**, soweit sie zutreffen,

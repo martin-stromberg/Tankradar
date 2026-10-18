@@ -10,7 +10,12 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Stand: Entwicklungsschritt 15 umgesetzt (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
+Stand: Entwicklungsschritt 15a umgesetzt (Version 0.1.20): Tankstellen zeigen überall die Marke vorn und den Namen der Quelle klein
+darunter (bei manchen Tankstellen ist er der Inhaber); in der Detailansicht lässt sich ein eigener Anzeigename vergeben, ändern und
+entfernen (lokal, überall bevorzugt, Teil der Sicherung; [ADR 0012](docs/adr/0012-station-display-name.md)). Die erste Volltankung
+eines Fahrzeugs liefert einen Verbrauch ab dem Start-Kilometerstand (Annahme: Tank beim Start voll), gekennzeichnet „ab Startstand“
+mit Hinweis; die Auswertung zeigt ihn schon mit einem vollen Vorgang (siehe [ADR 0009](docs/adr/0009-tankbook-entries.md),
+[ADR 0010](docs/adr/0010-tankbook-statistics.md)). Zuvor Schritt 15 (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
 „Sicherung“) – Sicherung auf Wunsch als ZIP (Datenbank-Schnappschuss, Belegfotos, Manifest mit Prüfsummen), Liste mit Datum und
 Größe, Wiederherstellen nach Rückfrage (vollständige Prüfung, atomarer Austausch mit Rollback und Wiederaufnahme nach Absturz),
 Löschen nach Rückfrage, Teilen/Speichern über die Systemfunktion und Einspielen einer externen Datei; ältere Sicherungen werden

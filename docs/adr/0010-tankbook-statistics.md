@@ -53,7 +53,17 @@ Speicherlücke; ein verwaistes Abonnement entfernt sich beim nächsten Wechsel s
 ### Kennzahlen
 
 - **Schwelle „zu wenige Vorgänge“.** Durchschnittsverbrauch und Kosten pro 100 km erscheinen, sobald je Art mindestens ein
-  berechnetes Intervall vorliegt (zwei volle Vorgänge). Darunter erscheint der Startverbrauch (falls vorhanden), sonst ein Hinweis.
+  berechnetes Intervall vorliegt. Für die Startart des Fahrzeugs genügt seit Schritt 15a ein voller Vorgang, weil der
+  Start-Kilometerstand die Basis liefert (ADR 0009); für die andere Art eines Hybrids braucht es weiterhin zwei volle Vorgänge.
+  Darunter erscheint der Startverbrauch (falls vorhanden), sonst ein Hinweis. **Ergänzt in Schritt 15a – Intervall ab Startstand:**
+  Es bildet Durchschnitt und Kosten pro 100 km nur, solange es kein reguläres Intervall (zwischen zwei vollen Vorgängen) gibt;
+  die Kennzahl ist dann als „Ab Startstand – angenommen wird ein voller Tank beim Start“ gekennzeichnet (`TankbookAverageSource.FromStart`).
+  Sobald ein reguläres Intervall vorliegt, geht das Startintervall nicht mehr in Durchschnitt und Kosten ein, weil die Annahme
+  unsicher ist und den Wert sonst dauerhaft verzerren könnte; im Verbrauchsverlauf und in der Liste bleibt sein Wert sichtbar.
+  Der gemessene Wert ab Startstand geht einem hinterlegten Startverbrauch vor; der Startverbrauch gilt nur noch, solange kein
+  voller Vorgang mit Strecke vorliegt („Startverbrauch – noch kein voller Vorgang“). Der Hinweis lautet für die Startart
+  „Für den Verbrauch wird mindestens ein voller Vorgang benötigt.“ (`TankbookKindStatistics.IsStartKind`), für den Strom-Block
+  eines Hybrids unverändert „… mindestens zwei volle Vorgänge …“.
 - **Startverbrauch.** Nur Ersatzwert für den Durchschnittsverbrauch, solange kein Intervall der Art existiert; gekennzeichnet
   als „Startverbrauch“ und nie mit berechneten Werten gemischt. Er gilt nur für die Art, deren Einheit er trägt
   (Elektro-Fahrzeug: Strom, sonst Kraftstoff; bei Hybrid also nur Kraftstoff). Kosten pro 100 km haben keinen Ersatzwert.

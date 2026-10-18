@@ -195,7 +195,17 @@ Systemdialoge). Es gibt keine eigene Seite und kein neues Symbol.
   Verschlüsselung mit Passwort wäre eine eigene Entscheidung (Schlüsselverwaltung, Verlustrisiko).
 - **Keine automatische Sicherung** und keine Cloud-Anbindung; beides ist nicht Teil der Anforderung.
 - **Ein Wechsel des Datenformats** (neue Tabellen, neue Migrationen) bleibt über die Migrationsregeln abgedeckt; ändert sich das
-  Archivformat selbst, ist `schemaVersion` zu erhöhen.
+  Archivformat selbst, ist `schemaVersion` zu erhöhen. Beispiel Schritt 15a: Die neue Spalte `Stations.CustomName` (eigener
+  Anzeigename, [ADR 0012](0012-station-display-name.md)) steckt automatisch in neuen Sicherungen; der Neuaufbau kopiert die
+  Spalten der Referenzdatenbank auf dem Migrationsstand der Sicherung, ältere Sicherungen ohne die Spalte werden eingespielt und
+  migriert (Integrationstests `BackupServiceTests_CustomName`).
+- **Fehlerart bei Dateifehlern (Schritt 15a):** Ein Fehler beim Lesen der Sicherungsdatenbank selbst (Öffnen, Integritätsprüfung,
+  Lesen der Tabellen, auch Ein-/Ausgabefehler einer abgeschnittenen Datei) gilt als ungültige Datei (`InvalidFile`). Als
+  vorübergehender Fehler der Umgebung (`Failed`) gelten nur Fehler der Referenzdatenbank und des Dateisystems, z. B. voller
+  Speicher.
+- **Datenschutz:** Die gespeicherten Tankstellen und Preisstände mit Abrufzeit sowie die eigenen Anzeigenamen stehen in der
+  Sicherung. Daraus lassen sich Gegenden und Zeiten ableiten, in denen gesucht wurde. Weil geteilte Sicherungen unverschlüsselt
+  sind, nennt die Hilfe das ausdrücklich.
 - **Das iOS-Verhalten** (Teilen-Blatt, Dateiauswahl) wird nur kompiliert und über die Testdoppel abgesichert; eine Sichtprüfung auf
   einem Gerät bleibt Teil der Abnahme.
 - **Datenmenge:** Dauer und Größe wachsen mit Datenbank und Fotos. Verarbeitet wird mit Stream-Kopien (80-KiB-Puffer), nichts wird

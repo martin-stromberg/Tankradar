@@ -33,9 +33,18 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
   „mindestens zwei der drei Werte“. Belege mit Zusatzgebühren erfasst man mit Menge und Gesamtbetrag.
 - **Verbrauch beim Lesen berechnet** (`ConsumptionCalculator`, nicht gespeichert). Je Art gibt es eine eigene Kette, damit
   Hybridfahrzeuge keine Einheiten mischen: (Menge + Mengen der Teilbetankungen seit dem vorherigen Vollvorgang) / Strecke
-  × 100, auf 2 Nachkommastellen. Der erste Vollvorgang, eine Strecke ≤ 0 und Teilbetankungen haben keinen Wert.
-  Teilbetankungen vor dem ersten Vollvorgang fließen nicht ein. Korrekturen und Löschungen bleiben dadurch automatisch
-  konsistent.
+  × 100, auf 2 Nachkommastellen. Eine Strecke ≤ 0 und Teilbetankungen haben keinen Wert. Korrekturen und Löschungen
+  bleiben dadurch automatisch konsistent. **Ergänzt in Schritt 15a:** Für die Startart des Fahrzeugs (Kraftstoff, bei
+  Elektrofahrzeugen Strom, bei Hybridfahrzeugen also nur Kraftstoff) ist der Start-Kilometerstand die Ausgangsbasis des ersten
+  Vollvorgangs. Er liefert damit einen Verbrauch ab Startstand unter der Annahme, dass der Tank beim Start voll war;
+  Teilbetankungen davor zählen mit. Der Wert ist als „(ab Startstand)“ gekennzeichnet (`TankbookEntryOverview.IsFromStart`),
+  ein Hinweis unter dem Eintrag erklärt die Annahme („Ab Startstand berechnet: Angenommen wird, dass der Tank beim Start voll
+  war. Teilbetankungen davor zählen mit.“). Liegt der erste Vollvorgang auf dem Startstand oder davor, gibt es keinen Wert
+  („Kein Verbrauch: keine Strecke seit dem Startstand“). Für die andere Art eines Hybrids und ohne bekannten Startstand bleibt es
+  beim bisherigen Verhalten („Noch kein Verbrauch: erster voller Vorgang“; Teilbetankungen davor zählen nicht). Der Dienst gibt
+  den Start-Kilometerstand des Fahrzeugs an `ConsumptionCalculator.Calculate` weiter; gespeichert wird weiterhin nichts. Die
+  Annahme „Tank beim Start voll“ kann falsch sein; deshalb steht sie sichtbar im Eintrag und die Auswertung bevorzugt reguläre
+  Intervalle (siehe [ADR 0010](0010-tankbook-statistics.md)).
 - **Art je Kraftstoffart:** Benzin und Diesel nur Kraftstoff, Elektro nur Strom, Hybrid beides (Chips, Kraftstoff
   vorgewählt). Ein Wechsel der Kraftstoffart eines Fahrzeugs mit Vorgängen bleibt erlaubt. Vorhandene Vorgänge behalten Art
   und Einheit, und beim Korrigieren bleibt die gespeicherte Art wählbar. Damit ist die offene Frage aus ADR 0008 „Folgen“
