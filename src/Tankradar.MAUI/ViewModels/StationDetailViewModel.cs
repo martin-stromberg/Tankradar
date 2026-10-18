@@ -446,7 +446,10 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Der eigene Anzeigename konnte nicht gespeichert werden ({ExceptionType}).", ex.GetType().Name);
-            CustomNameMessage = DetailTexts.CustomNameFailed;
+            if (string.Equals(_origin?.Id, stationId, StringComparison.OrdinalIgnoreCase))
+            {
+                CustomNameMessage = DetailTexts.CustomNameFailed;
+            }
         }
     }
 
