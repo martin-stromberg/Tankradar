@@ -147,7 +147,8 @@ dotnet test Tankradar.sln
 
 Dies führt Unit-, Integrations- und E2E-Tests aus (der `pre-push`-Hook lässt die E2E-Tests standardmäßig aus,
 `PRE_PUSH_E2E=1` schaltet sie ein; in der PR-CI nach `staging` sind sie blockierend). Die E2E-Tests starten die App
-im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; Rückfall auf
+im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; bedient wird nur über
+UI-Automation-Muster, nie über Fokus, Tastatur oder Maus, damit Eingaben des Anwenders nicht im Testfenster landen; Rückfall auf
 sichtbaren Betrieb per `TANKRADAR_E2E_WINDOW=foreground`. Der E2E-Test (`NavigationE2ETests`) startet die
 kompilierte Windows-App (`Tankradar.MAUI.exe`) über FlaUI und navigiert durch alle vier
 Navigationsbereiche; dafür muss `src/Tankradar.MAUI` zuvor für `net10.0-windows10.0.19041.0`

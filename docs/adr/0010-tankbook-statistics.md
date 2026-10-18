@@ -61,7 +61,7 @@ Speicherlücke; ein verwaistes Abonnement entfernt sich beim nächsten Wechsel s
   Sobald ein reguläres Intervall vorliegt, geht das Startintervall nicht mehr in Durchschnitt und Kosten ein, weil die Annahme
   unsicher ist und den Wert sonst dauerhaft verzerren könnte; im Verbrauchsverlauf und in der Liste bleibt sein Wert sichtbar.
   Der gemessene Wert ab Startstand geht einem hinterlegten Startverbrauch vor; der Startverbrauch gilt nur noch, solange kein
-  voller Vorgang mit Strecke vorliegt („Startverbrauch – noch kein voller Vorgang“). Der Hinweis lautet für die Startart
+  voller Vorgang mit Strecke vorliegt („Startverbrauch – noch keine Strecke aus vollen Vorgängen“; die Kennzeichnung gilt auch, wenn der erste volle Vorgang genau auf dem Start-Kilometerstand liegt und daher keine Strecke ergibt). Der Hinweis lautet für die Startart
   „Für den Verbrauch wird mindestens ein voller Vorgang benötigt.“ (`TankbookKindStatistics.IsStartKind`), für den Strom-Block
   eines Hybrids unverändert „… mindestens zwei volle Vorgänge …“.
 - **Startverbrauch.** Nur Ersatzwert für den Durchschnittsverbrauch, solange kein Intervall der Art existiert; gekennzeichnet

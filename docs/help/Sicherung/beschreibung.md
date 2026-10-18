@@ -31,7 +31,7 @@ Vor dem Überschreiben fragt Tankatlas im Eintrag nach und nennt Datum, App-Vers
 
 - **Ältere Sicherung:** wird eingespielt und auf den aktuellen Stand gebracht; Ihre Daten bleiben erhalten.
 - **Neuere Sicherung:** wird abgelehnt mit „Diese Sicherung stammt aus einer neueren Version von Tankatlas (…). Bitte aktualisiere die App. Deine Daten wurden nicht verändert.“
-- **Ungültige oder beschädigte Datei:** wird abgelehnt mit „Die Datei ist keine gültige Tankatlas-Sicherung oder beschädigt. Deine Daten wurden nicht verändert.“ Das gilt auch für Dateien mit unzulässigen Inhalten, falschen Prüfsummen, fehlenden Tabellen oder Spalten oder unbrauchbaren Werten in der Datenbank (zum Beispiel ein ungültiges Datum).
+- **Ungültige oder beschädigte Datei:** wird abgelehnt mit „Die Datei ist keine gültige Tankatlas-Sicherung oder beschädigt. Deine Daten wurden nicht verändert.“ Das gilt auch für Dateien mit unzulässigen Inhalten, falschen Prüfsummen, fehlenden Tabellen oder Spalten oder unbrauchbaren Werten in der Datenbank (zum Beispiel ein ungültiges Datum oder unplausibel lange Texte, etwa ein eigener Tankstellenname mit mehr als 60 Zeichen).
 
 ## Löschen, Teilen, Einspielen
 

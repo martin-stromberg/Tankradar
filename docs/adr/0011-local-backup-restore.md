@@ -125,8 +125,13 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
      Daten in dieser sauberen Datenbank); `integrity_check` und `foreign_key_check` erneut.
   5. Jede Entität wird einmal über Entity Framework gelesen (`AsNoTracking`, gestreamt): ungültige Datums- und Dezimalwerte
      (`FormatException` u. a.) führen zu `InvalidFile`; Text in Ganzzahl- oder Wahrheitswertspalten liest SQLite ohne Ausnahme als 0 bzw. wahr und wird daher nicht erkannt. Zusätzlich müssen die Enum-Zeichenketten, die die App nur gültig schreibt
-     (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. Weitere Grenzwerte (Längen,
-     Kilometerstände) werden nicht geprüft, weil die App sie nur bei der Eingabe durchsetzt und gespeicherte Altdaten nicht daran misst.
+     (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. **Textlängen** werden nach der letzten Migration
+     (alle Spalten vorhanden) mit festen Obergrenzen je frei befüllbarer Textspalte geprüft (`BackupTextLimits`, SQL `length()` in Zeichen):
+     eigener Anzeigename 60 (wie in der App), Namen von Tankstellen, Marken, Straßen, Orten, Gruppen, Fahrzeugen und Vorgängen 200,
+     Kennungen, Hausnummern, Postleitzahlen und Schlüssel 100, Notizen und Beschreibungen 2.000, `OpeningTimesJson` 20.000. Sie liegen
+     großzügig über dem, was die App und die Quelle liefern, aber weit unter Größen, bei denen die Oberfläche versagt (ein präparierter
+     eigener Name mit 200.000 Zeichen ließ „Vorgang erfassen“ abstürzen). Überlange Texte ergeben `InvalidFile`; der Bestand bleibt
+     unverändert. Kilometerstände und andere Zahlenwerte werden weiterhin nicht gemessen; die Anzeige kürzt lange Texte zusätzlich (ADR 0012).
      Einstellungen mit unbekannten Werten fängt die App beim Lesen selbst ab (Rückfall auf Standardwerte).
   6. Erst die so aufgebaute Referenzdatenbank (Journalmodus `DELETE`, ohne `-wal`/`-shm`) ersetzt im Staging die entpackte Datei und
      wird per `RestoreSwap` (Journal und Rollback) eingespielt. Die **Zählwerte der Rückfrage** (Fahrzeuge, Vorgänge, Gruppen, Favoriten,
