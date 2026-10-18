@@ -142,7 +142,7 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
   Datenbank wird entpackt) und bei der Wiederherstellung: Eine unbrauchbare Datei kommt gar nicht erst in die Liste, und die Meldung
   „gültige Sicherung“ erscheint erst danach.
   Die gesamte Vorbereitung hat eine Höchstdauer (`BackupLimits.PrepareTimeoutSeconds`, zwei Minuten); danach endet sie mit `Failed`, der Bestand bleibt
-  unverändert, Staging und Referenz werden entfernt, und die Oberfläche gibt die Schaltflächen wieder frei (Test mit Zeitlimit 0). Das
+  unverändert, Staging und Referenz werden entfernt, und das ViewModel gibt die Schaltflächen im `finally` wieder frei (der Dienst ist mit Zeitlimit 0 getestet, das Verhalten des ViewModels nicht gesondert). Das
   Abbruchsignal wird zwischen den Anweisungen und Zeilen geprüft; eine einzelne SQLite-Anweisung ist nicht unterbrechbar, ihre
   Dauer ist aber durch die Größengrenzen der Datenbank beschränkt.
   Getestet mit Integrations- und E2E-Tests bei gültigem Manifest und gültigen Prüfsummen: Trigger (auch mit Präfix `sqlite_`), View, zusätzlicher `CHECK`,
