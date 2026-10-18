@@ -19,13 +19,14 @@ die [Detailansicht](0004-station-detail-design-deviations.md) und die [Sicherung
   Namen unterscheidet; sonst entfällt die zweite Zeile (z. B. Marke „ARAL“, Name „Aral“). Die Regel liegt an einer Stelle
   (`StationNaming`), `StationInfo.DisplayName` und `SubName` leiten daraus ab. Alle Anzeigeorte verwenden sie: Startseite und
   „In der Nähe“ (`StationTile`), Gruppenansicht, Suchergebnisse, Kartenmarkierungen (Beschreibung für die Sprachausgabe),
-  Detailansicht und die Auswahl „Bekannte Tankstellen“ im Tankbuch.
+  Detailansicht und die Auswahl „Bekannte Tankstellen“ im Tankbuch (dort nur der Anzeigename ohne zweite Zeile, wie bei den Chips üblich).
 - **`StationListItem.Name` trägt den Anzeigenamen**, neu ist `SubName`. Die Sortierung nach Name folgt damit dem, was der Anwender
   liest. Das Gleiche gilt für `FavoriteEntry.StationName` (Ordnung innerhalb einer Priorität) und `KnownStation.Name`.
   Gespeicherte Tankbuch-Vorgänge behalten ihren Namen als Momentaufnahme (ADR 0009); eine spätere Umbenennung ändert sie nicht.
 - **Eigener Anzeigename:** neue Spalte `Stations.CustomName` (`TEXT`, null, höchstens 60 Zeichen). Er wird in der Detailansicht in
   der Karte „Eigener Name“ vergeben, geändert und entfernt (leeres Feld speichern oder **Eigenen Namen entfernen**). Voraussetzung
-  ist eine lokal bekannte Tankstelle; jede geöffnete Detailansicht ist es. Der Abruf der Quelle überschreibt die Spalte nie
+  ist eine lokal bekannte Tankstelle; eine geöffnete Detailansicht ist es nach dem Abruf in der Regel (scheitert das
+  Speichern, meldet die Karte, dass der Name erst nach dem Laden vergeben werden kann). Der Abruf der Quelle überschreibt die Spalte nie
   (`PriceRepository.SaveAsync` setzt Name, Marke, Adresse, Position und Details, nicht den eigenen Namen). Frisch abgerufene
   Tankstellen, die die Quelle ohne eigenen Namen liefert, ergänzt `FuelPriceService` aus der Datenbank (`GetCustomNamesAsync`);
   ein Lesefehler lässt die Anzeige ohne eigenen Namen, die frischen Daten bleiben nutzbar.

@@ -92,4 +92,16 @@ public class TankbookStatisticsCalculatorTests_FromStart : BaseTest
         Assert.Equal(15.00m, kind.AverageConsumption);
         Assert.True(kind.IsStartKind);
     }
+
+    /// <summary>
+    /// Prüft, dass der Verlaufspunkt ab Startstand gekennzeichnet ist und die Zusammenfassung es nennt.
+    /// </summary>
+    [Fact]
+    public void Trend_MarksStartValue()
+    {
+        var kind = Statistics([Create(1, 10_500, 30m), Create(2, 11_000, 25m)], fromStart: true).Kinds.Single();
+
+        Assert.Equal([true, false], kind.ConsumptionTrend.Select(point => point.IsFromStart));
+        Assert.EndsWith("ältester Wert ab Startstand berechnet", new MAUI.ViewModels.TankbookKindStatisticsViewModel(kind).ConsumptionChartSummary, StringComparison.Ordinal);
+    }
 }

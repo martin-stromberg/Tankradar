@@ -300,8 +300,9 @@ public static class TankbookStatisticsTexts
     /// </summary>
     /// <param name="points">Die dargestellten Werte, ältester zuerst.</param>
     /// <param name="kind">Die Art.</param>
+    /// <param name="includesStartValue">Gibt an, ob der älteste Wert ab dem Start-Kilometerstand berechnet wurde (wird in der Zusammenfassung genannt).</param>
     /// <returns>Der Text.</returns>
-    public static string FormatConsumptionSummary(IReadOnlyList<decimal> points, TankbookEntryKind kind)
+    public static string FormatConsumptionSummary(IReadOnlyList<decimal> points, TankbookEntryKind kind, bool includesStartValue = false)
     {
         ArgumentNullException.ThrowIfNull(points);
         if (points.Count == 0)
@@ -309,7 +310,7 @@ public static class TankbookStatisticsTexts
             return NoChartData;
         }
 
-        return $"Verlauf, {FormatValueCount(points.Count)}, zuletzt {TankbookEntryTexts.FormatConsumption(points[^1], kind)}, niedrigster {FormatValueShort(points.Min())}, höchster {FormatValueShort(points.Max())}";
+        return $"Verlauf, {FormatValueCount(points.Count)}, zuletzt {TankbookEntryTexts.FormatConsumption(points[^1], kind)}, niedrigster {FormatValueShort(points.Min())}, höchster {FormatValueShort(points.Max())}{(includesStartValue ? ", ältester Wert ab Startstand berechnet" : string.Empty)}";
     }
 
     /// <summary>

@@ -165,4 +165,41 @@ public class StationDetailViewModelTests_CustomName : StationDetailViewModelTest
         Assert.Empty(Prices.CustomNameRequests);
         Assert.False(ViewModel.HasCustomNameMessage);
     }
+
+    /// <summary>
+    /// Prüft, dass eine Eingabe vor dem Ende des ersten Ladens nicht vom Vorbelegen überschrieben wird.
+    /// </summary>
+    [Fact]
+    public async Task TypedBeforeLoad_IsNotOverwritten()
+    {
+        var station = CreateStation(Now.AddMinutes(-5), Now.AddMinutes(-5));
+        Prices.DetailResult = new StationDetailResult(
+            new StationInfo { Id = station.Id, Name = "Klaus Heinrich", CustomName = "Alt", Prices = station.Prices, DetailsUpdatedUtc = station.DetailsUpdatedUtc },
+            PriceDataSource.Live,
+            PriceFailure.None);
+        ViewModel.Show(CreateOrigin());
+
+        ViewModel.CustomNameInput = "Neu";
+        await AppearAsync();
+
+        Assert.Equal("Neu", ViewModel.CustomNameInput);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Laden, das den alten Stand ohne den inzwischen gespeicherten Namen liefert, den gespeicherten Namen nicht verdrängt.
+    /// </summary>
+    [Fact]
+    public async Task Reload_WithStaleResult_KeepsSavedCustomName()
+    {
+        await LoadAsync();
+        ViewModel.CustomNameInput = "Gespeichert";
+        ViewModel.SaveCustomNameCommand.Execute(null);
+        await ViewModel.LastCustomNameTask;
+
+        ViewModel.RefreshCommand.Execute(null);
+        await ViewModel.LastLoadTask;
+
+        Assert.Equal("Gespeichert", ViewModel.Detail!.Name);
+        Assert.True(ViewModel.HasCustomName);
+    }
 }

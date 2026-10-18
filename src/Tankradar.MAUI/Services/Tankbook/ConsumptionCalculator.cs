@@ -6,7 +6,7 @@ namespace Tankradar.MAUI.Services.Tankbook;
 /// Rechenbaustein für den Verbrauch pro 100 km. Je Art (Kraftstoff bzw. Strom) gibt es eine eigene Kette in chronologischer Ordnung:
 /// Ein voller Vorgang mit einem vorherigen vollen Vorgang derselben Art erhält
 /// (Menge + Mengen der Teilbetankungen dazwischen) / gefahrene Strecke × 100, auf 2 Nachkommastellen gerundet.
-/// Teilbetankungen erhalten keinen eigenen Wert; Teilbetankungen vor dem ersten vollen Vorgang fließen nicht ein.
+/// Teilbetankungen erhalten keinen eigenen Wert; Teilbetankungen vor dem ersten vollen Vorgang fließen nur mit Start-Kilometerstand (siehe unten) ein.
 /// Bei berechnetem Verbrauch werden zusätzlich Menge und Kosten des Intervalls (voller Vorgang plus Teilbetankungen dazwischen) geliefert.
 /// Ist der Start-Kilometerstand des Fahrzeugs bekannt, dient er für die Startart (Kraftstoff, bei Elektrofahrzeugen Strom) als Ausgangsbasis des ersten
 /// vollen Vorgangs (Annahme: Der Tank war beim Start voll); Teilbetankungen davor zählen dann mit, und das Intervall ist als „ab Startstand“ gekennzeichnet.

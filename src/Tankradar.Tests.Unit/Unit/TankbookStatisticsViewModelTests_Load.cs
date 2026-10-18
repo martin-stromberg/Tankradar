@@ -210,7 +210,7 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         await viewModel.LoadAsync(vehicle.Id);
 
         var kind = viewModel.Kinds.Single();
-        Assert.Equal("Verlauf, 3 Werte, zuletzt 5,00 L/100 km, niedrigster 5,00, höchster 8,00", kind.ConsumptionChartSummary);
+        Assert.Equal("Verlauf, 3 Werte, zuletzt 5,00 L/100 km, niedrigster 5,00, höchster 8,00, ältester Wert ab Startstand berechnet", kind.ConsumptionChartSummary);
         Assert.StartsWith("Monatskosten, 1 Wert, zuletzt 176,61 €", kind.CostChartSummary, StringComparison.Ordinal);
         Assert.Equal(3, kind.ConsumptionChart.Points.Count);
         Assert.True(kind.CostChart.HasData);

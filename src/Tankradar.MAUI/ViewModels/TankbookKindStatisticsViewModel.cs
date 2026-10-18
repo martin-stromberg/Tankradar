@@ -47,7 +47,7 @@ public sealed class TankbookKindStatisticsViewModel
                 point.Value,
                 TankbookStatisticsTexts.FormatValueShort(point.Value))).ToList(),
             TankbookEntryTexts.GetConsumptionUnit(kind));
-        ConsumptionChartSummary = TankbookStatisticsTexts.FormatConsumptionSummary(trend.Select(point => point.Value).ToList(), kind);
+        ConsumptionChartSummary = TankbookStatisticsTexts.FormatConsumptionSummary(trend.Select(point => point.Value).ToList(), kind, trend.Any(point => point.IsFromStart));
 
         var months = statistics.Months
             .Take(TankbookStatisticsLimits.ChartMaxPoints)

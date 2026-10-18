@@ -69,7 +69,7 @@ public static class TankbookStatisticsCalculator
 
         var trend = calculated
             .Where(overview => overview.Consumption is not null)
-            .Select(overview => new TrendPoint(overview.Entry.OccurredAt, overview.Consumption!.Value))
+            .Select(overview => new TrendPoint(overview.Entry.OccurredAt, overview.Consumption!.Value, overview.IsFromStart))
             .ToList();
         return new TankbookKindStatistics(
             kind,

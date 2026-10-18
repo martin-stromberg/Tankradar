@@ -33,6 +33,8 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     private bool _isOffline;
     private bool _subscribed;
     private bool _customNameLoaded;
+    private bool _customNameTouched;
+    private (bool IsSet, string? Name) _savedCustomName;
     private string _customNameInput = string.Empty;
     private string? _customNameMessage;
 
@@ -113,7 +115,14 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     public string CustomNameInput
     {
         get => _customNameInput;
-        set => SetProperty(ref _customNameInput, value ?? string.Empty);
+        set
+        {
+            if (SetProperty(ref _customNameInput, value ?? string.Empty))
+            {
+                // Eine Eingabe des Anwenders darf das Vorbelegen nach dem Laden nicht überschreiben.
+                _customNameTouched = true;
+            }
+        }
     }
 
     /// <summary>
@@ -255,7 +264,9 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         _station = null;
         _lastResult = null;
         _customNameLoaded = false;
-        CustomNameInput = string.Empty;
+        _customNameTouched = false;
+        _savedCustomName = default;
+        SetInput(string.Empty);
         CustomNameMessage = null;
         _ = Favorites.SetStationAsync(origin.Id);
         Detail = new StationDetailItem(
@@ -361,11 +372,17 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         _lastResult = result;
         if (result.Station is { } station)
         {
-            _station = station;
+            // Ein Laden, das älter ist als ein inzwischen gespeicherter Name, liefert den alten Stand; der gespeicherte Name gilt.
+            _station = _savedCustomName.IsSet && string.Equals(station.Id, _origin?.Id, StringComparison.OrdinalIgnoreCase)
+                ? station.WithCustomName(_savedCustomName.Name)
+                : station;
             if (!_customNameLoaded)
             {
                 _customNameLoaded = true;
-                CustomNameInput = station.CustomName ?? string.Empty;
+                if (!_customNameTouched)
+                {
+                    SetInput(_station.CustomName ?? string.Empty);
+                }
             }
 
             RebuildDetail(settings);
@@ -379,6 +396,11 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         UpdateOfflineState();
     }
 
+    private void SetInput(string value)
+    {
+        SetProperty(ref _customNameInput, value, nameof(CustomNameInput));
+    }
+
     private async Task SaveCustomNameAsync(string? name)
     {
         if (_origin is null)
@@ -386,14 +408,22 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             return;
         }
 
+        var stationId = _origin.Id;
         var trimmed = name?.Trim() ?? string.Empty;
         try
         {
-            var result = await _priceService.SetCustomNameAsync(_origin.Id, trimmed).ConfigureAwait(true);
+            var result = await _priceService.SetCustomNameAsync(stationId, trimmed).ConfigureAwait(true);
+            if (!string.Equals(_origin?.Id, stationId, StringComparison.OrdinalIgnoreCase))
+            {
+                // Inzwischen wird eine andere Tankstelle angezeigt: Die Anzeige bleibt unberührt.
+                return;
+            }
+
             switch (result)
             {
                 case StationNameResult.Ok:
-                    CustomNameInput = trimmed;
+                    _savedCustomName = (true, trimmed.Length == 0 ? null : trimmed);
+                    SetInput(trimmed);
                     if (_station is not null)
                     {
                         _station = _station.WithCustomName(trimmed.Length == 0 ? null : trimmed);

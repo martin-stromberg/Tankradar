@@ -110,7 +110,7 @@ public class FavoritesE2ETests_DisplayName : HomeE2ETestBase
 
             Press("Favorites.Station.Open");
             WaitUntil(() => FindByAutomationId("Detail.Name")?.Name == CustomName, "Die Detailansicht zeigt nach dem Neustart nicht den eigenen Namen.");
-            Assert.Equal(CustomName, WaitForAutomationId("Detail.CustomName.Input").Patterns.Value.Pattern.Value.Value);
+            WaitUntil(() => FindByAutomationId("Detail.CustomName.Input")?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault == CustomName, "Das Eingabefeld zeigt nach dem Neustart nicht den eigenen Namen.");
             Press("Detail.CustomName.Remove");
             WaitForText("Detail.CustomName.Message", "Der eigene Name wurde entfernt.");
             WaitUntil(() => FindByAutomationId("Detail.Name")?.Name == Brand, "Nach dem Entfernen zeigt die Detailansicht nicht wieder die Marke.");
