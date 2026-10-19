@@ -52,6 +52,10 @@ auf einem Mac bzw. im macOS-Runner. Zusätzlich prüft der Schritt
 „iOS-Deployment-Skript“ (`scripts/test-ios-deployment.ps1`) Syntax, Hilfe und das saubere Abbrechen von
 [`scripts/iOS-Deployment.ps1`](ios-deployment.md) ohne Mac.
 
+## Zwischenstände abnehmen
+
+Ein mit `scripts/create-review-version.ps1` erzeugter Zwischenstand wird bei Abnahmen **nicht** per `Start-Process` (oder einem ähnlichen Aufruf aus dem Skript) gestartet: Das Fenster käme in den Vordergrund und nähme dem Anwender, der parallel arbeitet, Fokus und Tastatureingaben. Für automatisierte Abläufe gilt der Testmodus der E2E-Tests (`TANKATLAS_TEST_DATA_PATH`, `TANKATLAS_TEST_WINDOW=offscreen`; die Tests bedienen die App nur über UI-Automation-Muster). Zum Ansehen startet der Anwender die `.exe` im Verzeichnis `review-versions/<Version>_<Datum>/bin/` selbst.
+
 ## Hinweise
 
 - Zum Abschluss eines Schritts empfiehlt sich der Lauf vor jedem PR nach `staging`.

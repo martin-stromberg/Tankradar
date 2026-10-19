@@ -26,7 +26,7 @@ Die Einheiten stehen fest rechts im Eingabefeld und wechseln mit der gewählten 
 
 ## Tank- und Ladevorgänge
 
-Die Seite **Tank- und Ladevorgänge** (bei Strom heißt die Kennzeichnung einer nicht vollen Ladung „Teilladung“ statt „Teilbetankung“) zeigt die Vorgänge eines Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
+Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
 
 | Angabe | Pflicht | Regeln |
 |--------|---------|--------|
@@ -37,7 +37,7 @@ Die Seite **Tank- und Ladevorgänge** (bei Strom heißt die Kennzeichnung einer 
 | Preis pro Liter bzw. pro kWh | siehe unten | größer als 0 und kleiner als 10 €, höchstens drei Nachkommastellen |
 | Gesamtbetrag | siehe unten | größer als 0 und kleiner als 10.000 €, höchstens zwei Nachkommastellen |
 | Kilometerstand | ja | ganze Kilometer; nicht unter dem Start-Kilometerstand und dem vorherigen Vorgang, nicht über dem nächsten Vorgang |
-| Teilbetankung | nein | Schalter, Standard aus (voll getankt bzw. geladen) |
+| Teilbetankung | nein | Schalter, Standard aus (voll getankt bzw. geladen); bei Strom heißen Schalter und Kennzeichnung **Teilladung** |
 | Notiz | nein | höchstens 500 Zeichen |
 | Belegfoto | nein | JPG, PNG oder HEIC, höchstens 20 MB; Tankatlas prüft den Dateiinhalt |
 
@@ -49,7 +49,7 @@ Die Seite **Tank- und Ladevorgänge** (bei Strom heißt die Kennzeichnung einer 
 
 - Der Verbrauch eines vollen Vorgangs ist (Menge + Mengen der Teilbetankungen seit dem vorherigen vollen Vorgang) / gefahrene Strecke × 100, in L/100 km bzw. kWh/100 km mit zwei Nachkommastellen.
 - **Der erste volle Vorgang** liefert einen Verbrauch ab dem **Start-Kilometerstand** des Fahrzeugs („Verbrauch 8,00 L/100 km (ab Startstand)“). Angenommen wird, dass der Tank beim Start voll war; ein Hinweis unter dem Eintrag nennt das („Ab Startstand berechnet: Angenommen wird, dass der Tank beim Start voll war. Teilbetankungen davor zählen mit.“). Das gilt für Kraftstoff, bei Elektrofahrzeugen für Strom; bei Hybridfahrzeugen hat der erste Vorgang der anderen Art weiterhin keinen Verbrauch („Noch kein Verbrauch: erster voller Vorgang“). Liegt der Kilometerstand nicht über dem Startstand, gibt es keinen Wert („Kein Verbrauch: keine Strecke seit dem Startstand“).
-- Eine Teilbetankung hat keinen eigenen Wert; ihre Menge zählt beim nächsten vollen Vorgang mit, auch vor dem ersten vollen Vorgang (dann im Wert ab Startstand), und ihre Kosten erscheinen in den Monatskosten. Im Formular steht dazu unter dem Schalter **Teilbetankung** ein Hinweis, solange der Schalter eingeschaltet ist.
+- Eine Teilbetankung hat keinen eigenen Wert; ihre Menge zählt beim nächsten vollen Vorgang mit, auch vor dem ersten vollen Vorgang (dann im Wert ab Startstand), und ihre Kosten erscheinen in den Monatskosten. Im Formular steht dazu unter dem Schalter **Teilbetankung** (bei Strom **Teilladung**) ein Hinweis, solange der Schalter eingeschaltet ist.
 - Ohne gefahrene Strecke seit dem letzten vollen Vorgang gibt es keinen Wert.
 - Bei Hybridfahrzeugen werden Kraftstoff und Strom getrennt gerechnet.
 - Korrigieren oder löschen Sie einen Vorgang, werden die Verbrauchswerte sofort neu berechnet.
@@ -71,6 +71,24 @@ Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und
 **Startverbrauch:** Haben Sie am Fahrzeug einen Startverbrauch hinterlegt, ersetzt er den Ø Verbrauch, solange noch kein Intervall vorliegt. Er ist als „Startverbrauch – noch keine Strecke aus vollen Vorgängen“ gekennzeichnet (auch wenn der erste volle Vorgang genau auf dem Start-Kilometerstand liegt) und verschwindet, sobald ein voller Vorgang mit Strecke vorliegt (dann gilt der gemessene Wert ab Startstand bzw. der berechnete Wert); beide werden nie gemischt. Er gilt nur für die Art, deren Einheit er trägt: bei Elektrofahrzeugen für Strom (kWh/100 km), sonst für Kraftstoff (L/100 km), bei Hybridfahrzeugen also nur für Kraftstoff. Für die Kosten pro 100 km gibt es keinen Ersatzwert.
 
 **Barrierefreiheit:** Jedes Diagramm hat eine sichtbare Textzusammenfassung, z. B. „Verlauf, 3 Werte, zuletzt 6,00 L/100 km, niedrigster 5,80, höchster 6,20“. Sie ist ein eigener Text unter dem Diagramm und wird von der Sprachausgabe als Text vorgelesen; das Diagramm selbst trägt nur die kurze Beschreibung („Balkendiagramm des Verbrauchsverlaufs“ bzw. „Balkendiagramm der Monatskosten“), damit nichts doppelt vorgelesen wird. Ohne Werte gibt es kein Diagramm und damit auch keine Ansage eines leeren Diagramms. Die Kacheln heißen für die Sprachausgabe „Durchschnittsverbrauch“ und „Kosten pro 100 km“. Die Monatsliste ist die Tabelle zum Kostendiagramm. Beim Wechsel zwischen hellem und dunklem Erscheinungsbild werden die Diagramme neu gezeichnet. Die Auswertung wird beim Öffnen sowie nach Erfassen, Korrigieren und Löschen eines Vorgangs neu berechnet; sie wird nicht gespeichert. Bei einem Ladefehler erscheint „Die Auswertung konnte nicht geladen werden.“, die Liste der Vorgänge bleibt nutzbar.
+
+## Export
+
+Unter der Auswertung hat die Seite **Tank- und Ladevorgänge** den Bereich **Export**. Er gibt die Vorgänge des Fahrzeugs als Datei weiter, **nur wenn Sie auf Exportieren tippen**; das Öffnen der Seite oder die Wahl von Format und Zeitraum erzeugt nichts. Entscheidungen: [ADR 0013](../../adr/0013-tankbook-export.md).
+
+- **Format:** **CSV** (Tabelle für Excel, LibreOffice u. a.) oder **PDF** (Bericht). Voreingestellt ist CSV.
+- **Zeitraum:** **Alle Vorgänge** (voreingestellt), **Dieses Jahr**, **Letztes Jahr**, **Letzte 12 Monate** oder **Eigener Zeitraum**. Nur beim eigenen Zeitraum erscheinen die Datumsfelder **Von** und **Bis**; beide Tage zählen mit, **Bis** liegt höchstens heute, und **Von** darf nicht nach **Bis** liegen („Das Startdatum liegt nach dem Enddatum.“, „Das Enddatum liegt in der Zukunft.“; es entsteht dann keine Datei).
+- **Weitergabe:** Tankatlas erzeugt die Datei und übergibt sie an die Funktion **Teilen/Speichern** des Systems (unter Windows der Teilen-Dialog, unter iOS das Teilen-Blatt, z. B. „In Dateien sichern“). Tankatlas überträgt selbst nichts. Danach steht unter dem Knopf „Export bereit: Tankbuch_Golf_2026-10-19.csv.“; die temporäre Kopie wird gelöscht. Brechen Sie den Dialog ab, ist das kein Fehler.
+- **Kein Vorgang:** Hat das Fahrzeug noch keine Vorgänge oder enthält der Zeitraum keine, entsteht keine Datei: „Für dieses Fahrzeug gibt es noch keine Vorgänge zum Exportieren.“ bzw. „Im gewählten Zeitraum gibt es keine Vorgänge.“.
+- **Dateiname:** `Tankbuch_<Fahrzeug>_<JJJJ-MM-TT>.csv` bzw. `.pdf` (Sonderzeichen des Fahrzeugnamens werden durch `_` ersetzt, höchstens 40 Zeichen).
+
+**CSV für deutschsprachige Tabellenkalkulationen:** UTF-8 mit Kennzeichnung (Umlaute stimmen), Semikolon als Trennzeichen, Dezimalkomma ohne Tausenderpunkt, Datum `TT.MM.JJJJ`, Uhrzeit `HH:mm` in einer eigenen Spalte, die älteste Zeile zuerst. Spalten: Datum, Uhrzeit, Tankstelle, Art (Kraftstoff oder Strom), Menge, Einheit (**Liter** bzw. **kWh**), Preis pro Einheit (EUR), Gesamtbetrag (EUR), Kilometerstand, Teilbetankung (Ja/Nein), Strecke (km), Verbrauch, Verbrauchseinheit (L/100 km bzw. kWh/100 km), Hinweis zum Verbrauch („ab Startstand“) und Notiz. Jede Zeile trägt ihre Art, auch bei Hybridfahrzeugen. Beginnt ein Text (Tankstelle, Notiz) mit `=`, `+`, `-` oder `@`, setzt Tankatlas ein `'` davor, damit die Tabellenkalkulation ihn nicht als Formel ausführt.
+
+**PDF-Bericht:** A4 hoch mit Kopf (Fahrzeug, Zeitraum, Erstellungsdatum, Zahl der Vorgänge), den **Kennzahlen** je Art (Ø Verbrauch mit Herkunft, Kosten pro 100 km, Gesamtkosten, Strecke), den **Monatskosten** und der **Vorgangstabelle** (Datum und Uhrzeit, Tankstelle, Menge, Preis, Betrag, Kilometerstand, Verbrauch, Notiz) mit wiederholter Kopfzeile auf jeder Seite und „Seite x von y“ in der Fußzeile. Der Bericht enthält keine Diagramme. Zeichen, die die Standardschrift nicht kennt (z. B. kyrillische Buchstaben), erscheinen als „?“.
+
+**Kennzahlen im Zeitraum:** Sie stammen aus denselben Berechnungen wie die Auswertung der Seite. Der Verbrauch eines Vorgangs gilt immer zum vorherigen vollen Vorgang, auch wenn dieser vor dem Zeitraum liegt; die Kennzahlen im Bericht umfassen die Intervalle, deren Abschluss im Zeitraum liegt. Ohne Zeitraum stimmen sie mit der Auswertung überein.
+
+**Datenschutz:** Der Export enthält Ihre Fahrdaten, Tankstellen und Notizen **unverschlüsselt**, aber keine Belegfotos. Die Datei verlässt das Gerät nur, wenn Sie sie über Teilen oder Speichern weitergeben. Der Export ist keine Sicherung: Er lässt sich nicht wiedereinspielen; dafür gibt es die [Sicherung](../Sicherung/index.md) in den Optionen.
 
 ## Fehlermeldungen
 

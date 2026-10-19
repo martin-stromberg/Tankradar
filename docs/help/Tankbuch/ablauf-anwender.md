@@ -34,6 +34,14 @@
 3. Mit einem vollen Vorgang zeigt die Auswertung den Wert ab Startstand (gekennzeichnet); ohne vollen Vorgang erscheint ein Hinweis, und ein hinterlegter Startverbrauch wird als „Startverbrauch“ gekennzeichnet angezeigt. Der Verweis auf den Startverbrauch erscheint nur, wenn er für diese Art gelten würde und noch keiner hinterlegt ist.
 4. Nach dem Erfassen, Korrigieren oder Löschen eines Vorgangs aktualisiert sich die Auswertung von selbst.
 
+**Tankbuch exportieren**
+
+1. In der Karte des Fahrzeugs **Tank- und Ladevorgänge** tippen und zum Bereich **Export** unter der Auswertung blättern.
+2. Das **Format** wählen: **CSV** (Tabelle) oder **PDF** (Bericht).
+3. Den **Zeitraum** wählen: **Alle Vorgänge**, **Dieses Jahr**, **Letztes Jahr**, **Letzte 12 Monate** oder **Eigener Zeitraum**. Beim eigenen Zeitraum erscheinen die Felder **Von** und **Bis**; tippen Sie ein Feld an und wählen Sie den Tag im Kalender.
+4. **Exportieren** tippen. Das System öffnet **Teilen/Speichern**; wählen Sie, wohin die Datei soll. Danach steht unter dem Knopf „Export bereit: …“.
+5. Gibt es im Zeitraum keine Vorgänge, erscheint ein Hinweis und es entsteht keine Datei. Beachten Sie: Die Datei ist unverschlüsselt.
+
 **Vorgang korrigieren**
 
 1. Im Eintrag **Bearbeiten** tippen; das Formular **Vorgang bearbeiten** zeigt die gespeicherten Werte und das Foto.
