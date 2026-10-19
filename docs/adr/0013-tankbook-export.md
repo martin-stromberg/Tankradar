@@ -105,7 +105,9 @@ Der Dienst (`TankbookExportService`) schreibt nach `<Zwischenspeicher>/exports/T
 (`TankbookExportFileNamer`: Fahrzeugname ohne ungültige Zeichen, höchstens 40 Zeichen, sonst „Fahrzeug“). Vor jedem Export werden alte Dateien im Verzeichnis
 gelöscht; nach der Übergabe bleibt die Datei bis zum nächsten Export liegen. Sie wird bewusst nicht sofort gelöscht, weil `Share.Default.RequestAsync` auf
 manchen Plattformen (Android, möglicherweise auch der Windows-Dialog) zurückkehrt, bevor die Zielanwendung die Datei liest. Das System darf den Zwischenspeicher
-ohnehin bereinigen. Eine angefangene Datei wird bei Fehler und bei Abbruch sofort gelöscht (`Discard`). Fehler werden ohne Namen und Werte protokolliert (nur der Ausnahmetyp), eine angefangene Datei wird gelöscht.
+ohnehin bereinigen. Eine angefangene Datei wird bei Fehler und bei Abbruch sofort gelöscht; Fehler werden ohne Namen und Werte protokolliert (nur der Ausnahmetyp).
+
+Einschränkung: Eine Vorversion, die das Zielprogramm noch geöffnet hält (unter Windows z. B. Excel oder ein PDF-Betrachter), lässt sich beim Aufräumen nicht löschen. Die neue Datei legt der Dienst dann mit `FileMode.CreateNew` unter einem Namen mit Zähler an (`Tankbuch_Golf_2026-10-19_2.csv`, bis zu 99 Versuche) statt mit einem Fehler zu scheitern; die gesperrte Datei bleibt bis zum nächsten Export, der sie wieder zu löschen versucht.
 
 ### Leeres Ergebnis
 

@@ -16,6 +16,8 @@ public sealed class TankbookExportService : ITankbookExportService
     /// </summary>
     public const string DirectoryName = "exports";
 
+    private const int MaxFileNameAttempts = 99;
+
     private readonly IVehicleService _vehicleService;
     private readonly ITankbookEntryService _entryService;
     private readonly IAppDataPathProvider _paths;
@@ -78,9 +80,14 @@ public sealed class TankbookExportService : ITankbookExportService
             };
             var directory = PrepareDirectory();
             var fileName = TankbookExportFileNamer.Create(vehicle.Name, now, TankbookExportTexts.GetFileExtension(request.Format));
-            path = Path.Combine(directory, fileName);
-            await File.WriteAllBytesAsync(path, bytes, cancellationToken).ConfigureAwait(false);
-            return new TankbookExportResult(TankbookExportStatus.Exported, path, fileName, data.Entries.Count);
+            var stream = CreateUniqueFile(directory, fileName);
+            path = stream.Name;
+            await using (stream.ConfigureAwait(false))
+            {
+                await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            }
+
+            return new TankbookExportResult(TankbookExportStatus.Exported, path, Path.GetFileName(path), data.Entries.Count);
         }
         catch (OperationCanceledException)
         {
@@ -103,8 +110,7 @@ public sealed class TankbookExportService : ITankbookExportService
         }
     }
 
-    /// <inheritdoc />
-    public void Discard(string path)
+    private void Discard(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
         try
@@ -118,6 +124,27 @@ public sealed class TankbookExportService : ITankbookExportService
         {
             _logger.LogDebug("Die Exportdatei konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
         }
+    }
+
+    private static FileStream CreateUniqueFile(string directory, string fileName)
+    {
+        // Eine noch gesperrte Vorversion (unter Windows z. B. in einem Betrachter geöffnet) bleibt beim Aufräumen liegen: Dann weicht der Name mit einem Zähler aus.
+        var baseName = Path.GetFileNameWithoutExtension(fileName);
+        var extension = Path.GetExtension(fileName);
+        for (var counter = 1; counter <= MaxFileNameAttempts; counter++)
+        {
+            var candidate = Path.Combine(directory, counter == 1 ? fileName : $"{baseName}_{counter}{extension}");
+            try
+            {
+                return new FileStream(candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            }
+            catch (IOException) when (File.Exists(candidate))
+            {
+                // Name belegt: nächster Versuch.
+            }
+        }
+
+        throw new IOException("Es gibt keinen freien Dateinamen für den Export.");
     }
 
     private string PrepareDirectory()

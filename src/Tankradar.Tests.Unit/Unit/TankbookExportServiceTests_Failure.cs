@@ -45,6 +45,23 @@ public class TankbookExportServiceTests_Failure : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass ein Abbruch nach dem Anlegen der Datei (während des Schreibens) die angefangene Datei löscht und die Ausnahme weitergibt.
+    /// </summary>
+    [Fact]
+    public async Task Create_CancelledAfterFileCreation_DeletesPartialFile()
+    {
+        var vehicle = await _fixture.CreateVehicleAsync("Golf");
+        await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddDays(-1), 10_500));
+        using var cts = new CancellationTokenSource();
+        var service = new TankbookExportService(_fixture.Vehicles, _fixture.Service, new CancellingPaths(_fixture.Temp.Path, cts), _fixture.Clock, _fixture.ExportLogger);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null), cts.Token));
+
+        Assert.Empty(Directory.GetFiles(_fixture.Temp.Combine("cache", "exports")));
+    }
+
+    /// <summary>
     /// Prüft, dass ein Abbruch nicht als Fehler verschluckt wird.
     /// </summary>
     [Fact]
@@ -57,5 +74,29 @@ public class TankbookExportServiceTests_Failure : BaseTest
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => _fixture.CreateExportService().CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null), cts.Token));
+    }
+
+    private sealed class CancellingPaths : MAUI.Services.IAppDataPathProvider
+    {
+        private readonly string _directory;
+        private readonly CancellationTokenSource _source;
+
+        public CancellingPaths(string directory, CancellationTokenSource source)
+        {
+            _directory = directory;
+            _source = source;
+        }
+
+        public string GetDataDirectory()
+        {
+            return _directory;
+        }
+
+        public string GetCacheDirectory()
+        {
+            // Wird nach dem Laden der Vorgänge und vor dem Anlegen der Datei aufgerufen: Der Abbruch trifft das Schreiben.
+            _source.Cancel();
+            return Path.Combine(_directory, "cache");
+        }
     }
 }

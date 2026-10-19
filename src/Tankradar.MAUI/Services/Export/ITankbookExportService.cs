@@ -9,17 +9,11 @@ namespace Tankradar.MAUI.Services.Export;
 public interface ITankbookExportService
 {
     /// <summary>
-    /// Erzeugt die Datei. Vorher werden alte Exportdateien gelöscht. Fehler beim Lesen oder Schreiben werden als <see cref="TankbookExportStatus.Failed"/> gemeldet.
+    /// Erzeugt die Datei. Vorher werden alte Exportdateien gelöscht; eine noch gesperrte Vorversion (z. B. in einem Betrachter geöffnet) bleibt liegen, die neue Datei erhält dann einen Zähler im Namen (`_2`, `_3` …, solange eine Vorversion gesperrt bleibt). Dateien nach einer erfolgreichen Weitergabe bleiben bis zum nächsten Export liegen, weil die Zielanwendung sie womöglich erst später liest. Fehler beim Lesen oder Schreiben werden als <see cref="TankbookExportStatus.Failed"/> gemeldet.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
     /// <param name="request">Format und Zeitraum.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Das Ergebnis; nur bei <see cref="TankbookExportStatus.Exported"/> mit Datei.</returns>
     Task<TankbookExportResult> CreateAsync(long vehicleId, TankbookExportRequest request, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Löscht eine Exportdatei (z. B. eine angefangene nach einem Fehler); Fehler werden ignoriert. Dateien nach einer erfolgreichen Weitergabe bleiben bis zum nächsten Export liegen, weil die Zielanwendung sie womöglich erst später liest.
-    /// </summary>
-    /// <param name="path">Der vollständige Pfad der Datei aus <see cref="TankbookExportResult.FilePath"/>.</param>
-    void Discard(string path);
 }

@@ -5,7 +5,7 @@ using Tankradar.Tests.Unit.Unit.Support;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft Ablage, Bereinigung alter Dateien und <see cref="ITankbookExportService.Discard"/> des <see cref="TankbookExportService"/>.
+/// Prüft Ablage, Bereinigung alter Dateien und Ausweichnamen des <see cref="TankbookExportService"/>.
 /// </summary>
 public class TankbookExportServiceTests_Files : BaseTest
 {
@@ -48,19 +48,24 @@ public class TankbookExportServiceTests_Files : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass Discard die Datei löscht und bei fehlender Datei ohne Fehler bleibt.
+    /// Prüft, dass eine noch gesperrte Vorversion (geöffnet, ohne Mitbenutzung) nicht zum Fehler führt: Der zweite Export erhält einen Zähler im Namen.
     /// </summary>
     [Fact]
-    public async Task Discard_DeletesFile_AndIgnoresMissingFile()
+    public async Task Create_PreviousFileLocked_UsesNumberedName()
     {
         var vehicle = await CreateVehicleWithEntryAsync();
         var service = _fixture.CreateExportService();
-        var result = await service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
+        var first = await service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
+        await using var lockHandle = new FileStream(first.FilePath!, FileMode.Open, FileAccess.Read, FileShare.None);
 
-        service.Discard(result.FilePath!);
-        service.Discard(result.FilePath!);
+        var second = await service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
+        var third = await service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
 
-        Assert.False(File.Exists(result.FilePath));
+        Assert.Equal(TankbookExportStatus.Exported, second.Status);
+        Assert.EndsWith("_2.csv", second.FileName, StringComparison.Ordinal);
+        Assert.Equal(TankbookExportStatus.Exported, third.Status);
+        Assert.EndsWith("_2.csv", third.FileName, StringComparison.Ordinal);
+        Assert.True(File.Exists(second.FilePath));
     }
 
     /// <summary>

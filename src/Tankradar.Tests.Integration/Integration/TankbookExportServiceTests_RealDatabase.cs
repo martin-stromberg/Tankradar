@@ -136,7 +136,6 @@ public class TankbookExportServiceTests_RealDatabase : IDisposable
 
         var none = await service.CreateAsync(empty.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
         var created = await service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Pdf, null, null));
-        service.Discard(created.FilePath!);
 
         Assert.Equal(TankbookExportStatus.NoEntries, none.Status);
         Assert.Null(none.FilePath);

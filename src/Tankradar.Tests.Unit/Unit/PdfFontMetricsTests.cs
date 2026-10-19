@@ -70,6 +70,31 @@ public class PdfFontMetricsTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass ein Text, bei dem nicht einmal das Auslassungszeichen passt, leer wird.
+    /// </summary>
+    [Fact]
+    public void Truncate_NothingFits_ReturnsEmpty()
+    {
+        Assert.Equal(string.Empty, PdfFontMetrics.Truncate("Hello", bold: false, 10, 1));
+    }
+
+    /// <summary>
+    /// Prüft das Kürzen eines Textes aus Emoji (Surrogatpaare): Es bleibt kein halbes Paar, das Ergebnis passt in die Breite.
+    /// </summary>
+    [Fact]
+    public void Truncate_SurrogatePairs_NeverSplitsPair()
+    {
+        var text = string.Concat(Enumerable.Repeat("\U0001F600", 10));
+
+        var shortened = PdfFontMetrics.Truncate(text, bold: false, 10, 30);
+
+        Assert.EndsWith("…", shortened, StringComparison.Ordinal);
+        Assert.True(PdfFontMetrics.Measure(shortened, bold: false, 10) <= 30);
+        Assert.DoesNotContain(true, shortened.Where((c, i) => char.IsHighSurrogate(c) && (i + 1 >= shortened.Length || !char.IsLowSurrogate(shortened[i + 1]))).Select(_ => true));
+        Assert.True(shortened.Length > 1);
+    }
+
+    /// <summary>
     /// Prüft den Umbruch an Leerzeichen innerhalb der Breite.
     /// </summary>
     [Fact]
