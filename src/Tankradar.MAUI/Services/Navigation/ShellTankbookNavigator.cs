@@ -40,7 +40,7 @@ public sealed class ShellTankbookNavigator : ITankbookNavigator
             return;
         }
 
-        if (ReferenceEquals(shell.CurrentItem?.CurrentItem, section))
+        if (ReferenceEquals(shell.CurrentItem?.CurrentItem, section) && section.Navigation.NavigationStack[^1] is TankbookEntriesPage)
         {
             await shell.GoToAsync("..").ConfigureAwait(true);
             return;

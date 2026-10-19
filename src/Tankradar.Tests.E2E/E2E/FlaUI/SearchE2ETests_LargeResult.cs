@@ -28,7 +28,7 @@ public class SearchE2ETests_LargeResult : SearchE2ETestBase
             WaitUntil(() => ReadResultTexts("Search.Station.Name").Count == PageSize, "Die erste Seite der Ergebnisliste wurde nicht angezeigt.");
             Assert.True(Exists("Search.ShowMore"));
 
-            FindByAutomationId("Search.ShowMore")!.Patterns.Invoke.Pattern.Invoke();
+            WaitForAutomationId("Search.ShowMore").Patterns.Invoke.Pattern.Invoke();
             WaitUntil(() => ReadResultTexts("Search.Station.Name").Count == 2 * PageSize, "Die zweite Seite wurde nicht angezeigt.");
 
             var stopwatch = Stopwatch.StartNew();
