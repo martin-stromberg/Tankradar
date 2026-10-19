@@ -656,6 +656,8 @@ für Routing, Adressauflösung und Preise. Sie decken die Auswahl der Tankstelle
 Abschluss wird ein startfähiger Windows-Zwischenstand unter `review-versions/<Version>_<JJJJ-MM-TT>/`
 im Repository-Root abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 16 (Härtungen, optional):** E2E-Test der großen Ergebnisliste (`SearchE2ETests_LargeResult`) gegen Falsch-Grün schärfen (Namensreihenfolge nach dem Sortierwechsel prüfen, einmal 50 dargestellte Einträge zählen, sobald die App ruht; 10-s-Grenze auf die Messzeit ohne UIA-Wartezeit beziehen) und sein Verhalten in den nächsten CI-Läufen beobachten; Beleg-E2E-Test gegen `ElementNotAvailableException` zwischen Suche und Lesen härten; Dokumentation nachziehen (`docs/help/ci-cd/workflows.md`, ADR 0013: nur die Vorgangsseite des betroffenen Fahrzeugs schließt, `Sicherung/ablauf-technisch.md`: Abonnent von `IRestoreNotifier`); Namen der Schaltfläche „Weitere anzeigen (N weitere)“ für die Sprachausgabe entdoppeln.
+
 **Abhängigkeiten:** 7, 9
 
 **Betroffene Bereiche:** Suche, Routenermittlung, Adressauflösung, Kartendarstellung, Sicherheit der Zugangsdaten
