@@ -27,7 +27,7 @@ public class TankbookExportE2ETests_Pdf : TankbookExportE2ETestBase
             var text = Encoding.Latin1.GetString(ReadFile(path));
             Assert.StartsWith("%PDF-", text, StringComparison.Ordinal);
             Assert.EndsWith("%%EOF\n", text, StringComparison.Ordinal);
-            Assert.Contains("/Title (Tankbuch Golf)", text, StringComparison.Ordinal);
+            Assert.Contains("/Title <FEFF00540061006E006B006200750063006800200047006F006C0066>", text, StringComparison.Ordinal);
             Assert.Contains("(Golf ", text, StringComparison.Ordinal);
             Assert.Contains("(6,00 L/100 km)", text, StringComparison.Ordinal);
             Assert.Contains("(130,13 \\200)", text, StringComparison.Ordinal);

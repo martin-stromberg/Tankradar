@@ -109,7 +109,7 @@ public class PdfDocumentBuilderTests_Structure : BaseTest
     {
         var reader = new PdfTestReader(CreateDocument(1));
 
-        Assert.Contains("/Title (Titel \\(Test\\))", reader.Objects[5], StringComparison.Ordinal);
+        Assert.Contains("/Title <FEFF0054006900740065006C0020002800540065007300740029>", reader.Objects[5], StringComparison.Ordinal);
         Assert.Contains("/CreationDate (D:20261019093015)", reader.Objects[5], StringComparison.Ordinal);
         Assert.Contains("/Producer (Tankatlas)", reader.Objects[5], StringComparison.Ordinal);
     }
