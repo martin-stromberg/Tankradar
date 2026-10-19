@@ -621,6 +621,8 @@ Exporte ab, einschließlich Zeitraumfilter und Fahrzeugen ohne Einträge, und pe
 eines Exports. Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter
 `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
 
+**Zusatz aus der Abnahme von Schritt 15a (Härtungen, optional):** Kachelzahlen-E2E-Test so schärfen, dass er die volle Elementhöhe sicherstellt (teilweise sichtbare Zahl meldet nur die sichtbare Höhe); Regressionstest für Sicherungen mit eingebettetem NUL-Zeichen in Textfeldern ergänzen und die zusätzliche Byteprüfung in ADR 0011 erwähnen; doppelten Satz in der Hilfe zu den Tankstellendetails entfernen und den Hinweis zur Teilladung in der Tankbuch-Hilfe besser platzieren; geöffnete Vorgangsseite nach einer Wiederherstellung neu laden (besteht seit Schritt 15); Abnahmen starten Zwischenstände nicht per `Start-Process`, damit kein Fenster in den Vordergrund kommt.
+
 **Abhängigkeiten:** 14
 
 **Betroffene Bereiche:** Tankbuch, Export
