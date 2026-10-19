@@ -31,7 +31,8 @@ public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
             Tankbook.OpenEntries("Golf");
             Press("TankbookEntries.Add");
             Assert.False(Exists("TankbookEntries.Form.CapturePhoto"));
-            Assert.Equal("Foto auswählen", WaitForAutomationId("TankbookEntries.Form.PickPhoto").Name);
+            WaitForAutomationId("TankbookEntries.Form.PickPhoto");
+            WaitUntil(() => FindByAutomationId("TankbookEntries.Form.PickPhoto")?.Properties.Name.ValueOrDefault == "Foto auswählen", "Die Schaltfläche „Foto auswählen“ trägt nicht den erwarteten Namen.");
 
             Press("TankbookEntries.Form.PickPhoto");
             WaitForAutomationId("TankbookEntries.Form.RemovePhoto");
