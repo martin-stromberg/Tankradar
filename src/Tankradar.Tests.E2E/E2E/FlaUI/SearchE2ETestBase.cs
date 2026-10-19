@@ -227,6 +227,18 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
+    /// Liefert die Texte der Elemente mit der AutomationId innerhalb der Ergebnisliste (<c>Search.Results</c>) von oben nach unten.
+    /// Die Suche bleibt auf die Liste begrenzt und läuft nicht über den ganzen Fensterbaum, der bei langen Listen sehr groß ist (UIA-Timeouts auf langsamen Runnern).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Die Texte.</returns>
+    protected IReadOnlyList<string> ReadResultTexts(string automationId)
+    {
+        var container = FindByAutomationId("Search.Results") ?? MainWindow;
+        return container.FindAllDescendants(cf => cf.ByAutomationId(automationId)).Select(element => element.Name).ToList();
+    }
+
+    /// <summary>
     /// Liefert die Elemente mit der AutomationId in Dokumentreihenfolge (bei der senkrechten Liste von oben nach unten).
     /// Elemente außerhalb des sichtbaren Bereichs melden keine Position, daher wird nicht nach Koordinaten sortiert.
     /// </summary>

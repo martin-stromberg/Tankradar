@@ -92,6 +92,21 @@ public sealed partial class PdfTestReader
     }
 
     /// <summary>
+    /// Liest die Textstellen einer Seite mit Position, Schrift und Größe.
+    /// </summary>
+    /// <param name="pageIndex">Der nullbasierte Seitenindex.</param>
+    /// <returns>Die Textstellen in Zeichenreihenfolge.</returns>
+    public List<PlacedText> ReadPlacedTexts(int pageIndex)
+    {
+        return PlacedTextRegex().Matches(PageStreams[pageIndex]).Select(match => new PlacedText(
+            Decode(match.Groups["t"].Value),
+            match.Groups["f"].Value == "F2",
+            double.Parse(match.Groups["s"].Value, System.Globalization.CultureInfo.InvariantCulture),
+            double.Parse(match.Groups["x"].Value, System.Globalization.CultureInfo.InvariantCulture),
+            double.Parse(match.Groups["y"].Value, System.Globalization.CultureInfo.InvariantCulture))).ToList();
+    }
+
+    /// <summary>
     /// Liest die Offsets der Querverweistabelle (Objekt 1 bis n).
     /// </summary>
     /// <returns>Die Offsets.</returns>
@@ -157,6 +172,65 @@ public sealed partial class PdfTestReader
     [GeneratedRegex(@"\((?<t>(?:\\.|[^\\)])*)\) Tj")]
     private static partial Regex TextRegex();
 
+    [GeneratedRegex(@"BT /(?<f>F\d) (?<s>[\d.]+) Tf [\d.]+ g (?<x>-?[\d.]+) (?<y>-?[\d.]+) Td \((?<t>(?:\\.|[^\\)])*)\) Tj ET")]
+    private static partial Regex PlacedTextRegex();
+
     [GeneratedRegex(@"startxref\n(?<o>\d+)\n%%EOF")]
     private static partial Regex StartXrefRegex();
+}
+
+/// <summary>
+/// Eine Textstelle einer PDF-Seite.
+/// </summary>
+public sealed class PlacedText
+{
+    /// <summary>
+    /// Erzeugt die Textstelle.
+    /// </summary>
+    /// <param name="text">Der Text.</param>
+    /// <param name="bold">Gibt an, ob die fette Schrift verwendet wird.</param>
+    /// <param name="size">Die Schriftgröße in Punkt.</param>
+    /// <param name="x">Der linke Rand in Punkt.</param>
+    /// <param name="y">Die Grundlinie in Punkt von der Unterkante der Seite.</param>
+    public PlacedText(string text, bool bold, double size, double x, double y)
+    {
+        Text = text;
+        Bold = bold;
+        Size = size;
+        X = x;
+        Y = y;
+    }
+
+    /// <summary>
+    /// Der Text.
+    /// </summary>
+    public string Text { get; }
+
+    /// <summary>
+    /// Gibt an, ob die fette Schrift verwendet wird.
+    /// </summary>
+    public bool Bold { get; }
+
+    /// <summary>
+    /// Die Schriftgröße in Punkt.
+    /// </summary>
+    public double Size { get; }
+
+    /// <summary>
+    /// Der linke Rand in Punkt.
+    /// </summary>
+    public double X { get; }
+
+    /// <summary>
+    /// Die Grundlinie in Punkt von der Unterkante der Seite.
+    /// </summary>
+    public double Y { get; }
+
+    /// <summary>
+    /// Die Breite des Textes in Punkt.
+    /// </summary>
+    public double Width
+    {
+        get { return MAUI.Services.Export.PdfFontMetrics.Measure(Text, Bold, Size); }
+    }
 }

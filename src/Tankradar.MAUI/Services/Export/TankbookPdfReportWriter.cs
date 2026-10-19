@@ -18,7 +18,10 @@ public static class TankbookPdfReportWriter
     private const double LineHeight = 14;
     private const double RowHeight = 12;
     private const double NoteHeight = 10;
-    private const double LabelWidth = 120;
+    private const double LabelGap = 8;
+
+    // Breite der Beschriftungsspalte: nach der breitesten Beschriftung bemessen, damit sich Beschriftung und Wert nie überlappen.
+    private static readonly double LabelWidth = MeasureLabelWidth();
     private const double Gray = 0.45;
     private const double MonthCostRight = Left + 260;
     private const double MonthQuantityRight = Left + 400;
@@ -200,6 +203,22 @@ public static class TankbookPdfReportWriter
         }
 
         return overview.Entry.IsPartial ? TankbookEntryTexts.GetPartialBadge(overview.Entry.Kind) : TankbookExportTexts.NoValue;
+    }
+
+    private static double MeasureLabelWidth()
+    {
+        string[] labels =
+        [
+            TankbookExportTexts.ReportVehicle,
+            TankbookExportTexts.ReportRange,
+            TankbookExportTexts.ReportCreated,
+            TankbookExportTexts.ReportEntryCount,
+            TankbookExportTexts.ReportTotalCost,
+            TankbookExportTexts.ReportDistance,
+            TankbookStatisticsTexts.AverageLabel,
+            TankbookStatisticsTexts.CostPer100KmLabel,
+        ];
+        return Math.Ceiling(labels.Max(label => PdfFontMetrics.Measure(label, true, TextSize))) + LabelGap;
     }
 
     private static void WriteLabeled(Layout layout, string label, string value)

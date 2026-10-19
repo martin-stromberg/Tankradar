@@ -25,15 +25,15 @@ public class SearchE2ETests_LargeResult : SearchE2ETestBase
             var sortChip = WaitForAutomationId("Search.Sort.Name");
             Automation.TransactionTimeout = TimeSpan.FromSeconds(60);
             Submit();
-            WaitUntil(() => ReadTexts("Search.Station.Name").Count == PageSize, "Die erste Seite der Ergebnisliste wurde nicht angezeigt.");
+            WaitUntil(() => ReadResultTexts("Search.Station.Name").Count == PageSize, "Die erste Seite der Ergebnisliste wurde nicht angezeigt.");
             Assert.True(Exists("Search.ShowMore"));
 
-            FindAllOrdered("Search.ShowMore").Single().Patterns.Invoke.Pattern.Invoke();
-            WaitUntil(() => ReadTexts("Search.Station.Name").Count == 2 * PageSize, "Die zweite Seite wurde nicht angezeigt.");
+            FindByAutomationId("Search.ShowMore")!.Patterns.Invoke.Pattern.Invoke();
+            WaitUntil(() => ReadResultTexts("Search.Station.Name").Count == 2 * PageSize, "Die zweite Seite wurde nicht angezeigt.");
 
             var stopwatch = Stopwatch.StartNew();
             SelectChip(sortChip, "Search.Sort.Name");
-            WaitUntil(() => ReadTexts("Search.Station.Name").Count == PageSize, "Nach dem Sortierwechsel wird nicht die erste Seite angezeigt.");
+            WaitUntil(() => ReadResultTexts("Search.Station.Name").Count == PageSize, "Nach dem Sortierwechsel wird nicht die erste Seite angezeigt.");
             stopwatch.Stop();
 
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"Der Sortierwechsel dauerte {stopwatch.Elapsed.TotalSeconds:0.0} s.");

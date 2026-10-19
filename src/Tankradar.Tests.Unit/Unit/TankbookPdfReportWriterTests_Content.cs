@@ -161,6 +161,21 @@ public class TankbookPdfReportWriterTests_Content : BaseTest
     {
         var reader = WriteReport(Build(CreateSeries(1), vehicle: CreateVehicle("Golf")));
 
-        Assert.Contains("/Title (Tankbuch Golf)", reader.Objects[5], StringComparison.Ordinal);
+        Assert.Contains("/Title <FEFF" + string.Concat("Tankbuch Golf".Select(character => ((int)character).ToString("X4", System.Globalization.CultureInfo.InvariantCulture))) + ">", reader.Objects[5], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass Sonderzeichen wie € im Titel als UTF-16BE erhalten bleiben.
+    /// </summary>
+    [Fact]
+    public void Write_InfoTitle_KeepsSpecialCharacters()
+    {
+        var reader = WriteReport(Build(CreateSeries(1), vehicle: CreateVehicle("Zoë 5 € – Süd")));
+
+        var match = System.Text.RegularExpressions.Regex.Match(reader.Objects[5], "/Title <(?<hex>[0-9A-F]+)>");
+        Assert.True(match.Success);
+        var bytes = Convert.FromHexString(match.Groups["hex"].Value);
+        Assert.Equal("Tankbuch Zoë 5 € – Süd", System.Text.Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2));
+        Assert.Equal(new byte[] { 0xFE, 0xFF }, bytes[..2]);
     }
 }

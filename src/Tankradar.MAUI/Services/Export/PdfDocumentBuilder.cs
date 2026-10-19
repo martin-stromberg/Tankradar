@@ -142,7 +142,7 @@ public sealed class PdfDocumentBuilder
             $"<< /Type /Pages /Kids [{string.Join(' ', Enumerable.Range(0, contents.Count).Select(index => $"{PageObjectNumber(index)} 0 R"))}] /Count {contents.Count} >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-            $"<< /Title {PdfTextEncoder.ToLiteral(_title)} /Creator (Tankatlas) /Producer (Tankatlas) /CreationDate (D:{_createdAt.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)}) >>",
+            $"<< /Title {ToTextString(_title)} /Creator (Tankatlas) /Producer (Tankatlas) /CreationDate (D:{_createdAt.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)}) >>",
         };
         for (var index = 0; index < contents.Count; index++)
         {
@@ -169,6 +169,18 @@ public sealed class PdfDocumentBuilder
         output.Append("trailer\n<< /Size ").Append(objects.Count + 1).Append(" /Root 1 0 R /Info 5 0 R >>\n");
         output.Append("startxref\n").Append(xrefOffset).Append("\n%%EOF\n");
         return Encoding.Latin1.GetBytes(output.ToString());
+    }
+
+    // Wandelt Text in eine PDF-Textzeichenkette für das Info-Dictionary um: UTF-16BE mit Byte-Order-Mark als Hex-String, damit auch Zeichen wie € stimmen.
+    private static string ToTextString(string text)
+    {
+        var builder = new StringBuilder("<FEFF");
+        foreach (var character in text)
+        {
+            builder.Append(((int)character).ToString("X4", CultureInfo.InvariantCulture));
+        }
+
+        return builder.Append('>').ToString();
     }
 
     private static int PageObjectNumber(int pageIndex)

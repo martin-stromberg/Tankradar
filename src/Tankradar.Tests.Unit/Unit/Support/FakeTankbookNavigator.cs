@@ -17,6 +17,11 @@ public sealed class FakeTankbookNavigator : ITankbookNavigator
     /// </summary>
     public int Closed { get; private set; }
 
+    /// <summary>
+    /// Gibt an, ob <see cref="CloseAsync"/> eine Ausnahme auslöst (z. B. weil die Seite im aktiven Reiter nicht geschlossen werden kann).
+    /// </summary>
+    public bool FailOnClose { get; set; }
+
     /// <inheritdoc />
     public Task OpenEntriesAsync(long vehicleId)
     {
@@ -28,6 +33,6 @@ public sealed class FakeTankbookNavigator : ITankbookNavigator
     public Task CloseAsync()
     {
         Closed++;
-        return Task.CompletedTask;
+        return FailOnClose ? Task.FromException(new InvalidOperationException("Die Seite lässt sich nicht schließen.")) : Task.CompletedTask;
     }
 }

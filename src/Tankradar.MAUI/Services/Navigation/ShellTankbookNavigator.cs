@@ -1,3 +1,5 @@
+using Tankradar.MAUI.Views;
+
 namespace Tankradar.MAUI.Services.Navigation;
 
 /// <summary>
@@ -23,8 +25,30 @@ public sealed class ShellTankbookNavigator : ITankbookNavigator
     }
 
     /// <inheritdoc />
-    public Task CloseAsync()
+    /// <remarks>
+    /// Die Seite wird im Navigationsstapel ihres eigenen Reiters geschlossen. <c>GoToAsync("..")</c> wirkt nur auf den aktiven Reiter und
+    /// schließt die Seite daher nicht, wenn z. B. während einer Wiederherstellung der Reiter „Optionen“ aktiv ist.
+    /// </remarks>
+    public async Task CloseAsync()
     {
-        return Shell.Current.GoToAsync("..");
+        var shell = Shell.Current;
+        var section = shell.Items
+            .SelectMany(item => item.Items)
+            .FirstOrDefault(candidate => candidate.Navigation.NavigationStack.OfType<TankbookEntriesPage>().Any());
+        if (section is null)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(shell.CurrentItem?.CurrentItem, section))
+        {
+            await shell.GoToAsync("..").ConfigureAwait(true);
+            return;
+        }
+
+        foreach (var page in section.Navigation.NavigationStack.OfType<TankbookEntriesPage>().ToList())
+        {
+            section.Navigation.RemovePage(page);
+        }
     }
 }

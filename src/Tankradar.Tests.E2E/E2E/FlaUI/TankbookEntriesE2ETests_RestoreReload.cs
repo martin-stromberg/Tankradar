@@ -36,4 +36,33 @@ public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
             Tankbook.WaitForStatistic("Fuel", "Average", "8,00");
         });
     }
+
+    /// <summary>
+    /// Prüft, dass die geöffnete Vorgangsseite schließt, wenn das Fahrzeug in der wiederhergestellten Sicherung fehlt (ADR 0013), obwohl beim Wiederherstellen
+    /// der Reiter „Optionen“ aktiv war; die Fahrzeugliste zeigt danach nur die gesicherten Fahrzeuge.
+    /// </summary>
+    [Fact]
+    public void Restore_WithoutOpenVehicle_ClosesEntriesPage()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenTankbook();
+            CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+
+            OpenBackup();
+            CreateBackup();
+
+            NavigateToTab("Tankbuch", "Tankbook.AddVehicle");
+            CreateVehicle("Neu nach Sicherung", "Diesel", "20000", string.Empty);
+            Tankbook.OpenEntries("Neu nach Sicherung");
+            WaitForAutomationId("TankbookEntries.Add");
+
+            OpenBackup();
+            RestoreBackup(1);
+
+            NavigateToTab("Tankbuch", "Tankbook.AddVehicle");
+            WaitUntil(() => !Exists("TankbookEntries.Add") && !Exists("TankbookEntries.Export.Start"), "Die Vorgangsseite des nicht mehr vorhandenen Fahrzeugs wurde nicht geschlossen.");
+            WaitForTexts("Tankbook.Vehicle.Name", "Golf");
+        });
+    }
 }

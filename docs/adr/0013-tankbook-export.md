@@ -49,7 +49,9 @@ Gewählt wurde ein **eigener, rein verwalteter PDF-Schreiber ohne neue Abhängig
 Standardschriften Helvetica und Helvetica-Bold ohne Einbettung, `WinAnsiEncoding`, unkomprimierte Inhaltsströme, Info-Dictionary,
 Querverweistabelle, Fußzeile „Seite x von y“). Der Bericht (`TankbookPdfReportWriter`) braucht nur Text und Linien: Kopf mit Fahrzeug,
 Zeitraum, Erstellungsdatum und Zahl der Vorgänge, Kennzahlen und Monatskosten je Art, danach die Vorgangstabelle mit Seitenumbruch und
-wiederholter Kopfzeile. Diagramme werden nicht gezeichnet.
+wiederholter Kopfzeile. Diagramme werden nicht gezeichnet. Die Beschriftungsspalte der Kennzahlen wird nach der breitesten Beschriftung
+(Helvetica-Bold-Metriken) bemessen, damit Beschriftung und Wert sich nie überlappen (Test über alle Zeilen). Der Titel im Info-Dictionary
+wird als UTF-16BE mit Byte-Order-Mark (Hex-String) geschrieben, damit Zeichen wie „€“ stimmen.
 
 Belege aus dem Bestand: `Microsoft.Maui.Graphics 10.0.20` kann PDFs nur lesen und rendern (`IPdfPage`, `IPdfRenderService`), nicht
 schreiben; SkiaSharp ist nicht referenziert (`obj/project.assets.json`); `Tankradar.MAUI.csproj` enthält kein PDF-Paket.
@@ -125,7 +127,11 @@ weitergibt (vgl. ADR 0011). Der Bereich und die Hilfe sagen das; Belegfotos sind
 `IRestoreNotifier` (Singleton, schwache Abonnenten über `WeakEventManager`) meldet eine erfolgreiche Wiederherstellung;
 `BackupViewModel` löst es aus, `TankbookEntriesViewModel` und `TankbookViewModel` laden daraufhin neu (`LoadAsync`). `OnAppearing`
 genügt nach einem Wechsel des Reiters nicht zuverlässig. Ist das Fahrzeug nach der Wiederherstellung weg, schließt die Seite wie bisher
-(„Das Fahrzeug gibt es nicht mehr“); die Rückmeldung des Exports wird zurückgesetzt.
+(„Das Fahrzeug gibt es nicht mehr“); die Rückmeldung des Exports wird zurückgesetzt. Weil bei der Wiederherstellung der Reiter „Optionen“
+aktiv ist und `GoToAsync("..")` nur auf den aktiven Reiter wirkt, schließt `ShellTankbookNavigator.CloseAsync` die Seite im Navigationsstapel
+ihres eigenen Reiters (`RemovePage`); schlägt das fehl, bleibt die Seite stehen und versucht es beim nächsten Erscheinen erneut. Solange
+kein Fahrzeug da ist, sind „Vorgang erfassen“ deaktiviert und der Bereich „Export“ ausgeblendet. Der Dateiname ersetzt eine feste Menge
+ungültiger Zeichen (`: " / \ * ? < > |`), unabhängig von der Plattform.
 
 ## Abweichungen vom Designentwurf
 

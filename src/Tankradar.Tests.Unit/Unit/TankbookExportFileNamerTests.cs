@@ -28,6 +28,15 @@ public class TankbookExportFileNamerTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass alle unter Windows und iOS-Freigaben ungültigen Zeichen ersetzt werden, unabhängig von der Plattform.
+    /// </summary>
+    [Fact]
+    public void Create_AllReservedCharacters_AreReplaced()
+    {
+        Assert.Equal("Tankbuch_a_b_c_d_e_f_g_h_i_2026-10-19.csv", TankbookExportFileNamer.Create("a:b\"c/d\\e*f?g<h>i|", Date, "csv"));
+    }
+
+    /// <summary>
     /// Prüft, dass Umlaute erhalten bleiben.
     /// </summary>
     [Fact]

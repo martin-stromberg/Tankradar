@@ -293,7 +293,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
                 Form.Cancel();
                 StatusMessage = TankbookEntryTexts.VehicleNotFound;
                 _announcer.Announce(StatusMessage);
-                await _navigator.CloseAsync().ConfigureAwait(true);
+                await CloseAsync().ConfigureAwait(true);
                 return;
             }
 
@@ -329,6 +329,19 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        try
+        {
+            await _navigator.CloseAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Die Seite bleibt ohne Fahrzeug stehen (Schaltflächen ausgeblendet); sie schließt beim nächsten Erscheinen.
+            _logger.LogWarning("Die Seite der Vorgänge konnte nicht geschlossen werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
 

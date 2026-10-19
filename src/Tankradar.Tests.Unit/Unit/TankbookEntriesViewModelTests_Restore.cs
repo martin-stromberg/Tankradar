@@ -66,6 +66,51 @@ public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTes
     }
 
     /// <summary>
+    /// Prüft, dass ohne Fahrzeug „Exportieren“ ausgeblendet ist und „Vorgang erfassen“ kein Formular öffnet.
+    /// </summary>
+    [Fact]
+    public async Task Restored_VehicleGone_HidesExportAndBlocksAdd()
+    {
+        var vehicle = await CreateVehicleAsync();
+        var viewModel = await OpenAsync(vehicle.Id);
+        Assert.True(viewModel.Export.HasVehicle);
+        await Fixture.Vehicles.DeleteVehicleAsync(vehicle.Id, 0);
+
+        Fixture.Restore.NotifyRestored();
+        await viewModel.LastTask;
+        await PressAsync(viewModel, viewModel.AddEntryCommand);
+        await PressAsync(viewModel, viewModel.Export.ExportCommand);
+
+        Assert.False(viewModel.HasVehicle);
+        Assert.False(viewModel.Export.HasVehicle);
+        Assert.True(viewModel.Form.IsClosed);
+        Assert.Null(viewModel.Export.StatusMessage);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein fehlgeschlagenes Schließen die Seite nicht abstürzen lässt und beim nächsten Erscheinen erneut versucht wird.
+    /// </summary>
+    [Fact]
+    public async Task Restored_VehicleGone_CloseFails_RetriesOnAppearing()
+    {
+        var vehicle = await CreateVehicleAsync();
+        var viewModel = await OpenAsync(vehicle.Id);
+        await Fixture.Vehicles.DeleteVehicleAsync(vehicle.Id, 0);
+        Navigator.FailOnClose = true;
+
+        Fixture.Restore.NotifyRestored();
+        await viewModel.LastTask;
+        Assert.Equal(1, Navigator.Closed);
+
+        Navigator.FailOnClose = false;
+        viewModel.OnAppearing();
+        await viewModel.LastTask;
+
+        Assert.Equal(2, Navigator.Closed);
+        Assert.Null(viewModel.Vehicle);
+    }
+
+    /// <summary>
     /// Prüft, dass eine Seite ohne Fahrzeug bei der Benachrichtigung nichts lädt.
     /// </summary>
     [Fact]

@@ -211,6 +211,14 @@ public sealed class TankbookExportViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Gibt an, ob ein Fahrzeug zugeordnet ist; ohne Fahrzeug (z. B. nach einer Wiederherstellung) wird der Bereich ausgeblendet.
+    /// </summary>
+    public bool HasVehicle
+    {
+        get { return _vehicle is not null; }
+    }
+
+    /// <summary>
     /// Hinweis von <b>Exportieren</b> für die Sprachausgabe, z. B. „Fahrzeug „Golf“, CSV, Alle Vorgänge“.
     /// </summary>
     public string StartHint
@@ -245,6 +253,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
 
         ClearMessages();
         OnPropertyChanged(nameof(StartHint));
+        OnPropertyChanged(nameof(HasVehicle));
     }
 
     /// <summary>
@@ -256,6 +265,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
         ResetSelection();
         ClearMessages();
         OnPropertyChanged(nameof(StartHint));
+        OnPropertyChanged(nameof(HasVehicle));
     }
 
     private async Task ExportAsync()

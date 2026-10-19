@@ -57,6 +57,7 @@
             <Button Text="{x:Static texts:TankbookEntryTexts.AddEntry}"
                     Command="{Binding AddEntryCommand}"
                     IsVisible="{Binding Form.IsClosed}"
+                    IsEnabled="{Binding HasVehicle}"
                     Style="{StaticResource TankbookButton}"
                     SemanticProperties.Hint="{Binding AddEntryHint}"
                     AutomationId="TankbookEntries.Add" />
@@ -562,6 +563,7 @@
             <!-- Export: CSV oder PDF, Zeitraum, Weitergabe über Teilen/Speichern -->
             <Border Style="{StaticResource TankbookCard}"
                     BindingContext="{Binding Export}"
+                    IsVisible="{Binding HasVehicle}"
                     x:DataType="vm:TankbookExportViewModel">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
                     <Label Text="{x:Static texts:TankbookExportTexts.Heading}"
