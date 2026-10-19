@@ -11,7 +11,7 @@ public class TankbookPdfReportWriterTests_Pagination : BaseTest
 {
     private static PdfTestReader WriteReport(int entryCount)
     {
-        return new PdfTestReader(new TankbookPdfReportWriter().Write(Build(CreateSeries(entryCount))));
+        return new PdfTestReader(TankbookPdfReportWriter.Write(Build(CreateSeries(entryCount))));
     }
 
     /// <summary>

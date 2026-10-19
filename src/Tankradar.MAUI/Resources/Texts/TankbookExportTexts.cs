@@ -78,6 +78,16 @@ public static class TankbookExportTexts
     public const string EndInFuture = "Das Enddatum liegt in der Zukunft.";
 
     /// <summary>
+    /// Meldung des Dienstes bei einem ungültigen Zeitraum (die Oberfläche prüft vorher und nennt den genauen Fehler).
+    /// </summary>
+    public const string InvalidRange = "Der Zeitraum ist ungültig.";
+
+    /// <summary>
+    /// Beschriftung der Notiz in der Vorgangstabelle des Berichts.
+    /// </summary>
+    public const string ReportNote = "Notiz";
+
+    /// <summary>
     /// Fehlermeldung, wenn die Datei nicht erzeugt werden konnte.
     /// </summary>
     public const string CreateFailed = "Der Export konnte nicht erstellt werden.";
@@ -239,6 +249,23 @@ public static class TankbookExportTexts
     }
 
     /// <summary>
+    /// Liefert die Meldung zu einem Fehler des Zeitraums.
+    /// </summary>
+    /// <param name="error">Der Fehler.</param>
+    /// <returns>Der Text; leer bei <see cref="TankbookExportRangeError.None"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Der Fehler ist kein bekannter Wert.</exception>
+    public static string GetRangeErrorMessage(TankbookExportRangeError error)
+    {
+        return error switch
+        {
+            TankbookExportRangeError.None => string.Empty,
+            TankbookExportRangeError.StartAfterEnd => StartAfterEnd,
+            TankbookExportRangeError.EndInFuture => EndInFuture,
+            _ => throw new ArgumentOutOfRangeException(nameof(error), error, "Unbekannter Fehler."),
+        };
+    }
+
+    /// <summary>
     /// Liefert die Meldung für ein Ergebnis ohne Datei.
     /// </summary>
     /// <param name="status">Das Ergebnis.</param>
@@ -252,7 +279,7 @@ public static class TankbookExportTexts
             TankbookExportStatus.Exported => string.Empty,
             TankbookExportStatus.NoEntries => isAllRange ? NoEntriesAtAll : NoEntriesInRange,
             TankbookExportStatus.VehicleNotFound => VehicleNotFound,
-            TankbookExportStatus.InvalidRange => StartAfterEnd,
+            TankbookExportStatus.InvalidRange => InvalidRange,
             TankbookExportStatus.Failed => CreateFailed,
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unbekanntes Ergebnis."),
         };

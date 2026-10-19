@@ -106,10 +106,10 @@ public class TankbookExportViewModelTests_Errors : TankbookExportViewModelTestBa
     }
 
     /// <summary>
-    /// Prüft, dass ein Fehler beim Teilen gemeldet, nur mit dem Ausnahmetyp protokolliert und die Datei trotzdem gelöscht wird.
+    /// Prüft, dass ein Fehler beim Teilen gemeldet und nur mit dem Ausnahmetyp protokolliert wird.
     /// </summary>
     [Fact]
-    public async Task Export_ShareFails_ShowsErrorLogsTypeAndDiscardsFile()
+    public async Task Export_ShareFails_ShowsErrorAndLogsOnlyType()
     {
         await PrepareVehicleAsync();
         Sharer.Exception = new InvalidOperationException("Geheimer Pfad");
@@ -121,12 +121,11 @@ public class TankbookExportViewModelTests_Errors : TankbookExportViewModelTestBa
         Assert.Contains("Der Export konnte nicht weitergegeben werden.", Announcer.Announcements);
         Assert.Contains("InvalidOperationException", Logger.AllText, StringComparison.Ordinal);
         Assert.DoesNotContain("Geheim", Logger.AllText, StringComparison.Ordinal);
-        Assert.Empty(Directory.GetFiles(Fixture.Temp.Combine("cache", "exports")));
         Assert.False(ViewModel.IsBusy);
     }
 
     /// <summary>
-    /// Prüft, dass der Abbruch des Teilen-Dialogs kein Fehler ist und die Datei gelöscht wird.
+    /// Prüft, dass der Abbruch des Teilen-Dialogs kein Fehler ist.
     /// </summary>
     [Fact]
     public async Task Export_ShareCancelled_IsNoError()
@@ -139,7 +138,6 @@ public class TankbookExportViewModelTests_Errors : TankbookExportViewModelTestBa
         Assert.Null(ViewModel.StatusMessage);
         Assert.False(ViewModel.StatusIsError);
         Assert.Empty(Logger.Messages);
-        Assert.Empty(Directory.GetFiles(Fixture.Temp.Combine("cache", "exports")));
     }
 
     /// <summary>

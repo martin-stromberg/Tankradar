@@ -12,7 +12,7 @@ public class TankbookPdfReportWriterTests_Content : BaseTest
 {
     private static PdfTestReader WriteReport(TankbookExportData data)
     {
-        return new PdfTestReader(new TankbookPdfReportWriter().Write(data));
+        return new PdfTestReader(TankbookPdfReportWriter.Write(data));
     }
 
     /// <summary>

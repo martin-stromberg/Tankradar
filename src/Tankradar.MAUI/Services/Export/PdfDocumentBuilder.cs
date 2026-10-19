@@ -142,7 +142,7 @@ public sealed class PdfDocumentBuilder
             $"<< /Type /Pages /Kids [{string.Join(' ', Enumerable.Range(0, contents.Count).Select(index => $"{PageObjectNumber(index)} 0 R"))}] /Count {contents.Count} >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
-            $"<< /Title {PdfTextEncoder.ToLiteral(_title)} /Creator (Tankatlas) /Producer (Tankatlas) /CreationDate (D:{_createdAt:yyyyMMddHHmmss}) >>",
+            $"<< /Title {PdfTextEncoder.ToLiteral(_title)} /Creator (Tankatlas) /Producer (Tankatlas) /CreationDate (D:{_createdAt.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)}) >>",
         };
         for (var index = 0; index < contents.Count; index++)
         {

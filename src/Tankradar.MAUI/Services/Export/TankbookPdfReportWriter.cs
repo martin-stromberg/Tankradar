@@ -7,7 +7,7 @@ namespace Tankradar.MAUI.Services.Export;
 /// Erzeugt den PDF-Bericht eines Exports auf A4 hoch: Kopf mit Fahrzeug und Zeitraum, Kennzahlen und Monatskosten je Art (aus den Rechnern der Auswertung),
 /// danach die Vorgangstabelle mit Seitenumbruch und wiederholter Kopfzeile; in der Fußzeile steht „Seite x von y“. Es werden keine Diagramme gezeichnet.
 /// </summary>
-public sealed class TankbookPdfReportWriter
+public static class TankbookPdfReportWriter
 {
     private const double Left = 40;
     private const double Right = 555;
@@ -20,6 +20,8 @@ public sealed class TankbookPdfReportWriter
     private const double NoteHeight = 10;
     private const double LabelWidth = 120;
     private const double Gray = 0.45;
+    private const double MonthCostRight = Left + 260;
+    private const double MonthQuantityRight = Left + 400;
 
     // Spaltengrenzen der Vorgangstabelle: Datum, Tankstelle, Menge, Preis, Betrag, Kilometerstand, Verbrauch.
     private static readonly double[] ColumnEdges = [40, 120, 235, 297, 349, 405, 461, 555];
@@ -30,7 +32,7 @@ public sealed class TankbookPdfReportWriter
     /// </summary>
     /// <param name="data">Die Exportdaten.</param>
     /// <returns>Die PDF-Datei.</returns>
-    public byte[] Write(TankbookExportData data)
+    public static byte[] Write(TankbookExportData data)
     {
         ArgumentNullException.ThrowIfNull(data);
         var builder = new PdfDocumentBuilder($"{TankbookExportTexts.ReportTitle} {data.Vehicle.Name}", data.CreatedAt);
@@ -113,8 +115,8 @@ public sealed class TankbookPdfReportWriter
             {
                 layout.Ensure(RowHeight);
                 layout.Builder.DrawText(Left, layout.Y + 9, TankbookStatisticsTexts.FormatMonthName(month.Year, month.Month), TextSize);
-                layout.Builder.DrawTextRight(Left + 260, layout.Y + 9, TankbookEntryTexts.FormatAmount(month.TotalCost), TextSize);
-                layout.Builder.DrawTextRight(Left + 400, layout.Y + 9, TankbookEntryTexts.FormatQuantity(month.TotalQuantity, kind.Kind), TextSize, gray: Gray);
+                layout.Builder.DrawTextRight(MonthCostRight, layout.Y + 9, TankbookEntryTexts.FormatAmount(month.TotalCost), TextSize);
+                layout.Builder.DrawTextRight(MonthQuantityRight, layout.Y + 9, TankbookEntryTexts.FormatQuantity(month.TotalQuantity, kind.Kind), TextSize, gray: Gray);
                 layout.Y += RowHeight + 1;
             }
 
@@ -148,7 +150,7 @@ public sealed class TankbookPdfReportWriter
             layout.Y += RowHeight;
             if (hasNote)
             {
-                var note = PdfFontMetrics.Truncate($"{TankbookEntryTexts.NoteLabel.Split(',')[0]}: {entry.Note!.ReplaceLineEndings(" ")}", false, 7, Right - ColumnEdges[1]);
+                var note = PdfFontMetrics.Truncate($"{TankbookExportTexts.ReportNote}: {entry.Note!.ReplaceLineEndings(" ")}", false, 7, Right - ColumnEdges[1]);
                 layout.Builder.DrawText(ColumnEdges[1], layout.Y + 6, note, 7, gray: Gray);
                 layout.Y += NoteHeight;
             }

@@ -96,7 +96,10 @@ public static class TankbookCsvWriter
             return string.Empty;
         }
 
-        return value[0] is '=' or '+' or '-' or '@' or '\t' or '\r' ? "'" + value : value;
+        // Auch Formeln nach führendem Leerraum werten manche Tabellenkalkulationen aus; deshalb zählt das erste Zeichen nach dem Leerraum.
+        var first = value.TrimStart(' ', '\t', '\r', '\n');
+        var isFormula = first.Length > 0 && first[0] is '=' or '+' or '-' or '@';
+        return isFormula || value[0] is '\t' or '\r' ? "'" + value : value;
     }
 
     private static string Escape(string field)

@@ -18,7 +18,7 @@ public interface ITankbookExportService
     Task<TankbookExportResult> CreateAsync(long vehicleId, TankbookExportRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Löscht eine erzeugte Exportdatei nach der Weitergabe; Fehler werden ignoriert.
+    /// Löscht eine Exportdatei (z. B. eine angefangene nach einem Fehler); Fehler werden ignoriert. Dateien nach einer erfolgreichen Weitergabe bleiben bis zum nächsten Export liegen, weil die Zielanwendung sie womöglich erst später liest.
     /// </summary>
     /// <param name="path">Der vollständige Pfad der Datei aus <see cref="TankbookExportResult.FilePath"/>.</param>
     void Discard(string path);

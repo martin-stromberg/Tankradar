@@ -266,21 +266,21 @@ public sealed class TankbookExportViewModel : BaseViewModel
         }
 
         IsBusy = true;
-        string? path = null;
         try
         {
             ClearMessages();
             var today = Today();
             var (from, to) = TankbookExportRangeResolver.Resolve(SelectedRange, today, FromDate ?? today, ToDate ?? today);
-            if (ValidateRange(from, to, today) is { } rangeError)
+            var rangeError = TankbookExportRangeResolver.Validate(from, to, today);
+            if (rangeError != TankbookExportRangeError.None)
             {
-                RangeError = rangeError;
-                _announcer.Announce(rangeError);
+                var message = TankbookExportTexts.GetRangeErrorMessage(rangeError);
+                RangeError = message;
+                _announcer.Announce(message);
                 return;
             }
 
             var result = await _service.CreateAsync(vehicle.Id, new TankbookExportRequest(SelectedFormat, from, to)).ConfigureAwait(true);
-            path = result.FilePath;
             if (result.Status != TankbookExportStatus.Exported || result.FilePath is null)
             {
                 ShowStatus(
@@ -298,11 +298,6 @@ public sealed class TankbookExportViewModel : BaseViewModel
         }
         finally
         {
-            if (path is not null)
-            {
-                _service.Discard(path);
-            }
-
             IsBusy = false;
         }
     }
@@ -323,16 +318,6 @@ public sealed class TankbookExportViewModel : BaseViewModel
             _logger.LogWarning("Der Export konnte nicht weitergegeben werden ({ExceptionType}).", ex.GetType().Name);
             ShowStatus(TankbookExportTexts.ShareFailed, isError: true);
         }
-    }
-
-    private static string? ValidateRange(DateTime? from, DateTime? to, DateTime today)
-    {
-        if (from is { } start && to is { } end && start.Date > end.Date)
-        {
-            return TankbookExportTexts.StartAfterEnd;
-        }
-
-        return to is { } last && last.Date > today ? TankbookExportTexts.EndInFuture : null;
     }
 
     private void ShowStatus(string message, bool isError)

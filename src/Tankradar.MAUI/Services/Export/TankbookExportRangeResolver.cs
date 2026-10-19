@@ -8,6 +8,23 @@ namespace Tankradar.MAUI.Services.Export;
 public static class TankbookExportRangeResolver
 {
     /// <summary>
+    /// Prüft einen Zeitraum: Der Starttag darf nicht nach dem Endtag liegen, der Endtag nicht in der Zukunft.
+    /// </summary>
+    /// <param name="from">Der Starttag; <see langword="null"/> ohne untere Grenze.</param>
+    /// <param name="to">Der Endtag; <see langword="null"/> ohne obere Grenze.</param>
+    /// <param name="today">Der heutige Tag (lokale Wanduhrzeit).</param>
+    /// <returns>Der Fehler oder <see cref="TankbookExportRangeError.None"/>.</returns>
+    public static TankbookExportRangeError Validate(DateTime? from, DateTime? to, DateTime today)
+    {
+        if (from is { } start && to is { } end && start.Date > end.Date)
+        {
+            return TankbookExportRangeError.StartAfterEnd;
+        }
+
+        return to is { } last && last.Date > today.Date ? TankbookExportRangeError.EndInFuture : TankbookExportRangeError.None;
+    }
+
+    /// <summary>
     /// Ermittelt Start- und Endtag eines Zeitraums.
     /// </summary>
     /// <param name="kind">Die Art des Zeitraums.</param>

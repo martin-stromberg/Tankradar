@@ -49,7 +49,7 @@ public sealed class TankbookExportService : ITankbookExportService
     {
         ArgumentNullException.ThrowIfNull(request);
         var now = _timeProvider.GetLocalNow().DateTime;
-        if (!IsValidRange(request, now))
+        if (TankbookExportRangeResolver.Validate(request.From, request.To, now) != TankbookExportRangeError.None)
         {
             return TankbookExportResult.WithoutFile(TankbookExportStatus.InvalidRange);
         }
@@ -73,7 +73,7 @@ public sealed class TankbookExportService : ITankbookExportService
             var bytes = request.Format switch
             {
                 TankbookExportFormat.Csv => TankbookCsvWriter.Write(data),
-                TankbookExportFormat.Pdf => new TankbookPdfReportWriter().Write(data),
+                TankbookExportFormat.Pdf => TankbookPdfReportWriter.Write(data),
                 _ => throw new ArgumentOutOfRangeException(nameof(request), request.Format, "Unbekanntes Format."),
             };
             var directory = PrepareDirectory();
@@ -82,7 +82,16 @@ public sealed class TankbookExportService : ITankbookExportService
             await File.WriteAllBytesAsync(path, bytes, cancellationToken).ConfigureAwait(false);
             return new TankbookExportResult(TankbookExportStatus.Exported, path, fileName, data.Entries.Count);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException)
+        {
+            if (path is not null)
+            {
+                Discard(path);
+            }
+
+            throw;
+        }
+        catch (Exception ex)
         {
             _logger.LogWarning("Der Export konnte nicht erstellt werden ({ExceptionType}).", ex.GetType().Name);
             if (path is not null)
@@ -109,16 +118,6 @@ public sealed class TankbookExportService : ITankbookExportService
         {
             _logger.LogDebug("Die Exportdatei konnte nicht gelöscht werden ({ExceptionType}).", ex.GetType().Name);
         }
-    }
-
-    private static bool IsValidRange(TankbookExportRequest request, DateTime now)
-    {
-        if (request.From is { } from && request.To is { } to && from.Date > to.Date)
-        {
-            return false;
-        }
-
-        return request.To is not { } end || end.Date <= now.Date;
     }
 
     private string PrepareDirectory()

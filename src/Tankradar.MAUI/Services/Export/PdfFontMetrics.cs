@@ -168,18 +168,26 @@ public static class PdfFontMetrics
             return text;
         }
 
-        var runes = text.EnumerateRunes().ToList();
-        while (runes.Count > 0)
+        var runes = text.EnumerateRunes().Select(rune => rune.ToString()).ToList();
+        var low = 0;
+        var high = runes.Count - 1;
+        var best = string.Empty;
+        while (low <= high)
         {
-            runes.RemoveAt(runes.Count - 1);
-            var candidate = string.Concat(runes.Select(rune => rune.ToString())).TrimEnd() + Ellipsis;
+            var middle = (low + high) / 2;
+            var candidate = string.Concat(runes.Take(middle)).TrimEnd() + Ellipsis;
             if (Measure(candidate, bold, fontSize) <= maxWidth)
             {
-                return candidate;
+                best = candidate;
+                low = middle + 1;
+            }
+            else
+            {
+                high = middle - 1;
             }
         }
 
-        return string.Empty;
+        return best;
     }
 
     /// <summary>

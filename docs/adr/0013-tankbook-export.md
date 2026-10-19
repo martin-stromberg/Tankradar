@@ -39,7 +39,7 @@ deutschsprachige Tabellenkalkulationen oder als PDF-Bericht mit den Einträgen u
 - Sortierung chronologisch **aufsteigend** (älteste zuerst, `TankbookEntryOrder.Ascending`), wie in Tabellen üblich.
 - **Maskierung:** Felder mit `;`, `"`, CR oder LF stehen in Anführungszeichen, `"` wird verdoppelt.
 - **Schutz vor Formelinjektion:** Textfelder (Tankstelle, Notiz), die mit `=`, `+`, `-`, `@`, Tabulator oder CR beginnen, erhalten ein
-  vorangestelltes `'`. Zahlen (auch negative) werden nie verändert. Die Namen und Notizen stammen vom Anwender oder aus dem
+  vorangestelltes `'`. Der Schutz gilt auch, wenn vor dem Formelzeichen Leerraum steht, den manche Tabellenkalkulationen überspringen. Zahlen (auch negative) werden nie verändert. Die Namen und Notizen stammen vom Anwender oder aus dem
   Preisdienst; eine Tabellenkalkulation würde sie sonst als Formel auswerten.
 - Umsetzung: `TankbookCsvWriter` (reine statische Funktion), Formate in `TankbookExportFormatter`.
 
@@ -88,7 +88,7 @@ Weitere Festlegungen:
   Die Voreinstellungen löst `TankbookExportRangeResolver` mit `TimeProvider` auf; sie sind ohne Datumseingabe bedienbar und testbar.
   Der Filter gilt für lokale Wanduhrzeit wie ADR 0009: `Von` ab 00:00, `Bis` bis 23:59:59,999. „Letzte 12 Monate“ sind heute minus
   zwölf Monate plus ein Tag bis heute.
-- Ein ungültiger Zeitraum (Start nach Ende, Ende in der Zukunft) wird am Feld gemeldet; es entsteht keine Datei.
+- Ein ungültiger Zeitraum (Start nach Ende, Ende in der Zukunft) wird am Feld gemeldet; es entsteht keine Datei. Die Prüfung liegt an einer Stelle (`TankbookExportRangeResolver.Validate`, Fehler `TankbookExportRangeError`) und wird von der Oberfläche (genaue Meldung) und vom Dienst (Ergebnis `InvalidRange`) verwendet.
 
 ### Kennzahlen im Zeitraum
 
@@ -103,8 +103,9 @@ sind der gespeicherte Anzeigename der Vorgänge (Momentaufnahme, ADR 0009/0012),
 
 Der Dienst (`TankbookExportService`) schreibt nach `<Zwischenspeicher>/exports/Tankbuch_<Fahrzeug>_<JJJJ-MM-TT>.csv|pdf`
 (`TankbookExportFileNamer`: Fahrzeugname ohne ungültige Zeichen, höchstens 40 Zeichen, sonst „Fahrzeug“). Vor jedem Export werden alte Dateien im Verzeichnis
-gelöscht; nach der Übergabe löscht das ViewModel die Datei (`Discard`). So bleiben keine Exportdaten liegen, und das System darf den Zwischenspeicher
-ohnehin bereinigen. Fehler werden ohne Namen und Werte protokolliert (nur der Ausnahmetyp), eine angefangene Datei wird gelöscht.
+gelöscht; nach der Übergabe bleibt die Datei bis zum nächsten Export liegen. Sie wird bewusst nicht sofort gelöscht, weil `Share.Default.RequestAsync` auf
+manchen Plattformen (Android, möglicherweise auch der Windows-Dialog) zurückkehrt, bevor die Zielanwendung die Datei liest. Das System darf den Zwischenspeicher
+ohnehin bereinigen. Eine angefangene Datei wird bei Fehler und bei Abbruch sofort gelöscht (`Discard`). Fehler werden ohne Namen und Werte protokolliert (nur der Ausnahmetyp), eine angefangene Datei wird gelöscht.
 
 ### Leeres Ergebnis
 

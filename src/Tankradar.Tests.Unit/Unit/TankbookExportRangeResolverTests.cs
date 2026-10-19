@@ -81,6 +81,20 @@ public class TankbookExportRangeResolverTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft die Zeitraumprüfung: gültig, Start nach Ende, Ende in der Zukunft; heute ist gültig.
+    /// </summary>
+    [Fact]
+    public void Validate_ReportsStartAfterEndAndEndInFuture()
+    {
+        var today = new DateTime(2026, 10, 19, 14, 30, 0);
+
+        Assert.Equal(TankbookExportRangeError.None, TankbookExportRangeResolver.Validate(null, null, today));
+        Assert.Equal(TankbookExportRangeError.None, TankbookExportRangeResolver.Validate(new DateTime(2026, 10, 19), new DateTime(2026, 10, 19), today));
+        Assert.Equal(TankbookExportRangeError.StartAfterEnd, TankbookExportRangeResolver.Validate(new DateTime(2026, 10, 19), new DateTime(2026, 10, 18), today));
+        Assert.Equal(TankbookExportRangeError.EndInFuture, TankbookExportRangeResolver.Validate(null, new DateTime(2026, 10, 20), today));
+    }
+
+    /// <summary>
     /// Prüft, dass ein unbekannter Wert abgelehnt wird.
     /// </summary>
     [Fact]

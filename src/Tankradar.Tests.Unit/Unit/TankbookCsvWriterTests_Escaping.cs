@@ -64,6 +64,17 @@ public class TankbookCsvWriterTests_Escaping : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass auch Formelzeichen nach führendem Leerraum geschützt werden, normaler Text mit Leerraum aber unverändert bleibt.
+    /// </summary>
+    [Fact]
+    public void Write_FormulaAfterLeadingWhitespace_IsPrefixed()
+    {
+        Assert.Contains(";' =1+1;", WriteSingle(" =1+1"), StringComparison.Ordinal);
+        Assert.Contains(";'  @Befehl;", WriteSingle("  @Befehl"), StringComparison.Ordinal);
+        Assert.Contains(";  Alpha;", WriteSingle("  Alpha"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Prüft, dass Zahlen, auch negative Werte, nicht mit einem Hochkomma versehen werden.
     /// </summary>
     [Fact]

@@ -23,10 +23,10 @@ public class TankbookExportViewModelTests_Export : TankbookExportViewModelTestBa
     }
 
     /// <summary>
-    /// Prüft den Ablauf: genau eine Weitergabe mit Pfad und Titel, Meldung mit Dateiname, Ansage und gelöschte Datei danach.
+    /// Prüft den Ablauf: genau eine Weitergabe mit Pfad und Titel, Meldung mit Dateiname und Ansage; die Datei bleibt liegen, weil die Zielanwendung sie womöglich erst später liest (das Aufräumen übernimmt der nächste Export).
     /// </summary>
     [Fact]
-    public async Task Export_Csv_SharesOnceThenDiscardsFile()
+    public async Task Export_Csv_SharesOnceAndKeepsFileUntilNextExport()
     {
         var vehicle = await PrepareVehicleAsync();
         var existsAtShare = false;
@@ -40,7 +40,7 @@ public class TankbookExportViewModelTests_Export : TankbookExportViewModelTestBa
         var path = Assert.Single(sharer.Paths);
         Assert.True(existsAtShare);
         Assert.Equal("Tankbuch-Export", sharer.Title);
-        Assert.False(File.Exists(path));
+        Assert.True(File.Exists(path));
         var expectedName = $"Tankbuch_Golf_{Fixture.Now:yyyy-MM-dd}.csv";
         Assert.Equal($"Export bereit: {expectedName}.", viewModel.StatusMessage);
         Assert.False(viewModel.StatusIsError);

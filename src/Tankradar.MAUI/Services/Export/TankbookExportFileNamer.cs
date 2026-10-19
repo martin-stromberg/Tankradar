@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Tankradar.MAUI.Services.Export;
@@ -27,7 +28,7 @@ public static class TankbookExportFileNamer
     public static string Create(string vehicleName, DateTime date, string extension)
     {
         ArgumentNullException.ThrowIfNull(extension);
-        return $"Tankbuch_{SanitizeVehicleName(vehicleName)}_{date:yyyy-MM-dd}.{extension}";
+        return $"Tankbuch_{SanitizeVehicleName(vehicleName)}_{date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.{extension}";
     }
 
     private static string SanitizeVehicleName(string? vehicleName)

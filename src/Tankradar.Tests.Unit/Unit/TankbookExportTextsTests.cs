@@ -46,9 +46,21 @@ public class TankbookExportTextsTests : BaseTest
         Assert.Equal("Für dieses Fahrzeug gibt es noch keine Vorgänge zum Exportieren.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.NoEntries, true));
         Assert.Equal("Im gewählten Zeitraum gibt es keine Vorgänge.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.NoEntries, false));
         Assert.Equal("Das Fahrzeug wurde nicht gefunden.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.VehicleNotFound, false));
-        Assert.Equal("Das Startdatum liegt nach dem Enddatum.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.InvalidRange, false));
+        Assert.Equal("Der Zeitraum ist ungültig.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.InvalidRange, false));
         Assert.Equal("Der Export konnte nicht erstellt werden.", TankbookExportTexts.GetStatusMessage(TankbookExportStatus.Failed, false));
         Assert.Throws<ArgumentOutOfRangeException>(() => TankbookExportTexts.GetStatusMessage((TankbookExportStatus)9, false));
+    }
+
+    /// <summary>
+    /// Prüft die Meldung zu jedem Fehler des Zeitraums.
+    /// </summary>
+    [Fact]
+    public void RangeErrors_HaveMessages()
+    {
+        Assert.Equal(string.Empty, TankbookExportTexts.GetRangeErrorMessage(TankbookExportRangeError.None));
+        Assert.Equal("Das Startdatum liegt nach dem Enddatum.", TankbookExportTexts.GetRangeErrorMessage(TankbookExportRangeError.StartAfterEnd));
+        Assert.Equal("Das Enddatum liegt in der Zukunft.", TankbookExportTexts.GetRangeErrorMessage(TankbookExportRangeError.EndInFuture));
+        Assert.Throws<ArgumentOutOfRangeException>(() => TankbookExportTexts.GetRangeErrorMessage((TankbookExportRangeError)9));
     }
 
     /// <summary>
