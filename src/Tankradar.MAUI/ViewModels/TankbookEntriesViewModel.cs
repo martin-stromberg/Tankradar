@@ -234,6 +234,14 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     public ICommand AddEntryCommand { get; }
 
     /// <summary>
+    /// Die Kennung des angezeigten Fahrzeugs; <see langword="null"/>, solange keines gewählt ist.
+    /// </summary>
+    public long? VehicleId
+    {
+        get { return _vehicleId; }
+    }
+
+    /// <summary>
     /// Übernimmt die Kennung des Fahrzeugs aus der Shell-Navigation.
     /// </summary>
     /// <param name="query">Die Navigationsparameter.</param>
@@ -293,7 +301,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
                 Form.Cancel();
                 StatusMessage = TankbookEntryTexts.VehicleNotFound;
                 _announcer.Announce(StatusMessage);
-                await CloseAsync().ConfigureAwait(true);
+                await CloseAsync(vehicleId).ConfigureAwait(true);
                 return;
             }
 
@@ -332,11 +340,11 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         }
     }
 
-    private async Task CloseAsync()
+    private async Task CloseAsync(long vehicleId)
     {
         try
         {
-            await _navigator.CloseAsync().ConfigureAwait(true);
+            await _navigator.CloseAsync(vehicleId).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

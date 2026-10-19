@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Navigation;
 using Tankradar.Tests.Unit.Unit.Support;
 
 namespace Tankradar.Tests.Unit.Unit;
@@ -61,6 +62,7 @@ public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTes
         await viewModel.LastTask;
 
         Assert.Equal(1, Navigator.Closed);
+        Assert.Equal([vehicle.Id], Navigator.ClosedVehicles);
         Assert.Empty(viewModel.Entries);
         Assert.Null(viewModel.Vehicle);
     }
@@ -132,5 +134,22 @@ public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTes
 
         Assert.False(viewModel.IsLoaded);
         Assert.Equal(0, Navigator.Closed);
+    }
+
+    /// <summary>
+    /// Prüft, dass nur die Seiten des Fahrzeugs ausgewählt werden, das geschlossen werden soll, nicht die eines anderen Fahrzeugs.
+    /// </summary>
+    [Fact]
+    public async Task SelectPages_OnlyPagesOfTheVehicle()
+    {
+        var vehicle = await CreateVehicleAsync();
+        var viewModel = await OpenAsync(vehicle.Id);
+        var pages = new[] { ("A", (object?)viewModel), ("B", null), ("C", "kein ViewModel") };
+
+        var own = ShellTankbookNavigator.SelectPages(pages, page => page.Item2, vehicle.Id);
+        var other = ShellTankbookNavigator.SelectPages(pages, page => page.Item2, vehicle.Id + 1);
+
+        Assert.Equal(["A"], own.Select(page => page.Item1));
+        Assert.Empty(other);
     }
 }

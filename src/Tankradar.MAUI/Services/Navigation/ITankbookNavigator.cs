@@ -13,8 +13,10 @@ public interface ITankbookNavigator
     Task OpenEntriesAsync(long vehicleId);
 
     /// <summary>
-    /// Schließt die Seite der Vorgänge und kehrt zum Tankbuch zurück (z. B. wenn das Fahrzeug nicht mehr existiert).
+    /// Schließt die Seite der Vorgänge des Fahrzeugs und kehrt zum Tankbuch zurück (z. B. wenn das Fahrzeug nicht mehr existiert);
+    /// die Seiten anderer Fahrzeuge bleiben unberührt.
     /// </summary>
+    /// <param name="vehicleId">Die Kennung des Fahrzeugs, dessen Seite geschlossen wird.</param>
     /// <returns>Ein Task, der nach der Rückkehr abgeschlossen ist.</returns>
-    Task CloseAsync();
+    Task CloseAsync(long vehicleId);
 }
