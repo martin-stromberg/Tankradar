@@ -559,6 +559,108 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- Export: CSV oder PDF, Zeitraum, Weitergabe über Teilen/Speichern -->
+            <Border Style="{StaticResource TankbookCard}"
+                    BindingContext="{Binding Export}"
+                    x:DataType="vm:TankbookExportViewModel">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{x:Static texts:TankbookExportTexts.Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="TankbookEntries.Export.Heading" />
+                    <Label Text="{x:Static texts:TankbookExportTexts.PrivacyNotice}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="TankbookEntries.Export.Notice" />
+
+                    <Label Text="{x:Static texts:TankbookExportTexts.FormatLabel}" Style="{StaticResource FieldLabel}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding FormatOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource FuelKindChip}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Export.Format.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label Text="{x:Static texts:TankbookExportTexts.RangeLabel}" Style="{StaticResource FieldLabel}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding RangeOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <Button Text="{Binding Label}"
+                                        Command="{Binding SelectCommand}"
+                                        Style="{StaticResource FuelKindChip}"
+                                        SemanticProperties.Hint="{Binding SelectionHint}"
+                                        AutomationId="{Binding AutomationKey, StringFormat='TankbookEntries.Export.Range.{0}'}">
+                                    <Button.Triggers>
+                                        <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                                            <Setter Property="TextColor" Value="White" />
+                                        </DataTrigger>
+                                    </Button.Triggers>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="{StaticResource space-sm}"
+                          IsVisible="{Binding IsCustomRange}">
+                        <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
+                            <Label Text="{x:Static texts:TankbookExportTexts.FromLabel}" Style="{StaticResource FieldLabel}" />
+                            <DatePicker Date="{Binding FromDate}"
+                                        MaximumDate="{Binding MaximumDate}"
+                                        Format="dd.MM.yyyy"
+                                        MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                        SemanticProperties.Description="{x:Static texts:TankbookExportTexts.FromLabel}"
+                                        AutomationId="TankbookEntries.Export.From" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="{StaticResource space-xs}">
+                            <Label Text="{x:Static texts:TankbookExportTexts.ToLabel}" Style="{StaticResource FieldLabel}" />
+                            <DatePicker Date="{Binding ToDate}"
+                                        MaximumDate="{Binding MaximumDate}"
+                                        Format="dd.MM.yyyy"
+                                        MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                        SemanticProperties.Description="{x:Static texts:TankbookExportTexts.ToLabel}"
+                                        AutomationId="TankbookEntries.Export.To" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Label Text="{Binding RangeError}"
+                           IsVisible="{Binding HasRangeError}"
+                           Style="{StaticResource FieldError}"
+                           AutomationId="TankbookEntries.Export.RangeError" />
+
+                    <Button Text="{x:Static texts:TankbookExportTexts.StartButton}"
+                            Command="{Binding ExportCommand}"
+                            Style="{StaticResource TankbookButton}"
+                            SemanticProperties.Hint="{Binding StartHint}"
+                            AutomationId="TankbookEntries.Export.Start" />
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="TankbookEntries.Export.Status">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding StatusIsError}" Value="True">
+                                <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                </VerticalStackLayout>
+            </Border>
+
             <Label Text="{x:Static texts:TankbookEntryTexts.EntriesHeading}"
                    Style="{StaticResource headline-md}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"

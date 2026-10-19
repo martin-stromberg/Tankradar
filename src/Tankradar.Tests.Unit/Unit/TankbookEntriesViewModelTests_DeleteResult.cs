@@ -26,6 +26,8 @@ public class TankbookEntriesViewModelTests_DeleteResult : TankbookEntriesViewMod
             Fixture.Photos,
             Fixture.CreateForm(Picker, Announcer, FormLogger),
             Fixture.CreateStatistics(Announcer, StatisticsLogger),
+            Fixture.CreateExport(Sharer, Announcer, ExportLogger),
+            Fixture.Restore,
             Navigator,
             Announcer,
             Logger);

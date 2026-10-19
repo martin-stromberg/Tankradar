@@ -1,6 +1,8 @@
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Favorites;
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Backup;
+using Tankradar.MAUI.Services.Export;
 using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.TestSupport;
@@ -32,6 +34,24 @@ public sealed class TankbookEntryFixture : IDisposable
         Service = CreateService();
         Statistics = new TankbookStatisticsService(Vehicles, Service, Clock);
     }
+
+    /// <summary>
+    /// Ein temporäres Verzeichnis als App-Datenverzeichnis (Zwischenspeicher der Exporte).
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public TempDirectory Temp { get; } = new();
+
+    /// <summary>
+    /// Der Logger des Exportdienstes.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public RecordingLogger<TankbookExportService> ExportLogger { get; } = new();
+
+    /// <summary>
+    /// Die Benachrichtigung nach einer Wiederherstellung.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public RestoreNotifier Restore { get; } = new();
 
     /// <summary>
     /// Die Kontext-Factory der Datenbank.
@@ -116,6 +136,27 @@ public sealed class TankbookEntryFixture : IDisposable
     public TankbookStatisticsViewModel CreateStatistics(FakeScreenReaderAnnouncer announcer, RecordingLogger<TankbookStatisticsViewModel> logger)
     {
         return new TankbookStatisticsViewModel(Statistics, announcer, logger);
+    }
+
+    /// <summary>
+    /// Erstellt den Exportdienst auf den Diensten dieser Umgebung.
+    /// </summary>
+    /// <returns>Der Dienst.</returns>
+    public TankbookExportService CreateExportService()
+    {
+        return new TankbookExportService(Vehicles, Service, new FakeAppDataPathProvider(Temp.Path), Clock, ExportLogger);
+    }
+
+    /// <summary>
+    /// Erstellt das ViewModel des Exports auf dem Exportdienst dieser Umgebung.
+    /// </summary>
+    /// <param name="sharer">Die Weitergabe.</param>
+    /// <param name="announcer">Die Ansage.</param>
+    /// <param name="logger">Der Logger.</param>
+    /// <returns>Das ViewModel.</returns>
+    public TankbookExportViewModel CreateExport(IBackupSharer sharer, FakeScreenReaderAnnouncer announcer, RecordingLogger<TankbookExportViewModel> logger)
+    {
+        return new TankbookExportViewModel(CreateExportService(), sharer, Clock, announcer, logger);
     }
 
     /// <summary>
@@ -212,5 +253,6 @@ public sealed class TankbookEntryFixture : IDisposable
     public void Dispose()
     {
         Factory.Dispose();
+        Temp.Dispose();
     }
 }

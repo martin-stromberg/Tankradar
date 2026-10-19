@@ -6,6 +6,7 @@ using Microsoft.Maui.LifecycleEvents;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Backup;
+using Tankradar.MAUI.Services.Export;
 using Tankradar.MAUI.Services.Favorites;
 using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
@@ -69,10 +70,12 @@ public static class MauiProgram
         builder.Services.AddSingleton<IVehicleService, VehicleService>();
         builder.Services.AddSingleton<ITankbookEntryService, TankbookEntryService>();
         builder.Services.AddSingleton<ITankbookStatisticsService, TankbookStatisticsService>();
+        builder.Services.AddSingleton<ITankbookExportService, TankbookExportService>();
         builder.Services.AddSingleton<IReceiptPhotoPicker>(_ => ReceiptPhotoPickerSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiReceiptPhotoPicker()));
         builder.Services.AddSingleton<IRestoreRecovery, RestoreRecovery>();
+        builder.Services.AddSingleton<IRestoreNotifier, RestoreNotifier>();
         builder.Services.AddSingleton<IBackupService, BackupService>();
         builder.Services.AddSingleton<IBackupFilePicker>(_ => BackupFilePickerSelector.Create(
             Environment.GetEnvironmentVariable,
@@ -93,6 +96,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookEntriesViewModel>();
         builder.Services.AddTransient<TankbookEntryFormViewModel>();
         builder.Services.AddTransient<TankbookStatisticsViewModel>();
+        builder.Services.AddTransient<TankbookExportViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddTransient<BackupViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();

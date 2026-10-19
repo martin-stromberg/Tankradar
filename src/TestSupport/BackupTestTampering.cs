@@ -200,6 +200,17 @@ public static class BackupTestTampering
     /// <param name="tamper">Die Art der Manipulation.</param>
     public static void CreateTamperedCopy(string sourceZip, string targetZip, BackupTamper tamper)
     {
+        CreateTamperedCopy(sourceZip, targetZip, GetSql(tamper));
+    }
+
+    /// <summary>
+    /// Liest die Datenbank, führt die Anweisung aus und schreibt ein neues Archiv mit gleichem Fotoinhalt und passendem Manifest.
+    /// </summary>
+    /// <param name="sourceZip">Das gültige Archiv.</param>
+    /// <param name="targetZip">Das zu schreibende Archiv.</param>
+    /// <param name="sql">Die SQL-Anweisung, die die Datenbank verändert.</param>
+    public static void CreateTamperedCopy(string sourceZip, string targetZip, string sql)
+    {
         byte[] database;
         var photos = new Dictionary<string, byte[]>();
         using (var archive = ZipFile.OpenRead(sourceZip))
@@ -211,7 +222,7 @@ public static class BackupTestTampering
             }
         }
 
-        var tampered = Tamper(database, GetSql(tamper), out var migration);
+        var tampered = Tamper(database, sql, out var migration);
         BackupTestArchive.Create(targetZip, tampered, photos, migration);
     }
 

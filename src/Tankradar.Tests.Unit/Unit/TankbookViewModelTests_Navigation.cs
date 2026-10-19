@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -33,7 +34,7 @@ public class TankbookViewModelTests_Navigation : BaseTest
     {
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 1000, null));
         var polo = (await _fixture.Service.CreateVehicleAsync(new VehicleInput("Polo", VehicleFuelKind.Petrol, 2000, null))).Vehicle!;
-        var viewModel = new TankbookViewModel(_fixture.Service, _navigator, new RecordingLogger<TankbookViewModel>(), new FakeScreenReaderAnnouncer());
+        var viewModel = new TankbookViewModel(_fixture.Service, _navigator, new RecordingLogger<TankbookViewModel>(), new FakeScreenReaderAnnouncer(), new RestoreNotifier());
         viewModel.OnAppearing();
         await viewModel.LastTask;
         var item = viewModel.Vehicles.Single(vehicle => vehicle.Name == "Polo");
