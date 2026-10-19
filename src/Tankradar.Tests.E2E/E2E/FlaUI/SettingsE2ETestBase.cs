@@ -161,9 +161,20 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
     protected static void WaitUntil(Func<bool> condition, string failureMessage)
     {
+        WaitUntil(condition, failureMessage, DefaultTimeout);
+    }
+
+    /// <summary>
+    /// Wartet bis zur angegebenen Frist, bis die Bedingung erfüllt ist; schlägt andernfalls mit der Meldung fehl.
+    /// </summary>
+    /// <param name="condition">Die Bedingung.</param>
+    /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
+    /// <param name="timeout">Die Frist.</param>
+    protected static void WaitUntil(Func<bool> condition, string failureMessage, TimeSpan timeout)
+    {
         // Ein UIA-Timeout (langsamer Runner, große Baumsuche) zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
         // Andere Fehler und Assertions bleiben unverändert sichtbar.
-        if (TransientWait.Until(condition, DefaultTimeout, out var lastTimeout))
+        if (TransientWait.Until(condition, timeout, out var lastTimeout))
         {
             return;
         }

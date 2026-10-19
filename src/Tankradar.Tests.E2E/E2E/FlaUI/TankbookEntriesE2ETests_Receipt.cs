@@ -32,7 +32,7 @@ public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
             Press("TankbookEntries.Add");
             Assert.False(Exists("TankbookEntries.Form.CapturePhoto"));
             WaitForAutomationId("TankbookEntries.Form.PickPhoto");
-            WaitUntil(() => FindByAutomationId("TankbookEntries.Form.PickPhoto")?.Properties.Name.ValueOrDefault == "Foto auswählen", "Die Schaltfläche „Foto auswählen“ trägt nicht den erwarteten Namen.");
+            WaitForName("TankbookEntries.Form.PickPhoto", "Foto auswählen");
 
             Press("TankbookEntries.Form.PickPhoto");
             WaitForAutomationId("TankbookEntries.Form.RemovePhoto");
@@ -45,10 +45,10 @@ public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
             Assert.Equal(file, Assert.Single(TankbookTestDatabase.ReadEntries(DatabasePath)).ReceiptPhotoFileName);
             Assert.Equal(File.ReadAllBytes(PhotoPath), File.ReadAllBytes(Path.Combine(TestDataDirectory, "receipts", file)));
 
-            Assert.Equal("Beleg anzeigen", WaitForAutomationId("TankbookEntry.Item.ShowReceipt").Name);
+            WaitForName("TankbookEntry.Item.ShowReceipt", "Beleg anzeigen");
             Press("TankbookEntry.Item.ShowReceipt");
             WaitForAutomationId("TankbookEntry.Item.Receipt");
-            WaitUntil(() => FindByAutomationId("TankbookEntry.Item.ShowReceipt")?.Name == "Beleg ausblenden", "Die Schaltfläche wechselt nicht zu „Beleg ausblenden“.");
+            WaitForName("TankbookEntry.Item.ShowReceipt", "Beleg ausblenden");
             Assert.False(Exists("TankbookEntry.Item.ReceiptMissing"));
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
@@ -70,5 +70,23 @@ public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
         Directory.CreateDirectory(Path.GetDirectoryName(PhotoPath)!);
         TankbookTestDatabase.WriteTestPng(PhotoPath);
         return new Dictionary<string, string> { [TestDataPaths.TestReceiptPhotoEnvironmentVariable] = PhotoPath };
+    }
+
+    /// <summary>
+    /// Wartet, bis das Element den Namen trägt. Der Name wird über die Eigenschaftsabfrage mit Rückgabe eines Standardwerts gelesen: Direkt nach dem Neuaufbau
+    /// des Elements meldet die UI-Automation die Eigenschaft kurz nicht (PropertyNotSupportedException), das gilt hier als „noch nicht erfüllt“.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Elements.</param>
+    /// <param name="expected">Der erwartete Name.</param>
+    private void WaitForName(string automationId, string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = FindByAutomationId(automationId)?.Properties.Name.ValueOrDefault ?? string.Empty;
+                return last == expected;
+            },
+            $"Das Element '{automationId}' trägt nicht den Namen '{expected}', zuletzt: '{last}'.");
     }
 }
