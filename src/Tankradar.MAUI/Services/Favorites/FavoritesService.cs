@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Favorites;
+using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Resources.Texts;
 
 namespace Tankradar.MAUI.Services.Favorites;
@@ -217,6 +218,8 @@ public sealed class FavoritesService : IFavoritesService
                 e.Note,
                 e.Priority,
                 e.Station!.Name,
+                e.Station.Brand,
+                e.Station.CustomName,
                 e.Station.Street,
                 e.Station.HouseNumber,
                 e.Station.PostCode,
@@ -226,17 +229,18 @@ public sealed class FavoritesService : IFavoritesService
             .ConfigureAwait(false);
 
         return rows
-            .Select(row => (Row: row, Priority: ParsePriority(row.Priority)))
+            .Select(row => (Row: row, Priority: ParsePriority(row.Priority), Display: StationNaming.GetPrimary(row.CustomName, row.Brand, row.Name)))
             .OrderByDescending(item => item.Priority)
-            .ThenBy(item => item.Row.Name, GermanOrder)
+            .ThenBy(item => item.Display, GermanOrder)
             .ThenBy(item => item.Row.Id)
             .Select(item => new FavoriteEntry(
                 item.Row.GroupId,
                 item.Row.StationId,
-                item.Row.Name,
+                item.Display,
                 SearchTexts.FormatAddress(item.Row.Street, item.Row.HouseNumber, item.Row.PostCode, item.Row.Place),
                 item.Row.Note,
-                item.Priority))
+                item.Priority,
+                StationNaming.GetSecondary(item.Row.CustomName, item.Row.Brand, item.Row.Name)))
             .ToList();
     }
 

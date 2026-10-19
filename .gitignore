@@ -288,6 +288,9 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+# Die Sicherungsfunktion der App (Namensraum Backup) liegt in eigenen Verzeichnissen und ist kein Visual-Studio-Konvertierungsrest.
+!src/Tankradar.MAUI/Models/Backup/
+!src/Tankradar.MAUI/Services/Backup/
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/

@@ -302,7 +302,7 @@ public class FavoriteGroupViewModel : BaseViewModel, IQueryAttributable
     {
         try
         {
-            var station = new StationListItem(item.StationId, item.StationName, null, string.Empty, [], false, false, string.Empty, item.AddressText);
+            var station = new StationListItem(item.StationId, item.StationName, null, string.Empty, [], false, false, string.Empty, item.AddressText, SubName: item.SubName);
             await _stationNavigator.OpenDetailAsync(station).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

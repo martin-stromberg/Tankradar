@@ -40,6 +40,8 @@ Ablage startfähiger Windows-Zwischenstände aufgebaut.
 | Feature-Flags | Es gibt keinen eigenen Mechanismus für Feature-Flags. Die Routensuche ist fester Bestandteil von Version 1.0. Das Offline-Verhalten ergibt sich aus der tatsächlichen Verbindung und wird nicht per Schalter erzwungen. Den E2E-Testmodus steuert die ohnehin geplante Test-Konfiguration (isolierte Testdatenbank, Mock-Dienste statt produktiver Endpunkte). Strom- und Cloud-Schalter entfallen mit den zugehörigen Funktionen. | Entscheidung des Projektleiters vom 2026-09-28: Die Feature-Flags stehen nicht in der Originalanforderung (`issue.md`), sondern sind ein Übersetzungsartefakt. Ein zusätzlicher Schaltmechanismus hätte in 1.0 keinen fachlichen Nutzen. |
 | Windows-Auslieferung | Für Windows gibt es keinen Installer (weder MSIX noch Setup.exe). Als Windows-Stände genügen die startfähigen Zwischenstände unter `review-versions/` und die CI-Release-Artefakte: ein gezipptes Build, das nach dem Entpacken ohne Installation startet. | Entscheidung des Projektleiters vom 2026-09-28: Laut Anforderung ist Windows Entwicklungs- und Testplattform. Der Installer steht nicht in der Originalanforderung, sondern stammt aus der Übersetzung. |
 | App-Anzeigename | Der für Anwender sichtbare Name der App lautet „Tankatlas“ (iOS-Homescreen/`CFBundleDisplayName`, Fenstertitel, Texte in der App, Anwenderdokumentation). Bundle-ID (`de.martinstromberg.tankradar`), Projekt-, Namespace- und Repository-Namen bleiben unverändert. Umsetzung als eigener Schritt 3a; alle folgenden Schritte verwenden den neuen Namen. | Stakeholder-Entscheidung vom 2026-10-04. |
+| Tankstellen-Anzeigename | Angezeigt wird die Marke (Tankerkönig `brand`) mit dem Stammdatennamen klein darunter, weil der Name bei manchen Stationen der Inhabername ist. Zusätzlich kann der Nutzer je Tankstelle einen eigenen Anzeigenamen vergeben (Detailansicht), der dann in Favoriten und Listen gilt. | Anwender-Rückmeldung vom 2026-10-12 aus TestFlight; Vorschlag ohne Widerspruch übernommen. |
+| Erster Verbrauch | Der Start-Kilometerstand bleibt. Die erste Volltankung liefert einen Verbrauch ab Start-Kilometerstand (Annahme: Tank beim Start voll), kenntlich als „ab Startstand“ mit Hinweis. | Anwender-Rückmeldung vom 2026-10-12 aus TestFlight; Vorschlag ohne Widerspruch übernommen. |
 | Suchradius | Der einstellbare Suchradius reicht von 1 bis 25 km (Standard 5 km); gemäß Designentwurf wird er über Chips mit den Stufen 1, 2, 5, 10, 15 und 25 km gewählt. 25 km ist die Obergrenze der Tankerkönig-Umkreissuche; mehrere zusammengeführte Abfragen für größere Radien werden nicht umgesetzt. | Entscheidung des Projektleiters vom 2026-10-05 (Empfehlung an den Stakeholder, bis auf Widerruf): Die Anforderung nennt „z. B. 5–50 km“ nur beispielhaft; mehrere Abfragen pro Suche würden das Kontingent und die Nutzungsbedingungen des Dienstes stärker belasten. |
 | Oberflächentests als Auslieferungs-Gate | Jede Auslieferung (Pre-Release/Release) erfolgt nur mit vollständig grünen Tests einschließlich der FlaUI-E2E-Tests: In der PR-CI nach `staging` sind die E2E-Tests blockierend (bewusste Abweichung von „best-effort“ der CI-Vorlage). Lokal sollen E2E-Läufe den Anwender möglichst nicht stören (nicht im pre-push-Hook standardmäßig; Fenster nach Möglichkeit außerhalb des sichtbaren Bereichs ohne Fokus) — aber nur, soweit die Zuverlässigkeit erhalten bleibt. | Stakeholder-Entscheidung vom 2026-10-05: „wir müssen aber zusehen, dass die tests am ende jeder auslieferung immer erfolgreich sind. wenn die einschränkungen das nicht mehr zuverlässig sicherstellen, dann belassen wir es wie es ist, ansonsten gerne wie vorgeschlagen einschränken“. |
 | Sprache | Die Oberfläche ist deutsch. Oberflächentexte werden zentral gepflegt, damit die Übersetzungsprüfung der Git-Hooks greift. | Zielgruppe und Designentwurf sind deutsch. |
@@ -587,6 +589,21 @@ wiederherstellen – Sicherung löschen". Nach Abschluss wird ein startfähiger 
 
 **Betroffene Bereiche:** Sicherung, Wiederherstellung, Sicherungsverwaltung, Datenhaltung, Einstellungen, Fahrzeuge
 
+### Schritt 15a: Anzeigename von Tankstellen und erster Verbrauch ab Startstand
+
+**Beschreibung:** Zwei Anwender-Rückmeldungen aus TestFlight werden umgesetzt.
+
+- Tankstellen-Anzeigename: Bei manchen Tankstellen liefert der Preisdienst als Namen den Inhaber (z. B. „Klaus Heinrich“ statt „Westfalen Tankstelle“). Überall, wo Tankstellen erscheinen (Startseite/Favoriten, Gruppenansicht, Suchergebnisse, Karte, Detailansicht, Tankbuch-Zuordnung), wird künftig die Marke prominent angezeigt und der Stammdatenname klein darunter; fehlt die Marke, bleibt der Name. In der Detailansicht kann der Nutzer einen eigenen Anzeigenamen vergeben, ändern und entfernen; er wird lokal gespeichert (Migration erhält Daten), ist Teil der Sicherung und hat überall Vorrang.
+- Erster Verbrauch ab Startstand: Die erste Volltankung eines Fahrzeugs liefert einen Verbrauch, berechnet ab dem Start-Kilometerstand unter der Annahme eines vollen Tanks beim Start (Teilbetankungen davor zählen mit). Der Wert ist als „ab Startstand“ gekennzeichnet; ein Hinweis erklärt die Annahme. Auswertung (Schritt 14) und Hilfe werden entsprechend angepasst; ADR 0009 wird ergänzt.
+
+Tests decken Markenanzeige mit/ohne Marke, eigenen Anzeigenamen (inkl. Sicherung/Wiederherstellung und Migration) und die Verbrauchsberechnung ab Startstand ab, per FlaUI das Vergeben eines Anzeigenamens und die Anzeige in Favoriten sowie den ersten Verbrauch. Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
+
+**Zusatz aus der Abnahme von Schritt 15 (Härtungen, optional):** Fehlerart bei Quellfehlern der Sicherung (`Failed` statt `InvalidFile`) präzisieren; Datenschutzhinweis zu Stationen/Preisständen in der Sicherung in der Hilfe ergänzen; App-Version des Windows-Zwischenstands (0.1.0.1) an die Zwischenstandsversion angleichen.
+
+**Abhängigkeiten:** 10, 11, 13, 14, 15
+
+**Betroffene Bereiche:** Tankstellenanzeige, Favoriten, Detailansicht, Datenhaltung, Sicherung, Tankbuch, Auswertung
+
 ### Schritt 16: Export des Tankbuchs als CSV oder PDF
 
 **Beschreibung:** Nutzer sollen die Tank- und Ladevorgänge eines Fahrzeugs aus dem Tankbuch
@@ -603,6 +620,8 @@ sein (Umlaute, Dezimaltrennzeichen, Einheiten Liter bzw. kWh). Tests decken Inha
 Exporte ab, einschließlich Zeitraumfilter und Fahrzeugen ohne Einträge, und per FlaUI das Auslösen
 eines Exports. Nach Abschluss wird ein startfähiger Windows-Zwischenstand unter
 `review-versions/<Version>_<JJJJ-MM-TT>/` im Repository-Root abgelegt (nicht committen).
+
+**Zusatz aus der Abnahme von Schritt 15a (Härtungen, optional):** Kachelzahlen-E2E-Test so schärfen, dass er die volle Elementhöhe sicherstellt (teilweise sichtbare Zahl meldet nur die sichtbare Höhe); Regressionstest für Sicherungen mit eingebettetem NUL-Zeichen in Textfeldern ergänzen und die zusätzliche Byteprüfung in ADR 0011 erwähnen; doppelten Satz in der Hilfe zu den Tankstellendetails entfernen und den Hinweis zur Teilladung in der Tankbuch-Hilfe besser platzieren; geöffnete Vorgangsseite nach einer Wiederherstellung neu laden (besteht seit Schritt 15); Abnahmen starten Zwischenstände nicht per `Start-Process`, damit kein Fenster in den Vordergrund kommt.
 
 **Abhängigkeiten:** 14
 

@@ -103,12 +103,42 @@ public static class TankbookEntryTexts
     /// <summary>
     /// Hinweis im Formular, solange „Teilbetankung“ aktiv ist.
     /// </summary>
-    public const string PartialHint = "Der Verbrauch wird erst ab dem ersten vollen Vorgang berechnet. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; Teilbetankungen vor dem ersten vollen Vorgang zählen nicht für den Verbrauch, ihre Kosten erscheinen aber in den Monatskosten.";
+    public const string PartialHint = "Der Verbrauch wird beim ersten vollen Vorgang ab dem Start-Kilometerstand des Fahrzeugs berechnet, angenommen wird ein voller Tank beim Start, danach zwischen vollen Vorgängen. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; ihre Kosten erscheinen auch in den Monatskosten.";
+
+    /// <summary>
+    /// Hinweis im Formular bei Strom, solange „Teilbetankung“ aktiv ist.
+    /// </summary>
+    public const string ElectricPartialHint = "Der Verbrauch wird beim ersten vollen Vorgang ab dem Start-Kilometerstand des Fahrzeugs berechnet, angenommen wird ein voller Akku beim Start, danach zwischen vollen Vorgängen. Die Menge einer Teilladung fließt in den nächsten vollen Vorgang ein; ihre Kosten erscheinen auch in den Monatskosten.";
+
+    /// <summary>
+    /// Liefert den Hinweis zur Teilbetankung passend zur Art (Tank bei Kraftstoff, Akku bei Strom).
+    /// </summary>
+    /// <param name="kind">Die Art.</param>
+    /// <returns>Der Hinweis.</returns>
+    public static string GetPartialHint(TankbookEntryKind kind)
+    {
+        return kind == TankbookEntryKind.Electricity ? ElectricPartialHint : PartialHint;
+    }
 
     /// <summary>
     /// Kennzeichnung einer Teilbetankung in der Liste.
     /// </summary>
     public const string PartialBadge = "Teilbetankung";
+
+    /// <summary>
+    /// Kennzeichnung einer Teilladung (Strom) in der Liste.
+    /// </summary>
+    public const string ElectricPartialBadge = "Teilladung";
+
+    /// <summary>
+    /// Liefert die Kennzeichnung einer Teilbetankung in der Liste passend zur Art.
+    /// </summary>
+    /// <param name="kind">Die Art.</param>
+    /// <returns>Der Text.</returns>
+    public static string GetPartialBadge(TankbookEntryKind kind)
+    {
+        return kind == TankbookEntryKind.Electricity ? ElectricPartialBadge : PartialBadge;
+    }
 
     /// <summary>
     /// Beschriftung der Notiz.
@@ -331,6 +361,32 @@ public static class TankbookEntryTexts
     }
 
     /// <summary>
+    /// Kennzeichnung eines Verbrauchs, der ab dem Start-Kilometerstand berechnet wurde.
+    /// </summary>
+    public const string FromStartLabel = "ab Startstand";
+
+    /// <summary>
+    /// Hinweis, der die Annahme hinter einem Verbrauch ab Startstand erklärt.
+    /// </summary>
+    public const string FromStartNote = "Ab Startstand berechnet: Angenommen wird, dass der Tank beim Start voll war. Teilbetankungen davor zählen mit.";
+
+    /// <summary>
+    /// Hinweis, der die Annahme hinter einem Verbrauch ab Startstand bei Strom erklärt.
+    /// </summary>
+    public const string ElectricFromStartNote = "Ab Startstand berechnet: Angenommen wird, dass der Akku beim Start voll war. Teilladungen davor zählen mit.";
+
+    /// <summary>
+    /// Liefert den Hinweis zur Annahme hinter einem Verbrauch ab Startstand.
+    /// </summary>
+    /// <param name="overview">Der Vorgang mit Berechnungsergebnis.</param>
+    /// <returns>Der Hinweis; leer, wenn der Verbrauch nicht ab dem Startstand berechnet wurde.</returns>
+    public static string GetConsumptionNote(TankbookEntryOverview overview)
+    {
+        ArgumentNullException.ThrowIfNull(overview);
+        return overview.IsFromStart && overview.ConsumptionState == TankbookConsumptionState.Calculated ? (overview.Entry.Kind == TankbookEntryKind.Electricity ? ElectricFromStartNote : FromStartNote) : string.Empty;
+    }
+
+    /// <summary>
     /// Liefert die Verbrauchszeile eines Eintrags: den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“, oder den Grund, warum es keinen gibt.
     /// </summary>
     /// <param name="overview">Der Vorgang mit Berechnungsergebnis.</param>
@@ -340,9 +396,11 @@ public static class TankbookEntryTexts
         ArgumentNullException.ThrowIfNull(overview);
         return overview.ConsumptionState switch
         {
+            TankbookConsumptionState.Calculated when overview.Consumption is { } consumption && overview.IsFromStart => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)} ({FromStartLabel})",
             TankbookConsumptionState.Calculated when overview.Consumption is { } consumption => $"Verbrauch {FormatConsumption(consumption, overview.Entry.Kind)}",
-            TankbookConsumptionState.Partial => "Teilbetankung: zählt beim nächsten vollen Vorgang mit",
+            TankbookConsumptionState.Partial => $"{GetPartialBadge(overview.Entry.Kind)}: zählt beim nächsten vollen Vorgang mit",
             TankbookConsumptionState.NoPreviousFullEntry => "Noch kein Verbrauch: erster voller Vorgang",
+            TankbookConsumptionState.NoDistance when overview.IsFromStart => "Kein Verbrauch: keine Strecke seit dem Startstand",
             TankbookConsumptionState.NoDistance => "Kein Verbrauch: keine Strecke seit dem letzten vollen Vorgang",
             _ => string.Empty,
         };
@@ -451,15 +509,70 @@ public static class TankbookEntryTexts
     }
 
     /// <summary>
-    /// Formatiert die Beschriftung einer bekannten Tankstelle: der Name, bei mehrfach vorkommendem Namen zusätzlich der Ort, z. B. „Alpha Tankstelle (Berlin)“.
+    /// Liefert die Beschriftungen der bekannten Tankstellen. Gleichnamige Tankstellen werden zuerst durch den Stammdatennamen bzw. die Straße,
+    /// bei weiterer Gleichheit zusätzlich durch den Ort und zuletzt durch die Adresse unterscheidbar gemacht.
+    /// </summary>
+    /// <param name="stations">Die bekannten Tankstellen.</param>
+    /// <returns>Je Tankstelle die Beschriftung, in derselben Reihenfolge.</returns>
+    public static IReadOnlyList<string> FormatKnownStationLabels(IReadOnlyList<KnownStation> stations)
+    {
+        ArgumentNullException.ThrowIfNull(stations);
+        var labels = stations.Select(station => station.Name).ToArray();
+        var duplicated = GetDuplicates(labels);
+        if (duplicated.Count == 0)
+        {
+            return labels;
+        }
+
+        for (var i = 0; i < labels.Length; i++)
+        {
+            if (duplicated.Contains(labels[i]))
+            {
+                labels[i] = FormatKnownStationLabel(stations[i], false);
+            }
+        }
+
+        var stillDuplicated = GetDuplicates(labels);
+        for (var i = 0; i < labels.Length; i++)
+        {
+            if (stillDuplicated.Contains(labels[i]))
+            {
+                labels[i] = FormatKnownStationLabel(stations[i], true);
+            }
+        }
+
+        var lastDuplicated = GetDuplicates(labels);
+        for (var i = 0; i < labels.Length; i++)
+        {
+            if (lastDuplicated.Contains(labels[i]) && !string.IsNullOrWhiteSpace(stations[i].Address) && !labels[i].Contains(stations[i].Address!, StringComparison.OrdinalIgnoreCase))
+            {
+                labels[i] = $"{labels[i]} · {stations[i].Address!.Trim()}";
+            }
+        }
+
+        return labels;
+    }
+
+    /// <summary>
+    /// Liefert die Beschriftung einer bekannten Tankstelle: den Namen, bei Mehrdeutigkeit mit Unterscheidungsmerkmal und optional dem Ort.
     /// </summary>
     /// <param name="station">Die Tankstelle.</param>
-    /// <param name="isAmbiguous">Gibt an, ob der Name mehrfach vorkommt.</param>
+    /// <param name="withPlace">Gibt an, ob zusätzlich der Ort angehängt wird.</param>
     /// <returns>Der Text.</returns>
-    public static string FormatKnownStationLabel(KnownStation station, bool isAmbiguous)
+    public static string FormatKnownStationLabel(KnownStation station, bool withPlace)
     {
         ArgumentNullException.ThrowIfNull(station);
-        return isAmbiguous && !string.IsNullOrWhiteSpace(station.Place) ? $"{station.Name} ({station.Place})" : station.Name;
+        var label = string.IsNullOrWhiteSpace(station.Detail) ? station.Name : $"{station.Name} · {station.Detail.Trim()}";
+        return withPlace && !string.IsNullOrWhiteSpace(station.Place) ? $"{label} ({station.Place})" : label;
+    }
+
+    private static HashSet<string> GetDuplicates(IEnumerable<string> labels)
+    {
+        return labels
+            .GroupBy(label => label, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>

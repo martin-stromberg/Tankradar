@@ -113,7 +113,7 @@ public static class StationResultBuilder
 
         return new StationListItem(
             station.Id,
-            station.Name,
+            station.DisplayName,
             station.DistanceKm,
             station.DistanceKm is { } distance ? SearchTexts.FormatDistance(distance) : string.Empty,
             lines,
@@ -123,7 +123,8 @@ public static class StationResultBuilder
             SearchTexts.FormatAddress(station.Street, station.HouseNumber, station.PostCode, station.Place),
             HasValidPosition(station) ? station.Latitude : null,
             HasValidPosition(station) ? station.Longitude : null,
-            station.IsOpen);
+            station.IsOpen,
+            station.SubName);
     }
 
     private static bool HasValidPosition(StationInfo station)

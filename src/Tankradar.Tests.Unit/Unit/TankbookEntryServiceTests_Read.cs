@@ -35,7 +35,9 @@ public class TankbookEntryServiceTests_Read : BaseTest
 
         Assert.Equal([11_000, 10_500], entries.Select(entry => entry.Entry.OdometerKm));
         Assert.Equal(6.00m, entries[0].Consumption);
-        Assert.Equal(TankbookConsumptionState.NoPreviousFullEntry, entries[1].ConsumptionState);
+        Assert.Equal(TankbookConsumptionState.Calculated, entries[1].ConsumptionState);
+        Assert.True(entries[1].IsFromStart);
+        Assert.Equal(8.00m, entries[1].Consumption);
     }
 
     /// <summary>

@@ -16,7 +16,8 @@ public class TankbookStatisticsTextsTests_Messages : BaseTest
     {
         Assert.Equal(string.Empty, TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.None));
         Assert.Equal("Berechnet aus vollen Vorgängen", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.Calculated));
-        Assert.Equal("Startverbrauch – noch keine zwei vollen Vorgänge", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.StartConsumption));
+        Assert.Equal("Ab Startstand – angenommen wird ein voller Tank beim Start", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.FromStart));
+        Assert.Equal("Startverbrauch – noch keine Strecke aus vollen Vorgängen", TankbookStatisticsTexts.GetSourceText(TankbookAverageSource.StartConsumption));
     }
 
     /// <summary>

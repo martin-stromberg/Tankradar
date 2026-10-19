@@ -60,8 +60,8 @@ public static class StationDetailBuilder
 
         return new StationDetailItem(
             current.Id,
-            current.Name,
-            FormatBrand(current),
+            current.DisplayName,
+            current.SubName,
             SearchTexts.FormatAddress(current.Street, current.HouseNumber, current.PostCode, current.Place),
             distanceKm is { } distance ? SearchTexts.FormatDistance(distance) : string.Empty,
             current.IsOpen is { } isOpen ? (isOpen ? SearchTexts.Open : SearchTexts.Closed) : string.Empty,
@@ -69,13 +69,8 @@ public static class StationDetailBuilder
             StationHints.HasUnconfirmedPrice(shownPrices, nowUtc),
             StationHints.IsAutomatedStation(current.WholeDay, current.OpeningTimes),
             hours,
-            ageText);
-    }
-
-    private static string FormatBrand(StationInfo station)
-    {
-        var brand = station.Brand?.Trim() ?? string.Empty;
-        return string.Equals(brand, station.Name.Trim(), StringComparison.OrdinalIgnoreCase) ? string.Empty : brand;
+            ageText,
+            current.CustomName?.Trim() ?? string.Empty);
     }
 
     private static OpeningHoursLine FormatOpeningHours(OpeningTimeEntry entry)

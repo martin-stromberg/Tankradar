@@ -134,6 +134,28 @@ public sealed class FakeFuelPriceService : IFuelPriceService
         return DetailException is null ? DetailResult : throw DetailException;
     }
 
+    /// <summary>
+    /// Das gelieferte Ergebnis von <see cref="SetCustomNameAsync"/> (Standard: <see cref="StationNameResult.Ok"/>).
+    /// </summary>
+    public StationNameResult CustomNameResult { get; set; } = StationNameResult.Ok;
+
+    /// <summary>
+    /// Wenn gesetzt, wird sie von <see cref="SetCustomNameAsync"/> ausgelöst.
+    /// </summary>
+    public Exception? CustomNameException { get; set; }
+
+    /// <summary>
+    /// Alle Aufrufe von <see cref="SetCustomNameAsync"/> (Kennung, Name) in Reihenfolge.
+    /// </summary>
+    public List<(string StationId, string? Name)> CustomNameRequests { get; } = [];
+
+    /// <inheritdoc />
+    public Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+    {
+        CustomNameRequests.Add((stationId, name));
+        return CustomNameException is null ? Task.FromResult(CustomNameResult) : Task.FromException<StationNameResult>(CustomNameException);
+    }
+
     /// <inheritdoc />
     public Task<PriceFailure> CheckAvailabilityAsync(CancellationToken cancellationToken = default)
     {

@@ -21,6 +21,11 @@ public class StationEntity
     public string? Brand { get; set; }
 
     /// <summary>
+    /// Eigener Anzeigename des Anwenders; <see langword="null"/>, wenn keiner vergeben ist. Wird von Abrufen der Quelle nie überschrieben.
+    /// </summary>
+    public string? CustomName { get; set; }
+
+    /// <summary>
     /// Straße, sofern geliefert.
     /// </summary>
     public string? Street { get; set; }

@@ -10,7 +10,18 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Stand: Entwicklungsschritt 14 umgesetzt (Version 0.1.18): Verbrauchs- und Kostenauswertung je Fahrzeug auf der Seite
+Stand: Entwicklungsschritt 15a umgesetzt (Version 0.1.20): Tankstellen zeigen überall die Marke vorn und den Namen der Quelle klein
+darunter (bei manchen Tankstellen ist er der Inhaber); in der Detailansicht lässt sich ein eigener Anzeigename vergeben, ändern und
+entfernen (lokal, überall bevorzugt, Teil der Sicherung; [ADR 0012](docs/adr/0012-station-display-name.md)). Die erste Volltankung
+eines Fahrzeugs liefert einen Verbrauch ab dem Start-Kilometerstand (Annahme: Tank beim Start voll), gekennzeichnet „ab Startstand“
+mit Hinweis; die Auswertung zeigt ihn schon mit einem vollen Vorgang (siehe [ADR 0009](docs/adr/0009-tankbook-entries.md),
+[ADR 0010](docs/adr/0010-tankbook-statistics.md)). Zuvor Schritt 15 (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
+„Sicherung“) – Sicherung auf Wunsch als ZIP (Datenbank-Schnappschuss, Belegfotos, Manifest mit Prüfsummen), Liste mit Datum und
+Größe, Wiederherstellen nach Rückfrage (vollständige Prüfung, atomarer Austausch mit Rollback und Wiederaufnahme nach Absturz),
+Löschen nach Rückfrage, Teilen/Speichern über die Systemfunktion und Einspielen einer externen Datei; ältere Sicherungen werden
+migriert, zu neue, ungültige und manipulierte Dateien abgelehnt; Hinweis zur Sicherung in der Löschrückfrage von Fahrzeugen mit
+Vorgängen; Kachelzahlen der Auswertung ohne Umbruch. Details unter [`docs/help/Sicherung/`](docs/help/Sicherung/index.md),
+[ADR 0011](docs/adr/0011-local-backup-restore.md). Zuvor Schritt 14: Verbrauchs- und Kostenauswertung je Fahrzeug auf der Seite
 „Tank- und Ladevorgänge“ – Kacheln Ø Verbrauch (nach Strecke gewichtet) und Kosten / 100 km, Monatsanalyse mit Kosten und Menge
 des laufenden Monats, Verbrauchsverlauf (Balkendiagramm der letzten 6 Vorgänge), Kostenverlauf (Monatskosten) und Monatsliste,
 je Art (Kraftstoff/Strom) getrennt, mit Startverbrauch als gekennzeichnetem Ersatzwert; selbst gezeichnete Diagramme (MAUI
@@ -60,6 +71,7 @@ src/
     Views/                           XAML-Seiten der vier Hauptbereiche
     Services/                        AppConfiguration u. a. Dienste
     Services/Pricing/                Tankerkönig-Client, Preis-Cache, Verbindungserkennung, API-Schlüssel
+    Services/Backup/                 Lokale Sicherung und Wiederherstellung (Archiv, Validierung, Austausch mit Rollback)
     Resources/DesignSystem.xaml      Zentrales Design-System (Farben, Typografie, Spacing, ...)
     Resources/Raw/appsettings.json   Konfigurationsdatei (Bundle-ID)
     Platforms/                       Plattformspezifischer Code (iOS, Windows, Android, MacCatalyst)
@@ -135,7 +147,8 @@ dotnet test Tankradar.sln
 
 Dies führt Unit-, Integrations- und E2E-Tests aus (der `pre-push`-Hook lässt die E2E-Tests standardmäßig aus,
 `PRE_PUSH_E2E=1` schaltet sie ein; in der PR-CI nach `staging` sind sie blockierend). Die E2E-Tests starten die App
-im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; Rückfall auf
+im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; bedient wird nur über
+UI-Automation-Muster, nie über Fokus, Tastatur oder Maus, damit Eingaben des Anwenders nicht im Testfenster landen; Rückfall auf
 sichtbaren Betrieb per `TANKRADAR_E2E_WINDOW=foreground`. Der E2E-Test (`NavigationE2ETests`) startet die
 kompilierte Windows-App (`Tankradar.MAUI.exe`) über FlaUI und navigiert durch alle vier
 Navigationsbereiche; dafür muss `src/Tankradar.MAUI` zuvor für `net10.0-windows10.0.19041.0`
@@ -168,6 +181,8 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
 
 - `TANKATLAS_TEST_LOCATION` – fester Standort im Format `breite,länge` mit Dezimalpunkt (z. B. `52.5200,13.4050`);
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
+- `TANKATLAS_TEST_BACKUP_IMPORT` – Pfad einer Sicherungsdatei, die „Sicherung aus Datei einspielen“ ohne Systemdialog liefert
+  (ohne Wert gilt die Auswahl als abgebrochen); „Teilen“ kopiert im Testmodus nach `<Datenverzeichnis>/test-shared/`,
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
 
@@ -244,6 +259,11 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
   Simulator/Gerät) ist hier jedoch nicht durchführbar und muss auf einem Mac bzw. über CI erfolgen.
   Für Build, Simulator, Gerät und TestFlight-Upload (auch von Windows per Pair to Mac) gibt es
   `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md).
+- **Sicherungen sind unverschlüsselt:** Sie enthalten Fahrdaten und Belege; eine geteilte oder gespeicherte Kopie liegt außerhalb
+  des Dateischutzes der App ([ADR 0011](docs/adr/0011-local-backup-restore.md)).
+- **Sichtprüfung offen:** Das Aussehen der Auswertung (Kacheln, Diagramme) und der Karte „Sicherung“ sowie das Verhalten des
+  Teilen-Blatts und der Dateiauswahl unter iOS sind ohne Gerät nur über Tests (Texte, Geometrie, Testdoppel) abgesichert und
+  bleiben Teil der Abnahme.
 - **Android/MacCatalyst:** Das MAUI-Standardtemplate legt zusätzlich zu iOS und Windows auch
   Android- und MacCatalyst-Ziele an. Diese sind für Schritt 1 nicht erforderlich, aber unschädlich
   und bauen erfolgreich mit.

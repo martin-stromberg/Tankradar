@@ -27,7 +27,7 @@ public class StationDetailBuilderTests_MissingData : BaseTest
         var item = StationDetailBuilder.Build(Bare(), SearchTestData.AllFuels, null, Now);
 
         Assert.Equal("Nur Name", item.Name);
-        Assert.False(item.HasBrand);
+        Assert.False(item.HasSubName);
         Assert.False(item.HasAddress);
         Assert.False(item.HasDistance);
         Assert.False(item.HasOpeningStatus);
@@ -45,7 +45,7 @@ public class StationDetailBuilderTests_MissingData : BaseTest
     {
         var station = new StationInfo { Id = "00000001-0000-4000-8000-000000000000", Name = "Aral", Brand = "ARAL" };
 
-        Assert.False(StationDetailBuilder.Build(station, SearchTestData.AllFuels, null, Now).HasBrand);
+        Assert.False(StationDetailBuilder.Build(station, SearchTestData.AllFuels, null, Now).HasSubName);
     }
 
     /// <summary>

@@ -21,6 +21,27 @@ public sealed class StationInfo
     public string? Brand { get; init; }
 
     /// <summary>
+    /// Der eigene Anzeigename des Anwenders; <see langword="null"/>, wenn keiner vergeben ist.
+    /// </summary>
+    public string? CustomName { get; init; }
+
+    /// <summary>
+    /// Der prominent angezeigte Name: eigener Anzeigename, sonst Marke, sonst Name der Quelle.
+    /// </summary>
+    public string DisplayName
+    {
+        get { return StationNaming.GetPrimary(CustomName, Brand, Name); }
+    }
+
+    /// <summary>
+    /// Der klein darunter angezeigte Stammdatenname; leer, wenn er dem <see cref="DisplayName"/> entspricht.
+    /// </summary>
+    public string SubName
+    {
+        get { return StationNaming.GetSecondary(CustomName, Brand, Name); }
+    }
+
+    /// <summary>
     /// Die Straße, sofern geliefert.
     /// </summary>
     public string? Street { get; init; }
@@ -94,6 +115,7 @@ public sealed class StationInfo
             Id = Id,
             Name = Name,
             Brand = Brand,
+            CustomName = CustomName,
             Street = Street,
             HouseNumber = HouseNumber,
             PostCode = PostCode,
@@ -128,6 +150,7 @@ public sealed class StationInfo
             Id = Id,
             Name = Name,
             Brand = Brand,
+            CustomName = CustomName,
             Street = Street,
             HouseNumber = HouseNumber,
             PostCode = PostCode,
@@ -152,6 +175,7 @@ public sealed class StationInfo
             Id = Id,
             Name = Name,
             Brand = Brand,
+            CustomName = CustomName,
             Street = Street,
             HouseNumber = HouseNumber,
             PostCode = PostCode,
@@ -179,6 +203,7 @@ public sealed class StationInfo
             Id = Id,
             Name = Name,
             Brand = Brand,
+            CustomName = CustomName,
             Street = Street,
             HouseNumber = HouseNumber,
             PostCode = PostCode,
@@ -190,6 +215,34 @@ public sealed class StationInfo
             WholeDay = WholeDay,
             OpeningTimes = OpeningTimes,
             Prices = prices,
+            DetailsUpdatedUtc = DetailsUpdatedUtc,
+        };
+    }
+
+    /// <summary>
+    /// Liefert eine Kopie mit anderem eigenen Anzeigenamen.
+    /// </summary>
+    /// <param name="customName">Der eigene Anzeigename oder <see langword="null"/>.</param>
+    /// <returns>Die Kopie.</returns>
+    public StationInfo WithCustomName(string? customName)
+    {
+        return new StationInfo
+        {
+            Id = Id,
+            Name = Name,
+            Brand = Brand,
+            CustomName = customName,
+            Street = Street,
+            HouseNumber = HouseNumber,
+            PostCode = PostCode,
+            Place = Place,
+            Latitude = Latitude,
+            Longitude = Longitude,
+            DistanceKm = DistanceKm,
+            IsOpen = IsOpen,
+            WholeDay = WholeDay,
+            OpeningTimes = OpeningTimes,
+            Prices = Prices,
             DetailsUpdatedUtc = DetailsUpdatedUtc,
         };
     }

@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Resources;
 using Tankradar.MAUI.Resources.Texts;
 
 namespace Tankradar.MAUI.ViewModels;
@@ -19,11 +20,13 @@ public sealed class TankbookKindStatisticsViewModel
         AutomationKey = kind.ToString();
         Heading = TankbookEntryTexts.GetKindLabel(kind);
         AverageValueText = TankbookStatisticsTexts.FormatAverageValue(statistics.AverageConsumption);
+        AverageValueFontSize = StatisticsTileFont.SizeFor(AverageValueText);
         AverageUnitText = TankbookEntryTexts.GetConsumptionUnit(kind);
-        AverageSourceText = TankbookStatisticsTexts.GetSourceText(statistics.AverageSource);
+        AverageSourceText = TankbookStatisticsTexts.GetSourceText(statistics.AverageSource, kind);
         CostPer100KmValueText = TankbookStatisticsTexts.FormatCostPer100KmValue(statistics.CostPer100Km);
+        CostPer100KmValueFontSize = StatisticsTileFont.SizeFor(CostPer100KmValueText);
         CostPer100KmUnitText = statistics.CostPer100Km is null ? TankbookStatisticsTexts.NotCalculable : "€";
-        Notice = statistics.AverageSource == TankbookAverageSource.None ? TankbookStatisticsTexts.GetTooFewEntriesNotice(statistics.OffersStartConsumption) : null;
+        Notice = statistics.AverageSource == TankbookAverageSource.None ? TankbookStatisticsTexts.GetTooFewEntriesNotice(statistics.OffersStartConsumption, statistics.IsStartKind) : null;
         var currentMonth = statistics.Months.Count > 0 ? statistics.Months[0] : null;
         MonthAnalysisHeading = currentMonth is null ? string.Empty : TankbookStatisticsTexts.FormatMonthAnalysisHeading(currentMonth.Year, currentMonth.Month);
         MonthCostLabel = currentMonth is null ? string.Empty : TankbookStatisticsTexts.FormatMonthCostLabel(currentMonth.Month);
@@ -44,7 +47,7 @@ public sealed class TankbookKindStatisticsViewModel
                 point.Value,
                 TankbookStatisticsTexts.FormatValueShort(point.Value))).ToList(),
             TankbookEntryTexts.GetConsumptionUnit(kind));
-        ConsumptionChartSummary = TankbookStatisticsTexts.FormatConsumptionSummary(trend.Select(point => point.Value).ToList(), kind);
+        ConsumptionChartSummary = TankbookStatisticsTexts.FormatConsumptionSummary(trend.Select(point => point.Value).ToList(), kind, trend.Any(point => point.IsFromStart));
 
         var months = statistics.Months
             .Take(TankbookStatisticsLimits.ChartMaxPoints)
@@ -75,6 +78,11 @@ public sealed class TankbookKindStatisticsViewModel
     public string AverageValueText { get; }
 
     /// <summary>
+    /// Die Schriftgröße des Durchschnittsverbrauchs; wird mit der Länge des Textes kleiner, damit die Zahl nicht umbricht.
+    /// </summary>
+    public double AverageValueFontSize { get; }
+
+    /// <summary>
     /// Die Einheit des Durchschnittsverbrauchs: „L/100 km“ bzw. „kWh/100 km“.
     /// </summary>
     public string AverageUnitText { get; }
@@ -96,6 +104,11 @@ public sealed class TankbookKindStatisticsViewModel
     /// Der Zahlenwert der Kosten pro 100 km ohne Einheit, z. B. „11,15“, oder „–“.
     /// </summary>
     public string CostPer100KmValueText { get; }
+
+    /// <summary>
+    /// Die Schriftgröße der Kosten pro 100 km; wird mit der Länge des Textes kleiner, damit die Zahl nicht umbricht.
+    /// </summary>
+    public double CostPer100KmValueFontSize { get; }
 
     /// <summary>
     /// Die Einheit der Kosten pro 100 km („€“) bzw. „noch nicht berechenbar“, solange es keinen Wert gibt.

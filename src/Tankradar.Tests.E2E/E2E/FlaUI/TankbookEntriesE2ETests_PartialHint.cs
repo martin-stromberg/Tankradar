@@ -5,8 +5,8 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 /// </summary>
 public class TankbookEntriesE2ETests_PartialHint : TankbookE2ETestBase
 {
-    private const string ExpectedHint = "Der Verbrauch wird erst ab dem ersten vollen Vorgang berechnet. Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; "
-        + "Teilbetankungen vor dem ersten vollen Vorgang zählen nicht für den Verbrauch, ihre Kosten erscheinen aber in den Monatskosten.";
+    private const string ExpectedHint = "Der Verbrauch wird beim ersten vollen Vorgang ab dem Start-Kilometerstand des Fahrzeugs berechnet, angenommen wird ein voller Tank beim Start, danach zwischen vollen Vorgängen. "
+        + "Die Menge einer Teilbetankung fließt in den nächsten vollen Vorgang ein; ihre Kosten erscheinen auch in den Monatskosten.";
 
     /// <summary>
     /// Prüft, dass der Hinweis nur bei eingeschaltetem Schalter erscheint und den vereinbarten Wortlaut hat.

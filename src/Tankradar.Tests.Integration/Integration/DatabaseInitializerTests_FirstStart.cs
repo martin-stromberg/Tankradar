@@ -29,7 +29,7 @@ public class DatabaseInitializerTests_FirstStart : IDisposable
         Assert.Contains("UserSettings", tables);
         Assert.Contains("FuelTypeSettings", tables);
         var history = Query(connection, "SELECT MigrationId FROM __EFMigrationsHistory ORDER BY MigrationId");
-        Assert.Equal(7, history.Count);
+        Assert.Equal(8, history.Count);
         Assert.EndsWith("_InitialCreate", history[0]);
         Assert.EndsWith("_AddFuelTypeSettings", history[1]);
         Assert.EndsWith("_AddPriceCache", history[2]);
@@ -37,6 +37,7 @@ public class DatabaseInitializerTests_FirstStart : IDisposable
         Assert.EndsWith("_AddNearbySetting", history[4]);
         Assert.EndsWith("_AddVehicles", history[5]);
         Assert.EndsWith("_AddTankbookEntryDetails", history[6]);
+        Assert.EndsWith("_AddStationCustomName", history[7]);
         Assert.Contains("Stations", tables);
         Assert.Contains("PriceEntries", tables);
         Assert.Contains("Vehicles", tables);

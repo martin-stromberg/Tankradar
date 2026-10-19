@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Tankbook;
 
 namespace Tankradar.MAUI.Data;
@@ -124,6 +125,7 @@ public class TankradarDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Name).IsRequired();
+            entity.Property(e => e.CustomName).HasMaxLength(StationNaming.MaxCustomNameLength);
             entity.HasIndex(e => new { e.Latitude, e.Longitude });
         });
 

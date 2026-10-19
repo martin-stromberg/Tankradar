@@ -51,3 +51,7 @@ Die Einstellungen liegen in einer lokalen Datenbank auf Ihrem Gerät und werden 
 - Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt; sonst fragt die Suche beim Tippen auf „Suchen“ nach der Standortfreigabe des Geräts.
 - Die Spritsorten und ihre Reihenfolge bestimmen auch, welche Preise die [Startseite](../Startseite/index.md) in welcher Reihenfolge zeigt.
 - Die Einstellungen gelten für die App auf diesem Gerät und werden nicht zwischen Geräten synchronisiert.
+
+## Sicherung
+
+Die Karte **Sicherung** (zwischen **Sortierung** und **Datenquelle**) erstellt, listet, stellt wieder her, löscht und teilt Sicherungen Ihrer Daten und spielt externe Sicherungsdateien ein. Sie ist unter [Sicherung](../Sicherung/index.md) beschrieben. Eine Wiederherstellung setzt auch diese Einstellungen auf den Stand der Sicherung zurück; die Seite lädt sie danach neu.

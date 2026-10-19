@@ -62,6 +62,23 @@ public interface IPriceRepository
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Ein Task, der nach dem Speichern abgeschlossen ist.</returns>
     Task SavePricesAsync(IReadOnlyDictionary<string, IReadOnlyList<FuelPrice>> prices, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Liefert die eigenen Anzeigenamen der Tankstellen, für die der Anwender einen vergeben hat.
+    /// </summary>
+    /// <param name="stationIds">Die Kennungen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die eigenen Anzeigenamen je Kennung; Tankstellen ohne eigenen Namen fehlen.</returns>
+    Task<IReadOnlyDictionary<string, string>> GetCustomNamesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Vergibt, ändert oder entfernt den eigenen Anzeigenamen einer lokal bekannten Tankstelle. Ein leerer Name entfernt ihn.
+    /// </summary>
+    /// <param name="stationId">Die Kennung.</param>
+    /// <param name="name">Der neue Name oder <see langword="null"/> bzw. leer zum Entfernen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Das Ergebnis.</returns>
+    Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -291,6 +308,51 @@ public sealed class PriceRepository : IPriceRepository
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<string, string>> GetCustomNamesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationIds);
+        if (stationIds.Count == 0)
+        {
+            return new Dictionary<string, string>();
+        }
+
+        await _initializer.InitializeAsync().ConfigureAwait(false);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        var ids = stationIds.Distinct().ToList();
+        var rows = await context.Stations.AsNoTracking()
+            .Where(s => ids.Contains(s.Id) && s.CustomName != null)
+            .Select(s => new { s.Id, s.CustomName })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return rows.ToDictionary(row => row.Id, row => row.CustomName!);
+    }
+
+    /// <inheritdoc />
+    public async Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationId);
+        var trimmed = name?.Trim() ?? string.Empty;
+        if (trimmed.Length > StationNaming.MaxCustomNameLength)
+        {
+            return StationNameResult.TooLong;
+        }
+
+        await _initializer.InitializeAsync().ConfigureAwait(false);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+
+        var entity = await context.Stations.FirstOrDefaultAsync(s => s.Id == stationId, cancellationToken).ConfigureAwait(false);
+        if (entity is null)
+        {
+            return StationNameResult.NotFound;
+        }
+
+        entity.CustomName = trimmed.Length == 0 ? null : trimmed;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return StationNameResult.Ok;
+    }
+
     private static async Task<Dictionary<string, List<FuelPrice>>> LoadLatestPricesAsync(
         TankradarDbContext context,
         List<string> stationIds,
@@ -331,6 +393,7 @@ public sealed class PriceRepository : IPriceRepository
             Id = entity.Id,
             Name = entity.Name,
             Brand = entity.Brand,
+            CustomName = entity.CustomName,
             Street = entity.Street,
             HouseNumber = entity.HouseNumber,
             PostCode = entity.PostCode,

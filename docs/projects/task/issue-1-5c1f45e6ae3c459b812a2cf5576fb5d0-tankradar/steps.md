@@ -23,7 +23,8 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 12 | Fahrzeugverwaltung im Tankbuch | 4 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-12-fahrzeuge` | Fertig |
 | 13 | Tank- und Ladevorgänge erfassen | 10, 11, 12 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-13-tankvorgaenge` | Fertig |
 | 14 | Verbrauchs- und Kostenauswertung | 13 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-14-auswertung` | Fertig |
-| 15 | Lokale Sicherung und Wiederherstellung | 11, 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15-sicherung` | Offen |
+| 15 | Lokale Sicherung und Wiederherstellung | 11, 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15-sicherung` | Fertig |
+| 15a | Anzeigename von Tankstellen und erster Verbrauch ab Startstand | 10, 11, 13, 14, 15 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15a-anzeigename-verbrauch` | Fertig |
 | 16 | Export des Tankbuchs als CSV oder PDF | 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-16-export` | Offen |
 | 17 | Tankstellen entlang einer Route | 7, 9 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-17-route` | Offen |
 | 18 | iOS-Build, Signierung und TestFlight-Auslieferung | 3, 13, 17 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-18-ios-auslieferung` | Offen |

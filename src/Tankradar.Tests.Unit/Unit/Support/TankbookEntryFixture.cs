@@ -186,8 +186,10 @@ public sealed class TankbookEntryFixture : IDisposable
     /// <param name="name">Der Name.</param>
     /// <param name="place">Der Ort.</param>
     /// <param name="groupName">Der Name der Favoritengruppe.</param>
+    /// <param name="brand">Die Marke; <see langword="null"/>, wenn keine bekannt ist.</param>
+    /// <param name="customName">Der eigene Anzeigename; <see langword="null"/>, wenn keiner vergeben ist.</param>
     /// <returns>Ein Task, der nach dem Speichern abgeschlossen ist.</returns>
-    public async Task AddFavoriteStationAsync(string stationId, string name, string? place, string groupName = "Arbeit")
+    public async Task AddFavoriteStationAsync(string stationId, string name, string? place, string groupName = "Arbeit", string? brand = null, string? customName = null)
     {
         await using var context = Factory.CreateDbContext();
         var group = context.FavoriteGroups.FirstOrDefault(g => g.Name == groupName);
@@ -199,7 +201,7 @@ public sealed class TankbookEntryFixture : IDisposable
 
         if (!context.Stations.Any(s => s.Id == stationId))
         {
-            context.Stations.Add(new StationEntity { Id = stationId, Name = name, Place = place, Latitude = 52.5, Longitude = 13.4 });
+            context.Stations.Add(new StationEntity { Id = stationId, Name = name, Brand = brand, CustomName = customName, Place = place, Latitude = 52.5, Longitude = 13.4 });
         }
 
         context.FavoriteEntries.Add(new FavoriteEntryEntity { Group = group, StationId = stationId, Priority = nameof(FavoritePriority.None), AddedUtc = Clock.UtcNow });

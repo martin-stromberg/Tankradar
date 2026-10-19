@@ -4,7 +4,7 @@ namespace Tankradar.MAUI.Models.Search;
 /// Eine Tankstelle in der Ergebnisliste der Umkreissuche. Fehlende Quelldaten sind leer bzw. <see langword="null"/>, nie durch Platzhalter ersetzt.
 /// </summary>
 /// <param name="Id">Die Kennung der Tankstelle.</param>
-/// <param name="Name">Der Name.</param>
+/// <param name="Name">Der prominent angezeigte Name: eigener Anzeigename, sonst Marke, sonst Name der Quelle.</param>
 /// <param name="DistanceKm">Die Entfernung in Kilometern; <see langword="null"/>, wenn unbekannt.</param>
 /// <param name="DistanceText">Die Entfernung als Text; leer, wenn unbekannt.</param>
 /// <param name="PriceLines">Die Preiszeilen in der Reihenfolge der Einstellungen.</param>
@@ -15,6 +15,7 @@ namespace Tankradar.MAUI.Models.Search;
 /// <param name="Latitude">Der Breitengrad der Tankstelle; <see langword="null"/>, wenn die Quelle keine gültige Position liefert (die Tankstelle erscheint dann nicht auf der Karte).</param>
 /// <param name="Longitude">Der Längengrad der Tankstelle; <see langword="null"/>, wenn die Quelle keine gültige Position liefert.</param>
 /// <param name="IsOpen">Gibt an, ob die Tankstelle laut Quelle geöffnet ist; <see langword="null"/>, wenn unbekannt.</param>
+/// <param name="SubName">Der klein darunter angezeigte Stammdatenname der Quelle; leer, wenn er dem <paramref name="Name"/> entspricht.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationListItem(
     string Id,
@@ -28,8 +29,14 @@ public sealed record StationListItem(
     string AddressText = "",
     double? Latitude = null,
     double? Longitude = null,
-    bool? IsOpen = null)
+    bool? IsOpen = null,
+    string SubName = "")
 {
+    /// <summary>
+    /// Gibt an, ob der Stammdatenname klein unter dem Namen angezeigt wird.
+    /// </summary>
+    public bool HasSubName => SubName.Length > 0;
+
     /// <summary>
     /// Gibt an, ob eine gültige Position vorliegt (Voraussetzung für die Markierung auf der Karte).
     /// </summary>

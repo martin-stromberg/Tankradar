@@ -31,6 +31,7 @@ public partial class StationTile : ContentView
         _idsApplied = true;
         var prefix = station.AutomationPrefix;
         NameLabel.AutomationId = $"{prefix}.Name";
+        SubNameLabel.AutomationId = $"{prefix}.SubName";
         AddressLabel.AutomationId = $"{prefix}.Address";
         DistanceLabel.AutomationId = $"{prefix}.Distance";
         NoPricesLabel.AutomationId = $"{prefix}.NoPrices";

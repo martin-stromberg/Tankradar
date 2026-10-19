@@ -29,7 +29,9 @@ public class TankbookEntriesE2ETests_Flow : TankbookE2ETestBase
             Tankbook.FillEntryForm("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
             WaitUntil(() => FindByAutomationId("TankbookEntries.Form.ComputedHint")?.Name == "Ergibt 74,36 €", "Der Rechenhinweis „Ergibt 74,36 €“ fehlt.");
             Tankbook.SaveEntryForm();
-            WaitForTexts("TankbookEntry.Item.Consumption", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 8,00 L/100 km (ab Startstand)");
+            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 500 km");
+            WaitForTexts("TankbookEntry.Item.ConsumptionNote", "Ab Startstand berechnet: Angenommen wird, dass der Tank beim Start voll war. Teilbetankungen davor zählen mit.");
 
             Press("TankbookEntries.Add");
             Tankbook.FillEntryForm("Beta Tankstelle", "30", string.Empty, "55,77", "11000");
@@ -37,8 +39,9 @@ public class TankbookEntriesE2ETests_Flow : TankbookE2ETestBase
             Tankbook.SaveEntryForm();
 
             WaitForTexts("TankbookEntry.Item.Station", "Beta Tankstelle", "Alpha Tankstelle");
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
-            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 500 km");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
+            WaitForTexts("TankbookEntry.Item.Distance", "Strecke 500 km", "Strecke 500 km");
+            Assert.Single(Tankbook.FindAllOrdered("TankbookEntry.Item.ConsumptionNote"));
             WaitForTexts("TankbookEntry.Item.Total", "55,77 €", "74,36 €");
             WaitForTexts("TankbookEntry.Item.UnitPrice", "1,859 €/L", "1,859 €/L");
             WaitForTexts("TankbookEntry.Item.Quantity", "Menge 30,00 L", "Menge 40,00 L");

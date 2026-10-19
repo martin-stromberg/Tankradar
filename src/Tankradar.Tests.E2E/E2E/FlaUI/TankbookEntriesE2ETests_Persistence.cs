@@ -34,14 +34,14 @@ public class TankbookEntriesE2ETests_Persistence : TankbookE2ETestBase
             WaitForAutomationId("TankbookEntries.Form.RemovePhoto");
             Tankbook.FillEntryForm("Beta Tankstelle", "30", "1,859", string.Empty, "11000");
             Tankbook.SaveEntryForm();
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
 
             RestartApplication();
             OpenTankbook();
             Tankbook.OpenEntries("Golf");
 
             WaitForTexts("TankbookEntry.Item.Station", "Beta Tankstelle", "Alpha Tankstelle");
-            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
             WaitForTexts("TankbookEntry.Item.Total", "55,77 €", "74,36 €");
             Press("TankbookEntry.Item.ShowReceipt");
             WaitForAutomationId("TankbookEntry.Item.Receipt");

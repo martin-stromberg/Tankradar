@@ -25,7 +25,7 @@ public class TankbookStatisticsE2ETests_Persistence : TankbookE2ETestBase
             Tankbook.OpenEntries("Golf");
 
             Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
-            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 6,00");
+            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 2 Werte, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 8,00, ältester Wert ab Startstand berechnet");
             Tankbook.WaitForStatistic("Fuel", "CostChartSummary", "Monatskosten, 1 Wert, zuletzt 130,13 €, niedrigster 130,13 €, höchster 130,13 €");
         });
     }

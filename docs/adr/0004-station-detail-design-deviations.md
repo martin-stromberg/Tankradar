@@ -16,6 +16,9 @@ Zurück-Pfeil der Kopfleiste der Shell sowie einen fest oben stehenden Offline-H
 
 ## Entscheidung
 
+Nachtrag Schritt 15a: Der Marken-Chip der Kopfkarte ist ersetzt; die Marke steht jetzt als Name in der Überschrift, der
+Stammdatenname klein darunter ([ADR 0012](0012-station-display-name.md)).
+
 Folgende Teile des Entwurfs sind bewusst nicht oder abweichend umgesetzt:
 
 - **Favoriten (Stern, Favoritengruppen):** umgesetzt in Entwicklungsschritt 10 als Karte „Favoritengruppen“ am

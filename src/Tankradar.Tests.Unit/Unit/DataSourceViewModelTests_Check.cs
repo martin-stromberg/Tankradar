@@ -146,6 +146,11 @@ public class DataSourceViewModelTests_Check : BaseTest
             return Task.FromResult(new StationSearchResult([], PriceDataSource.OfflineFallback, PriceFailure.None));
         }
 
+        public Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(StationNameResult.NotFound);
+        }
+
         public Task<StationDetailResult> GetStationDetailAsync(string stationId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new StationDetailResult(null, PriceDataSource.OfflineFallback, PriceFailure.None));

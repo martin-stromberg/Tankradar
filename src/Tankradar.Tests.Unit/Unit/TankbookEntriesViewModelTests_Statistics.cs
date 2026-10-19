@@ -49,7 +49,7 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
     }
 
     /// <summary>
-    /// Prüft, dass das Löschen die Auswertung aktualisiert und auf den Hinweis zurückfällt.
+    /// Prüft, dass das Löschen die Auswertung aktualisiert: Ohne zweiten vollen Vorgang gilt der Wert ab Startstand.
     /// </summary>
     [Fact]
     public async Task Entries_Delete_RefreshesStatistics()
@@ -65,7 +65,9 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
 
         var kind = Assert.Single(viewModel.Statistics.Kinds);
         Assert.Single(viewModel.Entries);
-        Assert.Equal(MAUI.Resources.Texts.TankbookStatisticsTexts.GetTooFewEntriesNotice(true), kind.Notice);
+        Assert.Equal(MAUI.Resources.Texts.TankbookStatisticsTexts.FromStartSource, kind.AverageSourceText);
+        Assert.Equal("8,00", kind.AverageValueText);
+        Assert.False(kind.HasNotice);
     }
 
     /// <summary>

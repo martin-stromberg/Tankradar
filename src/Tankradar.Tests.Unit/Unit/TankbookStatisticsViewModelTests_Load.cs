@@ -104,10 +104,29 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
     }
 
     /// <summary>
-    /// Prüft den Hinweis bei nur einem vollen Vorgang ohne Startverbrauch.
+    /// Prüft den Hinweis ohne vollen Vorgang (nur eine Teilbetankung) und ohne Startverbrauch.
     /// </summary>
     [Fact]
     public async Task Load_TooFewEntries_ShowsNotice()
+    {
+        var vehicle = await _fixture.CreateVehicleAsync();
+        await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddDays(-1), 10_500, 40m, isPartial: true));
+        var viewModel = CreateViewModel();
+
+        await viewModel.LoadAsync(vehicle.Id);
+
+        var kind = Assert.Single(viewModel.Kinds);
+        Assert.Contains("mindestens ein voller Vorgang", kind.Notice, StringComparison.Ordinal);
+        Assert.Equal(TankbookStatisticsTexts.NoAverage, kind.AverageValueText);
+        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);
+        Assert.False(kind.HasAverageSource);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein einziger voller Vorgang Durchschnitt und Kosten ab dem Startstand liefert und als solcher gekennzeichnet ist (statt eines Hinweises).
+    /// </summary>
+    [Fact]
+    public async Task Load_OneFullEntry_ShowsFromStartValues()
     {
         var vehicle = await _fixture.CreateVehicleAsync();
         await AddFuelEntriesAsync(vehicle.Id, (1, 10_500, 40m));
@@ -116,10 +135,10 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         await viewModel.LoadAsync(vehicle.Id);
 
         var kind = Assert.Single(viewModel.Kinds);
-        Assert.Contains("mindestens zwei volle Vorgänge", kind.Notice, StringComparison.Ordinal);
-        Assert.Equal(TankbookStatisticsTexts.NoAverage, kind.AverageValueText);
-        Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);
-        Assert.False(kind.HasAverageSource);
+        Assert.Equal("8,00 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
+        Assert.Equal(TankbookStatisticsTexts.FromStartSource, kind.AverageSourceText);
+        Assert.Equal("14,87 €", $"{kind.CostPer100KmValueText} {kind.CostPer100KmUnitText}");
+        Assert.False(kind.HasNotice);
     }
 
     /// <summary>
@@ -130,14 +149,14 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
     {
         var created = await _fixture.Vehicles.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 10_000, 5.4m));
         var vehicle = created.Vehicle!;
-        await AddFuelEntriesAsync(vehicle.Id, (1, 10_500, 40m));
+        await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddDays(-1), 10_500, 40m, isPartial: true));
         var viewModel = CreateViewModel();
 
         await viewModel.LoadAsync(vehicle.Id);
 
         var kind = Assert.Single(viewModel.Kinds);
         Assert.Equal("5,40 L/100 km", $"{kind.AverageValueText} {kind.AverageUnitText}");
-        Assert.Equal("Startverbrauch – noch keine zwei vollen Vorgänge", kind.AverageSourceText);
+        Assert.Equal("Startverbrauch – noch keine Strecke aus vollen Vorgängen", kind.AverageSourceText);
         Assert.True(kind.HasAverageSource);
         Assert.False(kind.HasNotice);
         Assert.Equal(TankbookStatisticsTexts.NotCalculable, kind.CostPer100KmUnitText);
@@ -191,9 +210,9 @@ public class TankbookStatisticsViewModelTests_Load : BaseTest
         await viewModel.LoadAsync(vehicle.Id);
 
         var kind = viewModel.Kinds.Single();
-        Assert.Equal("Verlauf, 2 Werte, zuletzt 5,00 L/100 km, niedrigster 5,00, höchster 6,00", kind.ConsumptionChartSummary);
+        Assert.Equal("Verlauf, 3 Werte, zuletzt 5,00 L/100 km, niedrigster 5,00, höchster 8,00, ältester Wert ab Startstand berechnet", kind.ConsumptionChartSummary);
         Assert.StartsWith("Monatskosten, 1 Wert, zuletzt 176,61 €", kind.CostChartSummary, StringComparison.Ordinal);
-        Assert.Equal(2, kind.ConsumptionChart.Points.Count);
+        Assert.Equal(3, kind.ConsumptionChart.Points.Count);
         Assert.True(kind.CostChart.HasData);
         Assert.Equal("L/100 km", kind.ConsumptionChart.Unit);
     }

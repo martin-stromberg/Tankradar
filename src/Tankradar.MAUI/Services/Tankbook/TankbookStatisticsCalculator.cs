@@ -40,12 +40,16 @@ public static class TankbookStatisticsCalculator
 
     private static TankbookKindStatistics CalculateKind(TankbookEntryKind kind, List<TankbookEntryOverview> ofKind, bool isStartKind, decimal? vehicleStartConsumption, DateTime today)
     {
-        var intervals = ofKind
+        var calculated = ofKind
             .Where(overview => overview.ConsumptionState == TankbookConsumptionState.Calculated
                 && overview.DistanceKm is > 0
                 && overview.IntervalQuantity is not null
                 && overview.IntervalCost is not null)
             .ToList();
+
+        // Das Intervall ab Startstand beruht auf der Annahme „Tank beim Start voll“: Es bildet die Kennzahlen nur, solange es kein reguläres Intervall gibt.
+        var regular = calculated.Where(overview => !overview.IsFromStart).ToList();
+        var intervals = regular.Count > 0 ? regular : calculated;
         var startConsumption = isStartKind ? vehicleStartConsumption : null;
         decimal? average = null;
         decimal? costPer100Km = null;
@@ -55,7 +59,7 @@ public static class TankbookStatisticsCalculator
         {
             average = Round(intervals.Sum(overview => overview.IntervalQuantity!.Value) / distance * 100m);
             costPer100Km = Round(intervals.Sum(overview => overview.IntervalCost!.Value) / distance * 100m);
-            source = TankbookAverageSource.Calculated;
+            source = regular.Count > 0 ? TankbookAverageSource.Calculated : TankbookAverageSource.FromStart;
         }
         else if (startConsumption is { } start)
         {
@@ -63,9 +67,9 @@ public static class TankbookStatisticsCalculator
             source = TankbookAverageSource.StartConsumption;
         }
 
-        var trend = intervals
+        var trend = calculated
             .Where(overview => overview.Consumption is not null)
-            .Select(overview => new TrendPoint(overview.Entry.OccurredAt, overview.Consumption!.Value))
+            .Select(overview => new TrendPoint(overview.Entry.OccurredAt, overview.Consumption!.Value, overview.IsFromStart))
             .ToList();
         return new TankbookKindStatistics(
             kind,
@@ -77,7 +81,8 @@ public static class TankbookStatisticsCalculator
             distance,
             ofKind.Sum(overview => overview.Entry.TotalAmount),
             BuildMonths(ofKind, today),
-            trend);
+            trend,
+            isStartKind);
     }
 
     private static List<MonthlyCostSummary> BuildMonths(List<TankbookEntryOverview> ofKind, DateTime today)

@@ -26,12 +26,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\TestSupport\BackupTestArchive.cs" Link="TestSupport\BackupTestArchive.cs" />
+    <Compile Include="..\TestSupport\BackupTestTampering.cs" Link="TestSupport\BackupTestTampering.cs" />
     <Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
     <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
     <Compile Include="..\TestSupport\E2EStartupPolicy.cs" Link="TestSupport\E2EStartupPolicy.cs" />
     <Compile Include="..\TestSupport\MockTankerkoenigServer.cs" Link="TestSupport\MockTankerkoenigServer.cs" />
     <Compile Include="..\TestSupport\MockNominatimServer.cs" Link="TestSupport\MockNominatimServer.cs" />
     <Compile Include="..\TestSupport\MockTileServer.cs" Link="TestSupport\MockTileServer.cs" />
+    <Compile Include="..\TestSupport\LoopbackHttpListener.cs" Link="TestSupport\LoopbackHttpListener.cs" />
   </ItemGroup>
 
 </Project>

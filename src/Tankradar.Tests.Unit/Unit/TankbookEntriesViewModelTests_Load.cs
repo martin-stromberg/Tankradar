@@ -32,8 +32,10 @@ public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBa
         Assert.Equal("Verbrauch 6,00 L/100 km", newest.ConsumptionText);
         Assert.Equal("„Urlaub“", newest.NoteText);
         Assert.False(newest.HasKindText);
-        Assert.Equal("Noch kein Verbrauch: erster voller Vorgang", viewModel.Entries[1].ConsumptionText);
-        Assert.False(viewModel.Entries[1].HasDistance);
+        Assert.Equal("Verbrauch 8,00 L/100 km (ab Startstand)", viewModel.Entries[1].ConsumptionText);
+        Assert.Equal("Strecke 500 km", viewModel.Entries[1].DistanceText);
+        Assert.True(viewModel.Entries[1].HasConsumptionNote);
+        Assert.False(newest.HasConsumptionNote);
         Assert.False(viewModel.ShowEmptyHint);
     }
 

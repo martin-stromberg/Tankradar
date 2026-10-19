@@ -15,9 +15,9 @@ public class MapE2ETests_Markers : MapE2ETestBase
         {
             SearchAndShowMap();
 
-            Assert.Equal("Alpha Tankstelle, Super E5 1,859 Euro pro Liter", WaitForAutomationId(AlphaMarker).Name);
+            Assert.Equal("Alpha Tankstelle, Hauptstraße 1, 10115 Berlin, Super E5 1,859 Euro pro Liter", WaitForAutomationId(AlphaMarker).Name);
             Assert.Equal("Günstigster Preis", ReadMarkerLevel(AlphaMarker));
-            Assert.Equal("Beta Tankstelle, Super E5 1,879 Euro pro Liter", WaitForAutomationId(BetaMarker).Name);
+            Assert.Equal("Beta Tankstelle, Nebenweg 22, 10117 Berlin, Super E5 1,879 Euro pro Liter", WaitForAutomationId(BetaMarker).Name);
             Assert.Equal("Hoher Preis", ReadMarkerLevel(BetaMarker));
             Assert.Equal(2, FindMarkers().Count);
         });
@@ -36,7 +36,7 @@ public class MapE2ETests_Markers : MapE2ETestBase
             SelectFilter("Diesel");
 
             WaitForMapCount("1 von 1 Station sichtbar");
-            Assert.Equal("Alpha Tankstelle, Diesel 1,699 Euro pro Liter", WaitForAutomationId(AlphaMarker).Name);
+            Assert.Equal("Alpha Tankstelle, Hauptstraße 1, 10115 Berlin, Diesel 1,699 Euro pro Liter", WaitForAutomationId(AlphaMarker).Name);
             Assert.Equal("Günstigster Preis", ReadMarkerLevel(AlphaMarker));
             WaitUntil(() => !Exists(BetaMarker), "Die Markierung ohne Diesel-Preis wurde nicht entfernt.");
             Assert.Equal(1, Server.ListRequests);
