@@ -125,8 +125,13 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
      Daten in dieser sauberen Datenbank); `integrity_check` und `foreign_key_check` erneut.
   5. Jede Entität wird einmal über Entity Framework gelesen (`AsNoTracking`, gestreamt): ungültige Datums- und Dezimalwerte
      (`FormatException` u. a.) führen zu `InvalidFile`; Text in Ganzzahl- oder Wahrheitswertspalten liest SQLite ohne Ausnahme als 0 bzw. wahr und wird daher nicht erkannt. Zusätzlich müssen die Enum-Zeichenketten, die die App nur gültig schreibt
-     (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. Weitere Grenzwerte (Längen,
-     Kilometerstände) werden nicht geprüft, weil die App sie nur bei der Eingabe durchsetzt und gespeicherte Altdaten nicht daran misst.
+     (`Vehicles.FuelKind`, `TankbookEntries.Kind`, `FavoriteEntries.Priority`), definierte Werte sein. **Textlängen** werden nach der letzten Migration
+     (alle Spalten vorhanden) mit festen Obergrenzen je frei befüllbarer Textspalte geprüft (`BackupTextLimits`, SQL `length()` in Zeichen):
+     eigener Anzeigename 60 (wie in der App), Namen von Tankstellen, Marken, Straßen, Orten, Gruppen, Fahrzeugen und Vorgängen 200,
+     Kennungen, Hausnummern, Postleitzahlen und Schlüssel 100, Notizen und Beschreibungen 2.000, `OpeningTimesJson` 20.000. Sie liegen
+     großzügig über dem, was die App und die Quelle liefern, aber weit unter Größen, bei denen die Oberfläche versagt (ein präparierter
+     eigener Name mit 200.000 Zeichen ließ „Vorgang erfassen“ abstürzen). Überlange Texte ergeben `InvalidFile`; der Bestand bleibt
+     unverändert. Kilometerstände und andere Zahlenwerte werden weiterhin nicht gemessen; die Anzeige kürzt lange Texte zusätzlich (ADR 0012).
      Einstellungen mit unbekannten Werten fängt die App beim Lesen selbst ab (Rückfall auf Standardwerte).
   6. Erst die so aufgebaute Referenzdatenbank (Journalmodus `DELETE`, ohne `-wal`/`-shm`) ersetzt im Staging die entpackte Datei und
      wird per `RestoreSwap` (Journal und Rollback) eingespielt. Die **Zählwerte der Rückfrage** (Fahrzeuge, Vorgänge, Gruppen, Favoriten,
@@ -195,7 +200,17 @@ Systemdialoge). Es gibt keine eigene Seite und kein neues Symbol.
   Verschlüsselung mit Passwort wäre eine eigene Entscheidung (Schlüsselverwaltung, Verlustrisiko).
 - **Keine automatische Sicherung** und keine Cloud-Anbindung; beides ist nicht Teil der Anforderung.
 - **Ein Wechsel des Datenformats** (neue Tabellen, neue Migrationen) bleibt über die Migrationsregeln abgedeckt; ändert sich das
-  Archivformat selbst, ist `schemaVersion` zu erhöhen.
+  Archivformat selbst, ist `schemaVersion` zu erhöhen. Beispiel Schritt 15a: Die neue Spalte `Stations.CustomName` (eigener
+  Anzeigename, [ADR 0012](0012-station-display-name.md)) steckt automatisch in neuen Sicherungen; der Neuaufbau kopiert die
+  Spalten der Referenzdatenbank auf dem Migrationsstand der Sicherung, ältere Sicherungen ohne die Spalte werden eingespielt und
+  migriert (Integrationstests `BackupServiceTests_CustomName`).
+- **Fehlerart bei Dateifehlern (Schritt 15a):** Ein Fehler beim Lesen der Sicherungsdatenbank selbst (Öffnen, Integritätsprüfung,
+  Lesen der Tabellen, auch Ein-/Ausgabefehler einer abgeschnittenen Datei) gilt als ungültige Datei (`InvalidFile`). Als
+  vorübergehender Fehler der Umgebung (`Failed`) gelten nur Fehler der Referenzdatenbank und des Dateisystems, z. B. voller
+  Speicher.
+- **Datenschutz:** Die gespeicherten Tankstellen und Preisstände mit Abrufzeit sowie die eigenen Anzeigenamen stehen in der
+  Sicherung. Daraus lassen sich Gegenden und Zeiten ableiten, in denen gesucht wurde. Weil geteilte Sicherungen unverschlüsselt
+  sind, nennt die Hilfe das ausdrücklich.
 - **Das iOS-Verhalten** (Teilen-Blatt, Dateiauswahl) wird nur kompiliert und über die Testdoppel abgesichert; eine Sichtprüfung auf
   einem Gerät bleibt Teil der Abnahme.
 - **Datenmenge:** Dauer und Größe wachsen mit Datenbank und Fotos. Verarbeitet wird mit Stream-Kopien (80-KiB-Puffer), nichts wird

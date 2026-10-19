@@ -37,7 +37,7 @@ public class TankbookKindStatisticsViewModelTests_Notice : BaseTest
     {
         var block = Block(Statistics([Create(1, 10_000, 40m)]), TankbookEntryKind.Fuel);
 
-        Assert.Equal(TankbookStatisticsTexts.GetTooFewEntriesNotice(true), block.Notice);
+        Assert.Equal(TankbookStatisticsTexts.GetTooFewEntriesNotice(true, true), block.Notice);
         Assert.Contains("Startverbrauch", block.Notice, StringComparison.Ordinal);
     }
 

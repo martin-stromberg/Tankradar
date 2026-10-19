@@ -28,13 +28,14 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
 
             var scale = GetDpiForWindow(MainWindow.Properties.NativeWindowHandle.ValueOrDefault) / 96.0;
             var resizable = MainWindow.Patterns.Transform.PatternOrDefault is { CanResize.ValueOrDefault: true };
-            var originalHeight = MainWindow.BoundingRectangle.Height;
+            // Feste, kleine Fensterhöhe (wie im Vordergrundbetrieb des CI-Runners): Die Kacheln liegen dann außerhalb des sichtbaren Bereichs und müssen eingeblendet werden.
+            const double WindowHeight = 520;
 
             foreach (var width in new[] { 360, 390 })
             {
                 if (resizable)
                 {
-                    MainWindow.Patterns.Transform.Pattern.Resize(width * scale, originalHeight);
+                    MainWindow.Patterns.Transform.Pattern.Resize(width * scale, WindowHeight * scale);
                     Thread.Sleep(500);
                 }
 
@@ -47,10 +48,64 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
     private void AssertSingleLine(string element, double fontSizePixels)
     {
         var label = WaitForAutomationId(TankbookE2EDriver.StatisticsId("Fuel", element));
+        EnsureVisible(label);
         WaitUntil(
             () => label.BoundingRectangle.Height <= fontSizePixels * 2.0,
             $"Die Zahl '{element}' ist {label.BoundingRectangle.Height} Pixel hoch (erlaubt {fontSizePixels * 2.0:0}, zwei Zeilen wären mindestens doppelt so hoch wie eine): Sie bricht um.");
         AssertInsideWindow(label);
+    }
+
+    /// <summary>
+    /// Bringt das Element in den sichtbaren Bereich: Elemente außerhalb des Sichtfensters der Liste melden leere Maße. Zuerst über das ScrollItemPattern,
+    /// sonst durch schrittweises Verschieben der umgebenden Bildlaufbereiche (nur UI-Automation-Muster, keine Maus- oder Tastatureingabe).
+    /// </summary>
+    /// <param name="label">Das Element.</param>
+    private void EnsureVisible(AutomationElement label)
+    {
+        if (HasBounds(label))
+        {
+            return;
+        }
+
+        if (label.Patterns.ScrollItem.TryGetPattern(out var scrollItem))
+        {
+            scrollItem.ScrollIntoView();
+            Thread.Sleep(300);
+            if (HasBounds(label))
+            {
+                return;
+            }
+        }
+
+        var scrollers = new List<global::FlaUI.Core.Patterns.IScrollPattern>();
+        for (var parent = label.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent.Patterns.Scroll.TryGetPattern(out var scroll) && scroll.VerticallyScrollable.ValueOrDefault)
+            {
+                scrollers.Add(scroll);
+            }
+        }
+
+        foreach (var scroll in scrollers)
+        {
+            for (var percent = 0; percent <= 100; percent += 10)
+            {
+                scroll.SetScrollPercent(global::FlaUI.Core.Patterns.ScrollPatternConstants.NoScroll, percent);
+                Thread.Sleep(150);
+                if (HasBounds(label))
+                {
+                    return;
+                }
+            }
+        }
+
+        WaitUntil(() => HasBounds(label), $"Das Element '{label.AutomationId}' liegt nicht im sichtbaren Bereich (leere Maße).");
+    }
+
+    private static bool HasBounds(AutomationElement label)
+    {
+        var bounds = label.BoundingRectangle;
+        return bounds.Width > 0 && bounds.Height > 0;
     }
 
     private void AssertInsideWindow(AutomationElement label)

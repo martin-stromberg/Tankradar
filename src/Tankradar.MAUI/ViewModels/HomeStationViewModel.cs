@@ -47,6 +47,16 @@ public sealed class HomeStationViewModel : BaseViewModel
     public string Name => Item.Name;
 
     /// <summary>
+    /// Der klein darunter angezeigte Stammdatenname; leer, wenn er dem Namen entspricht.
+    /// </summary>
+    public string SubName => Item.SubName;
+
+    /// <summary>
+    /// Gibt an, ob der Stammdatenname angezeigt wird.
+    /// </summary>
+    public bool HasSubName => Item.HasSubName;
+
+    /// <summary>
     /// Die Entfernung als Text; leer, wenn kein Standort vorliegt.
     /// </summary>
     public string DistanceText => Item.DistanceText;
@@ -127,6 +137,11 @@ public sealed class HomeStationViewModel : BaseViewModel
         get
         {
             var parts = new List<string> { Name };
+            if (HasSubName)
+            {
+                parts.Add(SubName);
+            }
+
             if (HasDistance)
             {
                 parts.Add(DistanceText);

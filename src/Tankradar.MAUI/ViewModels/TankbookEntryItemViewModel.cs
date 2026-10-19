@@ -48,6 +48,7 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
             ? TankbookEntryTexts.FormatDistanceLine(distance)
             : string.Empty;
         ConsumptionText = TankbookEntryTexts.GetConsumptionLine(overview);
+        ConsumptionNote = TankbookEntryTexts.GetConsumptionNote(overview);
         NoteText = TankbookEntryTexts.FormatNote(entry.Note);
         KindText = showKind ? TankbookEntryTexts.GetKindLabel(entry.Kind) : string.Empty;
         EntryHint = TankbookEntryTexts.FormatEntryHint(entry);
@@ -129,6 +130,19 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
     public string ConsumptionText { get; }
 
     /// <summary>
+    /// Der Hinweis zur Annahme hinter einem Verbrauch ab Startstand; leer bei anderen Vorgängen.
+    /// </summary>
+    public string ConsumptionNote { get; }
+
+    /// <summary>
+    /// Gibt an, ob der Hinweis zur Annahme hinter dem Verbrauch angezeigt wird.
+    /// </summary>
+    public bool HasConsumptionNote
+    {
+        get { return ConsumptionNote.Length > 0; }
+    }
+
+    /// <summary>
     /// Die Notiz in Anführungszeichen; leer ohne Notiz.
     /// </summary>
     public string NoteText { get; }
@@ -147,6 +161,14 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
     public bool IsPartial
     {
         get { return Overview.Entry.IsPartial; }
+    }
+
+    /// <summary>
+    /// Die Kennzeichnung der Teilbetankung („Teilbetankung“ bzw. „Teilladung“ bei Strom).
+    /// </summary>
+    public string PartialBadgeText
+    {
+        get { return TankbookEntryTexts.GetPartialBadge(Overview.Entry.Kind); }
     }
 
     /// <summary>

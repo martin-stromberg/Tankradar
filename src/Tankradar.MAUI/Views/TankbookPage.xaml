@@ -187,6 +187,8 @@
                         <Border Style="{StaticResource TankbookCard}">
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Label Text="{Binding Name}"
+                                       MaxLines="2"
+                                       LineBreakMode="TailTruncation"
                                        Style="{StaticResource headline-md}"
                                        TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                        AutomationId="Tankbook.Vehicle.Name" />

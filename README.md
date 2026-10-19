@@ -10,7 +10,12 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Stand: Entwicklungsschritt 15 umgesetzt (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
+Stand: Entwicklungsschritt 15a umgesetzt (Version 0.1.20): Tankstellen zeigen überall die Marke vorn und den Namen der Quelle klein
+darunter (bei manchen Tankstellen ist er der Inhaber); in der Detailansicht lässt sich ein eigener Anzeigename vergeben, ändern und
+entfernen (lokal, überall bevorzugt, Teil der Sicherung; [ADR 0012](docs/adr/0012-station-display-name.md)). Die erste Volltankung
+eines Fahrzeugs liefert einen Verbrauch ab dem Start-Kilometerstand (Annahme: Tank beim Start voll), gekennzeichnet „ab Startstand“
+mit Hinweis; die Auswertung zeigt ihn schon mit einem vollen Vorgang (siehe [ADR 0009](docs/adr/0009-tankbook-entries.md),
+[ADR 0010](docs/adr/0010-tankbook-statistics.md)). Zuvor Schritt 15 (Version 0.1.19): lokale Sicherung und Wiederherstellung in den Optionen (Karte
 „Sicherung“) – Sicherung auf Wunsch als ZIP (Datenbank-Schnappschuss, Belegfotos, Manifest mit Prüfsummen), Liste mit Datum und
 Größe, Wiederherstellen nach Rückfrage (vollständige Prüfung, atomarer Austausch mit Rollback und Wiederaufnahme nach Absturz),
 Löschen nach Rückfrage, Teilen/Speichern über die Systemfunktion und Einspielen einer externen Datei; ältere Sicherungen werden
@@ -142,7 +147,8 @@ dotnet test Tankradar.sln
 
 Dies führt Unit-, Integrations- und E2E-Tests aus (der `pre-push`-Hook lässt die E2E-Tests standardmäßig aus,
 `PRE_PUSH_E2E=1` schaltet sie ein; in der PR-CI nach `staging` sind sie blockierend). Die E2E-Tests starten die App
-im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; Rückfall auf
+im Testmodus außerhalb des sichtbaren Bildschirms (Off-Screen), ohne den Vordergrund zu übernehmen; bedient wird nur über
+UI-Automation-Muster, nie über Fokus, Tastatur oder Maus, damit Eingaben des Anwenders nicht im Testfenster landen; Rückfall auf
 sichtbaren Betrieb per `TANKRADAR_E2E_WINDOW=foreground`. Der E2E-Test (`NavigationE2ETests`) startet die
 kompilierte Windows-App (`Tankradar.MAUI.exe`) über FlaUI und navigiert durch alle vier
 Navigationsbereiche; dafür muss `src/Tankradar.MAUI` zuvor für `net10.0-windows10.0.19041.0`

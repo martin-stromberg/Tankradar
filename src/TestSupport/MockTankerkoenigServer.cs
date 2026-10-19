@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
 namespace Tankradar.TestSupport;
@@ -41,19 +40,34 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public const string StationEpsilon = "55555555-5555-4555-8555-555555555555";
 
+    /// <summary>
+    /// Kennung der Teststation mit Inhabernamen (nur nach <see cref="AddOwnerNamedStation"/> vorhanden): Name „Klaus Heinrich“, Marke „Westfalen“, wenige hundert Meter von Berlin-Mitte.
+    /// </summary>
+    public const string StationZeta = "66666666-6666-4666-8666-666666666666";
+
+    /// <summary>
+    /// Kennung der ersten Teststation der Marke „JET“ (nur nach <see cref="AddSameBrandStations"/> vorhanden): Name „JET BERLIN HAUPTSTR. 1“.
+    /// </summary>
+    public const string StationJetMain = "77777777-7777-4777-8777-777777777777";
+
+    /// <summary>
+    /// Kennung der zweiten Teststation der Marke „JET“ im selben Ort (nur nach <see cref="AddSameBrandStations"/> vorhanden): Name „JET BERLIN NEBENWEG 22“.
+    /// </summary>
+    public const string StationJetSide = "88888888-8888-4888-8888-888888888888";
+
     private const double MaxRadiusKm = 25;
     private const double DefaultLatitude = 52.52;
     private const double DefaultLongitude = 13.405;
 
     private static readonly MockStation[] GenericStations =
     [
-        new(StationGamma, "Gamma Tankstelle", "GAMMA", "Gammaweg", "3", "13125", "Berlin", 52.5920, 13.4050, 1.899m, null, 1.659m, false, "Mo-Fr", "06:00:00", "22:00:00"),
-        new(StationDelta, "Delta Tankstelle", "DELTA", "Deltaallee", "4", "16225", "Eberswalde", 52.5200, 13.7300, 1.829m, 1.769m, 1.689m, true, "Mo-So", "00:00:00", "24:00:00"),
-        new(StationEpsilon, "Epsilon Tankstelle", "EPSILON", "Epsilonstraße", "5", "16515", "Oranienburg", 52.8800, 13.4050, 1.809m, 1.749m, 1.669m, true, "Mo-So", "00:00:00", "24:00:00"),
+        new(StationGamma, "Gamma Tankstelle", "", "Gammaweg", "3", "13125", "Berlin", 52.5920, 13.4050, 1.899m, null, 1.659m, false, "Mo-Fr", "06:00:00", "22:00:00"),
+        new(StationDelta, "Delta Tankstelle", "", "Deltaallee", "4", "16225", "Eberswalde", 52.5200, 13.7300, 1.829m, 1.769m, 1.689m, true, "Mo-So", "00:00:00", "24:00:00"),
+        new(StationEpsilon, "Epsilon Tankstelle", "", "Epsilonstraße", "5", "16515", "Oranienburg", 52.8800, 13.4050, 1.809m, 1.749m, 1.669m, true, "Mo-So", "00:00:00", "24:00:00"),
     ];
 
     private readonly List<MockStation> _generated = [];
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
     private readonly CancellationTokenSource _stop = new();
@@ -74,14 +88,8 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public MockTankerkoenigServer()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-
+        _listener = LoopbackHttpListener.Start(out var port);
         BaseUrl = new Uri($"http://127.0.0.1:{port}/json/");
-        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        _listener.Start();
         _loop = Task.Run(RunAsync);
     }
 
@@ -181,6 +189,37 @@ public sealed class MockTankerkoenigServer : IDisposable
     }
 
     /// <summary>
+    /// Fügt dem Mock die Tankstelle <see cref="StationZeta"/> hinzu, deren Name der Inhaber ist („Klaus Heinrich“) und deren Marke „Westfalen“ lautet
+    /// (wie bei Tankstellen, für die die Quelle den Inhaber als Namen liefert). Alle übrigen Teststationen liefern, wie viele echte Tankstellen, keine Marke.
+    /// </summary>
+    public void AddOwnerNamedStation()
+    {
+        lock (_gate)
+        {
+            if (_generated.All(station => station.Id != StationZeta))
+            {
+                _generated.Add(new MockStation(StationZeta, "Klaus Heinrich", "Westfalen", "Zetastraße", "6", "10117", "Berlin", 52.5230, 13.4080, 1.839m, 1.779m, 1.679m, true, "Mo-So", "00:00:00", "24:00:00"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fügt dem Mock die Tankstellen <see cref="StationJetMain"/> und <see cref="StationJetSide"/> hinzu: zwei Tankstellen derselben Marke „JET“ im selben Ort,
+    /// deren Quellname die Straße enthält (wie bei vielen echten Tankstellen); der Anzeigename ist bei beiden „JET“.
+    /// </summary>
+    public void AddSameBrandStations()
+    {
+        lock (_gate)
+        {
+            if (_generated.All(station => station.Id != StationJetMain))
+            {
+                _generated.Add(new MockStation(StationJetMain, "JET BERLIN HAUPTSTR. 1", "JET", "Hauptstraße", "1", "10115", "Berlin", 52.5210, 13.4060, 1.849m, 1.789m, 1.689m, true, "Mo-So", "00:00:00", "24:00:00"));
+                _generated.Add(new MockStation(StationJetSide, "JET BERLIN NEBENWEG 22", "JET", "Nebenweg", "22", "10115", "Berlin", 52.5215, 13.4065, 1.859m, 1.799m, 1.699m, true, "Mo-So", "00:00:00", "24:00:00"));
+            }
+        }
+    }
+
+    /// <summary>
     /// Fügt dem Mock zusätzliche Tankstellen hinzu (alle Sorten, alle innerhalb von etwa 3 km um Berlin-Mitte), z. B. für Tests mit großer Ergebnismenge.
     /// </summary>
     /// <param name="count">Die Anzahl der zusätzlichen Tankstellen.</param>
@@ -195,7 +234,7 @@ public sealed class MockTankerkoenigServer : IDisposable
                 var offset = (i % 20) * 0.0012;
                 var offsetLng = (i / 20 % 20) * 0.0018;
                 var e5 = 1.700m + ((i * 7 % 90) / 1000m);
-                _generated.Add(new MockStation(id, $"Station {i + 1:D3}", "GEN", "Generierte Straße", (i % 50 + 1).ToString(CultureInfo.InvariantCulture), "10115", "Berlin", 52.5000 + offset, 13.3900 + offsetLng, e5, e5 - 0.060m, e5 - 0.160m, false, "Mo-Fr", "06:00:00", "22:00:00"));
+                _generated.Add(new MockStation(id, $"Station {i + 1:D3}", string.Empty, "Generierte Straße", (i % 50 + 1).ToString(CultureInfo.InvariantCulture), "10115", "Berlin", 52.5000 + offset, 13.3900 + offsetLng, e5, e5 - 0.060m, e5 - 0.160m, false, "Mo-Fr", "06:00:00", "22:00:00"));
             }
         }
     }
@@ -274,7 +313,7 @@ public sealed class MockTankerkoenigServer : IDisposable
         var extra = detailed
             ? AroundTheClock + ",\"overrides\":[],\"state\":\"open\""
             : $",\"dist\":{Number(distance)}";
-        return "{\"id\":\"" + StationAlpha + "\",\"name\":\"Alpha Tankstelle\",\"brand\":\"ALPHA\",\"street\":\"Hauptstraße\",\"houseNumber\":\"1\",\"postCode\":\"10115\",\"place\":\"Berlin\",\"lat\":52.5201,\"lng\":13.4051,\"isOpen\":true,\"e5\":1.859,\"e10\":1.799,\"diesel\":1.699" + extra + "}";
+        return "{\"id\":\"" + StationAlpha + "\",\"name\":\"Alpha Tankstelle\",\"brand\":\"\",\"street\":\"Hauptstraße\",\"houseNumber\":\"1\",\"postCode\":\"10115\",\"place\":\"Berlin\",\"lat\":52.5201,\"lng\":13.4051,\"isOpen\":true,\"e5\":1.859,\"e10\":1.799,\"diesel\":1.699" + extra + "}";
     }
 
     private static string BetaJson(bool detailed, double distance)
@@ -282,7 +321,7 @@ public sealed class MockTankerkoenigServer : IDisposable
         var extra = detailed
             ? ",\"wholeDay\":false,\"openingTimes\":[{\"text\":\"Mo-Fr\",\"start\":\"06:00:00\",\"end\":\"22:00:00\"}],\"overrides\":[]"
             : $",\"dist\":{Number(distance)}";
-        return "{\"id\":\"" + StationBeta + "\",\"name\":\"Beta Tankstelle\",\"brand\":\"BETA\",\"street\":\"Nebenweg\",\"houseNumber\":\"22\",\"postCode\":\"10117\",\"place\":\"Berlin\",\"lat\":52.5301,\"lng\":13.4151,\"isOpen\":true,\"e5\":1.879,\"e10\":1.819,\"diesel\":false" + extra + "}";
+        return "{\"id\":\"" + StationBeta + "\",\"name\":\"Beta Tankstelle\",\"brand\":\"\",\"street\":\"Nebenweg\",\"houseNumber\":\"22\",\"postCode\":\"10117\",\"place\":\"Berlin\",\"lat\":52.5301,\"lng\":13.4151,\"isOpen\":true,\"e5\":1.879,\"e10\":1.819,\"diesel\":false" + extra + "}";
     }
 
     private static double DistanceKm(double lat1, double lng1, double lat2, double lng2)

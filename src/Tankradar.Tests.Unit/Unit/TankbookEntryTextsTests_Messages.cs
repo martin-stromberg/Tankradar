@@ -84,7 +84,7 @@ public class TankbookEntryTextsTests_Messages : BaseTest
     [Fact]
     public void PartialHint_MentionsFirstFullEntryAndCosts()
     {
-        Assert.Contains("erst ab dem ersten vollen Vorgang", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
+        Assert.Contains("beim ersten vollen Vorgang ab dem Start-Kilometerstand", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
         Assert.Contains("fließt in den nächsten vollen Vorgang ein", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
         Assert.Contains("Monatskosten", TankbookEntryTexts.PartialHint, StringComparison.Ordinal);
     }

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
 
 namespace Tankradar.TestSupport;
@@ -39,7 +38,7 @@ public sealed class MockNominatimServer : IDisposable
         ("eberswalde", "52.5200", "13.7300", "Eberswalde, Landkreis Barnim, Brandenburg, Deutschland"),
     ];
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
     private readonly Queue<string> _queuedBodies = new();
@@ -56,14 +55,8 @@ public sealed class MockNominatimServer : IDisposable
     /// </summary>
     public MockNominatimServer()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-
+        _listener = LoopbackHttpListener.Start(out var port);
         BaseUrl = new Uri($"http://127.0.0.1:{port}/");
-        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        _listener.Start();
         _loop = Task.Run(RunAsync);
     }
 

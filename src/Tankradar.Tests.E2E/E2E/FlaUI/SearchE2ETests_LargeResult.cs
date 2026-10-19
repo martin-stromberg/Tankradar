@@ -19,6 +19,11 @@ public class SearchE2ETests_LargeResult : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+
+            // Die Sortierung wird vor der großen Ergebnisliste gesucht: Danach ist der UI-Baum so groß, dass eine Suche über den ganzen Fensterbaum
+            // auf einem langsamen Runner in einen UIA-Timeout laufen kann. Für diesen Test gelten zudem großzügigere UIA-Zeitlimits.
+            var sortChip = WaitForAutomationId("Search.Sort.Name");
+            Automation.TransactionTimeout = TimeSpan.FromSeconds(60);
             Submit();
             WaitUntil(() => ReadTexts("Search.Station.Name").Count == PageSize, "Die erste Seite der Ergebnisliste wurde nicht angezeigt.");
             Assert.True(Exists("Search.ShowMore"));
@@ -27,7 +32,7 @@ public class SearchE2ETests_LargeResult : SearchE2ETestBase
             WaitUntil(() => ReadTexts("Search.Station.Name").Count == 2 * PageSize, "Die zweite Seite wurde nicht angezeigt.");
 
             var stopwatch = Stopwatch.StartNew();
-            SelectSort("Name");
+            SelectChip(sortChip, "Search.Sort.Name");
             WaitUntil(() => ReadTexts("Search.Station.Name").Count == PageSize, "Nach dem Sortierwechsel wird nicht die erste Seite angezeigt.");
             stopwatch.Stop();
 

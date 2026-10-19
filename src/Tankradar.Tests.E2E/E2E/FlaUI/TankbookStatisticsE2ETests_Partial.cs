@@ -22,7 +22,7 @@ public class TankbookStatisticsE2ETests_Partial : TankbookE2ETestBase
             Tankbook.CreateEntry("Alpha Tankstelle", "20", "1,859", string.Empty, "11000");
 
             Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
-            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 6,00");
+            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 2 Werte, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 8,00, ältester Wert ab Startstand berechnet");
         });
     }
 }

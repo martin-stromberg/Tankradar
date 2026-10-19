@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Text.RegularExpressions;
 
 namespace Tankradar.TestSupport;
@@ -16,7 +15,7 @@ public sealed class MockTileServer : IDisposable
     // Gültige 1x1-PNG-Datei (graublau); die Karte streckt sie auf die Kachelgröße.
     private static readonly byte[] Png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
 
-    private readonly HttpListener _listener = new();
+    private readonly HttpListener _listener;
     private readonly object _gate = new();
     private readonly List<string> _paths = [];
     private readonly List<string> _userAgents = [];
@@ -33,14 +32,8 @@ public sealed class MockTileServer : IDisposable
     /// </summary>
     public MockTileServer()
     {
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-
+        _listener = LoopbackHttpListener.Start(out var port);
         BaseUrl = new Uri($"http://127.0.0.1:{port}/");
-        _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        _listener.Start();
         _loop = Task.Run(RunAsync);
     }
 

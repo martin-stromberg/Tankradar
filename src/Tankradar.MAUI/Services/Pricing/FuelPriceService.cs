@@ -52,6 +52,15 @@ public interface IFuelPriceService
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns><see cref="PriceFailure.None"/>, wenn der Dienst erreichbar ist, sonst der Grund.</returns>
     Task<PriceFailure> CheckAvailabilityAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Vergibt, ändert oder entfernt den eigenen Anzeigenamen einer lokal bekannten Tankstelle. Ein leerer Name entfernt ihn.
+    /// </summary>
+    /// <param name="stationId">Die Kennung der Tankstelle (UUID).</param>
+    /// <param name="name">Der neue Name oder <see langword="null"/> bzw. leer zum Entfernen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Das Ergebnis; ein nicht lesbarer Speicher wird als Ausnahme durchgereicht.</returns>
+    Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -123,7 +132,8 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
                 _searchCache[key] = _timeProvider.GetUtcNow().UtcDateTime;
             }
 
-            var detailed = await WithKnownDetailsAsync(stations, cancellationToken).ConfigureAwait(false);
+            var withDetails = await WithKnownDetailsAsync(stations, cancellationToken).ConfigureAwait(false);
+            var detailed = await WithCustomNamesAsync(withDetails, cancellationToken).ConfigureAwait(false);
             var sorted = detailed.OrderBy(s => s.DistanceKm ?? double.MaxValue).ToList();
             return new StationSearchResult(FilterByFuelTypes(sorted, query.FuelTypes), PriceDataSource.Live, PriceFailure.None);
         }
@@ -159,7 +169,8 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
         {
             var station = await _client.GetDetailAsync(id, cancellationToken).ConfigureAwait(false);
             await TrySaveAsync([station], cancellationToken).ConfigureAwait(false);
-            return new StationDetailResult(station, PriceDataSource.Live, PriceFailure.None);
+            var named = await WithCustomNamesAsync([station], cancellationToken).ConfigureAwait(false);
+            return new StationDetailResult(named[0], PriceDataSource.Live, PriceFailure.None);
         }
         catch (PriceApiException ex)
         {
@@ -238,6 +249,14 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
     }
 
     /// <inheritdoc />
+    public async Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(stationId);
+        var id = Guid.TryParse(stationId, out var parsed) ? parsed.ToString("D") : stationId;
+        return await _repository.SetCustomNameAsync(id, name, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<PriceFailure> CheckAvailabilityAsync(CancellationToken cancellationToken = default)
     {
         if (!_connection.IsOnline)
@@ -279,6 +298,29 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Bekannte Tankstellendetails konnten nicht gelesen werden ({ExceptionType}).", ex.GetType().Name);
+            return stations;
+        }
+    }
+
+    /// <summary>
+    /// Ergänzt frisch abgerufene Tankstellen um die lokal gespeicherten eigenen Anzeigenamen (die Quelle kennt sie nicht).
+    /// Ein Lesefehler lässt die Anzeige ohne eigenen Namen; die abgerufenen Daten bleiben nutzbar.
+    /// </summary>
+    /// <param name="stations">Die abgerufenen Tankstellen.</param>
+    /// <param name="cancellationToken">Abbruchsignal.</param>
+    /// <returns>Die Tankstellen, soweit vergeben mit eigenem Anzeigenamen.</returns>
+    private async Task<IReadOnlyList<StationInfo>> WithCustomNamesAsync(IReadOnlyList<StationInfo> stations, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var names = await _repository.GetCustomNamesAsync(stations.Select(s => s.Id).ToList(), cancellationToken).ConfigureAwait(false);
+            return names.Count == 0
+                ? stations
+                : stations.Select(s => names.TryGetValue(s.Id, out var custom) ? s.WithCustomName(custom) : s).ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Eigene Anzeigenamen konnten nicht gelesen werden ({ExceptionType}).", ex.GetType().Name);
             return stations;
         }
     }

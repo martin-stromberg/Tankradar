@@ -68,4 +68,18 @@ public class TankbookEntryFormViewModelTests_Station : TankbookEntriesViewModelT
 
         Assert.Equal(["Alpha Tankstelle (Berlin)", "Alpha Tankstelle (Potsdam)"], viewModel.Form.KnownStations.Select(chip => chip.Label));
     }
+
+    /// <summary>
+    /// Prüft, dass zwei Tankstellen gleicher Marke im selben Ort durch Stammdatenname bzw. Straße unterscheidbar beschriftet sind.
+    /// </summary>
+    [Fact]
+    public async Task SameBrandSamePlace_LabelsIncludeMasterName()
+    {
+        await Fixture.AddFavoriteStationAsync(TankbookEntryFixture.AlphaStationId, "JET BERLIN HAUPTSTR. 1", "Berlin", brand: "JET");
+        await Fixture.AddFavoriteStationAsync("00000002-0000-4000-8000-000000000000", "JET BERLIN NEBENWEG 22", "Berlin", brand: "JET");
+        var vehicle = await CreateVehicleAsync();
+        var viewModel = await OpenAsync(vehicle.Id);
+
+        Assert.Equal(["JET · JET BERLIN HAUPTSTR. 1", "JET · JET BERLIN NEBENWEG 22"], viewModel.Form.KnownStations.Select(chip => chip.Label));
+    }
 }

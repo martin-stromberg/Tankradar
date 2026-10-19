@@ -169,4 +169,39 @@ public class MapMarkerBuilderTests_Markers : BaseTest
         var colors = Enum.GetValues<PriceLevel>().Select(MAUI.Resources.MapPalette.For).Select(color => color.ToArgbHex()).Distinct().ToList();
         Assert.Equal(Enum.GetValues<PriceLevel>().Length, colors.Count);
     }
+
+    /// <summary>
+    /// Prüft, dass die Beschreibung der Markierung zwei Tankstellen gleicher Marke durch die Adresse unterscheidbar macht.
+    /// </summary>
+    [Fact]
+    public void Build_SameBrand_DescriptionContainsAddress()
+    {
+        StationInfo Jet(int number, string street)
+        {
+            var template = StationFactory.CreateCustom(number, "JET BERLIN", 1, Now, null, true, (FuelType.SuperE5, 1.80m));
+            return new StationInfo
+            {
+                Id = template.Id,
+                Name = template.Name,
+                Brand = "JET",
+                Street = street,
+                HouseNumber = "1",
+                PostCode = "10115",
+                Place = "Berlin",
+                Latitude = template.Latitude,
+                Longitude = template.Longitude,
+                DistanceKm = template.DistanceKm,
+                Prices = template.Prices,
+            };
+        }
+
+        var items = Items(null, Jet(1, "Hauptstraße"), Jet(2, "Nebenweg"));
+        var markers = MapMarkerBuilder.Build(items, FuelType.SuperE5);
+
+        Assert.NotEqual(markers[0].Description, markers[1].Description);
+        Assert.All(markers, marker => Assert.StartsWith("JET, ", marker.Description, StringComparison.Ordinal));
+        Assert.Contains("Hauptstraße", markers[0].Description, StringComparison.Ordinal);
+        Assert.Equal("JET, Weg 1, Super E5 1,859 Euro pro Liter", MapTexts.FormatMarkerDescription("JET", "Super E5", "1,859 Euro pro Liter", "Weg 1"));
+        Assert.Equal("JET, Weg 1", MapTexts.FormatMarkerDescription("JET", string.Empty, string.Empty, "Weg 1"));
+    }
 }

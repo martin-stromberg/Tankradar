@@ -79,7 +79,7 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
             Tankbook.FillEntryForm(string.Empty, "40", "1,859", string.Empty, "10500");
             Tankbook.SaveEntryForm();
             Tankbook.CreateEntry("Zuhause", "30", "1,859", string.Empty, "11000");
-            Tankbook.WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            Tankbook.WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
             var stored = TankbookTestDatabase.ReadEntries(DatabasePath);
             Assert.NotNull(stored[0].StationId);
             Assert.Null(stored[1].StationId);
@@ -89,13 +89,13 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
             Tankbook.PressForEntry("TankbookEntry.Item.Edit", 0);
             Tankbook.Type("TankbookEntries.Form.Odometer", "11500");
             Tankbook.SaveEntryForm();
-            Tankbook.WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 3,00 L/100 km", "Noch kein Verbrauch: erster voller Vorgang");
+            Tankbook.WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 3,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
             Tankbook.WaitForStatistic("Fuel", "Average", "3,00");
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
             Tankbook.Press("TankbookEntry.Item.DeleteConfirm");
             Tankbook.WaitForTexts("TankbookEntry.Item.Station", "Alpha Tankstelle");
-            Tankbook.WaitForStatistic("Fuel", "Average", "–");
+            Tankbook.WaitForStatistic("Fuel", "Average", "8,00");
             Assert.Equal(1, TankbookTestDatabase.CountEntries(DatabasePath));
         });
     }

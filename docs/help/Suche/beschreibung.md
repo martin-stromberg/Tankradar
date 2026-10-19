@@ -60,7 +60,7 @@ Tankatlas ermittelt Ihren Standort erst beim Tippen auf **Suchen** und nur, wenn
 
 Je Tankstelle zeigt die Liste:
 
-- den Namen und die Entfernung (z. B. „1,4 km“), wenn die Quelle eine Position liefert,
+- den Namen und die Entfernung (z. B. „1,4 km“), wenn die Quelle eine Position liefert; als Name erscheint Ihr eigener Name, sonst die Marke, sonst der Name der Quelle, der dann klein darunter steht, wenn er abweicht (bei manchen Tankstellen liefert die Quelle den Inhaber als Namen). Die Sortierung nach **Name** folgt dem angezeigten Namen,
 - die Adresszeile (z. B. „Hauptstraße 1, 10115 Berlin“), soweit die Quelle sie liefert,
 - „Geöffnet“ oder „Geschlossen“, wenn die Quelle den Status liefert,
 - je in den **Optionen** gewählter Spritsorte den hervorgehobenen Preis (z. B. „1,859 €“) und das Alter („vor X Min.“; ab 60 Minuten in Amber), in der Reihenfolge, die Sie in den **Optionen** festgelegt haben,

@@ -42,7 +42,7 @@ public class BackupServiceTests_Create : IDisposable
         Assert.Equal(1, manifest.Counts.Favorites);
         Assert.Equal(1, manifest.Counts.Stations);
         Assert.Equal(1, manifest.Counts.Prices);
-        Assert.EndsWith("_AddTankbookEntryDetails", manifest.DatabaseMigration, StringComparison.Ordinal);
+        Assert.EndsWith("_AddStationCustomName", manifest.DatabaseMigration, StringComparison.Ordinal);
         var photoEntry = manifest.Files.Single(f => f.Path.StartsWith("receipts/", StringComparison.Ordinal));
         Assert.Equal(BackupTestArchive.Hash(Photo), photoEntry.Sha256);
         Assert.Equal(Photo.Length, photoEntry.Size);

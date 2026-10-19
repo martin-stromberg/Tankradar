@@ -53,11 +53,13 @@ public static class TankbookEntryFactory
     /// <param name="fuelKind">Die Kraftstoffart des Fahrzeugs.</param>
     /// <param name="startConsumption">Der optionale Startverbrauch.</param>
     /// <param name="today">Das Referenzdatum; Standard ist der 05.10.2026.</param>
+    /// <param name="fromStart">Gibt an, ob der Start-Kilometerstand (10.000 km) die Basis des ersten vollen Vorgangs der Startart ist.</param>
     /// <returns>Die Auswertung.</returns>
-    public static TankbookStatistics Statistics(IEnumerable<TankbookEntry> entries, VehicleFuelKind fuelKind = VehicleFuelKind.Diesel, decimal? startConsumption = null, DateTime? today = null)
+    public static TankbookStatistics Statistics(IEnumerable<TankbookEntry> entries, VehicleFuelKind fuelKind = VehicleFuelKind.Diesel, decimal? startConsumption = null, DateTime? today = null, bool fromStart = false)
     {
         var vehicle = new Vehicle(1, "Golf", fuelKind, 10_000, startConsumption);
-        var overviews = ConsumptionCalculator.Calculate(entries).Reverse().ToList();
+        var startKind = fuelKind == VehicleFuelKind.Electric ? TankbookEntryKind.Electricity : TankbookEntryKind.Fuel;
+        var overviews = ConsumptionCalculator.Calculate(entries, fromStart ? vehicle.StartOdometerKm : null, startKind).Reverse().ToList();
         return TankbookStatisticsCalculator.Calculate(vehicle, overviews, today ?? new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Unspecified));
     }
 }

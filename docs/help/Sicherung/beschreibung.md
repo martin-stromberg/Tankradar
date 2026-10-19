@@ -11,9 +11,11 @@ Mit der Sicherung schützen Sie Ihre Daten vor Verlust, etwa beim Gerätewechsel
 - Ihre Einstellungen (Spritsorten, Standortnutzung, Ansicht, Sortierung, „In der Nähe“),
 - Favoritengruppen und Favoriten mit Notiz und Priorität,
 - Fahrzeuge sowie Tank- und Ladevorgänge samt Belegfotos,
-- die gespeicherten Tankstellen und Preisstände mit ihren Zeitstempeln.
+- die gespeicherten Tankstellen (auch Ihre eigenen Anzeigenamen) und Preisstände mit ihren Zeitstempeln.
 
 **Nicht enthalten** sind der Zugangsschlüssel zum Preisdienst, Kartenkacheln und Ihr Standort (er wird nie gespeichert). Nach einer Wiederherstellung gelten gesicherte Preise anhand ihres Alters als veraltet und werden bei Bedarf neu abgerufen.
+
+**Datenschutz:** Auch ohne Ihren Standort lassen sich aus den gespeicherten Tankstellen und Preisständen mit Abrufzeit Gegenden und Zeiten ableiten, in denen Sie gesucht haben. Sicherungen sind nicht verschlüsselt; teilen Sie eine Sicherungsdatei nur mit Personen oder an Orten, denen Sie diese Angaben anvertrauen.
 
 ## Die Karte „Sicherung“ in den Optionen
 
@@ -29,7 +31,7 @@ Vor dem Überschreiben fragt Tankatlas im Eintrag nach und nennt Datum, App-Vers
 
 - **Ältere Sicherung:** wird eingespielt und auf den aktuellen Stand gebracht; Ihre Daten bleiben erhalten.
 - **Neuere Sicherung:** wird abgelehnt mit „Diese Sicherung stammt aus einer neueren Version von Tankatlas (…). Bitte aktualisiere die App. Deine Daten wurden nicht verändert.“
-- **Ungültige oder beschädigte Datei:** wird abgelehnt mit „Die Datei ist keine gültige Tankatlas-Sicherung oder beschädigt. Deine Daten wurden nicht verändert.“ Das gilt auch für Dateien mit unzulässigen Inhalten, falschen Prüfsummen, fehlenden Tabellen oder Spalten oder unbrauchbaren Werten in der Datenbank (zum Beispiel ein ungültiges Datum).
+- **Ungültige oder beschädigte Datei:** wird abgelehnt mit „Die Datei ist keine gültige Tankatlas-Sicherung oder beschädigt. Deine Daten wurden nicht verändert.“ Das gilt auch für Dateien mit unzulässigen Inhalten, falschen Prüfsummen, fehlenden Tabellen oder Spalten oder unbrauchbaren Werten in der Datenbank (zum Beispiel ein ungültiges Datum oder unplausibel lange Texte, etwa ein eigener Tankstellenname mit mehr als 60 Zeichen).
 
 ## Löschen, Teilen, Einspielen
 

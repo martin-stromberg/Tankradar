@@ -46,6 +46,11 @@ public static class BackupDatabasePreparer
         {
             return new BackupPreparation(BackupResult.Failed);
         }
+        catch (SourceFileException)
+        {
+            // Ein Fehler beim Lesen der Sicherungsdatenbank (auch Ein-/Ausgabe- oder Öffnungsfehler einer abgeschnittenen Datei) liegt an der Datei, nicht an der Umgebung.
+            return new BackupPreparation(BackupResult.InvalidFile);
+        }
         catch (SqliteException ex) when (IsEnvironmentError(ex))
         {
             return new BackupPreparation(BackupResult.Failed);
@@ -66,14 +71,20 @@ public static class BackupDatabasePreparer
         var sourceConnectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Mode = SqliteOpenMode.ReadOnly, Pooling = false }.ToString();
 
         // Die Sicherungsdatenbank wird ausschließlich gelesen und nie migriert; eine Zeile in ihrer Migrationssperre kann deshalb nichts blockieren.
-        await using (var source = new SqliteConnection(sourceConnectionString))
+        try
         {
+            await using var source = new SqliteConnection(sourceConnectionString);
             await source.OpenAsync(cancellationToken).ConfigureAwait(false);
             if (!await IsIntegrityOkAsync(source, cancellationToken).ConfigureAwait(false)
                 || !string.Equals(await ReadLatestMigrationAsync(source, cancellationToken).ConfigureAwait(false), manifest.DatabaseMigration, StringComparison.Ordinal))
             {
                 return new BackupPreparation(BackupResult.InvalidFile);
             }
+        }
+        catch (SqliteException)
+        {
+            // Nur die Sicherungsdatenbank wird hier gelesen: Jeder SQLite-Fehler stammt aus der Datei.
+            return new BackupPreparation(BackupResult.InvalidFile);
         }
 
         try
@@ -105,7 +116,9 @@ public static class BackupDatabasePreparer
         await using (var reference = new SqliteConnection(referenceConnectionString))
         {
             await reference.OpenAsync(cancellationToken).ConfigureAwait(false);
-            if (!await IsIntegrityOkAsync(reference, cancellationToken).ConfigureAwait(false) || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false))
+            if (!await IsIntegrityOkAsync(reference, cancellationToken).ConfigureAwait(false)
+                || await HasForeignKeyViolationAsync(reference, cancellationToken).ConfigureAwait(false)
+                || await HasOversizedTextAsync(reference, cancellationToken).ConfigureAwait(false))
             {
                 return new BackupPreparation(BackupResult.InvalidFile);
             }
@@ -155,13 +168,13 @@ public static class BackupDatabasePreparer
         foreach (var table in tables)
         {
             var columns = await ReadStringsAsync(reference, "SELECT name FROM pragma_table_xinfo($name) WHERE hidden = 0 ORDER BY cid", table, cancellationToken).ConfigureAwait(false);
-            var present = await ReadStringsAsync(source, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = $name", table, cancellationToken).ConfigureAwait(false);
+            var present = await ReadSourceStringsAsync(source, "SELECT name FROM sqlite_master WHERE type = 'table' AND name = $name", table, cancellationToken).ConfigureAwait(false);
             if (columns.Count == 0 || present.Count != 1)
             {
                 return false;
             }
 
-            var sourceColumns = await ReadStringsAsync(source, "SELECT name FROM pragma_table_xinfo($name) WHERE hidden = 0", table, cancellationToken).ConfigureAwait(false);
+            var sourceColumns = await ReadSourceStringsAsync(source, "SELECT name FROM pragma_table_xinfo($name) WHERE hidden = 0", table, cancellationToken).ConfigureAwait(false);
             if (columns.Any(column => !sourceColumns.Contains(column, StringComparer.OrdinalIgnoreCase)))
             {
                 return false;
@@ -192,9 +205,9 @@ public static class BackupDatabasePreparer
             parameters.Add(parameter);
         }
 
-        await using var reader = await select.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await ExecuteSourceReaderAsync(select, cancellationToken).ConfigureAwait(false);
         var rows = 0;
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        while (await ReadSourceRowAsync(reader, cancellationToken).ConfigureAwait(false))
         {
             for (var index = 0; index < parameters.Count; index++)
             {
@@ -294,6 +307,42 @@ public static class BackupDatabasePreparer
         return "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
     }
 
+    private static async Task<List<string>> ReadSourceStringsAsync(SqliteConnection source, string sql, string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await ReadStringsAsync(source, sql, name, cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqliteException ex)
+        {
+            throw new SourceFileException(ex);
+        }
+    }
+
+    private static async Task<SqliteDataReader> ExecuteSourceReaderAsync(SqliteCommand select, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await select.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqliteException ex)
+        {
+            throw new SourceFileException(ex);
+        }
+    }
+
+    private static async Task<bool> ReadSourceRowAsync(SqliteDataReader reader, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (SqliteException ex)
+        {
+            throw new SourceFileException(ex);
+        }
+    }
+
     private static async Task<List<string>> ReadStringsAsync(SqliteConnection connection, string sql, string? name, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -320,6 +369,24 @@ public static class BackupDatabasePreparer
         return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
     }
 
+    private static async Task<bool> HasOversizedTextAsync(SqliteConnection reference, CancellationToken cancellationToken)
+    {
+        // Tabellen- und Spaltennamen stammen aus der festen Liste der App; geprüft wird die bereits in die Referenz kopierte Fassung (Länge in Zeichen und, gegen eingebettete NUL-Zeichen, in UTF-8-Bytes).
+        foreach (var (table, column, maxLength) in BackupTextLimits.Columns)
+        {
+            await using var command = reference.CreateCommand();
+            command.CommandText = $"SELECT 1 FROM {Quote(table)} WHERE length({Quote(column)}) > $max OR length(CAST({Quote(column)} AS BLOB)) > $maxBytes LIMIT 1";
+            command.Parameters.AddWithValue("$max", maxLength);
+            command.Parameters.AddWithValue("$maxBytes", maxLength * 4);
+            if (await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static async Task<bool> HasForeignKeyViolationAsync(SqliteConnection connection, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
@@ -334,5 +401,16 @@ public static class BackupDatabasePreparer
         command.CommandText = "PRAGMA integrity_check";
         var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
         return string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Kennzeichnet einen Fehler, der beim Lesen der Sicherungsdatenbank auftrat; er liegt an der Datei und nicht an der Umgebung.
+    /// </summary>
+    private sealed class SourceFileException : Exception
+    {
+        public SourceFileException(SqliteException inner)
+            : base("Die Sicherungsdatenbank konnte nicht gelesen werden.", inner)
+        {
+        }
     }
 }

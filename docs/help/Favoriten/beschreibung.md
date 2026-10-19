@@ -19,6 +19,7 @@ In der Gruppenübersicht und in der Gruppenansicht lassen sich Tankstellen weder
 
 - Die Übersicht ist die [Startseite](../Startseite/index.md): je Gruppe Name, Beschreibung, Zahl der Tankstellen und die Tankstellen mit Preisen; **Neue Gruppe** legt eine Gruppe mit optionaler Beschreibung an.
 - Die Gruppenansicht (**Gruppe öffnen**) bietet **Gruppe bearbeiten** (umbenennen, Beschreibung ändern) und **Gruppe löschen** (nach Rückfrage; die Tankstellen bleiben bekannt und in anderen Gruppen erhalten).
+- Tankstellen erscheinen überall mit ihrem Anzeigenamen: eigener Name, sonst Marke, sonst Name der Quelle, mit dem Stammdatennamen klein darunter (siehe [Detailansicht](../Tankstellendetails/index.md)). Die Reihenfolge ohne Priorität folgt diesem Namen.
 - In der Gruppenansicht öffnet das Antippen des Tankstellennamens oder **Details öffnen** die Detailansicht der Tankstelle.
 - Zu jeder Tankstelle der Gruppe lassen sich über **Notiz und Priorität** eine Notiz und eine Priorität (Keine, Niedrig, Mittel, Hoch) hinterlegen; die Liste ist nach Priorität geordnet (hoch zuerst), dann nach Namen.
 

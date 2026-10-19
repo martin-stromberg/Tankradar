@@ -38,7 +38,8 @@ public static class MapMarkerBuilder
                 station.Longitude!.Value,
                 levels[index],
                 line?.PriceText ?? string.Empty,
-                MapTexts.FormatMarkerDescription(station.Name, fuelLabel, line?.PriceSpokenText ?? string.Empty)));
+                MapTexts.FormatMarkerDescription(station.Name, fuelLabel, line?.PriceSpokenText ?? string.Empty,
+                    station.AddressText)));
         }
 
         return markers;

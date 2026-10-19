@@ -31,6 +31,8 @@
                        SemanticProperties.HeadingLevel="Level1"
                        AutomationId="TankbookEntriesPage.Headline" />
                 <Label Text="{Binding VehicleName}"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
                        IsVisible="{Binding HasVehicle}"
                        Style="{StaticResource headline-md}"
                        TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
@@ -128,6 +130,7 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="vm:IChoiceOption">
                                 <Button Text="{Binding Label}"
+                                        LineBreakMode="TailTruncation"
                                         Command="{Binding SelectCommand}"
                                         Style="{StaticResource FuelKindChip}"
                                         SemanticProperties.Hint="{Binding SelectionHint}"
@@ -576,7 +579,7 @@
                         <Border Style="{StaticResource TankbookCard}">
                             <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                                    <Label Text="{Binding StationName}"
+                                    <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
                                            Style="{StaticResource headline-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="TankbookEntry.Item.Station" />
@@ -597,7 +600,7 @@
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                            AutomationId="TankbookEntry.Item.UnitPrice" />
                                 </Grid>
-                                <Label Text="{x:Static texts:TankbookEntryTexts.PartialBadge}"
+                                <Label Text="{Binding PartialBadgeText}"
                                        IsVisible="{Binding IsPartial}"
                                        Style="{StaticResource body-sm}"
                                        TextColor="{StaticResource ColorTertiaryAmber}"
@@ -619,7 +622,12 @@
                                 <Label Text="{Binding ConsumptionText}"
                                        Style="{StaticResource FieldLabel}"
                                        AutomationId="TankbookEntry.Item.Consumption" />
-                                <Label Text="{Binding NoteText}"
+                                <Label Text="{Binding ConsumptionNote}"
+                                       IsVisible="{Binding HasConsumptionNote}"
+                                       Style="{StaticResource body-sm}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       AutomationId="TankbookEntry.Item.ConsumptionNote" />
+                                <Label Text="{Binding NoteText}" MaxLines="6" LineBreakMode="TailTruncation"
                                        IsVisible="{Binding HasNote}"
                                        Style="{StaticResource body-sm}"
                                        FontAttributes="Italic"

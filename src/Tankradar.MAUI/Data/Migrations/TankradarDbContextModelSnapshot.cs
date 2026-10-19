@@ -126,6 +126,10 @@ namespace Tankradar.MAUI.Data.Migrations
                     b.Property<string>("Brand")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CustomName")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("DetailsUpdatedUtc")
                         .HasColumnType("TEXT");
 

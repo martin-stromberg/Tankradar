@@ -12,7 +12,7 @@ public static class BackupTestArchive
     /// <summary>
     /// Eine beliebige, nur für Namenstests gedachte Datenbankmigration.
     /// </summary>
-    public const string DefaultMigration = "20261011170920_AddTankbookEntryDetails";
+    public const string DefaultMigration = "20261018094636_AddStationCustomName";
 
     /// <summary>
     /// Schreibt ein Archiv mit Manifest, Datenbank und Fotos.

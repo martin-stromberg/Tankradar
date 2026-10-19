@@ -33,7 +33,7 @@ public class TankbookStatisticsE2ETests_Flow : TankbookE2ETestBase
             Tankbook.WaitForStatistic("Fuel", "MonthCostLabel", $"Gesamtkosten {monthName}");
             Tankbook.WaitForStatistic("Fuel", "MonthQuantity", "70,00 L getankt");
             Tankbook.WaitForStatistic("Fuel", "AverageSource", "Berechnet aus vollen Vorgängen");
-            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 1 Wert, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 6,00");
+            Tankbook.WaitForStatistic("Fuel", "ConsumptionChartSummary", "Verlauf, 2 Werte, zuletzt 6,00 L/100 km, niedrigster 6,00, höchster 8,00, ältester Wert ab Startstand berechnet");
             Tankbook.WaitForStatistic("Fuel", "CostChartSummary", "Monatskosten, 1 Wert, zuletzt 130,13 €, niedrigster 130,13 €, höchster 130,13 €");
             var month = DateTime.Now.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("de-DE"));
             Tankbook.WaitForTexts("TankbookEntries.Statistics.Fuel.Month", $"{month}: 130,13 €");

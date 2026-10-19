@@ -65,5 +65,15 @@ public class FuelPriceServiceTests_StorageFailure : BaseTest
         {
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyDictionary<string, string>> GetCustomNamesAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        }
+
+        public Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(StationNameResult.NotFound);
+        }
     }
 }

@@ -102,11 +102,11 @@
                             <VerticalStackLayout Spacing="{StaticResource space-sm}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}" Padding="{StaticResource space-xs}">
                                     <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
-                                        <Label Text="{Binding Name}"
+                                        <Label Text="{Binding Name}" MaxLines="2" LineBreakMode="TailTruncation"
                                                Style="{StaticResource headline-md}"
                                                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                                AutomationId="Favorites.Group.Name" />
-                                        <Label Text="{Binding Description}"
+                                        <Label Text="{Binding Description}" MaxLines="4" LineBreakMode="TailTruncation"
                                                IsVisible="{Binding HasDescription}"
                                                Style="{StaticResource body-md}"
                                                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
@@ -174,7 +174,7 @@
                                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                SemanticProperties.HeadingLevel="Level2"
                                AutomationId="Nearby.Heading" />
-                        <Label Text="{Binding Description}"
+                        <Label Text="{Binding Description}" MaxLines="4" LineBreakMode="TailTruncation"
                                Style="{StaticResource body-sm}"
                                TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
                     </VerticalStackLayout>
