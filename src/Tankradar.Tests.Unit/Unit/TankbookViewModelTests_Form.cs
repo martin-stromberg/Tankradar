@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -17,7 +18,7 @@ public class TankbookViewModelTests_Form : BaseTest
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;

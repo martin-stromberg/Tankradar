@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Tankbook;
 
@@ -36,6 +37,8 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     /// <param name="photoStore">Die Ablage der Belegfotos (Anzeige der Belege).</param>
     /// <param name="form">Das Formular zum Erfassen und Korrigieren.</param>
     /// <param name="statistics">Der Bereich „Auswertung“.</param>
+    /// <param name="export">Der Bereich „Export“.</param>
+    /// <param name="restoreNotifier">Meldet, dass die Daten aus einer Sicherung wiederhergestellt wurden; die Seite wird dann neu geladen.</param>
     /// <param name="navigator">Schließt die Seite, wenn das Fahrzeug nicht mehr existiert.</param>
     /// <param name="announcer">Sagt Rückfragen und Meldungen über die Sprachausgabe an.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
@@ -45,6 +48,8 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         IReceiptPhotoStore photoStore,
         TankbookEntryFormViewModel form,
         TankbookStatisticsViewModel statistics,
+        TankbookExportViewModel export,
+        IRestoreNotifier restoreNotifier,
         ITankbookNavigator navigator,
         IScreenReaderAnnouncer announcer,
         ILogger<TankbookEntriesViewModel> logger)
@@ -57,6 +62,8 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         _logger = logger;
         Form = form;
         Statistics = statistics;
+        Export = export;
+        restoreNotifier.Restored += OnRestored;
         Form.Saved += OnFormSaved;
         Title = TankbookEntryTexts.PageTitle;
         LastTask = Task.CompletedTask;
@@ -77,6 +84,11 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     /// Der Bereich „Auswertung“ des Fahrzeugs.
     /// </summary>
     public TankbookStatisticsViewModel Statistics { get; }
+
+    /// <summary>
+    /// Der Bereich „Export“ des Fahrzeugs.
+    /// </summary>
+    public TankbookExportViewModel Export { get; }
 
     /// <summary>
     /// Das Fahrzeug; <see langword="null"/>, solange es nicht geladen ist.
@@ -222,6 +234,14 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     public ICommand AddEntryCommand { get; }
 
     /// <summary>
+    /// Die Kennung des angezeigten Fahrzeugs; <see langword="null"/>, solange keines gewählt ist.
+    /// </summary>
+    public long? VehicleId
+    {
+        get { return _vehicleId; }
+    }
+
+    /// <summary>
     /// Übernimmt die Kennung des Fahrzeugs aus der Shell-Navigation.
     /// </summary>
     /// <param name="query">Die Navigationsparameter.</param>
@@ -243,6 +263,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         _vehicleId = vehicleId;
         Form.Cancel();
         Statistics.Reset();
+        Export.Reset();
         Vehicle = null;
         Entries = [];
         IsLoaded = false;
@@ -276,16 +297,18 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
             {
                 Vehicle = null;
                 Entries = [];
+                Export.SetVehicle(null);
                 Form.Cancel();
                 StatusMessage = TankbookEntryTexts.VehicleNotFound;
                 _announcer.Announce(StatusMessage);
-                await _navigator.CloseAsync().ConfigureAwait(true);
+                await CloseAsync(vehicleId).ConfigureAwait(true);
                 return;
             }
 
             var overviews = await _entryService.GetEntriesAsync(vehicleId).ConfigureAwait(true);
             var stations = await _entryService.GetKnownStationsAsync().ConfigureAwait(true);
             Vehicle = vehicle;
+            Export.SetVehicle(vehicle);
             Form.SetKnownStations(stations);
             Entries = overviews
                 .Select(overview => new TankbookEntryItemViewModel(
@@ -314,6 +337,19 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private async Task CloseAsync(long vehicleId)
+    {
+        try
+        {
+            await _navigator.CloseAsync(vehicleId).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Die Seite bleibt ohne Fahrzeug stehen (Schaltflächen ausgeblendet); sie schließt beim nächsten Erscheinen.
+            _logger.LogWarning("Die Seite der Vorgänge konnte nicht geschlossen werden ({ExceptionType}).", ex.GetType().Name);
         }
     }
 
@@ -391,6 +427,11 @@ public sealed class TankbookEntriesViewModel : BaseViewModel, IQueryAttributable
     }
 
     private void OnFormSaved(object? sender, EventArgs e)
+    {
+        LastTask = LoadAsync();
+    }
+
+    private void OnRestored(object? sender, EventArgs e)
     {
         LastTask = LoadAsync();
     }

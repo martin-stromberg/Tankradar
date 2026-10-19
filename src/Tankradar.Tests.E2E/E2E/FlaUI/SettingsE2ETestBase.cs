@@ -161,19 +161,25 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
     protected static void WaitUntil(Func<bool> condition, string failureMessage)
     {
-        var deadline = DateTime.UtcNow + DefaultTimeout;
-        while (DateTime.UtcNow < deadline)
-        {
-            // Ein einzelner UIA-Timeout (langsamer Runner, große Baumsuche) wird begrenzt wiederholt; andere Fehler und Assertions bleiben unverändert sichtbar.
-            if (TransientRetry.Run(condition, failureMessage, maxAttempts: 3, pause: TimeSpan.FromSeconds(1)))
-            {
-                return;
-            }
+        WaitUntil(condition, failureMessage, DefaultTimeout);
+    }
 
-            Thread.Sleep(100);
+    /// <summary>
+    /// Wartet bis zur angegebenen Frist, bis die Bedingung erfüllt ist; schlägt andernfalls mit der Meldung fehl.
+    /// </summary>
+    /// <param name="condition">Die Bedingung.</param>
+    /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
+    /// <param name="timeout">Die Frist.</param>
+    protected static void WaitUntil(Func<bool> condition, string failureMessage, TimeSpan timeout)
+    {
+        // Ein UIA-Timeout (langsamer Runner, große Baumsuche) zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
+        // Andere Fehler und Assertions bleiben unverändert sichtbar.
+        if (TransientWait.Until(condition, timeout, out var lastTimeout))
+        {
+            return;
         }
 
-        Assert.Fail(failureMessage);
+        Assert.Fail(lastTimeout is null ? failureMessage : $"{failureMessage} Zuletzt antwortete die UI-Automation nicht rechtzeitig (UIA-Timeout): {lastTimeout.Message}");
     }
 
     /// <summary>

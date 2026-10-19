@@ -49,10 +49,18 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
     {
         var label = WaitForAutomationId(TankbookE2EDriver.StatisticsId("Fuel", element));
         EnsureVisible(label);
-        WaitUntil(
-            () => label.BoundingRectangle.Height <= fontSizePixels * 2.0,
-            $"Die Zahl '{element}' ist {label.BoundingRectangle.Height} Pixel hoch (erlaubt {fontSizePixels * 2.0:0}, zwei Zeilen wären mindestens doppelt so hoch wie eine): Sie bricht um.");
-        AssertInsideWindow(label);
+        EnsureFullyVisible(label, fontSizePixels);
+
+        // Ein nur teilweise sichtbares Element meldet nur die sichtbare Höhe; deshalb muss die Höhe stabil mindestens eine Schriftzeile betragen
+        // und das Element vollständig im Fenster liegen (Härtung H1 aus der Abnahme von Schritt 15a).
+        var bounds = ReadStableBounds(label);
+        Assert.True(
+            bounds.Height >= fontSizePixels,
+            $"Die Zahl '{element}' ist nur {bounds.Height} Pixel hoch (mindestens eine Schriftzeile von {fontSizePixels:0} Pixel erwartet): Sie ist nicht vollständig sichtbar.");
+        Assert.True(
+            bounds.Height <= fontSizePixels * 2.0,
+            $"Die Zahl '{element}' ist {bounds.Height} Pixel hoch (erlaubt {fontSizePixels * 2.0:0}, zwei Zeilen wären mindestens doppelt so hoch wie eine): Sie bricht um.");
+        AssertInsideWindow(bounds);
     }
 
     /// <summary>
@@ -108,10 +116,72 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
         return bounds.Width > 0 && bounds.Height > 0;
     }
 
-    private void AssertInsideWindow(AutomationElement label)
+    /// <summary>
+    /// Verschiebt den nächsten senkrecht scrollbaren Bereich in kleinen Schritten (UI-Automation-Muster, keine Mausräder), bis das Element mit mindestens der
+    /// Höhe einer Schriftzeile vollständig im Fenster liegt.
+    /// </summary>
+    /// <param name="label">Das Element.</param>
+    /// <param name="minimumHeight">Die kleinste erwartete Höhe in Pixeln.</param>
+    private void EnsureFullyVisible(AutomationElement label, double minimumHeight)
+    {
+        global::FlaUI.Core.Patterns.IScrollPattern? scroller = null;
+        for (var parent = label.Parent; parent is not null && scroller is null; parent = parent.Parent)
+        {
+            if (parent.Patterns.Scroll.TryGetPattern(out var scroll) && scroll.VerticallyScrollable.ValueOrDefault)
+            {
+                scroller = scroll;
+            }
+        }
+
+        for (var step = 0; step < 60; step++)
+        {
+            var bounds = ReadStableBounds(label);
+            var window = MainWindow.BoundingRectangle;
+            if (bounds.Height >= minimumHeight && bounds.Top >= window.Top - 1 && bounds.Bottom <= window.Bottom + 1)
+            {
+                return;
+            }
+
+            if (scroller is null)
+            {
+                break;
+            }
+
+            var down = bounds.Bottom > window.Bottom + 1 || bounds.Height < minimumHeight;
+            scroller.Scroll(
+                global::FlaUI.Core.Definitions.ScrollAmount.NoAmount,
+                down ? global::FlaUI.Core.Definitions.ScrollAmount.SmallIncrement : global::FlaUI.Core.Definitions.ScrollAmount.SmallDecrement);
+            Thread.Sleep(80);
+        }
+    }
+
+    /// <summary>
+    /// Liest die Maße des Elements, bis zwei aufeinanderfolgende Messungen gleich sind (Layout und Bildlauf sind dann abgeschlossen).
+    /// </summary>
+    /// <param name="label">Das Element.</param>
+    /// <returns>Die stabilen Maße.</returns>
+    private static System.Drawing.Rectangle ReadStableBounds(AutomationElement label)
+    {
+        var previous = label.BoundingRectangle;
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            Thread.Sleep(100);
+            var current = label.BoundingRectangle;
+            if (current == previous)
+            {
+                return current;
+            }
+
+            previous = current;
+        }
+
+        return previous;
+    }
+
+    private void AssertInsideWindow(System.Drawing.Rectangle bounds)
     {
         var window = MainWindow.BoundingRectangle;
-        var bounds = label.BoundingRectangle;
-        Assert.True(bounds.Left >= window.Left - 1 && bounds.Right <= window.Right + 1, $"Die Zahl ragt aus dem Fenster: {bounds} gegenüber {window}.");
+        Assert.True(bounds.Left >= window.Left - 1 && bounds.Right <= window.Right + 1, $"Die Zahl ragt seitlich aus dem Fenster: {bounds} gegenüber {window}.");
+        Assert.True(bounds.Top >= window.Top - 1 && bounds.Bottom <= window.Bottom + 1, $"Die Zahl ragt oben oder unten aus dem Fenster: {bounds} gegenüber {window}.");
     }
 }

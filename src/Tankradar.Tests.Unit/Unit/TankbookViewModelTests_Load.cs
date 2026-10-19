@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -33,7 +34,7 @@ public class TankbookViewModelTests_Load : BaseTest
     {
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Zoe", VehicleFuelKind.Electric, 12000, null));
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 84350, 5.4m));
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
 
         viewModel.OnAppearing();
         await viewModel.LastTask;
@@ -54,7 +55,7 @@ public class TankbookViewModelTests_Load : BaseTest
     [Fact]
     public async Task Load_NoVehicles_ShowsEmptyHint()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
         Assert.False(viewModel.ShowEmptyHint);
 
         await viewModel.LoadAsync();
@@ -71,7 +72,7 @@ public class TankbookViewModelTests_Load : BaseTest
     public async Task Load_StorageFailure_ShowsMessageWithoutLoggingNames()
     {
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Geheimauto", VehicleFuelKind.Petrol, 1, null));
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
         _fixture.Factory.FailingCreations = 1;
 
         await viewModel.LoadAsync();
@@ -89,7 +90,7 @@ public class TankbookViewModelTests_Load : BaseTest
     [Fact]
     public async Task Load_AfterFailure_AppearingAgain_HidesMessage()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer);
+        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
         _fixture.Factory.FailingCreations = 1;
         viewModel.OnAppearing();
         await viewModel.LastTask;

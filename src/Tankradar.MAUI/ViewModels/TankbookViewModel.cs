@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Tankbook;
 
@@ -41,12 +42,14 @@ public class TankbookViewModel : BaseViewModel
     /// <param name="navigator">Öffnet die Tank- und Ladevorgänge eines Fahrzeugs.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
     /// <param name="announcer">Sagt erscheinende Rückfragen und Fehlermeldungen über die Sprachausgabe an.</param>
-    public TankbookViewModel(IVehicleService service, ITankbookNavigator navigator, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer)
+    /// <param name="restoreNotifier">Meldet, dass die Daten aus einer Sicherung wiederhergestellt wurden; die Fahrzeuge werden dann neu geladen.</param>
+    public TankbookViewModel(IVehicleService service, ITankbookNavigator navigator, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer, IRestoreNotifier restoreNotifier)
     {
         _service = service;
         _navigator = navigator;
         _logger = logger;
         _announcer = announcer;
+        restoreNotifier.Restored += OnRestored;
         Title = TankbookTexts.PageTitle;
         FuelKindOptions = new[] { VehicleFuelKind.Petrol, VehicleFuelKind.Diesel, VehicleFuelKind.Electric, VehicleFuelKind.Hybrid }
             .Select(value => new ChoiceOptionViewModel<VehicleFuelKind>(value, TankbookTexts.GetFuelKindLabel(value), OnFuelKindSelected))
@@ -369,6 +372,11 @@ public class TankbookViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    private void OnRestored(object? sender, EventArgs e)
+    {
+        LastTask = LoadAsync();
     }
 
     private void BeginCreate()

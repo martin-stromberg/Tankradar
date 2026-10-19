@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Backup;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -19,7 +20,7 @@ public abstract class BackupViewModelTestBase : BaseTest
             new BackupFileInfo("tankatlas-backup-20261012-131500.zip", new DateTime(2026, 10, 12, 13, 15, 0, DateTimeKind.Utc), 1_258_291, "0.1.19", true),
             new BackupFileInfo("tankatlas-backup-20261011-080000.zip", new DateTime(2026, 10, 11, 8, 0, 0, DateTimeKind.Utc), 900, "0.1.18", true),
         ];
-        ViewModel = new BackupViewModel(Service, Picker, Sharer, Announcer, new ListLogger<BackupViewModel>());
+        ViewModel = new BackupViewModel(Service, Picker, Sharer, Restore, Announcer, new ListLogger<BackupViewModel>());
     }
 
     /// <summary>
@@ -39,6 +40,12 @@ public abstract class BackupViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeBackupSharer Sharer { get; } = new();
+
+    /// <summary>
+    /// Die Benachrichtigung nach einer Wiederherstellung.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected RestoreNotifier Restore { get; } = new();
 
     /// <summary>
     /// Die Sprachausgabe.

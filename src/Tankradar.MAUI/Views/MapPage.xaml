@@ -312,8 +312,7 @@
 
             <VerticalStackLayout BindableLayout.ItemsSource="{Binding Stations}"
                                  IsVisible="{Binding IsListView}"
-                                 Spacing="{StaticResource space-sm}"
-                                 AutomationId="Search.Results">
+                                 Spacing="{StaticResource space-sm}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="search:StationListItem">
                         <Border Style="{StaticResource SearchCard}">

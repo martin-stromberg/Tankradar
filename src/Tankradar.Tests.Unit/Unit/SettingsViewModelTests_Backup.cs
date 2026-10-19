@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -14,7 +15,7 @@ public class SettingsViewModelTests_Backup : BaseTest
 
     private BackupViewModel CreateBackup()
     {
-        return new BackupViewModel(_service, new FakeBackupFilePicker(), new FakeBackupSharer(), new FakeScreenReaderAnnouncer(), new ListLogger<BackupViewModel>());
+        return new BackupViewModel(_service, new FakeBackupFilePicker(), new FakeBackupSharer(), new RestoreNotifier(), new FakeScreenReaderAnnouncer(), new ListLogger<BackupViewModel>());
     }
 
     /// <summary>
