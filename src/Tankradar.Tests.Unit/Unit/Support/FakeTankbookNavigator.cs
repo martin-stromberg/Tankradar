@@ -15,7 +15,10 @@ public sealed class FakeTankbookNavigator : ITankbookNavigator
     /// <summary>
     /// Die Zahl der Aufrufe von <see cref="CloseAsync"/>.
     /// </summary>
-    public int Closed { get; private set; }
+    public int Closed
+    {
+        get { return ClosedVehicles.Count; }
+    }
 
     /// <summary>
     /// Die Kennungen der Fahrzeuge, deren Seite geschlossen werden sollte.
@@ -37,7 +40,6 @@ public sealed class FakeTankbookNavigator : ITankbookNavigator
     /// <inheritdoc />
     public Task CloseAsync(long vehicleId)
     {
-        Closed++;
         ClosedVehicles.Add(vehicleId);
         return FailOnClose ? Task.FromException(new InvalidOperationException("Die Seite lässt sich nicht schließen.")) : Task.CompletedTask;
     }

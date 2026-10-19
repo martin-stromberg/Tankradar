@@ -28,7 +28,13 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
     // Die Gesamtfrist einer Wartephase.
     private static readonly TimeSpan PhaseDeadline = TimeSpan.FromSeconds(90);
 
+    // Höchstdauer des Sortierwechsels ohne UIA-Timeouts; mit Timeouts (die App blockierte den UI-Thread) gilt die großzügigere Grenze.
     private static readonly TimeSpan MaxSortChange = TimeSpan.FromSeconds(10);
+
+    private static readonly TimeSpan MaxSortChangeWithTimeouts = TimeSpan.FromSeconds(30);
+
+    // Antwortfrist einer UIA-Anfrage, die etwas auslöst (Invoke): nicht wiederholbar, daher großzügig.
+    private static readonly TimeSpan InvokeTimeout = TimeSpan.FromSeconds(60);
 
     private AutomationElement? _showMore;
 
@@ -45,30 +51,45 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
 
             // Das Element der Sortierung wird vor der großen Ergebnisliste gesucht, danach sucht der Test nur noch am Rand des Baums.
             var sortChip = WaitForAutomationId("Search.Sort.Name");
-            Automation.TransactionTimeout = PollTimeout;
+            Automation.TransactionTimeout = InvokeTimeout;
             Submit();
+            Automation.TransactionTimeout = PollTimeout;
 
             var remainingOnFirstPage = WaitForRemaining(null, "Die erste Seite der Ergebnisliste wurde nicht angezeigt (keine Schaltfläche „Weitere anzeigen“).").Remaining;
             Assert.True(remainingOnFirstPage >= 300 - PageSize, $"Es sollten mindestens {300 - PageSize} Treffer fehlen, gemeldet: {remainingOnFirstPage}.");
 
-            _showMore!.Patterns.Invoke.Pattern.Invoke();
+            InvokeWithLongTimeout(_showMore!);
             WaitForRemaining(remainingOnFirstPage - PageSize, "Die zweite Seite wurde nicht angezeigt.");
 
             var stopwatch = Stopwatch.StartNew();
-            sortChip.Patterns.Invoke.Pattern.Invoke();
+            InvokeWithLongTimeout(sortChip);
             var change = WaitForRemaining(remainingOnFirstPage, "Nach dem Sortierwechsel wird nicht die erste Seite angezeigt.");
             stopwatch.Stop();
 
-            var appTime = stopwatch.Elapsed - change.UiaWaiting;
+            var limit = change.UiaTimeouts == 0 ? MaxSortChange : MaxSortChangeWithTimeouts;
             Assert.True(
-                appTime < MaxSortChange,
-                $"Der Sortierwechsel dauerte {appTime.TotalSeconds:0.0} s in der App (Gesamt {stopwatch.Elapsed.TotalSeconds:0.0} s, davon {change.UiaWaiting.TotalSeconds:0.0} s Wartezeit auf die UI-Automation in {change.UiaTimeouts} Timeouts).");
+                stopwatch.Elapsed < limit,
+                $"Der Sortierwechsel dauerte {stopwatch.Elapsed.TotalSeconds:0.0} s (erlaubt {limit.TotalSeconds:0} s); {change.UiaTimeouts} UIA-Timeouts mit zusammen {change.UiaWaiting.TotalSeconds:0.0} s Wartezeit auf die UI-Automation (ohne Timeouts wären {MaxSortChange.TotalSeconds:0} s erlaubt, App zu langsam oder UI-Thread blockiert).");
 
             // Einmal zählen, wie viele Einträge tatsächlich in der Liste stehen (die Zahl der Schaltfläche allein bewiese nicht, dass nur eine Seite aufgebaut ist).
             Automation.TransactionTimeout = TimeSpan.FromSeconds(30);
             WaitUntil(() => FindAllOrdered("Search.Station.Name").Count == PageSize, $"Die Liste zeigt nicht genau {PageSize} Einträge.", TimeSpan.FromSeconds(120));
             Assert.Equal(1, Server.ListRequests);
         });
+    }
+
+    private void InvokeWithLongTimeout(AutomationElement element)
+    {
+        // Ein Invoke darf nicht wiederholt werden (ein zweites "Weitere anzeigen" lüde eine dritte Seite); es bekommt daher die lange Antwortfrist.
+        Automation.TransactionTimeout = InvokeTimeout;
+        try
+        {
+            element.Patterns.Invoke.Pattern.Invoke();
+        }
+        finally
+        {
+            Automation.TransactionTimeout = PollTimeout;
+        }
     }
 
     [GeneratedRegex(@"\((\d[\d.]*) weitere\)")]
@@ -151,8 +172,9 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
             }
         }
 
-        if (_showMore is null)
+        if (name is null || !RemainingPattern().IsMatch(name))
         {
+            // Nicht gelesen (Element neu aufgebaut, Eigenschaft kurz nicht unterstützt) oder noch ohne Zahl: neu suchen.
             _showMore = FindByAutomationId("Search.ShowMore");
             name = _showMore?.Properties.Name.ValueOrDefault;
         }

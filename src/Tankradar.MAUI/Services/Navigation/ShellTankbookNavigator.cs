@@ -36,7 +36,7 @@ public sealed class ShellTankbookNavigator : ITankbookNavigator
         var shell = Shell.Current;
         var section = shell.Items
             .SelectMany(item => item.Items)
-            .FirstOrDefault(candidate => SelectPages(candidate.Navigation.NavigationStack.OfType<TankbookEntriesPage>(), page => page.BindingContext, vehicleId).Count > 0);
+            .FirstOrDefault(candidate => candidate.Navigation.NavigationStack.OfType<TankbookEntriesPage>().Any(page => ShowsVehicle(page.BindingContext, vehicleId)));
         if (section is null)
         {
             return;
@@ -44,7 +44,7 @@ public sealed class ShellTankbookNavigator : ITankbookNavigator
 
         var stack = section.Navigation.NavigationStack;
         if (ReferenceEquals(shell.CurrentItem?.CurrentItem, section) && stack[^1] is TankbookEntriesPage top
-            && SelectPages([top], page => page.BindingContext, vehicleId).Count == 1)
+            && ShowsVehicle(top.BindingContext, vehicleId))
         {
             await shell.GoToAsync("..").ConfigureAwait(true);
             return;
@@ -68,6 +68,11 @@ public sealed class ShellTankbookNavigator : ITankbookNavigator
     {
         ArgumentNullException.ThrowIfNull(pages);
         ArgumentNullException.ThrowIfNull(bindingContextOf);
-        return pages.Where(page => bindingContextOf(page) is TankbookEntriesViewModel { VehicleId: { } id } && id == vehicleId).ToList();
+        return pages.Where(page => ShowsVehicle(bindingContextOf(page), vehicleId)).ToList();
+    }
+
+    private static bool ShowsVehicle(object? bindingContext, long vehicleId)
+    {
+        return bindingContext is TankbookEntriesViewModel { VehicleId: { } id } && id == vehicleId;
     }
 }
