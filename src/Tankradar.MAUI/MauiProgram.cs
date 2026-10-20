@@ -13,6 +13,7 @@ using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
@@ -84,6 +85,7 @@ public static class MauiProgram
             Environment.GetEnvironmentVariable,
             () => new MauiBackupSharer()));
         AddGeocodingServices(builder.Services);
+        AddRoutingServices(builder.Services);
         AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
             Environment.GetEnvironmentVariable,
@@ -140,6 +142,49 @@ public static class MauiProgram
             var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
             return new NominatimGeocodingService(client, options, throttle, provider.GetRequiredService<ILogger<NominatimGeocodingService>>());
         });
+    }
+
+    private static void AddRoutingServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => RoutingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
+        services.AddSingleton(new RouteSearchOptions());
+        services.AddSingleton<IRoutingService>(provider =>
+        {
+            var options = provider.GetRequiredService<RoutingOptions>();
+
+            // Eigener HTTP-Client, eigene Drosselung und eigener Schlüssel: keine automatischen Weiterleitungen (der Schlüssel steht im Anfragekopf
+            // und darf nie an einen anderen Host gehen), begrenzte Antwortgröße.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                MaxResponseContentBufferSize = 4 * 1024 * 1024,
+            };
+            var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+#if WINDOWS
+            var store = ApiKeyStoreSelector.Create(
+                Environment.GetEnvironmentVariable,
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingResource));
+#else
+            var store = ApiKeyStoreSelector.Create(
+                Environment.GetEnvironmentVariable,
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingStorageKey));
+#endif
+            var keyProvider = new ApiKeyProvider(
+                store,
+                () => ApiKeyProvider.ReadBuildTimeKey(ApiKeyProvider.RoutingBuildKeyMetadataName),
+                Environment.GetEnvironmentVariable,
+                provider.GetRequiredService<ILogger<ApiKeyProvider>>(),
+                RoutingOptions.ApiKeyEnvironmentVariable);
+            return new OpenRouteServiceClient(
+                client,
+                keyProvider,
+                options,
+                provider.GetRequiredService<IDelay>(),
+                throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceClient>>());
+        });
+        services.AddSingleton<IRouteStationSearchService, RouteStationSearchService>();
+        services.AddSingleton<IRouteSearchService, RouteSearchService>();
     }
 
     private static void AddMapServices(IServiceCollection services)

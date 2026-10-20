@@ -240,6 +240,27 @@ public sealed class MockTankerkoenigServer : IDisposable
     }
 
     /// <summary>
+    /// Fügt dem Mock eine Tankstelle an einer vorgegebenen Position hinzu (z. B. an definiertem Abstand zu einer Mock-Route).
+    /// </summary>
+    /// <param name="id">Die Kennung (UUID).</param>
+    /// <param name="name">Der Name der Tankstelle.</param>
+    /// <param name="latitude">Der Breitengrad.</param>
+    /// <param name="longitude">Der Längengrad.</param>
+    /// <param name="e5">Preis Super E5.</param>
+    /// <param name="e10">Preis Super E10.</param>
+    /// <param name="diesel">Preis Diesel.</param>
+    public void AddStationAt(string id, string name, double latitude, double longitude, decimal? e5, decimal? e10, decimal? diesel)
+    {
+        lock (_gate)
+        {
+            if (_generated.All(station => station.Id != id))
+            {
+                _generated.Add(new MockStation(id, name, string.Empty, "Routenstraße", "1", "16515", "Oranienburg", latitude, longitude, e5, e10, diesel, true, "Mo-So", "00:00:00", "24:00:00"));
+            }
+        }
+    }
+
+    /// <summary>
     /// Legt die Preise fest, die <c>prices.php</c> für eine Tankstelle liefert (überschreibt nur diesen Endpunkt; <see langword="null"/> ergibt <c>false</c>).
     /// </summary>
     /// <param name="stationId">Die Kennung der Tankstelle.</param>
