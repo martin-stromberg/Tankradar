@@ -188,7 +188,7 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
 - `TANKATLAS_TEST_BACKUP_IMPORT` – Pfad einer Sicherungsdatei, die „Sicherung aus Datei einspielen“ ohne Systemdialog liefert
   (ohne Wert gilt die Auswahl als abgebrochen); „Teilen“ kopiert im Testmodus nach `<Datenverzeichnis>/test-shared/`,
-- `TANKRADAR_ROUTING_URL` und `TANKRADAR_ROUTE_API_KEY` – Adresse und Schlüssel eines Routingdienstes (in Tests der lokale
+- `TANKRADAR_ROUTING_URL` und `TANKRADAR_ROUTING_TEST_API_KEY` – Adresse und Schlüssel eines Routingdienstes (in Tests der lokale
   `MockOpenRouteServiceServer`; ohne Adresse wird im Testmodus keine Route berechnet),
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).

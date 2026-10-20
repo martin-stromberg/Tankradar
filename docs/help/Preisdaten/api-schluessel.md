@@ -75,4 +75,4 @@ Die Routensuche (Schritt 17) braucht einen eigenen Schlüssel von <https://openr
 - **Windows-Paket:** enthält den Schlüssel nie (öffentlich herunterladbar). `scripts/package-windows.ps1` und die Aktion `build-and-package` leeren die Routing-Variablen
   und blenden `routing.local.props` aus; `scripts/validate-workflows.py` prüft das. Der iOS-Build erhält das Secret `ROUTING_API_KEY` (`TANKRADAR_ROUTING_API_KEY`).
 - **Ohne Schlüssel:** Die Routensuche meldet „Routensuche nicht verfügbar“; alle anderen Funktionen laufen weiter.
-- **Tests:** nur `TANKRADAR_ROUTE_API_KEY` im Testmodus (getrennt von der Build-Variablen), Mock `MockOpenRouteServiceServer`, nie ein echter Schlüssel.
+- **Tests:** nur `TANKRADAR_ROUTING_TEST_API_KEY` im Testmodus (getrennt von der Build-Variablen), Mock `MockOpenRouteServiceServer`, nie ein echter Schlüssel.

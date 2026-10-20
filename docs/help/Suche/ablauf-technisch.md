@@ -135,5 +135,5 @@ AutomationIds: `Search.Mode.Route`, `Search.Route.StartKind.CurrentLocation|Addr
 `Search.RouteDistance.{1|2|5|10}`, `Search.Route.Summary`, `Search.Route.Progress`, `Search.Attribution.Routing`, `Search.Station.RouteOffset`, `Map.Destination`.
 
 Testmodus: `TANKRADAR_ROUTING_URL` (Adresse des Mocks `MockOpenRouteServiceServer`; ohne Adresse wird die Routenberechnung verweigert) und
-`TANKRADAR_ROUTE_API_KEY` (nur im Testmodus). Tests rufen nie Produktivendpunkte. Datenschutz: Route, Orte und Positionen bleiben im Arbeitsspeicher
+`TANKRADAR_ROUTING_TEST_API_KEY` (nur im Testmodus). Tests rufen nie Produktivendpunkte. Datenschutz: Route, Orte und Positionen bleiben im Arbeitsspeicher
 des `MapViewModel`; es gibt keine Migration.

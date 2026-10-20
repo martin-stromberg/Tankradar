@@ -38,7 +38,7 @@ public static class TestDataPaths
     /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Routingdienst vorgibt.
     /// </summary>
-    public const string RouteApiKeyEnvironmentVariable = "TANKRADAR_ROUTE_API_KEY";
+    public const string RoutingTestApiKeyEnvironmentVariable = "TANKRADAR_ROUTING_TEST_API_KEY";
 
     /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen festen Standort im Format <c>breite,länge</c> (invariante Kultur) vorgibt.

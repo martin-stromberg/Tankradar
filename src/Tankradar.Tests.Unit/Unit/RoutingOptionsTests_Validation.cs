@@ -112,7 +112,7 @@ public class RoutingOptionsTests_Validation : BaseTest
     public void EnvironmentVariables_AreSeparateFromPriceService()
     {
         Assert.Equal("TANKRADAR_ROUTING_URL", RoutingOptions.BaseUrlEnvironmentVariable);
-        Assert.Equal("TANKRADAR_ROUTE_API_KEY", RoutingOptions.ApiKeyEnvironmentVariable);
+        Assert.Equal("TANKRADAR_ROUTING_TEST_API_KEY", RoutingOptions.ApiKeyEnvironmentVariable);
         Assert.NotEqual(TestDataPaths.PriceApiKeyEnvironmentVariable, RoutingOptions.ApiKeyEnvironmentVariable);
     }
 }

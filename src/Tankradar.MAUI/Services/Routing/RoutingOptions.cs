@@ -21,7 +21,7 @@ public sealed class RoutingOptions
     /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen API-Schlüssel vorgibt (wird nie gespeichert).
     /// </summary>
-    public const string ApiKeyEnvironmentVariable = TestDataPaths.RouteApiKeyEnvironmentVariable;
+    public const string ApiKeyEnvironmentVariable = TestDataPaths.RoutingTestApiKeyEnvironmentVariable;
 
     private static readonly Uri DefaultUri = new Uri(DefaultBaseUrl);
     private static readonly string UnknownVersionUserAgent = AppIdentity.BuildUserAgent(null);

@@ -21,7 +21,7 @@ public class ApiKeyProviderTests_Routing : BaseTest
             () => _buildKey,
             name => _environment.GetValueOrDefault(name),
             NullLogger<ApiKeyProvider>.Instance,
-            TestDataPaths.RouteApiKeyEnvironmentVariable);
+            TestDataPaths.RoutingTestApiKeyEnvironmentVariable);
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public class ApiKeyProviderTests_Routing : BaseTest
 
         Assert.Null(await CreateProvider().GetApiKeyAsync());
 
-        _environment[TestDataPaths.RouteApiKeyEnvironmentVariable] = "routing-schluessel";
+        _environment[TestDataPaths.RoutingTestApiKeyEnvironmentVariable] = "routing-schluessel";
 
         Assert.Equal("routing-schluessel", await CreateProvider().GetApiKeyAsync());
         Assert.Equal(0, _store.SetCount);
@@ -60,7 +60,7 @@ public class ApiKeyProviderTests_Routing : BaseTest
     [Fact]
     public async Task GetApiKeyAsync_RoutingVariableOutsideTestMode_IsIgnored()
     {
-        _environment[TestDataPaths.RouteApiKeyEnvironmentVariable] = "routing-schluessel";
+        _environment[TestDataPaths.RoutingTestApiKeyEnvironmentVariable] = "routing-schluessel";
 
         Assert.Null(await CreateProvider().GetApiKeyAsync());
     }

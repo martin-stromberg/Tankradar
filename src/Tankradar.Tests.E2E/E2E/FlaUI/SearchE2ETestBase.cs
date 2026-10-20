@@ -108,7 +108,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
 
         if (routingCredential is not null)
         {
-            environment[TestDataPaths.RouteApiKeyEnvironmentVariable] = routingCredential;
+            environment[TestDataPaths.RoutingTestApiKeyEnvironmentVariable] = routingCredential;
         }
 
         return environment;
