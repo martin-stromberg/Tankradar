@@ -193,6 +193,12 @@ public sealed class OpenRouteServiceClient : IRoutingService
         return RoutingResult.Fail(failure);
     }
 
+    /// <summary>
+    /// Liest die Wartezeit aus <c>Retry-After</c>. Nur die Sekundenform wird ausgewertet (auf <see cref="MaxRetryAfter"/> gedeckelt);
+    /// die HTTP-Datumsform wird bewusst ignoriert (es gilt dann die Standardwartezeit), weil sie eine Uhr voraussetzt und der Dienst Sekunden liefert.
+    /// </summary>
+    /// <param name="response">Die Antwort mit Status 429.</param>
+    /// <returns>Die gedeckelte Wartezeit oder <see langword="null"/>, wenn keine Sekundenangabe vorliegt.</returns>
     private static TimeSpan? GetRetryAfter(HttpResponseMessage response)
     {
         var delta = response.Headers.RetryAfter?.Delta;

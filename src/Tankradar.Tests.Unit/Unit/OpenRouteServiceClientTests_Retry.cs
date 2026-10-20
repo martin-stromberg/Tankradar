@@ -68,6 +68,25 @@ public class OpenRouteServiceClientTests_Retry : OpenRouteServiceClientTestBase
         Assert.Equal([TimeSpan.FromSeconds(10)], Delay.Delays);
     }
 
+    /// <summary>
+    /// Prüft, dass die HTTP-Datumsform von Retry-After ignoriert wird und die Standardwartezeit gilt.
+    /// </summary>
+    [Fact]
+    public async Task GetRouteAsync_TooManyRequestsWithRetryAfterDate_UsesDefaultDelay()
+    {
+        Handler.Respond(() =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent("{}") };
+            response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(DateTimeOffset.UtcNow.AddSeconds(8));
+            return response;
+        }).RespondWith(HttpStatusCode.OK, RouteBody());
+
+        var result = await CreateClient().GetRouteAsync(Start, Destination);
+
+        Assert.Equal(RoutingFailure.None, result.Failure);
+        Assert.Equal([TimeSpan.FromSeconds(1)], Delay.Delays);
+    }
+
     private static HttpResponseMessage TooManyRequests(TimeSpan retryAfter)
     {
         var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent("{}") };

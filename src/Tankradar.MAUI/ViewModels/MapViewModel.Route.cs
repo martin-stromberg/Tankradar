@@ -355,7 +355,12 @@ public partial class MapViewModel
             return;
         }
 
-        await RunGuardedSearchAsync(ExecuteRouteSearchAsync, isRoute: true).ConfigureAwait(true);
+        await RunGuardedSearchAsync(ExecuteRouteSearchAsync, LogRouteSearchFailure, () => RouteProgressText = null).ConfigureAwait(true);
+    }
+
+    private void LogRouteSearchFailure(Exception ex)
+    {
+        _logger.LogWarning("Die Routensuche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
     }
 
     private async Task ExecuteRouteSearchAsync(CancellationTokenSource cancellation)

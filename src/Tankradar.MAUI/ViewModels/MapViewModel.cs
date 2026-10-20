@@ -515,10 +515,15 @@ public partial class MapViewModel : BaseViewModel
             return;
         }
 
-        await RunGuardedSearchAsync(cancellation => RunSearchAsync(_radiusKm, cancellation.Token), isRoute: false).ConfigureAwait(true);
+        await RunGuardedSearchAsync(cancellation => RunSearchAsync(_radiusKm, cancellation.Token), LogSearchFailure).ConfigureAwait(true);
     }
 
-    private async Task RunGuardedSearchAsync(Func<CancellationTokenSource, Task> work, bool isRoute)
+    private void LogSearchFailure(Exception ex)
+    {
+        _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+    }
+
+    private async Task RunGuardedSearchAsync(Func<CancellationTokenSource, Task> work, Action<Exception> logFailure, Action? onFinished = null)
     {
         var cancellation = new CancellationTokenSource();
         _searchCancellation = cancellation;
@@ -535,14 +540,7 @@ public partial class MapViewModel : BaseViewModel
         catch (Exception ex) when (IsCurrent(cancellation))
         {
             // Nur der Typ wird protokolliert: Ausnahmetexte könnten Orte oder Positionen enthalten.
-            if (isRoute)
-            {
-                _logger.LogWarning("Die Routensuche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
-            }
-            else
-            {
-                _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
-            }
+            logFailure(ex);
 
             ClearResult();
             StatusMessage = SearchTexts.SearchFailed;
@@ -552,10 +550,7 @@ public partial class MapViewModel : BaseViewModel
             if (IsCurrent(cancellation))
             {
                 _searchCancellation = null;
-                if (isRoute)
-                {
-                    RouteProgressText = null;
-                }
+                onFinished?.Invoke();
 
                 IsBusy = false;
                 cancellation.Dispose();

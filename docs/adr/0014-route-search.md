@@ -61,7 +61,7 @@ Beschränkung auf ausdrücklich ausgelöste Suchen begrenzt.
 - `POST {BaseUrl}v2/directions/driving-car` mit `coordinates` (Länge, Breite) und `instructions=false`; der Schlüssel steht im Kopf
   `Authorization`, nie in der Adresse. Ausgewertet werden `routes[0].geometry` (kodierte Polylinie, Genauigkeit 5) und nur diese; die Länge
   folgt aus den Punkten. Dekodierung und Geometrie sind selbst implementiert (kein Paket, keine Reflexion).
-- Zeitlimit 15 s je Versuch, bis zu 3 Versuche mit Wartezeit 1 s, 2 s; Mindestabstand 1,5 s (Kontingent). 429 (ein Retry-After in Sekunden verlängert die Wartezeit, gedeckelt auf 10 s) und 5xx sowie Zeitlimit
+- Zeitlimit 15 s je Versuch, bis zu 3 Versuche mit Wartezeit 1 s, 2 s; Mindestabstand 1,5 s (Kontingent). 429 (ein Retry-After in Sekunden verlängert die Wartezeit, gedeckelt auf 10 s; die HTTP-Datumsform wird ignoriert, es gilt die Standardwartezeit) und 5xx sowie Zeitlimit
   werden wiederholt (Ergebnis `QuotaExceeded` bzw. `Unreachable`); 401/403 `KeyRejected`; 404 oder Code 2009/2010 `RouteNotFound`;
   Code 2004 `RouteTooLong`; sonstige 4xx `Rejected`; unlesbar `InvalidResponse`. Weiterleitungen werden nicht verfolgt.
 - Orte: Wie die Adresssuche der erste Treffer (`limit=1`, ADR 0003); der aufgelöste Name steht in der Zusammenfassung, damit Fehltreffer
