@@ -131,7 +131,11 @@ Eine externe Datei ist nicht vertrauenswürdig. Geprüft wird in zwei Stufen (St
      Kennungen, Hausnummern, Postleitzahlen und Schlüssel 100, Notizen und Beschreibungen 2.000, `OpeningTimesJson` 20.000. Sie liegen
      großzügig über dem, was die App und die Quelle liefern, aber weit unter Größen, bei denen die Oberfläche versagt (ein präparierter
      eigener Name mit 200.000 Zeichen ließ „Vorgang erfassen“ abstürzen). Überlange Texte ergeben `InvalidFile`; der Bestand bleibt
-     unverändert. Kilometerstände und andere Zahlenwerte werden weiterhin nicht gemessen; die Anzeige kürzt lange Texte zusätzlich (ADR 0012).
+     unverändert. **Byteprüfung:** `length()` zählt bei Text nur bis zum ersten NUL-Zeichen; ein Wert wie `'a' || char(0) || <200.000 Zeichen>` hätte die Zeichenprüfung
+     deshalb passiert. Die SQL-Abfrage prüft daher zusätzlich `length(CAST(spalte AS BLOB))` gegen das Vierfache der Grenze (UTF-8 braucht höchstens vier Bytes je Zeichen), und zwar
+     auf der bereits kopierten Referenzdatenbank. Beim Kopieren liest der Neuaufbau den Text bis zum ersten NUL (ADO.NET); ein solcher Wert gelangt damit gekürzt (`a`) in die
+     Referenz, der Rest ist nicht übernommen, und die Byteprüfung bleibt als zweite Absicherung. Belegt ist das durch `BackupServiceTests_EmbeddedNul` (eigener Name, Name, Marke einer Tankstelle und Notiz eines Vorgangs):
+     Die Wiederherstellung endet ohne Absturz und ohne überlangen Wert, der übrige Bestand bleibt unverändert; zulässig sind Ablehnung (`InvalidFile`, Bestand unverändert) oder Annahme mit gekürztem Wert. Kilometerstände und andere Zahlenwerte werden weiterhin nicht gemessen; die Anzeige kürzt lange Texte zusätzlich (ADR 0012).
      Einstellungen mit unbekannten Werten fängt die App beim Lesen selbst ab (Rückfall auf Standardwerte).
   6. Erst die so aufgebaute Referenzdatenbank (Journalmodus `DELETE`, ohne `-wal`/`-shm`) ersetzt im Staging die entpackte Datei und
      wird per `RestoreSwap` (Journal und Rollback) eingespielt. Die **Zählwerte der Rückfrage** (Fahrzeuge, Vorgänge, Gruppen, Favoriten,

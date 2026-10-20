@@ -10,7 +10,12 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Stand: Entwicklungsschritt 15a umgesetzt (Version 0.1.20): Tankstellen zeigen überall die Marke vorn und den Namen der Quelle klein
+Stand: Entwicklungsschritt 16 umgesetzt (Version 0.1.21): Export des Tankbuchs auf der Seite „Tank- und Ladevorgänge“ – Bereich „Export“ mit Format
+(CSV oder PDF) und Zeitraum (alle Vorgänge, dieses Jahr, letztes Jahr, letzte 12 Monate, eigener Zeitraum); der Export entsteht nur auf Veranlassung und wird über
+Teilen/Speichern des Systems übergeben (im Testmodus Kopie nach `test-shared/`). CSV für deutschsprachige Tabellenkalkulationen (UTF-8 mit BOM, Semikolon,
+Dezimalkomma, Einheiten Liter bzw. kWh, Schutz vor Formelinjektion), PDF-Bericht mit Kennzahlen, Monatskosten und Vorgangstabelle durch einen eigenen
+PDF-Schreiber ohne neue Abhängigkeit ([ADR 0013](docs/adr/0013-tankbook-export.md)); geöffnete Vorgangs- und Fahrzeugseiten laden nach einer Wiederherstellung
+neu. Details unter [`docs/help/Tankbuch/`](docs/help/Tankbuch/index.md). Zuvor Schritt 15a (Version 0.1.20): Tankstellen zeigen überall die Marke vorn und den Namen der Quelle klein
 darunter (bei manchen Tankstellen ist er der Inhaber); in der Detailansicht lässt sich ein eigener Anzeigename vergeben, ändern und
 entfernen (lokal, überall bevorzugt, Teil der Sicherung; [ADR 0012](docs/adr/0012-station-display-name.md)). Die erste Volltankung
 eines Fahrzeugs liefert einen Verbrauch ab dem Start-Kilometerstand (Annahme: Tank beim Start voll), gekennzeichnet „ab Startstand“
@@ -225,6 +230,10 @@ Die App im erzeugten Zwischenstand wird direkt über die `.exe` gestartet, ohne 
 ```powershell
 .\review-versions\0.1.0_2026-09-28\bin\Tankradar.MAUI.exe
 ```
+
+Für Abnahmen wird der Zwischenstand nicht per `Start-Process` gestartet: Das Fenster käme in den Vordergrund und nähme dem Anwender Fokus und Tastatureingaben. Wer die
+App von Hand oder skriptgesteuert prüfen will, startet die `.exe` selbst (Doppelklick) oder verwendet den Testmodus ohne sichtbares Fenster (`TANKATLAS_TEST_DATA_PATH`
+mit `TANKATLAS_TEST_WINDOW=offscreen`, wie die E2E-Tests über `scripts/local-ci.ps1`).
 
 `review-versions/` ist per `.gitignore` von Commits ausgeschlossen und wird niemals versioniert.
 

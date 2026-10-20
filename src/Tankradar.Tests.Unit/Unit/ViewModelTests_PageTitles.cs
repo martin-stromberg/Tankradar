@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -17,7 +18,7 @@ public class ViewModelTests_PageTitles : BaseTest
     {
         using var vehicles = new VehicleFixture();
 
-        var viewModel = new TankbookViewModel(vehicles.Service, new FakeTankbookNavigator(), NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer());
+        var viewModel = new TankbookViewModel(vehicles.Service, new FakeTankbookNavigator(), NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer(), new RestoreNotifier());
 
         Assert.Equal("Tankbuch", viewModel.Title);
     }
@@ -37,6 +38,8 @@ public class ViewModelTests_PageTitles : BaseTest
             fixture.Photos,
             form,
             fixture.CreateStatistics(new FakeScreenReaderAnnouncer(), new Tankradar.TestSupport.RecordingLogger<TankbookStatisticsViewModel>()),
+            fixture.CreateExport(new FakeBackupSharer(), new FakeScreenReaderAnnouncer(), new Tankradar.TestSupport.RecordingLogger<TankbookExportViewModel>()),
+            fixture.Restore,
             new FakeTankbookNavigator(),
             new FakeScreenReaderAnnouncer(),
             NullLogger<TankbookEntriesViewModel>.Instance);

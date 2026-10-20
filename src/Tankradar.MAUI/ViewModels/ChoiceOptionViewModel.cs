@@ -49,8 +49,9 @@ public class ChoiceOptionViewModel<TValue> : ChoiceOptionBase
     /// <param name="value">Der Wert der Option.</param>
     /// <param name="label">Der Anzeigetext.</param>
     /// <param name="onSelected">Wird aufgerufen, wenn der Anwender die Option auswählt.</param>
-    public ChoiceOptionViewModel(TValue value, string label, Action<ChoiceOptionViewModel<TValue>> onSelected)
-        : base(label, value.ToString())
+    /// <param name="automationKey">Der Schlüssel für die AutomationId; Standard ist der Name des Werts.</param>
+    public ChoiceOptionViewModel(TValue value, string label, Action<ChoiceOptionViewModel<TValue>> onSelected, string? automationKey = null)
+        : base(label, automationKey ?? value.ToString())
     {
         Value = value;
         _onSelected = onSelected;

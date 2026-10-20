@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
+    <Compile Include="..\TestSupport\TransientWait.cs" Link="TestSupport\TransientWait.cs" />
     <Compile Include="..\TestSupport\E2EStartupPolicy.cs" Link="TestSupport\E2EStartupPolicy.cs" />
     <Compile Include="..\TestSupport\BackupTestArchive.cs" Link="TestSupport\BackupTestArchive.cs" />
     <Compile Include="..\TestSupport\RecordingLogger.cs" Link="TestSupport\RecordingLogger.cs" />

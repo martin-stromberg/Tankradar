@@ -17,6 +17,7 @@ public class BackupViewModel : BaseViewModel
     private readonly IBackupService _service;
     private readonly IBackupFilePicker _picker;
     private readonly IBackupSharer _sharer;
+    private readonly IRestoreNotifier _restoreNotifier;
     private readonly IScreenReaderAnnouncer _announcer;
     private readonly ILogger<BackupViewModel> _logger;
     private string? _statusMessage;
@@ -27,18 +28,21 @@ public class BackupViewModel : BaseViewModel
     /// <param name="service">Der Sicherungsdienst.</param>
     /// <param name="picker">Die Dateiauswahl für das Einspielen.</param>
     /// <param name="sharer">Die Weitergabe über die Systemfunktion.</param>
+    /// <param name="restoreNotifier">Meldet geöffneten Seiten, dass die Daten wiederhergestellt wurden.</param>
     /// <param name="announcer">Die Sprachausgabe für Meldungen.</param>
     /// <param name="logger">Logger.</param>
     public BackupViewModel(
         IBackupService service,
         IBackupFilePicker picker,
         IBackupSharer sharer,
+        IRestoreNotifier restoreNotifier,
         IScreenReaderAnnouncer announcer,
         ILogger<BackupViewModel> logger)
     {
         _service = service;
         _picker = picker;
         _sharer = sharer;
+        _restoreNotifier = restoreNotifier;
         _announcer = announcer;
         _logger = logger;
         CreateCommand = new Command(() => LastTask = CreateAsync(), () => IsNotBusy);
@@ -253,6 +257,7 @@ public class BackupViewModel : BaseViewModel
                 SetStatus(BackupTexts.Restored);
                 await LoadAsync().ConfigureAwait(true);
                 Restored?.Invoke(this, EventArgs.Empty);
+                _restoreNotifier.NotifyRestored();
                 return;
             }
 

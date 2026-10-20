@@ -55,6 +55,18 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
     protected RecordingLogger<TankbookStatisticsViewModel> StatisticsLogger { get; } = new();
 
     /// <summary>
+    /// Der Logger des Exports.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected RecordingLogger<TankbookExportViewModel> ExportLogger { get; } = new();
+
+    /// <summary>
+    /// Die Weitergabe des Exports.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakeBackupSharer Sharer { get; } = new();
+
+    /// <summary>
     /// Öffnet die Seite eines Fahrzeugs wie über die Shell-Navigation und wartet das Laden ab.
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
@@ -67,6 +79,8 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
             Fixture.Photos,
             Fixture.CreateForm(Picker, Announcer, FormLogger),
             Fixture.CreateStatistics(Announcer, StatisticsLogger),
+            Fixture.CreateExport(Sharer, Announcer, ExportLogger),
+            Fixture.Restore,
             Navigator,
             Announcer,
             Logger);
