@@ -117,13 +117,19 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
     }
 
     /// <summary>
-    /// Verschiebt den nächsten senkrecht scrollbaren Bereich in kleinen Schritten (UI-Automation-Muster, keine Mausräder), bis das Element mit mindestens der
-    /// Höhe einer Schriftzeile vollständig im Fenster liegt.
+    /// Durchläuft den nächsten senkrecht scrollbaren Bereich von oben nach unten in kleinen Schritten (UI-Automation-Muster, keine Mausräder), bis das Element
+    /// mit mindestens der Höhe einer Schriftzeile vollständig im Fenster liegt. Ein Element außerhalb des Sichtbereichs meldet leere Maße, aus denen sich die
+    /// Richtung nicht ablesen lässt; das frühere schrittweise Abwärtsscrollen fand eine darüber liegende Zahl nie (CI-Lauf 39379778082: Höhe 0).
     /// </summary>
     /// <param name="label">Das Element.</param>
     /// <param name="minimumHeight">Die kleinste erwartete Höhe in Pixeln.</param>
     private void EnsureFullyVisible(AutomationElement label, double minimumHeight)
     {
+        if (IsFullyVisible(label, minimumHeight))
+        {
+            return;
+        }
+
         global::FlaUI.Core.Patterns.IScrollPattern? scroller = null;
         for (var parent = label.Parent; parent is not null && scroller is null; parent = parent.Parent)
         {
@@ -133,26 +139,26 @@ public class TankbookStatisticsE2ETests_TileNumbers : TankbookE2ETestBase
             }
         }
 
-        for (var step = 0; step < 60; step++)
+        if (scroller is null)
         {
-            var bounds = ReadStableBounds(label);
-            var window = MainWindow.BoundingRectangle;
-            if (bounds.Height >= minimumHeight && bounds.Top >= window.Top - 1 && bounds.Bottom <= window.Bottom + 1)
+            return;
+        }
+
+        for (var percent = 0.0; percent <= 100.0; percent += 2.5)
+        {
+            scroller.SetScrollPercent(global::FlaUI.Core.Patterns.ScrollPatternConstants.NoScroll, percent);
+            if (IsFullyVisible(label, minimumHeight))
             {
                 return;
             }
-
-            if (scroller is null)
-            {
-                break;
-            }
-
-            var down = bounds.Bottom > window.Bottom + 1 || bounds.Height < minimumHeight;
-            scroller.Scroll(
-                global::FlaUI.Core.Definitions.ScrollAmount.NoAmount,
-                down ? global::FlaUI.Core.Definitions.ScrollAmount.SmallIncrement : global::FlaUI.Core.Definitions.ScrollAmount.SmallDecrement);
-            Thread.Sleep(80);
         }
+    }
+
+    private bool IsFullyVisible(AutomationElement label, double minimumHeight)
+    {
+        var bounds = ReadStableBounds(label);
+        var window = MainWindow.BoundingRectangle;
+        return bounds.Height >= minimumHeight && bounds.Top >= window.Top - 1 && bounds.Bottom <= window.Bottom + 1;
     }
 
     /// <summary>
