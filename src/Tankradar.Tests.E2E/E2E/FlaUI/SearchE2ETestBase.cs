@@ -7,8 +7,8 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// Basis für E2E-Tests der Umkreissuche: startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Test-Schlüssel und festem Teststandort
-/// (Berlin-Mitte); produktive Endpunkte und der echte Standortdienst werden nie berührt.
+/// Basis für E2E-Tests der Umkreissuche und der Routensuche: startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Mock-Routingdienst
+/// (OpenRouteService), Mock-Kachelserver, Test-Schlüsseln und festem Teststandort (Berlin-Mitte); produktive Endpunkte und der echte Standortdienst werden nie berührt.
 /// </summary>
 public abstract class SearchE2ETestBase : SettingsE2ETestBase
 {
@@ -26,16 +26,26 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
     /// </summary>
     protected SearchE2ETestBase()
-        : this(new MockTankerkoenigServer(), new MockNominatimServer(), new MockTileServer())
+        : this(MockOpenRouteServiceServer.AcceptedKey)
     {
     }
 
-    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding, MockTileServer tiles)
-        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl, tiles.BaseUrl))
+    /// <summary>
+    /// Startet die App mit neuen Mock-Servern und dem angegebenen Schlüssel des Routingdienstes.
+    /// </summary>
+    /// <param name="routingKey">Der Test-Schlüssel des Routingdienstes oder <see langword="null"/>, wenn die App keinen Schlüssel erhalten soll.</param>
+    protected SearchE2ETestBase(string? routingKey)
+        : this(new MockTankerkoenigServer(), new MockNominatimServer(), new MockTileServer(), new MockOpenRouteServiceServer(), routingKey)
+    {
+    }
+
+    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding, MockTileServer tiles, MockOpenRouteServiceServer routing, string? routingKey)
+        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl, tiles.BaseUrl, routing.BaseUrl, routingKey))
     {
         Server = server;
         Geocoding = geocoding;
         Tiles = tiles;
+        Routing = routing;
     }
 
     /// <summary>
@@ -54,6 +64,11 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     protected MockTileServer Tiles { get; }
 
     /// <summary>
+    /// Der Mock-Server des Routingdienstes (OpenRouteService).
+    /// </summary>
+    protected MockOpenRouteServiceServer Routing { get; }
+
+    /// <summary>
     /// Erstellt die Umgebungsvariablen der App für den Testmodus (Preisdienst-Adresse, Schlüssel und optional der Teststandort).
     /// </summary>
     /// <param name="baseUrl">Die Adresse des Preisdienstes.</param>
@@ -61,8 +76,10 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="apiKey">Der Test-Schlüssel.</param>
     /// <param name="geocodingUrl">Die Adresse des Ortssuchdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Adressauflösung).</param>
     /// <param name="tileUrl">Die Basisadresse des Kachelservers oder <see langword="null"/>, wenn keine gesetzt werden soll (die App ruft dann keine Kacheln ab).</param>
+    /// <param name="routingUrl">Die Adresse des Routingdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Routenberechnung).</param>
+    /// <param name="routingCredential">Der Test-Schlüssel des Routingdienstes oder <see langword="null"/>, wenn keiner gesetzt werden soll.</param>
     /// <returns>Die Umgebungsvariablen.</returns>
-    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null, Uri? tileUrl = null)
+    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null, Uri? tileUrl = null, Uri? routingUrl = null, string? routingCredential = null)
     {
         var environment = new Dictionary<string, string>
         {
@@ -82,6 +99,16 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         if (tileUrl is not null)
         {
             environment[TestDataPaths.TileUrlEnvironmentVariable] = tileUrl.ToString();
+        }
+
+        if (routingUrl is not null)
+        {
+            environment[TestDataPaths.RoutingUrlEnvironmentVariable] = routingUrl.ToString();
+        }
+
+        if (routingCredential is not null)
+        {
+            environment[TestDataPaths.RouteApiKeyEnvironmentVariable] = routingCredential;
         }
 
         return environment;
@@ -322,6 +349,60 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
+    /// Wählt die Suchart „Route“ und wartet, bis das Zielfeld erscheint.
+    /// </summary>
+    protected void SelectRouteMode()
+    {
+        SelectChip("Search.Mode.Route");
+        WaitForAutomationId("Search.Route.Destination.Input");
+    }
+
+    /// <summary>
+    /// Wählt die Startart „Adresse, Ort oder PLZ“ der Routensuche und trägt den Starttext ein.
+    /// </summary>
+    /// <param name="text">Der Starttext.</param>
+    protected void SetRouteStart(string text)
+    {
+        SelectChip("Search.Route.StartKind.Address");
+        WaitForAutomationId("Search.Route.Start.Input");
+        SetFieldValue("Search.Route.Start.Input", text);
+    }
+
+    /// <summary>
+    /// Trägt den Text in das Zielfeld der Routensuche ein und wartet, bis er dort steht.
+    /// </summary>
+    /// <param name="text">Der Zieltext.</param>
+    protected void SetRouteDestination(string text)
+    {
+        SetFieldValue("Search.Route.Destination.Input", text);
+    }
+
+    /// <summary>
+    /// Wählt die Abstandsstufe zur Route (Chip) in Kilometern („1“, „2“, „5“, „10“).
+    /// </summary>
+    /// <param name="key">Der Abstand in Kilometern.</param>
+    protected void SelectRouteDistance(string key)
+    {
+        SelectChip("Search.RouteDistance." + key);
+    }
+
+    /// <summary>
+    /// Wartet, bis die Zusammenfassung der Routensuche den Text zeigt.
+    /// </summary>
+    /// <param name="expected">Der erwartete Text.</param>
+    protected void WaitForRouteSummary(string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = FindByAutomationId("Search.Route.Summary")?.Properties.Name.ValueOrDefault ?? string.Empty;
+                return last == expected;
+            },
+            $"Die Zusammenfassung der Route lautet nicht '{expected}', zuletzt: '{last}'.");
+    }
+
+    /// <summary>
     /// Trägt den Text in das Adressfeld ein und wartet, bis er dort steht.
     /// </summary>
     /// <param name="text">Der Text.</param>
@@ -363,5 +444,6 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
         ((IDisposable?)Server)?.Dispose();
         ((IDisposable?)Geocoding)?.Dispose();
         ((IDisposable?)Tiles)?.Dispose();
+        ((IDisposable?)Routing)?.Dispose();
     }
 }
