@@ -1,5 +1,7 @@
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
+using Tankradar.MAUI.Models.Routing;
+using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -16,7 +18,7 @@ public abstract class MapViewModelTestBase : BaseTest
     /// </summary>
     protected MapViewModelTestBase()
     {
-        ViewModel = new MapViewModel(Settings, Location, Geocoding, Prices, Connection, Clock, Navigator, Logger);
+        ViewModel = new MapViewModel(Settings, Location, Geocoding, Prices, RouteSearch, Connection, Clock, Navigator, Logger);
     }
 
     /// <summary>
@@ -42,6 +44,12 @@ public abstract class MapViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeFuelPriceService Prices { get; } = new();
+
+    /// <summary>
+    /// Der Routensuchdienst.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakeRouteSearchService RouteSearch { get; } = new();
 
     /// <summary>
     /// Die Verbindungserkennung.
@@ -106,6 +114,24 @@ public abstract class MapViewModelTestBase : BaseTest
     protected static StationSearchResult Result(PriceDataSource source, PriceFailure failure, params StationInfo[] stations)
     {
         return new StationSearchResult(stations, source, failure);
+    }
+
+    /// <summary>
+    /// Erzeugt ein erfolgreiches Ergebnis der Routensuche (Berlin nach Oranienburg, rund 40 km).
+    /// </summary>
+    /// <param name="startName">Der aufgelöste Startname.</param>
+    /// <param name="destinationName">Der aufgelöste Zielname.</param>
+    /// <param name="stations">Die Tankstellen im Abstandsband.</param>
+    /// <returns>Das Ergebnis.</returns>
+    protected static RouteSearchResult RouteSuccess(string? startName, string? destinationName, params RouteStation[] stations)
+    {
+        return RouteSearchResult.Success(
+            RouteTestData.NorthFromBerlin(0.36),
+            new GeoPosition(52.52, 13.405),
+            new GeoPosition(52.88, 13.405),
+            startName,
+            destinationName,
+            stations);
     }
 
     /// <summary>

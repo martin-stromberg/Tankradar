@@ -1,6 +1,7 @@
 using System.Globalization;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
+using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 
@@ -47,6 +48,42 @@ public static class StationResultBuilder
 
         var sortFuel = effectiveFilter ?? selected.FirstOrDefault();
         return Sort(items, sortOrder, sortFuel);
+    }
+
+    /// <summary>
+    /// Erzeugt die Ergebnisliste einer Routensuche. Die Entfernung ist die Streckenposition („ab Start“), zusätzlich wird der Abstand zur Route angegeben;
+    /// Filter, Preise, Hinweise und Sortierung entsprechen <see cref="Build"/>.
+    /// </summary>
+    /// <param name="routeStations">Die Tankstellen im Abstandsband der Route.</param>
+    /// <param name="fuelTypes">Die Spritsorten der Einstellungen in ihrer Reihenfolge.</param>
+    /// <param name="filter">Die Sorte, nach der gefiltert wird; <see langword="null"/> für „Alle“.</param>
+    /// <param name="sortOrder">Die Sortierung.</param>
+    /// <param name="nowUtc">Der aktuelle Zeitpunkt in UTC.</param>
+    /// <returns>Die sortierte Liste.</returns>
+    public static IReadOnlyList<StationListItem> BuildForRoute(
+        IReadOnlyList<RouteStation> routeStations,
+        IReadOnlyList<FuelTypeSelection> fuelTypes,
+        FuelType? filter,
+        ResultSortOrder sortOrder,
+        DateTime nowUtc)
+    {
+        ArgumentNullException.ThrowIfNull(routeStations);
+        var offsets = new Dictionary<string, double>(StringComparer.Ordinal);
+        var stations = new List<StationInfo>(routeStations.Count);
+        foreach (var routeStation in routeStations)
+        {
+            offsets.TryAdd(routeStation.Station.Id, routeStation.OffsetKm);
+            stations.Add(routeStation.Station.WithDistance(routeStation.AlongKm));
+        }
+
+        return Build(stations, fuelTypes, filter, sortOrder, nowUtc)
+            .Select(item => item with
+            {
+                DistanceText = item.DistanceKm is { } along ? SearchTexts.FormatRouteDistance(along) : string.Empty,
+                RouteOffsetKm = offsets.TryGetValue(item.Id, out var offset) ? offset : null,
+                RouteOffsetText = offsets.TryGetValue(item.Id, out var offsetKm) ? SearchTexts.FormatRouteOffset(offsetKm) : string.Empty,
+            })
+            .ToList();
     }
 
     /// <summary>

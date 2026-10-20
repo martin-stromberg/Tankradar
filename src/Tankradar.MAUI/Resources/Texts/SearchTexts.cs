@@ -1,7 +1,9 @@
 using System.Globalization;
 using Tankradar.MAUI.Models.Pricing;
+using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services.Geocoding;
+using Tankradar.MAUI.Services.Routing;
 
 namespace Tankradar.MAUI.Resources.Texts;
 
@@ -183,13 +185,13 @@ public static class SearchTexts
     public const string ShowMore = "Weitere anzeigen";
 
     /// <summary>
-    /// Formatiert die Beschriftung zum Nachladen („Weitere anzeigen (12 weitere)“).
+    /// Formatiert die Beschriftung zum Nachladen („Weitere anzeigen (12 übrig)“); das Wort „weitere“ kommt nur einmal vor, damit die Sprachausgabe nichts doppelt liest.
     /// </summary>
     /// <param name="remaining">Die Anzahl noch nicht angezeigter Tankstellen.</param>
     /// <returns>Der Text.</returns>
     public static string FormatShowMore(int remaining)
     {
-        return $"{ShowMore} ({remaining.ToString(German)} weitere)";
+        return $"{ShowMore} ({remaining.ToString(German)} übrig)";
     }
 
     /// <summary>
@@ -217,6 +219,7 @@ public static class SearchTexts
         return mode switch
         {
             SearchMode.Address => ModeAddress,
+            SearchMode.Route => ModeRoute,
             _ => ModeCurrentLocation,
         };
     }
@@ -323,5 +326,269 @@ public static class SearchTexts
     public static string FormatPrice(decimal price)
     {
         return price.ToString("0.000", German) + " €";
+    }
+
+    /// <summary>
+    /// Beschriftung der Suchart „Route“.
+    /// </summary>
+    public const string ModeRoute = "Route";
+
+    /// <summary>
+    /// Überschrift der Startauswahl der Routensuche.
+    /// </summary>
+    public const string RouteStartHeading = "Start";
+
+    /// <summary>
+    /// Beschriftung der Startart „Aktueller Standort“.
+    /// </summary>
+    public const string RouteStartCurrentLocation = "Aktueller Standort";
+
+    /// <summary>
+    /// Beschriftung der Startart „Adresse“.
+    /// </summary>
+    public const string RouteStartAddress = "Adresse, Ort oder PLZ";
+
+    /// <summary>
+    /// Platzhalter des Startfelds.
+    /// </summary>
+    public const string RouteStartPlaceholder = "Start: Adresse, PLZ oder Ort, z. B. Berlin";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Löschen des Starts.
+    /// </summary>
+    public const string RouteStartClear = "Start löschen";
+
+    /// <summary>
+    /// Überschrift des Zielfelds der Routensuche.
+    /// </summary>
+    public const string RouteDestinationHeading = "Ziel";
+
+    /// <summary>
+    /// Platzhalter des Zielfelds.
+    /// </summary>
+    public const string RouteDestinationPlaceholder = "Ziel: Adresse, PLZ oder Ort, z. B. Hamburg";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Löschen des Ziels.
+    /// </summary>
+    public const string RouteDestinationClear = "Ziel löschen";
+
+    /// <summary>
+    /// Überschrift der Abstandsauswahl der Routensuche.
+    /// </summary>
+    public const string RouteDistanceHeading = "Abstand zur Route";
+
+    /// <summary>
+    /// Quellenangabe für Routen (Nutzungsbedingung von OpenRouteService und OpenStreetMap).
+    /// </summary>
+    public const string RoutingAttribution = "Routen: OpenRouteService, Geodaten © OpenStreetMap-Mitwirkende";
+
+    /// <summary>
+    /// Beschriftung der Abstandsangabe zur Route in der Ergebnisliste (Zugänglichkeit).
+    /// </summary>
+    public const string RouteOffsetLabel = "Abstand zur Route";
+
+    /// <summary>
+    /// Hinweis bei ungültigem Abstand zur Route.
+    /// </summary>
+    public const string RouteDistanceInvalid = "Bitte einen Abstand von 1, 2, 5 oder 10 km zur Route wählen.";
+
+    /// <summary>
+    /// Hinweis, wenn die Routensuche wegen fehlender Verbindung nicht möglich ist.
+    /// </summary>
+    public const string RouteOffline = "Keine Netzverbindung: Die Routensuche braucht eine Verbindung zum Orts-, Routen- und Preisdienst.";
+
+    /// <summary>
+    /// Hinweis, wenn Start und Ziel am selben Ort liegen.
+    /// </summary>
+    public const string RouteSamePlace = "Start und Ziel liegen am selben Ort. Bitte ein anderes Ziel wählen.";
+
+    /// <summary>
+    /// Hinweis, wenn zum Start kein Ort gefunden wurde.
+    /// </summary>
+    public const string RouteStartNotFound = "Zum Start wurde in Deutschland kein Ort gefunden. Bitte die Schreibweise prüfen oder genauer angeben.";
+
+    /// <summary>
+    /// Hinweis, wenn zum Ziel kein Ort gefunden wurde.
+    /// </summary>
+    public const string RouteDestinationNotFound = "Zum Ziel wurde in Deutschland kein Ort gefunden. Bitte die Schreibweise prüfen oder genauer angeben.";
+
+    /// <summary>
+    /// Hinweis, wenn die Routensuche nicht eingerichtet ist (fehlender Schlüssel oder Testmodus ohne Adresse).
+    /// </summary>
+    public const string RoutingUnavailable = "Routensuche nicht verfügbar. Die übrige Suche funktioniert weiterhin.";
+
+    /// <summary>
+    /// Hinweis, wenn der Routendienst den Schlüssel abgelehnt hat.
+    /// </summary>
+    public const string RoutingKeyRejected = "Der Routendienst hat den Schlüssel abgelehnt. Die Routensuche ist nicht verfügbar.";
+
+    /// <summary>
+    /// Hinweis, wenn der Routendienst nicht erreichbar ist.
+    /// </summary>
+    public const string RoutingUnreachable = "Der Routendienst ist nicht erreichbar. Bitte versuche es später erneut.";
+
+    /// <summary>
+    /// Hinweis, wenn der Routendienst ausgelastet oder das Kontingent aufgebraucht ist.
+    /// </summary>
+    public const string RoutingQuotaExceeded = "Der Routendienst ist gerade ausgelastet oder das Tageskontingent ist aufgebraucht. Bitte später erneut versuchen.";
+
+    /// <summary>
+    /// Hinweis, wenn keine Route berechnet werden konnte.
+    /// </summary>
+    public const string RoutingRouteNotFound = "Zwischen Start und Ziel konnte keine Route berechnet werden.";
+
+    /// <summary>
+    /// Hinweis, wenn der Routendienst die Anfrage abgelehnt hat.
+    /// </summary>
+    public const string RoutingRejected = "Der Routendienst hat die Anfrage abgelehnt. Bitte versuche es später erneut.";
+
+    /// <summary>
+    /// Hinweis, wenn die Antwort des Routendienstes nicht auswertbar war.
+    /// </summary>
+    public const string RoutingInvalidResponse = "Der Routendienst hat eine unerwartete Antwort geliefert.";
+
+    /// <summary>
+    /// Hinweis im Leerzustand der Routensuche.
+    /// </summary>
+    public const string RouteEmptyState = "Keine Tankstellen entlang der Route gefunden. Ein größerer Abstand zur Route kann helfen.";
+
+    /// <summary>
+    /// Fortschrittstext, während Start und Ziel aufgelöst werden.
+    /// </summary>
+    public const string RouteProgressPlaces = "Orte werden gesucht …";
+
+    /// <summary>
+    /// Fortschrittstext, während die Route berechnet wird.
+    /// </summary>
+    public const string RouteProgressRoute = "Route wird berechnet …";
+
+    /// <summary>
+    /// Formatiert die Entfernung in der Routenliste („12,3 km ab Start“).
+    /// </summary>
+    /// <param name="alongKm">Die Position entlang der Route in Kilometern.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteDistance(double alongKm)
+    {
+        return FormatDistance(alongKm) + " ab Start";
+    }
+
+    /// <summary>
+    /// Formatiert den Abstand zur Route („0,8 km abseits der Route“).
+    /// </summary>
+    /// <param name="offsetKm">Der Abstand in Kilometern.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteOffset(double offsetKm)
+    {
+        return FormatDistance(offsetKm) + " abseits der Route";
+    }
+
+    /// <summary>
+    /// Formatiert die Zusammenfassung einer Routensuche („Von A nach B, 123 km, 4 Tankstellen im Abstand von 2 km zur Route“).
+    /// </summary>
+    /// <param name="startName">Der Name des Starts.</param>
+    /// <param name="destinationName">Der Name des Ziels.</param>
+    /// <param name="lengthKm">Die Länge der Route in Kilometern.</param>
+    /// <param name="stationCount">Die Anzahl der Tankstellen.</param>
+    /// <param name="distanceKm">Der Abstand zur Route in Kilometern.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteSummary(string startName, string destinationName, double lengthKm, int stationCount, int distanceKm)
+    {
+        var stations = stationCount == 1 ? "1 Tankstelle" : $"{stationCount.ToString(German)} Tankstellen";
+        return $"Von {startName} nach {destinationName}, {lengthKm.ToString("0", German)} km, {stations} im Abstand von {distanceKm.ToString(German)} km zur Route";
+    }
+
+    /// <summary>
+    /// Formatiert den Zugänglichkeitstext der Karte mit eingezeichneter Route.
+    /// </summary>
+    /// <param name="startName">Der Name des Starts.</param>
+    /// <param name="destinationName">Der Name des Ziels.</param>
+    /// <param name="stationCount">Die Anzahl der Tankstellen.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteMapHint(string startName, string destinationName, int stationCount)
+    {
+        return $"Route von {startName} nach {destinationName} eingezeichnet, {stationCount.ToString(German)} Tankstellen";
+    }
+
+    /// <summary>
+    /// Formatiert den Fortschrittstext einer laufenden Routensuche.
+    /// </summary>
+    /// <param name="progress">Der Fortschritt.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteProgress(RouteSearchProgress progress)
+    {
+        ArgumentNullException.ThrowIfNull(progress);
+        return progress.Phase switch
+        {
+            RouteSearchPhase.ResolvingPlaces => RouteProgressPlaces,
+            RouteSearchPhase.CalculatingRoute => RouteProgressRoute,
+            _ => $"Tankstellen werden gesucht ({progress.Current.ToString(German)} von {progress.Total.ToString(German)}) …",
+        };
+    }
+
+    /// <summary>
+    /// Formatiert den Hinweis, dass die Route zu lang ist.
+    /// </summary>
+    /// <param name="maxKm">Die längste unterstützte Route in Kilometern.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatRouteTooLong(double maxKm)
+    {
+        return $"Die Route ist zu lang. Es werden Routen bis {maxKm.ToString("0", German)} km unterstützt.";
+    }
+
+    /// <summary>
+    /// Liefert den Hinweistext zu einer ungültigen Start- oder Zieleingabe.
+    /// </summary>
+    /// <param name="isStart"><see langword="true"/> für den Start, <see langword="false"/> für das Ziel.</param>
+    /// <param name="error">Der Grund.</param>
+    /// <returns>Der Text; leer bei <see cref="AddressInputError.None"/>.</returns>
+    public static string GetRouteInputMessage(bool isStart, AddressInputError error)
+    {
+        var message = GetAddressInputMessage(error);
+        return message.Length == 0 ? string.Empty : (isStart ? "Start: " : "Ziel: ") + message;
+    }
+
+    /// <summary>
+    /// Liefert die Meldung zu einem Fehler des Routingdienstes (nie Roh-Ausnahmetexte).
+    /// </summary>
+    /// <param name="failure">Der Fehlergrund.</param>
+    /// <returns>Der Text; leer bei <see cref="RoutingFailure.None"/>.</returns>
+    public static string GetRoutingMessage(RoutingFailure failure)
+    {
+        return failure switch
+        {
+            RoutingFailure.None => string.Empty,
+            RoutingFailure.ApiKeyMissing => RoutingUnavailable,
+            RoutingFailure.EndpointNotConfigured => RoutingUnavailable,
+            RoutingFailure.KeyRejected => RoutingKeyRejected,
+            RoutingFailure.Unreachable => RoutingUnreachable,
+            RoutingFailure.QuotaExceeded => RoutingQuotaExceeded,
+            RoutingFailure.RouteNotFound => RoutingRouteNotFound,
+            RoutingFailure.RouteTooLong => FormatRouteTooLong(RouteSearchOptions.DefaultMaxRouteLengthKm),
+            RoutingFailure.Rejected => RoutingRejected,
+            _ => RoutingInvalidResponse,
+        };
+    }
+
+    /// <summary>
+    /// Liefert die Meldung zu einem Ergebnis der Routensuche.
+    /// </summary>
+    /// <param name="result">Das Ergebnis.</param>
+    /// <returns>Der Text; leer bei <see cref="RouteSearchStatus.Success"/>.</returns>
+    public static string GetRouteMessage(RouteSearchResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return result.Status switch
+        {
+            RouteSearchStatus.Success => string.Empty,
+            RouteSearchStatus.StartNotFound => RouteStartNotFound,
+            RouteSearchStatus.DestinationNotFound => RouteDestinationNotFound,
+            RouteSearchStatus.GeocodingFailed => GetGeocodingMessage(result.GeocodingStatus, isOnline: true),
+            RouteSearchStatus.SamePlace => RouteSamePlace,
+            RouteSearchStatus.RoutingUnavailable => RoutingUnavailable,
+            RouteSearchStatus.RoutingFailed => GetRoutingMessage(result.RoutingFailure),
+            RouteSearchStatus.RouteTooLong => FormatRouteTooLong(RouteSearchOptions.DefaultMaxRouteLengthKm),
+            _ => GetFailureMessage(result.PriceFailure, hasStations: false),
+        };
     }
 }

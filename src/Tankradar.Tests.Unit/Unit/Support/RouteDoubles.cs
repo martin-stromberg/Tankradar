@@ -58,31 +58,31 @@ public sealed class ScriptedFuelPriceService : IFuelPriceService
     /// <inheritdoc />
     public Task<StationDetailResult> GetStationDetailAsync(string stationId, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        return Task.FromResult(new StationDetailResult(null, PriceDataSource.Live, PriceFailure.None));
     }
 
     /// <inheritdoc />
     public Task<StationRefreshResult> RefreshStationsAsync(IReadOnlyCollection<string> stationIds, bool force, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        return Task.FromResult(new StationRefreshResult([], PriceDataSource.Live, PriceFailure.None));
     }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<StationInfo>> GetKnownStationsAsync(IReadOnlyCollection<string> stationIds, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        return Task.FromResult<IReadOnlyList<StationInfo>>([]);
     }
 
     /// <inheritdoc />
     public Task<StationNameResult> SetCustomNameAsync(string stationId, string? name, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        return Task.FromResult(StationNameResult.Ok);
     }
 
     /// <inheritdoc />
     public Task<PriceFailure> CheckAvailabilityAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException();
+        return Task.FromResult(PriceFailure.None);
     }
 }
 

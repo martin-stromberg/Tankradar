@@ -80,7 +80,7 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
         Assert.Equal(MapViewModel.PageSize, ViewModel.Stations.Count);
         Assert.Equal(60, ViewModel.TotalStationCount);
         Assert.True(ViewModel.HasMore);
-        Assert.Equal("Weitere anzeigen (35 weitere)", ViewModel.ShowMoreText);
+        Assert.Equal("Weitere anzeigen (35 übrig)", ViewModel.ShowMoreText);
 
         ViewModel.ShowMoreCommand.Execute(null);
         Assert.Equal(50, ViewModel.Stations.Count);
@@ -123,7 +123,7 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
 
         Assert.Equal(MapViewModel.PageSize, ViewModel.Stations.Count);
         Assert.True(ViewModel.HasMore);
-        Assert.Equal("Weitere anzeigen (35 weitere)", ViewModel.ShowMoreText);
+        Assert.Equal("Weitere anzeigen (35 übrig)", ViewModel.ShowMoreText);
     }
 
     /// <summary>

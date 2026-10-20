@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Map;
 using Tankradar.MAUI.Models.Pricing;
+using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
@@ -11,16 +12,17 @@ using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.Services.Search;
 
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse mit filterbarer und sortierbarer Ergebnisliste
+/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse sowie Suche entlang einer Route mit filterbarer und sortierbarer Ergebnisliste
 /// und alternativer Kartenansicht der Ergebnisse. Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert
 /// (die Karte hält die Suchposition ausschließlich im Arbeitsspeicher bis zur nächsten Suche); die Adresseingabe wird nicht gespeichert.
 /// </summary>
-public class MapViewModel : BaseViewModel
+public partial class MapViewModel : BaseViewModel
 {
     /// <summary>
     /// Anzahl der Tankstellen, die auf einmal in der Liste dargestellt werden (weitere über „Weitere anzeigen“).
@@ -73,6 +75,7 @@ public class MapViewModel : BaseViewModel
     /// <param name="locationService">Dienst zur Standortermittlung.</param>
     /// <param name="geocodingService">Dienst zur Umwandlung einer Adresse in eine Position.</param>
     /// <param name="priceService">Preisdienst für die Umkreissuche.</param>
+    /// <param name="routeSearchService">Dienst für die Suche entlang einer Route.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
     /// <param name="navigator">Die Navigation zur Detailansicht einer Tankstelle.</param>
@@ -82,6 +85,7 @@ public class MapViewModel : BaseViewModel
         ILocationService locationService,
         IGeocodingService geocodingService,
         IFuelPriceService priceService,
+        IRouteSearchService routeSearchService,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
         IStationNavigator navigator,
@@ -91,6 +95,7 @@ public class MapViewModel : BaseViewModel
         _locationService = locationService;
         _geocodingService = geocodingService;
         _priceService = priceService;
+        _routeSearchService = routeSearchService;
         _connection = connection;
         _timeProvider = timeProvider;
         _navigator = navigator;
@@ -125,6 +130,9 @@ public class MapViewModel : BaseViewModel
         _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
+        ClearStartCommand = new Command(ClearStart);
+        ClearDestinationCommand = new Command(ClearDestination);
+        InitializeRouteOptions();
         ShowMoreCommand = new Command(ShowMore);
         OpenStationCommand = new Command<StationListItem>(OpenStation);
         FuelFilterOptions = CreateFilterOptions([]);
@@ -296,12 +304,18 @@ public class MapViewModel : BaseViewModel
     /// <summary>
     /// Gibt an, ob in der Kartenansicht der Hinweis „Noch keine Ergebnisse“ erscheint.
     /// </summary>
-    public bool ShowMapHint => IsMapView && !HasMapContent && !ShowEmptyState && !HasStatusMessage;
+    public bool ShowMapHint
+    {
+        get { return IsMapView && (HasMapRoute || (!HasMapContent && !ShowEmptyState && !HasStatusMessage)); }
+    }
 
     /// <summary>
-    /// Der Hinweis der Kartenansicht ohne Ergebnisse.
+    /// Der Hinweis der Kartenansicht: ohne Ergebnisse der Hinweis zum Starten einer Suche, bei einer Routensuche die Beschreibung der eingezeichneten Route.
     /// </summary>
-    public string MapHintText => MapTexts.NoResults;
+    public string MapHintText
+    {
+        get { return _routeResult is { Status: RouteSearchStatus.Success } ? RouteMapHintText : MapTexts.NoResults; }
+    }
 
     /// <summary>
     /// Gibt an, ob Markierungen oder eine Suchposition für die Karte vorliegen.
@@ -478,6 +492,12 @@ public class MapViewModel : BaseViewModel
     public async Task SearchAsync()
     {
         CancelSearch();
+        if (_searchMode == SearchMode.Route)
+        {
+            await SearchRouteAsync().ConfigureAwait(true);
+            return;
+        }
+
         if (!SearchRadius.IsValid(_radiusKm))
         {
             IsBusy = false;
@@ -588,12 +608,10 @@ public class MapViewModel : BaseViewModel
 
         var filter = FuelFilterOptions.FirstOrDefault(option => option.IsSelected)?.FuelType;
         var sort = _sortOptions.FirstOrDefault(option => option.IsSelected)?.Value ?? ResultSortOrder.Price;
-        _allStations = StationResultBuilder.Build(
-            _lastResult.Stations,
-            _settings.FuelTypes,
-            filter,
-            sort,
-            _timeProvider.GetUtcNow().UtcDateTime);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        _allStations = _routeResult is { Status: RouteSearchStatus.Success } route
+            ? StationResultBuilder.BuildForRoute(route.Stations, _settings.FuelTypes, filter, sort, now)
+            : StationResultBuilder.Build(_lastResult.Stations, _settings.FuelTypes, filter, sort, now);
 
         // Die Karte zeigt die gesamte Ergebnismenge (nicht nur die dargestellte Listenseite); maßgeblich ist die gefilterte, sonst die zuerst gewählte Sorte.
         MapMarkers = MapMarkerBuilder.Build(_allStations, StationResultBuilder.ResolveFuelType(_settings.FuelTypes, filter));
@@ -702,6 +720,9 @@ public class MapViewModel : BaseViewModel
         _searchMode = selected.Value;
         SyncModeSelection();
         OnPropertyChanged(nameof(IsAddressMode));
+        OnPropertyChanged(nameof(IsRouteMode));
+        OnPropertyChanged(nameof(IsRadiusVisible));
+        OnPropertyChanged(nameof(EmptyStateText));
         ClearResult();
         StatusMessage = null;
     }
@@ -884,6 +905,7 @@ public class MapViewModel : BaseViewModel
 
     private void ClearResult()
     {
+        ClearRouteState();
         _lastResult = null;
         SourceNote = null;
         ResolvedPlace = null;

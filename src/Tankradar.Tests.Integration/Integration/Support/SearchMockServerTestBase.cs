@@ -6,6 +6,7 @@ using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.TestSupport;
 
@@ -40,6 +41,12 @@ public abstract class SearchMockServerTestBase : IDisposable
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected MockNominatimServer Nominatim { get; } = new();
+
+    /// <summary>
+    /// Der Mock-Server des Routingdienstes (OpenRouteService).
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected MockOpenRouteServiceServer Routing { get; } = new();
 
     /// <summary>
     /// Die Testdatenbank.
@@ -93,8 +100,9 @@ public abstract class SearchMockServerTestBase : IDisposable
     /// </summary>
     /// <param name="baseUrl">Die Adresse oder <see langword="null"/> für den Mock-Server.</param>
     /// <param name="key">Der Schlüssel.</param>
+    /// <param name="minRequestInterval">Der Mindestabstand der Abfragen oder <see langword="null"/> für keinen.</param>
     /// <returns>Der Dienst.</returns>
-    protected FuelPriceService CreateService(Uri? baseUrl = null, string? key = MockTankerkoenigServer.AcceptedKey)
+    protected FuelPriceService CreateService(Uri? baseUrl = null, string? key = MockTankerkoenigServer.AcceptedKey, TimeSpan? minRequestInterval = null)
     {
         var options = new PriceApiOptions
         {
@@ -102,7 +110,7 @@ public abstract class SearchMockServerTestBase : IDisposable
             AllowLoopbackHttp = true,
             RequestTimeout = TimeSpan.FromSeconds(3),
             RetryBaseDelay = TimeSpan.FromMilliseconds(20),
-            MinRequestInterval = TimeSpan.Zero,
+            MinRequestInterval = minRequestInterval ?? TimeSpan.Zero,
         };
         var delay = new TaskDelay();
         var client = new TankerkoenigClient(
@@ -110,7 +118,7 @@ public abstract class SearchMockServerTestBase : IDisposable
             new FixedKey(key),
             options,
             delay,
-            new RequestThrottle(options.MinRequestInterval, delay, Clock),
+            new RequestThrottle(options.MinRequestInterval, delay, minRequestInterval is null ? Clock : TimeProvider.System),
             Clock,
             new RecordingLogger<TankerkoenigClient>(_logSink));
         var factory = Database.CreateFactory();
@@ -135,12 +143,48 @@ public abstract class SearchMockServerTestBase : IDisposable
     }
 
     /// <summary>
+    /// Erstellt den Routensuchdienst mit echten Diensten gegen die Mock-Server (Nominatim, OpenRouteService; der Preisdienst wird übergeben).
+    /// </summary>
+    /// <param name="prices">Der Preisdienst.</param>
+    /// <param name="geocoding">Der Geokodierungsdienst oder <see langword="null"/> für den Dienst gegen den Nominatim-Mock.</param>
+    /// <param name="routingUrl">Die Adresse des Routingdienstes oder <see langword="null"/> für den Mock-Server.</param>
+    /// <param name="key">Der Schlüssel des Routingdienstes.</param>
+    /// <param name="requestTimeout">Das Zeitlimit je Anfrage an den Routingdienst oder <see langword="null"/> für 3 Sekunden.</param>
+    /// <returns>Der Dienst.</returns>
+    protected RouteSearchService CreateRouteSearch(
+        IFuelPriceService prices,
+        IGeocodingService? geocoding = null,
+        Uri? routingUrl = null,
+        string? key = MockOpenRouteServiceServer.AcceptedKey,
+        TimeSpan? requestTimeout = null)
+    {
+        var options = new RoutingOptions
+        {
+            BaseUrl = routingUrl ?? Routing.BaseUrl,
+            AllowLoopbackHttp = true,
+            RequestTimeout = requestTimeout ?? TimeSpan.FromSeconds(3),
+            RetryBaseDelay = TimeSpan.FromMilliseconds(20),
+            MinRequestInterval = TimeSpan.Zero,
+        };
+        var delay = new TaskDelay();
+        var client = new OpenRouteServiceClient(
+            new HttpClient { Timeout = Timeout.InfiniteTimeSpan },
+            new FixedKey(key),
+            options,
+            delay,
+            new RequestThrottle(options.MinRequestInterval, delay, TimeProvider.System),
+            new RecordingLogger<OpenRouteServiceClient>(_logSink));
+        return new RouteSearchService(geocoding ?? CreateGeocoding(), client, new RouteStationSearchService(prices), new RouteSearchOptions());
+    }
+
+    /// <summary>
     /// Erstellt das ViewModel der Suche mit dem übergebenen Preisdienst und festem Teststandort.
     /// </summary>
     /// <param name="service">Der Preisdienst.</param>
     /// <returns>Das ViewModel.</returns>
     /// <param name="geocoding">Der Geokodierungsdienst oder <see langword="null"/> für den Dienst gegen den Nominatim-Mock.</param>
-    protected MapViewModel CreateViewModel(FuelPriceService service, IGeocodingService? geocoding = null)
+    /// <param name="routeSearch">Der Routensuchdienst oder <see langword="null"/> für den Dienst gegen die Mock-Server.</param>
+    protected MapViewModel CreateViewModel(FuelPriceService service, IGeocodingService? geocoding = null, IRouteSearchService? routeSearch = null)
     {
         var factory = Database.CreateFactory();
         var settings = new SettingsService(factory, Database.CreateInitializer(factory));
@@ -149,6 +193,7 @@ public abstract class SearchMockServerTestBase : IDisposable
             new TestLocationService(new GeoPosition(SearchLatitude, SearchLongitude)),
             geocoding ?? CreateGeocoding(),
             service,
+            routeSearch ?? CreateRouteSearch(service, geocoding),
             Connection,
             Clock,
             new NullStationNavigator(),
@@ -171,6 +216,7 @@ public abstract class SearchMockServerTestBase : IDisposable
     {
         Server.Dispose();
         Nominatim.Dispose();
+        Routing.Dispose();
         Database.Dispose();
         GC.SuppressFinalize(this);
     }
