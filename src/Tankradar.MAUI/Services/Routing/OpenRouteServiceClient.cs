@@ -44,6 +44,7 @@ public sealed class OpenRouteServiceClient : IRoutingService
 
     private const string DirectionsPath = "v2/directions/driving-car";
     private const int PolylinePrecision = 5;
+    private static readonly TimeSpan MaxRetryAfter = TimeSpan.FromSeconds(10);
 
     private readonly HttpClient _httpClient;
     private readonly IApiKeyProvider _apiKeyProvider;
@@ -117,6 +118,7 @@ public sealed class OpenRouteServiceClient : IRoutingService
         {
             await _throttle.WaitAsync(cancellationToken).ConfigureAwait(false);
             var retryable = false;
+            TimeSpan? retryAfter = null;
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -141,6 +143,7 @@ public sealed class OpenRouteServiceClient : IRoutingService
                 {
                     failure = RoutingFailure.QuotaExceeded;
                     retryable = true;
+                    retryAfter = GetRetryAfter(response);
                 }
                 else if (status >= 500)
                 {
@@ -178,11 +181,27 @@ public sealed class OpenRouteServiceClient : IRoutingService
             if (attempt < _options.MaxAttempts)
             {
                 var wait = TimeSpan.FromTicks(_options.RetryBaseDelay.Ticks * (1L << (attempt - 1)));
+                if (retryAfter is { } requested && requested > wait)
+                {
+                    wait = requested;
+                }
+
                 await _delay.DelayAsync(wait, cancellationToken).ConfigureAwait(false);
             }
         }
 
         return RoutingResult.Fail(failure);
+    }
+
+    private static TimeSpan? GetRetryAfter(HttpResponseMessage response)
+    {
+        var delta = response.Headers.RetryAfter?.Delta;
+        if (delta is null || delta.Value <= TimeSpan.Zero)
+        {
+            return null;
+        }
+
+        return delta.Value > MaxRetryAfter ? MaxRetryAfter : delta.Value;
     }
 
     private static async Task<string> ReadErrorBodyAsync(HttpResponseMessage response, CancellationToken cancellationToken)

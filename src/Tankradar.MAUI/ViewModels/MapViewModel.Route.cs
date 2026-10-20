@@ -269,16 +269,6 @@ public partial class MapViewModel
     }
 
     /// <summary>
-    /// Führt die Routensuche aus: Eingaben und Verbindung prüfen, Standort bei Bedarf ermitteln, dann Route und Tankstellen über den Routensuchdienst bestimmen.
-    /// </summary>
-    /// <returns>Ein Task, der nach der Suche abgeschlossen ist.</returns>
-    public async Task RunRouteSearchAsync()
-    {
-        CancelSearch();
-        await SearchRouteAsync().ConfigureAwait(true);
-    }
-
-    /// <summary>
     /// Löscht die Starteingabe.
     /// </summary>
     public void ClearStart()
@@ -365,35 +355,7 @@ public partial class MapViewModel
             return;
         }
 
-        var cancellation = new CancellationTokenSource();
-        _searchCancellation = cancellation;
-        IsBusy = true;
-        try
-        {
-            StatusMessage = null;
-            await ExecuteRouteSearchAsync(cancellation).ConfigureAwait(true);
-        }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-        {
-            // Eine neuere Suche oder das Verlassen der Seite hat diese abgelöst.
-        }
-        catch (Exception ex) when (IsCurrent(cancellation))
-        {
-            // Nur der Typ wird protokolliert: Ausnahmetexte könnten Orte oder Positionen enthalten.
-            _logger.LogWarning("Die Routensuche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
-            ClearResult();
-            StatusMessage = SearchTexts.SearchFailed;
-        }
-        finally
-        {
-            if (IsCurrent(cancellation))
-            {
-                _searchCancellation = null;
-                RouteProgressText = null;
-                IsBusy = false;
-                cancellation.Dispose();
-            }
-        }
+        await RunGuardedSearchAsync(ExecuteRouteSearchAsync, isRoute: true).ConfigureAwait(true);
     }
 
     private async Task ExecuteRouteSearchAsync(CancellationTokenSource cancellation)

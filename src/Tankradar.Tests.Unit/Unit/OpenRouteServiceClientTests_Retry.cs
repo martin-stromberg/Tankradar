@@ -41,6 +41,41 @@ public class OpenRouteServiceClientTests_Retry : OpenRouteServiceClientTestBase
     }
 
     /// <summary>
+    /// Prüft, dass ein Retry-After bei 429 als Wartezeit übernommen wird, wenn es länger ist als die Standardwartezeit.
+    /// </summary>
+    [Fact]
+    public async Task GetRouteAsync_TooManyRequestsWithRetryAfter_WaitsRequestedTime()
+    {
+        Handler.Respond(() => TooManyRequests(TimeSpan.FromSeconds(5))).RespondWith(HttpStatusCode.OK, RouteBody());
+
+        var result = await CreateClient().GetRouteAsync(Start, Destination);
+
+        Assert.Equal(RoutingFailure.None, result.Failure);
+        Assert.Equal([TimeSpan.FromSeconds(5)], Delay.Delays);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein sehr langes Retry-After auf zehn Sekunden gedeckelt wird.
+    /// </summary>
+    [Fact]
+    public async Task GetRouteAsync_TooManyRequestsWithHugeRetryAfter_IsCappedAtTenSeconds()
+    {
+        Handler.Respond(() => TooManyRequests(TimeSpan.FromMinutes(5))).RespondWith(HttpStatusCode.OK, RouteBody());
+
+        var result = await CreateClient().GetRouteAsync(Start, Destination);
+
+        Assert.Equal(RoutingFailure.None, result.Failure);
+        Assert.Equal([TimeSpan.FromSeconds(10)], Delay.Delays);
+    }
+
+    private static HttpResponseMessage TooManyRequests(TimeSpan retryAfter)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent("{}") };
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(retryAfter);
+        return response;
+    }
+
+    /// <summary>
     /// Prüft das Zeitlimit: Eine nicht antwortende Gegenstelle führt nach den Versuchen zu „nicht erreichbar“.
     /// </summary>
     [Fact]

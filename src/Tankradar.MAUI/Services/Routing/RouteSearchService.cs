@@ -11,7 +11,7 @@ namespace Tankradar.MAUI.Services.Routing;
 public interface IRouteSearchService
 {
     /// <summary>
-    /// Führt die Routensuche aus. Die Eingaben müssen vom Aufrufer bereits geprüft sein; Fehler werden als Status gemeldet.
+    /// Führt die Routensuche aus. Ein unzulässiger Abstand löst eine <see cref="ArgumentOutOfRangeException"/> aus, bevor ein externer Dienst aufgerufen wird; sonstige Fehler werden als Status gemeldet.
     /// </summary>
     /// <param name="request">Der Auftrag.</param>
     /// <param name="progress">Meldet den Fortschritt; kann <see langword="null"/> sein.</param>
@@ -51,6 +51,10 @@ public sealed class RouteSearchService : IRouteSearchService
     public async Task<RouteSearchResult> SearchAsync(RouteSearchRequest request, IProgress<RouteSearchProgress>? progress, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        if (!RouteDistance.IsValid(request.DistanceKm))
+        {
+            throw new ArgumentOutOfRangeException(nameof(request), "Der Abstand zur Route ist keine zulässige Stufe.");
+        }
 
         if (!await _routing.IsAvailableAsync(cancellationToken).ConfigureAwait(false))
         {

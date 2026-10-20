@@ -29,6 +29,23 @@ public class RouteSearchServiceTests_Failures : RouteSearchServiceTestBase
     }
 
     /// <summary>
+    /// Prüft, dass ein unzulässiger Abstand abgewiesen wird, bevor ein externer Dienst aufgerufen wird.
+    /// </summary>
+    /// <param name="distanceKm">Der unzulässige Abstand.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-3)]
+    [InlineData(3)]
+    public async Task SearchAsync_InvalidDistance_ThrowsWithoutExternalCalls(int distanceKm)
+    {
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => SearchAsync(Request(distanceKm)));
+
+        Assert.Empty(Geocoding.Inputs);
+        Assert.Equal(0, Routing.Calls);
+        Assert.Empty(Prices.Queries);
+    }
+
+    /// <summary>
     /// Prüft, dass ein unbekannter Start gemeldet wird, ohne das Ziel aufzulösen.
     /// </summary>
     [Fact]

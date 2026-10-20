@@ -515,13 +515,18 @@ public partial class MapViewModel : BaseViewModel
             return;
         }
 
+        await RunGuardedSearchAsync(cancellation => RunSearchAsync(_radiusKm, cancellation.Token), isRoute: false).ConfigureAwait(true);
+    }
+
+    private async Task RunGuardedSearchAsync(Func<CancellationTokenSource, Task> work, bool isRoute)
+    {
         var cancellation = new CancellationTokenSource();
         _searchCancellation = cancellation;
         IsBusy = true;
         try
         {
             StatusMessage = null;
-            await RunSearchAsync(_radiusKm, cancellation.Token).ConfigureAwait(true);
+            await work(cancellation).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -529,8 +534,16 @@ public partial class MapViewModel : BaseViewModel
         }
         catch (Exception ex) when (IsCurrent(cancellation))
         {
-            // Nur der Typ wird protokolliert: Ausnahmetexte könnten die Anfrage samt Position enthalten.
-            _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+            // Nur der Typ wird protokolliert: Ausnahmetexte könnten Orte oder Positionen enthalten.
+            if (isRoute)
+            {
+                _logger.LogWarning("Die Routensuche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+            }
+            else
+            {
+                _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+            }
+
             ClearResult();
             StatusMessage = SearchTexts.SearchFailed;
         }
@@ -539,6 +552,11 @@ public partial class MapViewModel : BaseViewModel
             if (IsCurrent(cancellation))
             {
                 _searchCancellation = null;
+                if (isRoute)
+                {
+                    RouteProgressText = null;
+                }
+
                 IsBusy = false;
                 cancellation.Dispose();
             }

@@ -144,7 +144,11 @@ public static class MauiProgram
         });
     }
 
-    private static void AddRoutingServices(IServiceCollection services)
+    /// <summary>
+    /// Registriert die Dienste der Routensuche (Routingdienst, Stationssuche entlang der Route, Gesamtablauf). Voraussetzung sind die Registrierungen von <c>IGeocodingService</c>, <c>IFuelPriceService</c>, <c>IDelay</c>, <c>TimeProvider</c> und Logging.
+    /// </summary>
+    /// <param name="services">Die Dienstesammlung.</param>
+    public static void AddRoutingServices(IServiceCollection services)
     {
         services.AddSingleton(_ => RoutingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
         services.AddSingleton(new RouteSearchOptions());

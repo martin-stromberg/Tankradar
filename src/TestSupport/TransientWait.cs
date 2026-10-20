@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FlaUI.Core.Exceptions;
 
 namespace Tankradar.TestSupport;
 
@@ -9,8 +10,6 @@ namespace Tankradar.TestSupport;
 /// </summary>
 public static class TransientWait
 {
-    private const string ElementNotAvailableTypeName = "FlaUI.Core.Exceptions.ElementNotAvailableException";
-
     /// <summary>
     /// Wertet die Bedingung wiederholt aus, bis sie erfüllt ist oder die Frist abläuft.
     /// </summary>
@@ -85,7 +84,7 @@ public static class TransientWait
 
         for (Exception? current = exception; current is not null; current = current.InnerException)
         {
-            if (current.GetType().FullName == ElementNotAvailableTypeName)
+            if (current is ElementNotAvailableException)
             {
                 return true;
             }
