@@ -9,7 +9,7 @@ inputs:
     description: Release-Tag (z. B. v0.2.0 oder v0.2.0-rc.1), bestimmt die Download-URL der Assets in update.json.
     required: true
   routing-api-key:
-    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein.
+    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein. Das Windows-Paket enthält ihn bewusst nie (öffentlich herunterladbar), die Eingabe bleibt aus Kompatibilität bestehen.
     required: false
     default: ''
 
@@ -39,10 +39,11 @@ runs:
       # erwartet genau diese Namen.
       shell: pwsh
       env:
-        # Das Windows-Paket enthält bewusst nie den Tankerkönig-Schlüssel (öffentlich herunterladbar): Quellen explizit leeren.
+        # Das Windows-Paket enthält bewusst nie den Tankerkönig- oder den OpenRouteService-Schlüssel (öffentlich herunterladbar): Quellen explizit leeren.
         TANKRADAR_FUEL_PRICE_API_KEY: ''
         FUEL_PRICE_API_KEY: ''
-        TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
+        TANKRADAR_ROUTING_API_KEY: ''
+        ROUTING_API_KEY: ''
       run: >
         ./scripts/package-windows.ps1
         -Version '${{ inputs.release-version }}'

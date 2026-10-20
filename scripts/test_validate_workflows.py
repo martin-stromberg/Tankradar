@@ -86,5 +86,21 @@ class ReleaseCommandTests(unittest.TestCase):
         self.assertEqual([], errors)
 
 
+class WindowsPackageKeyPolicyTests(unittest.TestCase):
+    def test_windows_package_action_clears_all_key_variables(self):
+        action = MODULE.load(MODULE.ROOT / '.github' / 'actions' / 'build-and-package' / 'action.yml')
+        env = {}
+        for step in action['runs']['steps']:
+            env.update(step.get('env') or {})
+        for name in ['TANKRADAR_FUEL_PRICE_API_KEY', 'FUEL_PRICE_API_KEY', 'TANKRADAR_ROUTING_API_KEY', 'ROUTING_API_KEY']:
+            self.assertIn(name, env)
+            self.assertEqual('', str(env[name]).strip(), name)
+
+    def test_package_script_clears_routing_variables(self):
+        script = (MODULE.ROOT / 'scripts' / 'package-windows.ps1').read_text(encoding='utf-8')
+        for name in ['TANKRADAR_ROUTING_API_KEY', 'ROUTING_API_KEY', 'RoutingLocalPropsFile']:
+            self.assertIn(name, script)
+
+
 if __name__ == '__main__':
     unittest.main()

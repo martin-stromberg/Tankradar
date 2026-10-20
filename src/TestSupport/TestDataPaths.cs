@@ -31,6 +31,16 @@ public static class TestDataPaths
     public const string PriceApiKeyEnvironmentVariable = "TANKRADAR_PRICE_API_KEY";
 
     /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Adresse des Routingdienstes (Mock-Server) vorgibt.
+    /// </summary>
+    public const string RoutingUrlEnvironmentVariable = "TANKRADAR_ROUTING_URL";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Routingdienst vorgibt.
+    /// </summary>
+    public const string RouteApiKeyEnvironmentVariable = "TANKRADAR_ROUTE_API_KEY";
+
+    /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen festen Standort im Format <c>breite,länge</c> (invariante Kultur) vorgibt.
     /// </summary>
     public const string TestLocationEnvironmentVariable = "TANKATLAS_TEST_LOCATION";

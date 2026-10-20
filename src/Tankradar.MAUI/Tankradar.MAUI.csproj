@@ -111,6 +111,9 @@
 	<!-- Tankerkönig-API-Schlüssel: Übernahme ohne MSBuild-Eigenschaft, siehe MSBuild\TankerkoenigApiKey.targets (Schlüssel gelangt nie ins Build-Log). -->
 	<Import Project="MSBuild\TankerkoenigApiKey.targets" />
 
+	<!-- OpenRouteService-API-Schlüssel (Routensuche): gleiches Muster, siehe MSBuild\RoutingApiKey.targets. -->
+	<Import Project="MSBuild\RoutingApiKey.targets" />
+
 	<ItemGroup>
 		<Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
 	</ItemGroup>

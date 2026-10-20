@@ -208,7 +208,7 @@ def check_action(path, errors):
                 errors.append(f'{label}: die Windows-Paket-Action darf keinen Schlüssel-Input haben ({name})')
         for step in runs.get('steps', []):
             for key, value in (step.get('env') or {}).items():
-                if re.search(r'FUEL_PRICE', str(key)) and str(value).strip() not in ('', "''"):
+                if re.search(r'FUEL_PRICE|ROUTING_API_KEY', str(key)) and str(value).strip() not in ('', "''"):
                     errors.append(f'{label}: Schritt "{step.get("name", "?")}" setzt {key} nicht leer')
     check_key_policy(label, runs.get('steps'), errors)
 
