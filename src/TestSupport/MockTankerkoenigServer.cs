@@ -55,6 +55,26 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// </summary>
     public const string StationJetSide = "88888888-8888-4888-8888-888888888888";
 
+    /// <summary>
+    /// Kennung der Teststation „Route Nah“ (nur nach <see cref="AddRouteStations"/> vorhanden): rund 1,5 km östlich der geraden Mock-Route von Berlin-Mitte nach Oranienburg.
+    /// </summary>
+    public const string StationRouteNear = "a0000000-0000-4000-8000-000000000001";
+
+    /// <summary>
+    /// Kennung der Teststation „Route Mittel“ (nur nach <see cref="AddRouteStations"/> vorhanden): rund 4 km östlich der Mock-Route.
+    /// </summary>
+    public const string StationRouteMid = "a0000000-0000-4000-8000-000000000002";
+
+    /// <summary>
+    /// Kennung der Teststation „Route Fern“ (nur nach <see cref="AddRouteStations"/> vorhanden): rund 12 km östlich der Mock-Route.
+    /// </summary>
+    public const string StationRouteFar = "a0000000-0000-4000-8000-000000000003";
+
+    /// <summary>
+    /// Kennung der Teststation „Route Dahinter“ (nur nach <see cref="AddRouteStations"/> vorhanden): rund 5 km hinter dem Ziel Oranienburg.
+    /// </summary>
+    public const string StationRouteBeyond = "a0000000-0000-4000-8000-000000000004";
+
     private const double MaxRadiusKm = 25;
     private const double DefaultLatitude = 52.52;
     private const double DefaultLongitude = 13.405;
@@ -67,6 +87,7 @@ public sealed class MockTankerkoenigServer : IDisposable
     ];
 
     private readonly List<MockStation> _generated = [];
+    private readonly List<DateTimeOffset> _listTimes = [];
     private readonly HttpListener _listener;
     private readonly object _gate = new();
     private readonly Queue<int> _queuedStatuses = new();
@@ -112,6 +133,20 @@ public sealed class MockTankerkoenigServer : IDisposable
     /// Anzahl der empfangenen Detailanfragen.
     /// </summary>
     public int DetailRequests => _detailRequests;
+
+    /// <summary>
+    /// Die Empfangszeitpunkte aller Umkreisanfragen in Reihenfolge (zum Prüfen des Mindestabstands).
+    /// </summary>
+    public IReadOnlyList<DateTimeOffset> ListRequestTimes
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _listTimes.ToArray();
+            }
+        }
+    }
 
     /// <summary>
     /// Gesamtzahl der empfangenen Anfragen.
@@ -258,6 +293,18 @@ public sealed class MockTankerkoenigServer : IDisposable
                 _generated.Add(new MockStation(id, name, string.Empty, "Routenstraße", "1", "16515", "Oranienburg", latitude, longitude, e5, e10, diesel, true, "Mo-So", "00:00:00", "24:00:00"));
             }
         }
+    }
+
+    /// <summary>
+    /// Fügt die vier Teststationen <see cref="StationRouteNear"/>, <see cref="StationRouteMid"/>, <see cref="StationRouteFar"/> und <see cref="StationRouteBeyond"/> hinzu,
+    /// die in definiertem Abstand zur geraden Mock-Route von Berlin-Mitte nach Oranienburg (Längengrad 13,405) liegen: etwa 1,5 km, 4 km und 12 km seitlich sowie 5 km hinter dem Ziel.
+    /// </summary>
+    public void AddRouteStations()
+    {
+        AddStationAt(StationRouteNear, "Route Nah", 52.66, 13.42726, 1.759m, 1.699m, 1.599m);
+        AddStationAt(StationRouteMid, "Route Mittel", 52.72, 13.4644, 1.769m, 1.709m, 1.609m);
+        AddStationAt(StationRouteFar, "Route Fern", 52.78, 13.5836, 1.779m, 1.719m, 1.619m);
+        AddStationAt(StationRouteBeyond, "Route Dahinter", 52.925, 13.405, 1.789m, 1.729m, 1.629m);
     }
 
     /// <summary>
@@ -504,6 +551,11 @@ public sealed class MockTankerkoenigServer : IDisposable
         var isPrices = path.EndsWith("/prices.php", StringComparison.Ordinal);
         if (isList)
         {
+            lock (_gate)
+            {
+                _listTimes.Add(DateTimeOffset.UtcNow);
+            }
+
             Interlocked.Increment(ref _listRequests);
         }
         else if (isPrices)
