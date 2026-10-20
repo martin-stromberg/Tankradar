@@ -1,3 +1,10 @@
+## 2026-10-20 — App-Icon im Tankatlas-Design (Tankradar Schritt 17a, Version 0.1.23)
+
+- Die App trägt jetzt ein eigenes Icon nach dem Entwurf „tank_lade_navigator_logo“ statt des Symbols der MAUI-Vorlage: weiße Zapfsäule mit gelbem Blitz auf einem Verlauf von Teal (`#0D9488`) nach Grün (`#10B981`). Es erscheint als Windows-App- und Taskleistensymbol (auch in den kleinen Größen 16 bis 48 Pixel erkennbar), in den Kacheln und als iOS-App-Icon
+- Der Hintergrund ist vollflächig ohne abgerundete Ecken und ohne Transparenz (iOS maskiert die Ecken selbst und verlangt für den App Store ein Icon ohne Transparenz); das Motiv liegt mit Rand im Vordergrund. Der MAUI-Resizetizer rendert den Farbverlauf korrekt, eine Ersatzlösung war nicht nötig. Der Startbildschirm zeigt dasselbe Motiv
+- Prüfungen: Ein Unit-Test stellt sicher, dass Hintergrund, Vordergrund, Splash und die Einbindung im Projekt das Motiv tragen; `scripts/create-review-version.ps1` bricht ab, wenn die erzeugten Icon-Dateien (ICO, Taskleistengrößen, Store-Logo) in der Build-Ausgabe fehlen
+- Keine Schemaänderung, keine neue Abhängigkeit; `MtouchInterpreter` und `TrimmerRootAssembly` unverändert
+
 ## 2026-10-19 — Export des Tankbuchs als CSV oder PDF (Tankradar Schritt 16, Version 0.1.21)
 
 - Auf der Seite „Tank- und Ladevorgänge“ gibt es den Bereich „Export“: Format (CSV oder PDF) und Zeitraum (Alle Vorgänge, Dieses Jahr, Letztes Jahr, Letzte 12 Monate, Eigener Zeitraum mit den Datumsfeldern „Von“ und „Bis“) wählen und „Exportieren“ tippen. Ein Export entsteht nur auf Veranlassung des Anwenders und wird über Teilen/Speichern des Systems weitergegeben (Windows: Teilen-Dialog, iOS: Teilen-Blatt); die temporäre Kopie im Zwischenspeicher bleibt bis zum nächsten Export liegen, damit die Zielanwendung sie in Ruhe lesen kann; ist eine frühere Datei noch geöffnet, bekommt die neue einen Zähler im Namen. Hat das Fahrzeug im Zeitraum keine Vorgänge, erscheint ein Hinweis und es entsteht keine Datei

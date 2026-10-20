@@ -10,6 +10,8 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
+Schritt 17a (Version 0.1.23): Die App hat ein eigenes Icon (weiße Zapfsäule mit gelbem Blitz auf Teal-Grün-Verlauf) für Windows und iOS sowie einen passenden Startbildschirm.
+
 Stand: Entwicklungsschritt 16 umgesetzt (Version 0.1.21): Export des Tankbuchs auf der Seite „Tank- und Ladevorgänge“ – Bereich „Export“ mit Format
 (CSV oder PDF) und Zeitraum (alle Vorgänge, dieses Jahr, letztes Jahr, letzte 12 Monate, eigener Zeitraum); der Export entsteht nur auf Veranlassung und wird über
 Teilen/Speichern des Systems übergeben (im Testmodus Kopie nach `test-shared/`). CSV für deutschsprachige Tabellenkalkulationen (UTF-8 mit BOM, Semikolon,
