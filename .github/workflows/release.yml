@@ -86,7 +86,6 @@ jobs:
         with:
           release-version: ${{ steps.version.outputs.version }}
           release-tag: ${{ steps.version.outputs.tag }}
-          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
 
       - name: Create GitHub release
         # Beide Wege (automatisch auf main, manuell per Tag) nutzen die gh CLI (Vorlage, Abschnitt 11.3).

@@ -8,10 +8,6 @@ inputs:
   release-tag:
     description: Release-Tag (z. B. v0.2.0 oder v0.2.0-rc.1), bestimmt die Download-URL der Assets in update.json.
     required: true
-  routing-api-key:
-    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein. Das Windows-Paket enthält ihn bewusst nie (öffentlich herunterladbar), die Eingabe bleibt aus Kompatibilität bestehen.
-    required: false
-    default: ''
 
 outputs:
   zip-path:

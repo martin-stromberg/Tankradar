@@ -251,7 +251,6 @@ jobs:
         with:
           release-version: ${{ needs.version.outputs.rc_version }}
           release-tag: ${{ needs.version.outputs.rc_tag }}
-          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
 
       - name: Create GitHub pre-release
         env:
