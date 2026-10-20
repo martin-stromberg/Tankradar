@@ -188,8 +188,18 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
 - `TANKATLAS_TEST_BACKUP_IMPORT` – Pfad einer Sicherungsdatei, die „Sicherung aus Datei einspielen“ ohne Systemdialog liefert
   (ohne Wert gilt die Auswahl als abgebrochen); „Teilen“ kopiert im Testmodus nach `<Datenverzeichnis>/test-shared/`,
+- `TANKRADAR_ROUTING_URL` und `TANKRADAR_ROUTE_API_KEY` – Adresse und Schlüssel eines Routingdienstes (in Tests der lokale
+  `MockOpenRouteServiceServer`; ohne Adresse wird im Testmodus keine Route berechnet),
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
+
+Die Suchart „Route“ (Schritt 17) zeigt Tankstellen entlang einer Strecke: Start (aktueller Standort oder Adresse) und Ziel werden über
+OpenStreetMap-Nominatim aufgelöst, die Route für ein Auto berechnet OpenRouteService (Quellenangabe „Routen: OpenRouteService, Geodaten ©
+OpenStreetMap-Mitwirkende“), der Abstand zur Route ist 1, 2, 5 oder 10 km (Standard 2 km). Die Tankerkönig-Abfragen entlang der Strecke sind auf
+höchstens 15 je Suche und 400 km Routenlänge begrenzt (nacheinander, mindestens eine Sekunde Abstand; [ADR 0014](docs/adr/0014-route-search.md)).
+Der Schlüssel des Routingdienstes wird wie der Tankerkönig-Schlüssel behandelt: lokal über `TANKRADAR_ROUTING_API_KEY`, dann `ROUTING_API_KEY`, dann die
+nicht versionierte Datei `routing.local.props` (Element `RoutingApiKey`), in der CI über das Secret `ROUTING_API_KEY` (nur iOS; das Windows-Paket enthält ihn nie);
+siehe [`docs/help/Preisdaten/api-schluessel.md`](docs/help/Preisdaten/api-schluessel.md). Routen, Adressen und Standort werden nicht gespeichert.
 
 Neben der Standortsuche bietet „Karte“ die Suche nach Adresse, Ort oder Postleitzahl (Suchart „Adresse, Ort oder
 PLZ“): Die Eingabe wird erst beim ausdrücklichen Absenden geprüft und über OpenStreetMap-Nominatim in eine

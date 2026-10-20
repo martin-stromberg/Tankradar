@@ -143,6 +143,15 @@ Auf langsamen Windows-Runnern scheiterte `SearchE2ETests_LargeResult` einmal mit
 wiederholt einen einzelnen UIA-Timeout begrenzt über `TransientRetry` (andere Fehler bleiben sichtbar) und prüft die Chip-Auswahl zuerst am bereits
 gefundenen Element statt per Suche im ganzen Baum. Lokal sank die Laufzeit des Tests von 12 s auf 7 s (einschließlich App-Start).
 
+Die Wartephasen laufen über `TransientWait.Until` (`src/TestSupport/TransientWait.cs`): Ein UIA-Timeout und ein Element, das zwischen Suche und Lesen nicht mehr verfügbar
+ist (`ElementNotAvailableException`, z. B. weil die Liste neu aufgebaut wird), gelten als „noch nicht erfüllt“; gewartet wird bis zur Frist, andere Fehler bleiben sichtbar.
+Die Überladung mit `out TimeSpan timeoutTime` liefert die in solchen Fehlern verbrachte Zeit. Zeitgrenzen beziehen sich auf die **Messzeit abzüglich dieser Zeit**
+(`SearchE2ETests_LargeResult`: Sortierwechsel höchstens 10 s ohne UIA-Wartezeit; eine Sonderfrist bei Timeouts gibt es nicht mehr). Der Test prüft außerdem die
+Namensreihenfolge nach dem Sortierwechsel und zählt nach „Weitere anzeigen“ im Ruhezustand einmal 50 Einträge. Das Verhalten in künftigen CI-Läufen ist zu beobachten.
+
+E2E-Tests dürfen dem Anwender weder Tastatur- noch Maus- noch Fensterfokus nehmen (keine Aufrufe von `Focus()`, `SetForeground`, Tastatur- oder Mausaktionen; Eingaben per
+UIA-Wertemuster, Chips und Schaltflächen per `Invoke`); `E2EInputPolicyTests_NoFocus` prüft das per Quelltext. In Wartephasen entfallen breite `FindAll`-Suchen über das Fenster.
+
 ## E2E-Diagnosedaten
 
 Zur Nachvollziehbarkeit eines Fehlschlags erfasst die

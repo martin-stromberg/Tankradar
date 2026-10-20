@@ -68,7 +68,7 @@ Je Tankstelle zeigt die Liste:
 
 Gibt es keine Tankstelle im Umkreis, erscheint „Keine Tankstellen im Umkreis gefunden“.
 
-Bei sehr vielen Treffern (in Großstädten bei 25 km mehrere hundert) zeigt die Liste zunächst die ersten 25 Tankstellen; **Weitere anzeigen (N weitere)** ergänzt jeweils 25. Ein Wechsel von Filter oder Sortierung zeigt wieder die ersten 25 der neu geordneten Liste.
+Bei sehr vielen Treffern (in Großstädten bei 25 km mehrere hundert) zeigt die Liste zunächst die ersten 25 Tankstellen; **Weitere anzeigen (N übrig)** ergänzt jeweils 25 (N ist die Zahl der noch nicht angezeigten Treffer). Ein Wechsel von Filter oder Sortierung zeigt wieder die ersten 25 der neu geordneten Liste.
 
 ### Filtern und Sortieren
 
@@ -111,3 +111,23 @@ Die Karte besteht aus Kacheln von OpenStreetMap und sieht unter iOS und Windows 
 - **Filter und Sortierung** gelten für Liste und Karte gemeinsam; die Karte zeigt immer die gesamte gefilterte Ergebnismenge (nicht nur die ersten Listeneinträge).
 
 Datenschutz: Beim Laden der Kacheln erfährt der Kachelserver von OpenStreetMap Ihre IP-Adresse und den betrachteten Kartenausschnitt, nicht aber die genaue Suchposition. Wie lange eine Kachel ohne erneute Prüfung gilt, bestimmt der Kachelserver; nennt er nichts, sind es sieben Tage (höchstens 100 MB Zwischenspeicher). Hat der Server eine Kachel schon eine Weile vorgehalten, gilt sie entsprechend kürzer; bestätigt er eine Kachel ohne neue Angaben, behält sie ihre bisherige Gültigkeitsdauer; ohne Verbindung zeigt die Karte bereits geladene Kacheln, sonst einen leeren Hintergrund, die Markierungen bleiben benutzbar. Begründung und Abweichungen vom Designentwurf: [ADR 0005](../../adr/0005-map-view-decisions.md).
+
+## Suche entlang einer Route
+
+Die Suchart **Route** zeigt Tankstellen entlang einer Strecke mit dem Auto.
+
+- **Start:** **Aktueller Standort** (nur wenn **Standort und GPS** das erlaubt) oder **Adresse, Ort oder PLZ**. **Ziel:** Adresse, Ort oder Postleitzahl.
+  Beide werden wie bei der Adresssuche über OpenStreetMap-Nominatim aufgelöst (erster Treffer; der aufgelöste Name steht in der Zusammenfassung).
+- **Abstand zur Route:** 1, 2, 5 oder 10 km (voreingestellt 2 km). Es erscheinen nur Tankstellen innerhalb dieses Abstands.
+- Die Route berechnet OpenRouteService (Profil Auto). Die Abfragen der Preise erfolgen entlang der Strecke: höchstens 15 Abfragen, nacheinander im
+  Abstand von mindestens einer Sekunde; Routen sind bis 400 km möglich. Eine Suche dauert deshalb je nach Länge bis zu etwa 15 Sekunden; der Fortschritt
+  („Tankstellen werden gesucht (3 von 9) …“) wird angezeigt.
+- **Ergebnis:** Liste und Karte mit den gewohnten Filtern, Preisen mit Alter, Hinweisen, Preisniveau-Farben und Sortierungen. Die **Entfernung** ist die Position
+  entlang der Route („12,3 km ab Start“), zusätzlich steht „0,8 km abseits der Route“ da. Die Karte zeichnet die Route ein und markiert Start und Ziel.
+  Antippen einer Tankstelle öffnet die Detailansicht. Über der Liste steht „Von A nach B, 123 km, N Tankstellen im Abstand von 2 km zur Route“.
+- **Quellenangabe:** „Routen: OpenRouteService, Geodaten © OpenStreetMap-Mitwirkende“.
+- **Fehler:** Meldungen gibt es für nicht gefundene Orte (Start oder Ziel), „Start und Ziel liegen am selben Ort“, nicht berechenbare oder zu lange Routen,
+  einen ausgelasteten oder nicht erreichbaren Routendienst, fehlende Verbindung und Fehler des Preisdienstes. Fehlt der Schlüssel des Routendienstes,
+  meldet die Routensuche „Routensuche nicht verfügbar“; die übrige Suche funktioniert weiter. Bei einem Fehler gibt es keine Teilergebnisse.
+- **Datenschutz:** Start, Ziel, Standort und Route werden nicht gespeichert und nicht protokolliert; sie gehen nur an Nominatim und OpenRouteService.
+  Die abgerufenen Tankstellen und Preise werden wie bei jeder Suche zwischengespeichert (öffentliche Daten).

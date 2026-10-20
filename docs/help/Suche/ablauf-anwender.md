@@ -55,3 +55,14 @@ Eine Liste der Tankstellen im gewählten Umkreis. Erscheint „Offline: keine Ve
 3. Mit **+**/**−** zoomen, mit Wischgeste oder den Pfeilen verschieben, mit **◎** den Ausschnitt zurücksetzen.
 4. Auf eine Markierung tippen, um die Details der Tankstelle zu öffnen; mit dem Zurück-Pfeil kommen Sie zur Karte zurück.
 5. Mit **Liste** wechseln Sie ohne neue Suche zurück. Möchten Sie immer mit der Karte starten, wählen Sie in den **Optionen** die Standardansicht **Karte**.
+
+## Suche entlang einer Route
+
+1. Tippen Sie im Bereich **Karte** unter **Suchen nach** auf **Route**.
+2. Wählen Sie unter **Start** **Aktueller Standort** oder **Adresse, Ort oder PLZ** (dann den Start eingeben).
+3. Geben Sie das **Ziel** ein. Mit **Start löschen** bzw. **Ziel löschen** leeren Sie die Felder.
+4. Wählen Sie den **Abstand zur Route** (1, 2, 5 oder 10 km).
+5. Tippen Sie auf **Suchen**. Erst jetzt gehen die Eingaben an Nominatim und OpenRouteService; der Fortschritt steht unter der Schaltfläche.
+6. Die Tankstellen erscheinen in der Reihenfolge entlang der Route (Sortierung **Entfernung**), mit „km ab Start“ und dem Abstand zur Route. Unter **Ansicht** → **Karte** sehen Sie die eingezeichnete Route.
+
+> **Hinweis:** Bei Fehlern erscheint eine verständliche Meldung. Es werden keine Routen, Adressen oder Standorte gespeichert.

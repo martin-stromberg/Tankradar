@@ -54,3 +54,25 @@ Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testm
 ## Hinweis zur Sicherheit des Build-Schlüssels
 
 Der beim Build mitgegebene Schlüssel steht als Metadatum in der ausgelieferten Assembly und ist daraus lesbar. Bei der iOS-App (TestFlight) ist das unvermeidbar, weil es kein Backend gibt, das den Schlüssel verwaltet; bei lokalen Windows-Builds liegt die Assembly nur auf Ihrem Rechner (Zwischenstände unter `review-versions/` nicht weitergeben). Er steht nicht im Quellcode und in keinem öffentlich herunterladbaren Windows-Paket. Verwenden Sie für den iOS-Build einen eigenen, jederzeit rotierbaren Schlüssel und tauschen Sie ihn bei Verdacht auf Weitergabe aus (empfohlen: regelmäßige Rotation, neuen Wert im Secret `FUEL_PRICE_API_KEY` hinterlegen).
+
+## Schlüssel des Routingdienstes (OpenRouteService)
+
+Die Routensuche (Schritt 17) braucht einen eigenen Schlüssel von <https://openrouteservice.org>. Er wird wie der Tankerkönig-Schlüssel behandelt:
+
+- **Lokal:** Umgebungsvariable `TANKRADAR_ROUTING_API_KEY`, dann `ROUTING_API_KEY` (Name des GitHub-Secrets), dann die nicht versionierte Datei
+  `routing.local.props` im Repository-Root (fällt unter `*.local.props` der `.gitignore`):
+
+  ```xml
+  <Project>
+    <PropertyGroup>
+      <RoutingApiKey>IHR-SCHLUESSEL</RoutingApiKey>
+    </PropertyGroup>
+  </Project>
+  ```
+
+  Die Build-Aufgabe `src/Tankradar.MAUI/MSBuild/RoutingApiKey.targets` arbeitet wie die des Tankerkönig-Schlüssels (Assembly-Metadatum `RoutingApiKey`, nie im Log).
+- **Laufzeit:** sichere Ablage (Windows: Credential Locker „Tankatlas/RoutingApi“, iOS: Keychain „tankatlas.routing-api-key“); der Build-Schlüssel ist maßgeblich.
+- **Windows-Paket:** enthält den Schlüssel nie (öffentlich herunterladbar). `scripts/package-windows.ps1` und die Aktion `build-and-package` leeren die Routing-Variablen
+  und blenden `routing.local.props` aus; `scripts/validate-workflows.py` prüft das. Der iOS-Build erhält das Secret `ROUTING_API_KEY` (`TANKRADAR_ROUTING_API_KEY`).
+- **Ohne Schlüssel:** Die Routensuche meldet „Routensuche nicht verfügbar“; alle anderen Funktionen laufen weiter.
+- **Tests:** nur `TANKRADAR_ROUTE_API_KEY` im Testmodus (getrennt von der Build-Variablen), Mock `MockOpenRouteServiceServer`, nie ein echter Schlüssel.

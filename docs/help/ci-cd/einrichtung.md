@@ -56,7 +56,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | Name | Inhalt | Pflicht |
 |---|---|---|
 | `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes; nur für den iOS-Build (TestFlight) | optional (ohne Schlüssel zeigt die App nur zuletzt bekannte Preise) |
-| `ROUTING_API_KEY` | API-Schlüssel des Routing-Dienstes | optional, bis die App ihn nutzt |
+| `ROUTING_API_KEY` | API-Schlüssel des Routing-Dienstes (OpenRouteService); nur für den iOS-Build, das Windows-Paket enthält ihn nie | optional (ohne Schlüssel meldet die Routensuche „nicht verfügbar“) |
 | `IOS_CODESIGN_KEY` | Name der Signierungsidentität, z. B. `Apple Distribution: Firma (TEAMID)` | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE` | Name des Provisioning-Profils (wie im Developer-Portal) | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE_BASE64` | `.mobileprovision`-Datei, Base64-kodiert | für signierten iOS-Build |

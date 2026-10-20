@@ -127,3 +127,5 @@ und liefen in UIA-Timeouts (Staging-Lauf mit `SearchE2ETests_LargeResult`), zugl
 - Die Kartenkomponente ist die Grundlage für spätere Schritte (z. B. Routenansicht, Schritt 17).
 - Das Verhalten der Gesten unter iOS ist nur per Compile-Prüfung (`local-ci.ps1`) abgesichert und erst auf
   einem Gerät bzw. in TestFlight prüfbar.
+- Schritt 17 zeichnet auf dieser Karte die Route einer Routensuche (Linie unter den Markern, Ziel, Anpassung des Ausschnitts an die
+  Begrenzungsbox); siehe [ADR 0014](0014-route-search.md).
