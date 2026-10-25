@@ -3,8 +3,8 @@ using Tankradar.MAUI.Services.Pricing;
 namespace Tankradar.MAUI.Services.Routing;
 
 /// <summary>
-/// Sorgt für den Mindestabstand zwischen den Preisabfragen der Routensuche (<see cref="RouteSearchOptions.MinQueryInterval"/>), auch über mehrere Suchen hinweg und
-/// bei gleichzeitigen Aufrufern. Jede Abfrage reserviert einen Zeitpunkt (Absendezeitpunkt): der erste Aufrufer sofort, jeder weitere frühestens ein Intervall nach dem
+/// Sorgt für den Mindestabstand zwischen den Preisabfragen der Routensuche (<see cref="RouteSearchOptions.MinQueryInterval"/> zuzüglich der Reserve <see cref="RouteSearchOptions.QueryIntervalReserve"/>), auch über mehrere Suchen hinweg und
+/// bei gleichzeitigen Aufrufern. Jede Abfrage reserviert einen Zeitpunkt (Absendezeitpunkt): der erste Aufrufer sofort, jeder weitere frühestens ein Intervall (Mindestabstand plus Reserve) nach dem
 /// vorherigen reservierten Zeitpunkt. Die Reservierung gilt auch, wenn die Abfrage danach abgebrochen wird, während sie unterwegs ist; nur ein Abbruch in der Wartezeit
 /// (es wurde nichts gesendet) gibt sie wieder frei. Der Abstand gilt zusätzlich zur allgemeinen Drosselung des Preisdienstes (<see cref="RequestThrottle"/>), über die alle
 /// Abfragen der App laufen; die Routensuche umgeht diese also nicht, sie wartet nur länger. Die Zeit wird monoton gemessen.
@@ -47,7 +47,7 @@ public sealed class RouteQueryPacer
             previous = _nextSlot;
             slot = previous is { } next && _timeProvider.GetElapsedTime(now, next) > TimeSpan.Zero ? next : now;
             remaining = _timeProvider.GetElapsedTime(now, slot);
-            _nextSlot = slot + (long)(_options.MinQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
+            _nextSlot = slot + (long)(_options.EffectiveQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
         }
 
         if (remaining <= TimeSpan.Zero)
@@ -55,7 +55,7 @@ public sealed class RouteQueryPacer
             return;
         }
 
-        var reserved = slot + (long)(_options.MinQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
+        var reserved = slot + (long)(_options.EffectiveQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
         try
         {
             await _delay.DelayAsync(remaining, cancellationToken).ConfigureAwait(false);

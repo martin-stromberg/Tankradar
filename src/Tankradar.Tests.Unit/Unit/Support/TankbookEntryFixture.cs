@@ -48,6 +48,12 @@ public sealed class TankbookEntryFixture : IDisposable
     public RecordingLogger<TankbookExportService> ExportLogger { get; } = new();
 
     /// <summary>
+    /// Der Dateischutz-Fake des Exportdienstes.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public FakeDatabaseFileProtector ExportProtector { get; } = new();
+
+    /// <summary>
     /// Die Benachrichtigung nach einer Wiederherstellung.
     /// </summary>
     /// <returns>Der Wert.</returns>
@@ -144,7 +150,7 @@ public sealed class TankbookEntryFixture : IDisposable
     /// <returns>Der Dienst.</returns>
     public TankbookExportService CreateExportService()
     {
-        return new TankbookExportService(Vehicles, Service, new FakeAppDataPathProvider(Temp.Path), Clock, ExportLogger);
+        return new TankbookExportService(Vehicles, Service, new FakeAppDataPathProvider(Temp.Path), ExportProtector, Clock, ExportLogger);
     }
 
     /// <summary>

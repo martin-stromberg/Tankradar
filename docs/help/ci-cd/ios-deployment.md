@@ -23,6 +23,20 @@ dieselbe iTMSTransporter-Suche.
 
 Hilfe: `Get-Help ./scripts/iOS-Deployment.ps1 -Full`.
 
+## Mindestversion und fehlende Werte
+
+- **Mindestversion iOS 16:** Die App unterstützt iOS 16 und neuer (`SupportedOSPlatformVersion` in der `.csproj`). Die IPA-Validierung (`store`, `upload`) bricht mit einer Fehlermeldung ab, wenn `MinimumOSVersion` in der `Info.plist` des Pakets kleiner als 16 ist oder fehlt; dieselbe Prüfung läuft in der CI (Schritt *Validate iOS package* in `package-ios`, vor dem Upload).
+- **Fehlende Werte werden gesammelt gemeldet:** Fehlen Werte, nennt das Skript alle fehlenden Werte der gewählten Aktion auf einmal, jeweils mit Parameter, Umgebungsvariable und Herkunft (Apple-Developer-Konto bzw. App Store Connect; die Team-ID steht in Klammern am Ende des Zertifikatsnamens). Jede Aktion prüft nur ihre eigenen Werte:
+
+| Aktion | Benötigte Werte |
+|---|---|
+| `build`, `simulator`, `list` | keine Signierungs- oder App-Store-Werte (unter Windows: Mac-Zugang) |
+| `device` | `-CodesignKey`, `-CodesignProvision` |
+| `upload` | `-ApiKeyPath`, `-ApiKeyId`, `-ApiIssuerId` |
+| `store` | Signierung und App-Store-Connect-Zugang |
+
+Ein fehlender App-Store-Wert verhindert also nie einen Simulator- oder Gerätelauf.
+
 ## Voraussetzungen und Umgebungsvariablen
 
 | Variable | Bedeutung |
@@ -95,7 +109,8 @@ $env:TANKRADAR_IOS_MAC_SERVER_USER    = "martin"
   `PrivacyInfo.xcprivacy` im Bundle-Root (Pflicht, Fehler bei Fehlen; die Datei liegt unter
   `src/Tankradar.MAUI/Platforms/iOS/Resources/`), Gerätefamilie (iPhone muss enthalten sein),
   `ITSAppUsesNonExemptEncryption` = `false` (Pflicht; in der `Info.plist` gesetzt, die App nutzt nur Standard-HTTPS)
-  und führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankatlas nicht gelten (nur iPhone,
+  `MinimumOSVersion` (iOS 16 oder neuer), die Größe des Marketing-Icons (1024 x 1024 px) und
+  führt `iTMSTransporter -m verify` aus. Vorlagen-Invarianten, die für Tankatlas nicht gelten (nur iPhone,
   `en`+`de`-Lokalisierung), sind abgeschwächt bzw. entfallen.
 - Die Variablen `$isWindows`/`$isMacOS` heißen `$onWindows`/`$onMacOS`, weil PowerShell 7 gleichnamige
   Konstanten schreibgeschützt führt.
@@ -105,7 +120,11 @@ $env:TANKRADAR_IOS_MAC_SERVER_USER    = "martin"
 
 `scripts/test-ios-deployment.ps1` (Teil von `scripts/local-ci.ps1` und des CI-Schritts *iOS deployment script
 checks*) prüft ohne Mac: PowerShell-Syntax, Hilfe (`Get-Help`), das saubere Abbrechen mit verständlicher Meldung
-bei fehlendem Mac, die Buildnummern-Logik und das Transporter-Suchskript.
+bei fehlendem Mac, die Buildnummern-Logik (auch Randfälle: ungültige `-Version`, gleiche Version, fehlendes Tag),
+die IPA-Auswahl (`-IpaPath`, mehrere IPAs, Vorrang von `publish`), die Mindestversion (`Test-MinimumOsVersion`),
+die gesammelten Meldungen fehlender Werte je Aktion, das Transporter-Suchskript, Textmuster von `Info.plist` und
+Privacy-Manifest sowie die Übereinstimmung der Fehlertexte mit dem CI-Schritt *Validate iOS package*.
+Datenschutzangaben, Berechtigungstexte und Manifest: [Datenschutz](../Datenschutz/index.md).
 
 **Nicht** prüfbar ohne Mac, daher bis zum ersten Lauf auf einem Mac bzw. auf GitHub offen: Pair to Mac, SSH/scp,
 Simulator, Gerät, Signierung, Keychain, iTMSTransporter, Upload nach TestFlight.

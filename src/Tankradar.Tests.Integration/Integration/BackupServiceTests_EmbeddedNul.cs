@@ -11,6 +11,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// bis zum ersten NUL, die zusätzliche Byteprüfung (<c>length(CAST(col AS BLOB))</c>, ADR 0011) erkennt den Überhang. Erwartet wird die Ablehnung mit
 /// <see cref="BackupResult.InvalidFile"/> und unveränderter Bestand; zulässig wäre auch die Annahme mit gekürztem Wert, aber nie ein Absturz oder ein überlanger Wert.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_EmbeddedNul : IDisposable
 {
     private const string Payload = "'a' || char(0) || replace(hex(zeroblob(100000)), '0', 'x')";

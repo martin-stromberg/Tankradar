@@ -21,6 +21,7 @@ public sealed class TankbookExportService : ITankbookExportService
     private readonly IVehicleService _vehicleService;
     private readonly ITankbookEntryService _entryService;
     private readonly IAppDataPathProvider _paths;
+    private readonly IDatabaseFileProtector _protector;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<TankbookExportService> _logger;
 
@@ -30,18 +31,21 @@ public sealed class TankbookExportService : ITankbookExportService
     /// <param name="vehicleService">Der Fahrzeugdienst.</param>
     /// <param name="entryService">Der Dienst der Vorgänge.</param>
     /// <param name="paths">Liefert den Zwischenspeicher.</param>
+    /// <param name="protector">Setzt den Dateischutz der fertigen Exportdatei (iOS: Data Protection).</param>
     /// <param name="timeProvider">Die Zeitquelle.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
     public TankbookExportService(
         IVehicleService vehicleService,
         ITankbookEntryService entryService,
         IAppDataPathProvider paths,
+        IDatabaseFileProtector protector,
         TimeProvider timeProvider,
         ILogger<TankbookExportService> logger)
     {
         _vehicleService = vehicleService;
         _entryService = entryService;
         _paths = paths;
+        _protector = protector;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -86,6 +90,9 @@ public sealed class TankbookExportService : ITankbookExportService
             {
                 await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
             }
+
+            // Die Datei enthält personenbezogene Tankbuchdaten: Sie erhält wie die Datenbank und die Belegfotos den Dateischutz des Betriebssystems.
+            _protector.ProtectFile(path);
 
             return new TankbookExportResult(TankbookExportStatus.Exported, path, Path.GetFileName(path), data.Entries.Count);
         }

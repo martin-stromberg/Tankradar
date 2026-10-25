@@ -30,6 +30,20 @@ public class TankbookExportServiceTests_Files : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass die fertige Exportdatei den Dateischutz des Betriebssystems erhält (personenbezogene Tankbuchdaten).
+    /// </summary>
+    [Fact]
+    public async Task Create_ProtectsFinishedFile()
+    {
+        var vehicle = await CreateVehicleWithEntryAsync();
+
+        var result = await _fixture.CreateExportService().CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null));
+
+        Assert.Equal(TankbookExportStatus.Exported, result.Status);
+        Assert.Equal(result.FilePath, Assert.Single(_fixture.ExportProtector.ProtectedFiles));
+    }
+
+    /// <summary>
     /// Prüft, dass vor einem Export alte Dateien im Exportverzeichnis gelöscht werden.
     /// </summary>
     [Fact]

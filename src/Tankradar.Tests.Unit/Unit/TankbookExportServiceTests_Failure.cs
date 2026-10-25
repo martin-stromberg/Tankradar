@@ -53,7 +53,7 @@ public class TankbookExportServiceTests_Failure : BaseTest
         var vehicle = await _fixture.CreateVehicleAsync("Golf");
         await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddDays(-1), 10_500));
         using var cts = new CancellationTokenSource();
-        var service = new TankbookExportService(_fixture.Vehicles, _fixture.Service, new CancellingPaths(_fixture.Temp.Path, cts), _fixture.Clock, _fixture.ExportLogger);
+        var service = new TankbookExportService(_fixture.Vehicles, _fixture.Service, new CancellingPaths(_fixture.Temp.Path, cts), _fixture.ExportProtector, _fixture.Clock, _fixture.ExportLogger);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => service.CreateAsync(vehicle.Id, new TankbookExportRequest(TankbookExportFormat.Csv, null, null), cts.Token));

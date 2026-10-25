@@ -91,6 +91,32 @@ public class SearchTextsTests_Route : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass die durchsuchbare Länge abgerundet wird (nie größer als tatsächlich möglich).
+    /// </summary>
+    [Fact]
+    public void FormatRouteLimit_RoundsSearchableLengthDown()
+    {
+        var text = SearchTexts.FormatRouteLimit(new RouteLimit(5, 200.2, 85.9));
+
+        Assert.Contains("bis 85 km", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("86", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass bei 1 km Abstand kein kleinerer Abstand vorgeschlagen wird, bei größerem Abstand aber schon.
+    /// </summary>
+    [Fact]
+    public void FormatRouteLimit_AtOneKm_OmitsSmallerDistanceHint()
+    {
+        var atOne = SearchTexts.FormatRouteLimit(new RouteLimit(1, 400, 400.5));
+        var atTwo = SearchTexts.FormatRouteLimit(new RouteLimit(2, 400, 260));
+
+        Assert.DoesNotContain("kleineren Abstand", atOne, StringComparison.Ordinal);
+        Assert.EndsWith("Wähle eine kürzere Strecke.", atOne, StringComparison.Ordinal);
+        Assert.Contains("kleineren Abstand", atTwo, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Prüft, dass die Meldung der Abfragegrenze nur mit Angaben erscheint und sonst (Routingdienst lehnt ab) der allgemeine Hinweis gilt.
     /// </summary>
     [Fact]

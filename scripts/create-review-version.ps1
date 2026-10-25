@@ -83,6 +83,14 @@ if (Test-Path $releaseObjDir) {
     Get-ChildItem -Path $releaseObjDir -Recurse -File -Filter "mauimanifest.stamp" -ErrorAction SilentlyContinue | Remove-Item -Force
 }
 
+# Der Publish-Ordner wird vor dem Build geleert: Sonst koennten die Icon-Pruefung unten und der Zwischenstand
+# veraltete Dateien eines frueheren Builds enthalten (ein fehlgeschlagener Build haette dann scheinbar bestanden).
+$publishDir = Join-Path $repoRoot "src\Tankradar.MAUI\bin\Release\$targetFramework\win-x64\publish"
+if (Test-Path $publishDir) {
+    Remove-Item -Path $publishDir -Recurse -Force
+}
+$buildStart = Get-Date
+
 Write-Host "Fuehre Windows-Release-Build aus (dotnet publish, Framework $targetFramework) ..."
 & dotnet publish $mauiProject -c Release -f $targetFramework -p:Version=$Version -p:InformationalVersion=$Version -p:ApplicationDisplayVersion=$Version
 
@@ -108,14 +116,14 @@ if (-not $reportedVersion -or -not $reportedVersion.StartsWith("$Version.")) {
 }
 Write-Host "Die App meldet die Version $reportedVersion."
 
-$publishDir = Join-Path $repoRoot "src\Tankradar.MAUI\bin\Release\$targetFramework\win-x64\publish"
 
 if (-not (Test-Path $publishDir)) {
     Write-Error "Erwartetes Build-Ausgabeverzeichnis wurde nicht gefunden: $publishDir"
     exit 1
 }
 
-# Pruefung: Der Resizetizer muss das App-Icon (Windows-ICO, Taskleistengroessen, Kacheln) erzeugt haben; sonst startet die App mit dem Standardsymbol.
+# Pruefung: Der Resizetizer muss das App-Icon (Windows-ICO, Taskleistengroessen, Store-Logo) erzeugt haben; sonst startet die App mit dem
+# Standardsymbol. Der Publish-Ordner wurde vor dem Build geleert, vorhandene Dateien stammen also aus diesem Build.
 foreach ($iconFile in @("appicon.ico", "appiconLogo.targetsize-16.png", "appiconLogo.targetsize-32.png", "appiconLogo.targetsize-256.png", "appiconStoreLogo.scale-400.png")) {
     if (-not (Test-Path (Join-Path $publishDir $iconFile))) {
         Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -123,6 +131,38 @@ foreach ($iconFile in @("appicon.ico", "appiconLogo.targetsize-16.png", "appicon
         exit 1
     }
 }
+
+# Das ICO wird bei jedem Build neu geschrieben (MSBuild\WindowsAppIcon.targets): Es darf nicht aelter als der Build und nicht aelter
+# als die SVG-Quellen sein, und es muss mehrere Groessen enthalten (mindestens 16, 32, 48 und 256 px).
+$icoPath = Join-Path $publishDir "appicon.ico"
+$icoFile = Get-Item $icoPath
+$iconSources = Get-ChildItem -Path (Join-Path $repoRoot "src\Tankradar.MAUI\Resources\AppIcon") -Filter "*.svg"
+$newestSource = ($iconSources | Measure-Object -Property LastWriteTime -Maximum).Maximum
+if ($icoFile.LastWriteTime -lt $buildStart.AddSeconds(-2) -or ($newestSource -and $icoFile.LastWriteTime -lt $newestSource)) {
+    Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Error "Die Icon-Datei '$icoPath' ist veraltet (geaendert $($icoFile.LastWriteTime), Build gestartet $buildStart). Es wurde kein Zwischenstand erzeugt."
+    exit 1
+}
+function Get-IcoSizes {
+    param([string]$Path)
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -lt 6 -or $bytes[0] -ne 0 -or $bytes[1] -ne 0 -or $bytes[2] -ne 1 -or $bytes[3] -ne 0) { return @() }
+    $count = [BitConverter]::ToUInt16($bytes, 4)
+    $sizes = @()
+    for ($i = 0; $i -lt $count; $i++) {
+        $width = $bytes[6 + 16 * $i]
+        $sizes += $(if ($width -eq 0) { 256 } else { [int]$width })
+    }
+    return $sizes
+}
+$icoSizes = @(Get-IcoSizes -Path $icoPath)
+$missingSizes = @(16, 32, 48, 256) | Where-Object { $icoSizes -notcontains $_ }
+if ($missingSizes) {
+    Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Error "Die Icon-Datei '$icoPath' enthaelt die Groessen ($($icoSizes -join ', ')) px; es fehlen: $($missingSizes -join ', ') px. Es wurde kein Zwischenstand erzeugt."
+    exit 1
+}
+Write-Host "Das App-Icon enthaelt die Groessen $($icoSizes -join ', ') px."
 
 Write-Host "Kopiere Build-Ausgabe nach '$binDir' ..."
 Copy-Item -Path $publishDir -Destination $binDir -Recurse -Force

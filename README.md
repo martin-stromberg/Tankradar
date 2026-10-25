@@ -202,8 +202,8 @@ OpenStreetMap-Mitwirkende“), der Abstand zur Route ist 1, 2, 5 oder 10 km (Sta
 höchstens 3 je Suche mit mindestens 10 Sekunden Abstand begrenzt (vorläufig, bis Tankerkönig die Zulässigkeit geklärt hat; zu lange Routen werden mit Hinweis
 abgelehnt; [ADR 0014](docs/adr/0014-route-search.md)).
 Den Schlüssel für OpenRouteService beantragt jeder Anwender selbst und trägt ihn in den **Optionen** unter **Routensuche** ein (verdecktes Feld, Prüfung per
-Testanfrage, Schalter **Routensuche aktivieren**). Er liegt nur in der sicheren Ablage des Geräts (Credential Locker bzw. Keychain), wird beim Build nie eingebunden
-und gehört nicht zur Sicherung. Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar und es gehen Aufrufe an OpenRouteService
+Testanfrage, Schalter **Routensuche aktivieren**). Er liegt in der Keychain des Geräts (iOS) bzw. im Credential Locker (Windows), wird beim Build nie eingebunden
+und gehört nicht zur Sicherung der App (iOS-Keychain-Einträge können in verschlüsselten Gerätesicherungen enthalten sein). Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar und es gehen Aufrufe an OpenRouteService
 (`https://api.heigit.org/openrouteservice/`); siehe [`docs/help/Preisdaten/api-schluessel.md`](docs/help/Preisdaten/api-schluessel.md). Routen, Adressen und Standort werden nicht gespeichert.
 
 Neben der Standortsuche bietet „Karte“ die Suche nach Adresse, Ort oder Postleitzahl (Suchart „Adresse, Ort oder
@@ -282,7 +282,7 @@ Details und Begründung: [`docs/adr/0001-no-electricity-prices-in-v1.md`](docs/a
   (`net10.0-ios`, `SupportedOSPlatformVersion=16.0`); ein tatsächlicher iOS-Build (App-Bundle,
   Simulator/Gerät) ist hier jedoch nicht durchführbar und muss auf einem Mac bzw. über CI erfolgen.
   Für Build, Simulator, Gerät und TestFlight-Upload (auch von Windows per Pair to Mac) gibt es
-  `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md).
+  `scripts/iOS-Deployment.ps1`, siehe [`docs/help/ci-cd/ios-deployment.md`](docs/help/ci-cd/ios-deployment.md). Datenschutzangaben für den App Store: [`docs/help/Datenschutz/`](docs/help/Datenschutz/index.md).
 - **Sicherungen sind unverschlüsselt:** Sie enthalten Fahrdaten und Belege; eine geteilte oder gespeicherte Kopie liegt außerhalb
   des Dateischutzes der App ([ADR 0011](docs/adr/0011-local-backup-restore.md)).
 - **Sichtprüfung offen:** Das Aussehen der Auswertung (Kacheln, Diagramme) und der Karte „Sicherung“ sowie das Verhalten des

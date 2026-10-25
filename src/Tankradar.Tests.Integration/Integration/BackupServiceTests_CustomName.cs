@@ -11,6 +11,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft, dass der eigene Anzeigename einer Tankstelle Teil der Sicherung ist (Wiederherstellung auf dem Stand der Sicherung) und dass eine Sicherung
 /// aus der Zeit vor dem eigenen Anzeigenamen (ohne die Spalte) weiter eingespielt und migriert wird, ohne Daten zu verlieren.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_CustomName : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

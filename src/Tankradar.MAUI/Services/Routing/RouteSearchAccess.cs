@@ -7,8 +7,8 @@ namespace Tankradar.MAUI.Services.Routing;
 
 /// <summary>
 /// Zugang zur Routensuche: der vom Anwender eingetragene OpenRouteService-Schlüssel (sichere Ablage) und der Schalter „Routensuche aktivieren“.
-/// Die Routensuche ist nur aktiv, wenn der Schalter an ist und ein Schlüssel gespeichert ist. Schlüssel und Schalter sind gerätelokal und gehören nicht zur
-/// Sicherung; nach einer Wiederherstellung ohne Schlüssel ist die Routensuche daher aus. Der Schlüssel wird nie protokolliert.
+/// Die Routensuche ist nur aktiv, wenn der Schalter an ist und ein Schlüssel gespeichert ist. Schlüssel und Schalter liegen in der Keychain des Geräts bzw. im Credential Locker und gehören nicht zur
+/// Sicherung der App (iOS-Keychain-Einträge können in verschlüsselten Gerätesicherungen enthalten sein); nach einer Wiederherstellung ohne Schlüssel ist die Routensuche daher aus. Der Schlüssel wird nie protokolliert.
 /// Als <see cref="IApiKeyProvider"/> liefert der Zugang den Schlüssel nur bei aktivierter Routensuche, sodass ohne Aktivierung kein Aufruf an den Routingdienst möglich ist.
 /// </summary>
 public interface IRouteSearchAccess : IApiKeyProvider
@@ -74,7 +74,7 @@ public sealed class RouteSearchAccess : IRouteSearchAccess
     /// Erstellt den Zugang.
     /// </summary>
     /// <param name="keyStore">Die sichere Ablage des Schlüssels.</param>
-    /// <param name="enabledStore">Die Ablage des Schalters (gerätelokal).</param>
+    /// <param name="enabledStore">Die Ablage des Schalters (Keychain bzw. Credential Locker).</param>
     /// <param name="logger">Logger (protokolliert nie den Schlüssel).</param>
     public RouteSearchAccess(IApiKeyStore keyStore, IApiKeyStore enabledStore, ILogger<RouteSearchAccess> logger)
     {

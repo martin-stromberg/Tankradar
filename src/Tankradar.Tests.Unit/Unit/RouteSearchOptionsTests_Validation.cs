@@ -65,6 +65,7 @@ public class RouteSearchOptionsTests_Validation : BaseTest
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { MaxRouteLengthKm = 0 }.Validate());
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { SamePlaceKm = -1 }.Validate());
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { MinQueryInterval = TimeSpan.FromSeconds(-1) }.Validate());
+        Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { QueryIntervalReserve = TimeSpan.FromSeconds(-1) }.Validate());
     }
 
     /// <summary>

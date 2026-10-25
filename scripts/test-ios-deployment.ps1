@@ -40,6 +40,19 @@ function Get-FunctionSource {
     return $fn.Extent.Text
 }
 
+# Fuehrt Funktionen des Skripts in einem eigenen Prozess aus (fuer Pfade mit exit). $Setup setzt Variablen,
+# $Functions nennt die benoetigten Funktionen, $Call ist der Aufruf. Rueckgabe: Exit-Code und Ausgabe.
+function Invoke-Isolated {
+    param([string]$Setup, [string[]]$Functions, [string]$Call)
+    $parts = @($Setup)
+    foreach ($f in $Functions) { $parts += (Get-FunctionSource $ast $f) }
+    $parts += $Call
+    $file = Join-Path $tempDir ("isolated-" + [Guid]::NewGuid().ToString("n") + ".ps1")
+    [IO.File]::WriteAllText($file, ($parts -join "`n"))
+    $out = & $hostPath -NoProfile -File $file 2>&1 | Out-String
+    return [pscustomobject]@{ Code = $LASTEXITCODE; Output = $out }
+}
+
 try {
     $content = [IO.File]::ReadAllText($scriptPath)
 
@@ -147,6 +160,97 @@ try {
     Assert-That "PrivacyInfo.xcprivacy liegt im iOS-Ressourcenordner" (Test-Path (Join-Path $mauiDir "Platforms/iOS/Resources/PrivacyInfo.xcprivacy"))
     $infoPlist = [IO.File]::ReadAllText((Join-Path $mauiDir "Platforms/iOS/Info.plist"))
     Assert-That "Info.plist setzt ITSAppUsesNonExemptEncryption auf false" ($infoPlist -match '<key>ITSAppUsesNonExemptEncryption</key>\s*<false\s*/>')
+
+    Write-Host "Mindestversion iOS 16"
+    Assert-That "csproj: SupportedOSPlatformVersion iOS = 16.0" ($csprojText -match "<SupportedOSPlatformVersion Condition=`"[^`"]*== 'ios'`">16\.0</SupportedOSPlatformVersion>")
+    Invoke-Expression (Get-FunctionSource $ast "Test-MinimumOsVersion")
+    Assert-That "Test-MinimumOsVersion: 15.0 ungueltig" (-not (Test-MinimumOsVersion "15.0"))
+    Assert-That "Test-MinimumOsVersion: 15.9.9 ungueltig" (-not (Test-MinimumOsVersion "15.9.9"))
+    Assert-That "Test-MinimumOsVersion: 16.0 gueltig" (Test-MinimumOsVersion "16.0")
+    Assert-That "Test-MinimumOsVersion: 17.2 gueltig" (Test-MinimumOsVersion "17.2")
+    Assert-That "Test-MinimumOsVersion: leer ungueltig" (-not (Test-MinimumOsVersion ""))
+    Assert-That "Test-MinimumOsVersion: Text ungueltig" (-not (Test-MinimumOsVersion "abc"))
+    Assert-That "Validierung prueft MinimumOSVersion mit Fehler (exit 1)" ($validation -match 'FEHLER: MinimumOSVersion' -and $validation -match 'MinimumOSVersion fehlt oder ist nicht lesbar')
+    Assert-That "Skript und Validierung nutzen dieselbe Mindestversion" ($content -match '\[int\]\$MinimumMajor = 16' -and $validation -match '-ge 16')
+
+    Write-Host "Fehlende Werte je Aktion"
+    Invoke-Expression (Get-FunctionSource $ast "Get-MissingDeployValues")
+    Invoke-Expression (Get-FunctionSource $ast "Write-MissingDeployValues")
+    $CodesignKey = ""; $CodesignProvision = ""; $ApiKeyPath = ""; $ApiKeyId = ""; $ApiIssuerId = ""
+    $storeMissing = @(Get-MissingDeployValues -Action "store" | ForEach-Object { $_.Parameter })
+    Assert-That "store ohne Werte: alle fuenf gesammelt" ($storeMissing.Count -eq 5 -and $storeMissing -contains "-CodesignKey" -and $storeMissing -contains "-CodesignProvision" -and $storeMissing -contains "-ApiKeyPath" -and $storeMissing -contains "-ApiKeyId" -and $storeMissing -contains "-ApiIssuerId") ($storeMissing -join ",")
+    $uploadMissing = @(Get-MissingDeployValues -Action "upload" | ForEach-Object { $_.Parameter })
+    Assert-That "upload ohne Werte: nur App-Store-Connect-Zugang (keine Signierung)" ($uploadMissing.Count -eq 3 -and $uploadMissing -notcontains "-CodesignKey") ($uploadMissing -join ",")
+    $deviceMissing = @(Get-MissingDeployValues -Action "device" | ForEach-Object { $_.Parameter })
+    Assert-That "device ohne Werte: nur Zertifikat und Profil" ($deviceMissing.Count -eq 2 -and $deviceMissing -notcontains "-ApiKeyId") ($deviceMissing -join ",")
+    foreach ($a in @("build", "simulator", "list", "menu")) {
+        Assert-That "$a ohne Werte: nichts fehlt (blockiert nicht)" (@(Get-MissingDeployValues -Action $a).Count -eq 0)
+    }
+    $ApiKeyId = "KEY"; $ApiIssuerId = "ISS"
+    $oneMissing = @(Get-MissingDeployValues -Action "upload")
+    Assert-That "upload: einzeln fehlender Wert (nur -ApiKeyPath)" ($oneMissing.Count -eq 1 -and $oneMissing[0].Parameter -eq "-ApiKeyPath" -and $oneMissing[0].Variable -eq "TANKRADAR_IOS_API_KEY_PATH")
+    Assert-That "Meldung nennt Herkunft (App Store Connect)" ($oneMissing[0].Hint -match "App Store Connect")
+    $CodesignKey = "Apple Distribution: Test (ABCDE12345)"
+    $profileOnly = @(Get-MissingDeployValues -Action "device")
+    Assert-That "device: nur Profil fehlt, Hinweis nennt Apple Developer" ($profileOnly.Count -eq 1 -and $profileOnly[0].Hint -match "Apple-Developer")
+    $CodesignKey = ""
+    $keyMissing = @(Get-MissingDeployValues -Action "device")[0]
+    Assert-That "Zertifikatshinweis erklaert die Team-ID" ($keyMissing.Hint -match "Team-ID")
+    $msgOut = (Write-MissingDeployValues -Action "store" -Missing @(Get-MissingDeployValues -Action "store") 6>&1 | Out-String)
+    Assert-That "Sammelmeldung enthaelt 'Fehlende Pflichtparameter' und die Variablen" ($msgOut -match "Fehlende Pflichtparameter" -and $msgOut -match "TANKRADAR_IOS_CODESIGN_KEY" -and $msgOut -match "TANKRADAR_IOS_PROVISIONING_PROFILE" -and $msgOut -match "TANKRADAR_IOS_API_KEY_PATH")
+    Assert-That "Assert-CodesigningForAction ueberspringt build/simulator/upload" ((Get-FunctionSource $ast "Assert-CodesigningForAction") -match '"simulator", "build", "upload"')
+
+    Write-Host "Buildnummer: Randfaelle"
+    $csprojB = Join-Path $tempDir "Bump.csproj"
+    [IO.File]::WriteAllText($csprojB, $csprojTemplate)
+    $r = Invoke-Isolated -Setup "`$projectPath = '$csprojB'; `$Version = 'abc'" -Functions @("Update-BuildNumber") -Call "Update-BuildNumber"
+    Assert-That "Update-BuildNumber: ungueltige -Version beendet mit Exit 1" ($r.Code -eq 1 -and $r.Output -match "X\.Y") $r.Output
+    Assert-That "Update-BuildNumber: ungueltige -Version aendert die csproj nicht" ([IO.File]::ReadAllText($csprojB) -eq $csprojTemplate)
+    $r = Invoke-Isolated -Setup "`$projectPath = '$csprojB'; `$Version = '0.1.0'" -Functions @("Update-BuildNumber") -Call "Update-BuildNumber"
+    $textB = [IO.File]::ReadAllText($csprojB)
+    Assert-That "Update-BuildNumber: gleiche Version erhoeht nur die Buildnummer" ($r.Code -eq 0 -and $textB -match "<ApplicationVersion>42</ApplicationVersion>" -and $textB -match "<ApplicationDisplayVersion>0\.1\.0</ApplicationDisplayVersion>") $r.Output
+    $csprojNone = Join-Path $tempDir "NoTag.csproj"
+    [IO.File]::WriteAllText($csprojNone, "<Project><PropertyGroup></PropertyGroup></Project>")
+    $r = Invoke-Isolated -Setup "`$projectPath = '$csprojNone'; `$Version = ''" -Functions @("Update-BuildNumber") -Call "Update-BuildNumber"
+    Assert-That "Update-BuildNumber: fehlendes Tag nur Warnung, Exit 0" ($r.Code -eq 0 -and $r.Output -match "Warnung") $r.Output
+
+    Write-Host "IPA-Auswahl (Get-LatestIpa)"
+    $r = Invoke-Isolated -Setup "`$IpaPath = '$(Join-Path $tempDir 'gibt-es-nicht.ipa')'" -Functions @("Get-LatestIpa") -Call "Get-LatestIpa"
+    Assert-That "-IpaPath ohne Datei: Fehler, Exit 1" ($r.Code -eq 1 -and $r.Output -match "nicht gefunden") $r.Output
+    $fakeRepo = Join-Path $tempDir "fakerepo"
+    $ridDir = Join-Path $fakeRepo "src/Tankradar.MAUI/bin/Release/net10.0-ios/ios-arm64"
+    New-Item -ItemType Directory -Path (Join-Path $ridDir "publish") -Force | Out-Null
+    $setupI = "`$repoRoot = '$fakeRepo'; `$framework = 'net10.0-ios'; `$IpaPath = ''; `$RuntimeIdentifier = ''; `$Configuration = ''; `$onMacOS = `$false"
+    $fnsI = @("Get-LatestIpa", "Get-Configuration", "Get-RuntimeIdentifier")
+    $r = Invoke-Isolated -Setup $setupI -Functions $fnsI -Call "Get-LatestIpa"
+    Assert-That "Keine IPA vorhanden: Fehler, Exit 1" ($r.Code -eq 1 -and $r.Output -match "Keine \.ipa") $r.Output
+    [IO.File]::WriteAllText((Join-Path $ridDir "A.ipa"), "a")
+    [IO.File]::WriteAllText((Join-Path $ridDir "publish/A.ipa"), "a")
+    $r = Invoke-Isolated -Setup $setupI -Functions $fnsI -Call "Get-LatestIpa"
+    Assert-That "Gleicher Name in rid und publish: bevorzugt publish" ($r.Code -eq 0 -and $r.Output.Trim() -match "publish[\\/]A\.ipa$") $r.Output
+    [IO.File]::WriteAllText((Join-Path $ridDir "B.ipa"), "b")
+    $r = Invoke-Isolated -Setup $setupI -Functions $fnsI -Call "Get-LatestIpa"
+    Assert-That "Mehrere verschiedene IPAs: Fehler, Exit 1" ($r.Code -eq 1 -and $r.Output -match "Mehrere verschiedene") $r.Output
+
+    Write-Host "Berechtigungstexte und Privacy-Manifest (Textmuster; Details in IosProjectFilesTests)"
+    $usageKeys = @([regex]::Matches($infoPlist, '<key>(NS\w+UsageDescription)</key>') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
+    Assert-That "Info.plist: nur Kamera, Fotos und Standort (WhenInUse)" (($usageKeys -join ",") -eq "NSCameraUsageDescription,NSLocationWhenInUseUsageDescription,NSPhotoLibraryUsageDescription") ($usageKeys -join ",")
+    Assert-That "Info.plist: Standorttext nennt Tankstellen und Routenstart" ($infoPlist -match 'Tankstellen in deiner N' -and $infoPlist -match 'Startpunkt')
+    $manifest = [IO.File]::ReadAllText((Join-Path $mauiDir "Platforms/iOS/Resources/PrivacyInfo.xcprivacy"))
+    Assert-That "Manifest: Tracking false" ($manifest -match '<key>NSPrivacyTracking</key>\s*<false\s*/>')
+    Assert-That "Manifest: UserDefaults mit CA92.1" ($manifest -match '(?s)(?<!<!--.{0,400})NSPrivacyAccessedAPICategoryUserDefaults</string>\s*<key>NSPrivacyAccessedAPITypeReasons</key>\s*<array>\s*<string>CA92\.1</string>')
+    Assert-That "Manifest: FileTimestamp mit C617.1 und 3B52.1" ($manifest -match 'C617\.1' -and $manifest -match '3B52\.1')
+    Assert-That "Manifest: SystemBootTime und DiskSpace" ($manifest -match '35F9\.1' -and $manifest -match 'E174\.1')
+
+    Write-Host "CI-Pruefschritt 'Validate iOS package' entspricht der Skript-Validierung"
+    $actionYml = [IO.File]::ReadAllText((Join-Path $repoRoot ".github/actions/package-ios/action.yml"))
+    $idxVal = $actionYml.IndexOf("- name: Validate iOS package")
+    $idxUp = $actionYml.IndexOf("- name: Upload to TestFlight")
+    Assert-That "Schritt 'Validate iOS package' liegt vor dem Upload" ($idxVal -gt 0 -and $idxUp -gt $idxVal)
+    $ciStep = if ($idxVal -gt 0 -and $idxUp -gt $idxVal) { $actionYml.Substring($idxVal, $idxUp - $idxVal) } else { "" }
+    foreach ($msg in @("FEHLER: PrivacyInfo.xcprivacy fehlt im Bundle-Root", "FEHLER: PrivacyInfo.xcprivacy ist kein gueltiges plist", "FEHLER: UIDeviceFamily ohne iPhone (1)", "FEHLER: ITSAppUsesNonExemptEncryption nicht false", "FEHLER: MinimumOSVersion fehlt oder ist nicht lesbar", "ist kleiner als 16.0", "FEHLER: Marketing-Icon ist")) {
+        Assert-That "Fehlertext in Skript und CI: $msg" ($validation.Contains($msg) -and $ciStep.Contains($msg))
+    }
 
     Write-Host "Zielframeworks per Eigenschaft ausblendbar"
     if (Get-Command dotnet -ErrorAction SilentlyContinue) {

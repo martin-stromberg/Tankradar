@@ -7,6 +7,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Prüft Liste, Löschen (mit Pfadschutz) und Import externer Dateien des <see cref="Tankradar.MAUI.Services.Backup.BackupService"/> auf einer echten Datei.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_ListDeleteImport : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

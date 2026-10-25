@@ -12,6 +12,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft, dass Schlüssel und Schalter der Routensuche nicht in der lokalen Sicherung stehen und eine Wiederherstellung sie nicht verändert:
 /// Auf einem Gerät ohne Schlüssel ist die Routensuche nach der Wiederherstellung aus.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_RouteKey : IDisposable
 {
     private const string Key = "ZZPLATZHALTER-SICHERUNG-ZZ";

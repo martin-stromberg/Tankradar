@@ -9,6 +9,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft die Atomarität der Wiederherstellung: Bei einem Fehler an jedem Schritt des Austauschs ist der alte Stand vollständig wiederhergestellt,
 /// und nach einem simulierten Absturz stellt die Wiederaufnahme beim Start den alten Stand her.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Atomicity : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

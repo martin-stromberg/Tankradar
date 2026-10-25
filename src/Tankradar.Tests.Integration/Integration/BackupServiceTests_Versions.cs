@@ -12,6 +12,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft Sicherungen anderer App-Versionen sowie ungültige Dateien: Ältere Stände werden eingespielt und migriert, zu neue und ungültige Dateien
 /// werden mit verständlichem Ergebnis abgelehnt, ohne dass Datenbank oder Fotos verändert werden.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Versions : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

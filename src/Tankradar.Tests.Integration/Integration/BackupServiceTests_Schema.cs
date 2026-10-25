@@ -9,6 +9,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft, dass eine Sicherung mit unbrauchbarer Datenbank (gültiges Manifest, gültige Prüfsummen) beim Wiederherstellen und beim Einspielen abgelehnt wird
 /// und der Bestand unverändert bleibt: fehlende Tabelle oder Spalte, ungültiges Datum, unbekannte Kraftstoffart, Vorgang ohne Fahrzeug, Zeitüberschreitung.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Schema : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
