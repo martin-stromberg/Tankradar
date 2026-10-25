@@ -709,6 +709,8 @@ ohne Mac lauffähig sind, werden automatisiert getestet. Die Nutzung des Skripts
 
 **Zusatz aus der Abnahme von Schritt 17a (Härtungen, optional):** Windows-ICO mit mehreren Bildgrößen (16–256 px) statt nur 64 px; in der iOS-Prüfung das 1024-px-App-Store-Icon auf Größe und Deckung kontrollieren und den ersten TestFlight-Upload mit neuem Icon auf Annahme prüfen; Icon-Prüfung in `create-review-version.ps1` gegen veraltete Dateien im Publish-Verzeichnis absichern; Unit-Tests der Icon-Ressourcen per XML-Auswertung statt Textsuche; ungenaue Angaben „Kacheln/Startmenü“ in `changes.log` korrigieren.
 
+**Zusatz aus der Abnahme von Schritt 17 (Härtungen, optional):** Abfragetakt der Routensuche mit kleiner Reserve bzw. Reservierung ab dem tatsächlichen Absenden (gemessen 9,987–10,013 s; `RequestThrottle` kann den Abstand nach einer anderen Preisanfrage verkürzen); Grenzmeldung „bis … km“ abrunden statt kaufmännisch runden (Hilfe nennt 85, App 86 km), bei 1 km Abstand den Vorschlag „kleineren Abstand“ weglassen; Formulierung „gerätelokal“ für die Keychain präzisieren (Einträge mit „AfterFirstUnlock“ wandern mit verschlüsselten Gerätesicherungen mit) – auch für die Datenschutzangaben dieses Schritts; E2E-Test für „Suche abbrechen“ ergänzen; nach Antwort von Tankerkönig die vorläufige Abfragegrenze anpassen und mit Quelle in ADR 0014 festhalten.
+
 **Abhängigkeiten:** 3, 13, 17
 
 **Betroffene Bereiche:** iOS-Auslieferung, Signierung, Datenschutzangaben, CI
