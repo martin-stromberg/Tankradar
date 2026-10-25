@@ -559,8 +559,11 @@ public static class SearchTexts
     public static string FormatRouteLimit(RouteLimit limit)
     {
         ArgumentNullException.ThrowIfNull(limit);
-        return $"Die Route ist {FormatRouteLength(limit.RouteLengthKm)} lang. Bei {limit.DistanceKm.ToString(German)} km Abstand zur Route kann nur bis {limit.MaxSearchLengthKm.ToString("0", German)} km Länge gesucht werden, "
-            + "weil die Preisabfragen begrenzt sind. Wähle eine kürzere Strecke oder einen kleineren Abstand.";
+        // Abgerundet: Die genannte Länge darf nie größer sein als die tatsächlich durchsuchbare.
+        var searchableKm = Math.Floor(limit.MaxSearchLengthKm);
+        var advice = limit.DistanceKm > 1 ? "Wähle eine kürzere Strecke oder einen kleineren Abstand." : "Wähle eine kürzere Strecke.";
+        return $"Die Route ist {FormatRouteLength(limit.RouteLengthKm)} lang. Bei {limit.DistanceKm.ToString(German)} km Abstand zur Route kann nur bis {searchableKm.ToString("0", German)} km Länge gesucht werden, "
+            + "weil die Preisabfragen begrenzt sind. " + advice;
     }
 
     /// <summary>

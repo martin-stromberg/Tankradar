@@ -27,6 +27,13 @@ public sealed class RouteSearchOptions
     public static readonly TimeSpan DefaultMinQueryInterval = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// Die Standardreserve auf den Mindestabstand: Der Takt wird ab der Reservierung gemessen, die Abfrage verlässt die App aber erst nach der allgemeinen
+    /// Drosselung des Preisdienstes (<c>RequestThrottle</c>) und dem Verbindungsaufbau; die Reserve deckt diese Verzögerung, damit der tatsächliche Abstand nicht unter den Mindestabstand fällt.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public static readonly TimeSpan DefaultQueryIntervalReserve = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
     /// Der größte Radius einer Umkreisabfrage beim Preisdienst in Kilometern.
     /// </summary>
     public double QueryRadiusKm { get; init; } = 25;
@@ -45,6 +52,19 @@ public sealed class RouteSearchOptions
     /// Der Mindestabstand zwischen zwei Preisabfragen der Routensuche (auch über mehrere Suchen hinweg).
     /// </summary>
     public TimeSpan MinQueryInterval { get; init; } = DefaultMinQueryInterval;
+
+    /// <summary>
+    /// Die Reserve, die auf den Mindestabstand aufgeschlagen wird (nur wenn ein Mindestabstand gilt).
+    /// </summary>
+    public TimeSpan QueryIntervalReserve { get; init; } = DefaultQueryIntervalReserve;
+
+    /// <summary>
+    /// Der tatsächliche Abstand der Reservierungen: Mindestabstand zuzüglich Reserve; ohne Mindestabstand 0.
+    /// </summary>
+    public TimeSpan EffectiveQueryInterval
+    {
+        get { return MinQueryInterval > TimeSpan.Zero ? MinQueryInterval + QueryIntervalReserve : TimeSpan.Zero; }
+    }
 
     /// <summary>
     /// Die längste Route in Kilometern, die gesucht wird.
@@ -98,6 +118,11 @@ public sealed class RouteSearchOptions
         if (MinQueryInterval < TimeSpan.Zero)
         {
             throw new InvalidOperationException("Der Mindestabstand der Abfragen darf nicht negativ sein.");
+        }
+
+        if (QueryIntervalReserve < TimeSpan.Zero)
+        {
+            throw new InvalidOperationException("Die Reserve des Abfrageabstands darf nicht negativ sein.");
         }
 
         if (MaxQueries < 1 || !double.IsFinite(MaxRouteLengthKm) || MaxRouteLengthKm <= 0 || !double.IsFinite(SamePlaceKm) || SamePlaceKm < 0)
