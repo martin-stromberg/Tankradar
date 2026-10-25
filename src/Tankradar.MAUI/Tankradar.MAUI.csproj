@@ -25,6 +25,10 @@
 		<OutputType>Exe</OutputType>
 		<RootNamespace>Tankradar.MAUI</RootNamespace>
 		<UseMaui>true</UseMaui>
+		<!-- MAUI-Version explizit festgelegt, unabhängig von der installierten Workload (Standard wäre MauiWorkloadVersion):
+		Microsoft.Maui.* (Controls, Core, Essentials, Resizetizer) kommen so in jedem Job in derselben Version aus NuGet.
+		Ab 10.0.60 fordert MediaPicker.PhotoAsync auf iOS für die Aufnahme keine PhotosAddOnly-Berechtigung mehr an (dotnet/maui#34287), siehe ADR 0016. -->
+		<MauiVersion>10.0.120</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>

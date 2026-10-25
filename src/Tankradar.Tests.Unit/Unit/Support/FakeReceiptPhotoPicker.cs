@@ -23,6 +23,11 @@ public sealed class FakeReceiptPhotoPicker : IReceiptPhotoPicker
     public TaskCompletionSource? Gate { get; set; }
 
     /// <summary>
+    /// Die Ausnahme, die jeder Aufruf auslöst, bis sie auf <see langword="null"/> zurückgesetzt wird (z. B. <see cref="ReceiptPhotoAccessException"/>).
+    /// </summary>
+    public Exception? NextException { get; set; }
+
+    /// <summary>
     /// Die Zahl der Aufrufe von <see cref="PickAsync"/>.
     /// </summary>
     public int PickCalls { get; private set; }
@@ -36,6 +41,11 @@ public sealed class FakeReceiptPhotoPicker : IReceiptPhotoPicker
     public async Task<PickedReceiptPhoto?> PickAsync(CancellationToken cancellationToken = default)
     {
         PickCalls++;
+        if (NextException is { } exception)
+        {
+            throw exception;
+        }
+
         if (Gate is { } gate)
         {
             await gate.Task;
@@ -48,6 +58,11 @@ public sealed class FakeReceiptPhotoPicker : IReceiptPhotoPicker
     public Task<PickedReceiptPhoto?> CaptureAsync(CancellationToken cancellationToken = default)
     {
         CaptureCalls++;
+        if (NextException is { } exception)
+        {
+            return Task.FromException<PickedReceiptPhoto?>(exception);
+        }
+
         return Task.FromResult(Create());
     }
 

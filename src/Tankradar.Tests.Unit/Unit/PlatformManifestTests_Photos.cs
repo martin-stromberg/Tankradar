@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft, dass iOS und MacCatalyst die Verwendungszwecke für Kamera und Fotomediathek (Belegfotos) deklarieren; ohne sie bricht die Systemabfrage ab.
+/// Prüft die Verwendungszwecke für Kamera und Fotomediathek (Belegfotos) in den Info.plist von iOS und MacCatalyst; ohne den Kamera-Zweck bricht die Systemabfrage ab.
 /// </summary>
 public class PlatformManifestTests_Photos : BaseTest
 {
@@ -18,21 +18,31 @@ public class PlatformManifestTests_Photos : BaseTest
     }
 
     /// <summary>
-    /// Prüft beide Verwendungszwecke samt deutschem Text.
+    /// Prüft, dass iOS nur die Kamera begründet: Die Fotoauswahl des Systems (PHPicker) und die Aufnahme brauchen ab .NET MAUI 10.0.60 keine Fotos-Berechtigung (ADR 0016).
     /// </summary>
-    /// <param name="platform">Der Plattformordner.</param>
-    [Theory]
-    [InlineData("iOS")]
-    [InlineData("MacCatalyst")]
-    public void InfoPlist_ContainsCameraAndPhotoDescriptions(string platform)
+    [Fact]
+    public void InfoPlist_iOS_ContainsOnlyCameraDescription()
     {
-        var plist = ReadInfoPlist(platform);
+        var plist = ReadInfoPlist("iOS");
+
+        Assert.Contains("<key>NSCameraUsageDescription</key>", plist, StringComparison.Ordinal);
+        Assert.Contains("<string>Foto eines Tankbelegs aufnehmen</string>", plist, StringComparison.Ordinal);
+        Assert.DoesNotContain("NSPhotoLibraryUsageDescription", plist, StringComparison.Ordinal);
+        Assert.DoesNotContain("NSPhotoLibraryAddUsageDescription", plist, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass MacCatalyst weiterhin Kamera und Fotomediathek samt deutschem Text deklariert (nicht Teil der iOS-Auslieferung, nicht geräteerprobt).
+    /// </summary>
+    [Fact]
+    public void InfoPlist_MacCatalyst_ContainsCameraAndPhotoDescriptions()
+    {
+        var plist = ReadInfoPlist("MacCatalyst");
 
         var cameraIndex = plist.IndexOf("<key>NSCameraUsageDescription</key>", StringComparison.Ordinal);
         var photosIndex = plist.IndexOf("<key>NSPhotoLibraryUsageDescription</key>", StringComparison.Ordinal);
         Assert.True(cameraIndex >= 0, "Der Schlüssel NSCameraUsageDescription fehlt.");
         Assert.True(photosIndex >= 0, "Der Schlüssel NSPhotoLibraryUsageDescription fehlt.");
-        Assert.StartsWith("<key>NSCameraUsageDescription</key>", plist[cameraIndex..], StringComparison.Ordinal);
         Assert.Contains("<string>Foto eines Tankbelegs aufnehmen</string>", plist[cameraIndex..], StringComparison.Ordinal);
         Assert.Contains("<string>Foto eines Tankbelegs auswählen</string>", plist[photosIndex..], StringComparison.Ordinal);
     }

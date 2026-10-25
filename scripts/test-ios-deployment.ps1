@@ -234,7 +234,7 @@ try {
 
     Write-Host "Berechtigungstexte und Privacy-Manifest (Textmuster; Details in IosProjectFilesTests)"
     $usageKeys = @([regex]::Matches($infoPlist, '<key>(NS\w+UsageDescription)</key>') | ForEach-Object { $_.Groups[1].Value } | Sort-Object)
-    Assert-That "Info.plist: nur Kamera, Fotos und Standort (WhenInUse)" (($usageKeys -join ",") -eq "NSCameraUsageDescription,NSLocationWhenInUseUsageDescription,NSPhotoLibraryUsageDescription") ($usageKeys -join ",")
+    Assert-That "Info.plist: nur Kamera und Standort (WhenInUse)" (($usageKeys -join ",") -eq "NSCameraUsageDescription,NSLocationWhenInUseUsageDescription") ($usageKeys -join ",")
     Assert-That "Info.plist: Standorttext nennt Tankstellen und Routenstart" ($infoPlist -match 'Tankstellen in deiner N' -and $infoPlist -match 'Startpunkt')
     $manifest = [IO.File]::ReadAllText((Join-Path $mauiDir "Platforms/iOS/Resources/PrivacyInfo.xcprivacy"))
     Assert-That "Manifest: Tracking false" ($manifest -match '<key>NSPrivacyTracking</key>\s*<false\s*/>')
