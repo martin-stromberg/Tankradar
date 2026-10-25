@@ -32,14 +32,14 @@ public class IosProjectFilesTests : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass genau die drei benötigten Berechtigungen (Kamera, Fotos, Standort bei Nutzung) beschrieben sind und keine weiteren.
+    /// Prüft, dass genau die zwei benötigten Berechtigungen (Kamera, Standort bei Nutzung) beschrieben sind und keine weiteren.
     /// </summary>
     [Fact]
-    public void Info_plist_DeclaresOnlyCameraPhotosAndLocationWhenInUse()
+    public void Info_plist_DeclaresOnlyCameraAndLocationWhenInUse()
     {
         var usageKeys = InfoPlist().Keys.Where(k => k.StartsWith("NS", StringComparison.Ordinal) && k.EndsWith("UsageDescription", StringComparison.Ordinal)).Order().ToList();
 
-        Assert.Equal(["NSCameraUsageDescription", "NSLocationWhenInUseUsageDescription", "NSPhotoLibraryUsageDescription"], usageKeys);
+        Assert.Equal(["NSCameraUsageDescription", "NSLocationWhenInUseUsageDescription"], usageKeys);
     }
 
     /// <summary>
@@ -57,15 +57,16 @@ public class IosProjectFilesTests : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass Kamera und Fotos nur für Belegfotos begründet sind und alle Begründungen ausgefüllt sind.
+    /// Prüft, dass die Kamera nur für Belegfotos begründet ist (die Fotoauswahl des Systems braucht keine Berechtigung) und alle Begründungen ausgefüllt sind.
     /// </summary>
     [Fact]
-    public void Info_plist_CameraAndPhotoTextsAreLimitedToReceipts()
+    public void Info_plist_CameraTextIsLimitedToReceipts()
     {
         var plist = InfoPlist();
 
         Assert.Contains("Tankbeleg", plist["NSCameraUsageDescription"].Value, StringComparison.Ordinal);
-        Assert.Contains("Tankbeleg", plist["NSPhotoLibraryUsageDescription"].Value, StringComparison.Ordinal);
+        Assert.False(plist.ContainsKey("NSPhotoLibraryUsageDescription"));
+        Assert.False(plist.ContainsKey("NSPhotoLibraryAddUsageDescription"));
         Assert.All(plist.Where(p => p.Key.EndsWith("UsageDescription", StringComparison.Ordinal)), p => Assert.False(string.IsNullOrWhiteSpace(p.Value.Value)));
     }
 

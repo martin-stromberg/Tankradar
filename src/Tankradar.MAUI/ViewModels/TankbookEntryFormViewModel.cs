@@ -1077,6 +1077,13 @@ public sealed class TankbookEntryFormViewModel : BaseViewModel
             _pendingPhoto = fileName;
             PhotoFileName = fileName;
         }
+        catch (ReceiptPhotoAccessException ex)
+        {
+            // Berechtigung verweigert oder Funktion nicht verfügbar: eigene Meldung mit Hinweis auf die Einstellungen.
+            _logger.LogWarning("Der Zugriff auf das Belegfoto ist nicht möglich ({ExceptionType}, {Problem}).", ex.GetType().Name, ex.Problem);
+            PhotoError = TankbookEntryTexts.GetPhotoAccessError(ex.Problem, capture);
+            _announcer.Announce(PhotoError);
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning("Das Belegfoto konnte nicht übernommen werden ({ExceptionType}).", ex.GetType().Name);

@@ -17,8 +17,11 @@ public sealed class MauiReceiptPhotoPicker : IReceiptPhotoPicker
     public async Task<PickedReceiptPhoto?> PickAsync(CancellationToken cancellationToken = default)
     {
         // PickPhotoAsync ist in .NET MAUI 10 veraltet; die Mehrfachauswahl wird auf ein Foto begrenzt.
-        var results = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions { SelectionLimit = 1 }).ConfigureAwait(true);
-        return ToPhoto(results?.FirstOrDefault());
+        return await TranslateAsync(async () =>
+        {
+            var results = await MediaPicker.Default.PickPhotosAsync(new MediaPickerOptions { SelectionLimit = 1 }).ConfigureAwait(true);
+            return ToPhoto(results?.FirstOrDefault());
+        }).ConfigureAwait(true);
     }
 
     /// <inheritdoc />
@@ -29,8 +32,27 @@ public sealed class MauiReceiptPhotoPicker : IReceiptPhotoPicker
             return null;
         }
 
-        var result = await MediaPicker.Default.CapturePhotoAsync().ConfigureAwait(true);
-        return ToPhoto(result);
+        return await TranslateAsync(async () =>
+        {
+            var result = await MediaPicker.Default.CapturePhotoAsync().ConfigureAwait(true);
+            return ToPhoto(result);
+        }).ConfigureAwait(true);
+    }
+
+    private static async Task<PickedReceiptPhoto?> TranslateAsync(Func<Task<PickedReceiptPhoto?>> action)
+    {
+        try
+        {
+            return await action().ConfigureAwait(true);
+        }
+        catch (PermissionException ex)
+        {
+            throw new ReceiptPhotoAccessException(ReceiptPhotoAccessProblem.PermissionDenied, ex);
+        }
+        catch (FeatureNotSupportedException ex)
+        {
+            throw new ReceiptPhotoAccessException(ReceiptPhotoAccessProblem.NotSupported, ex);
+        }
     }
 
     private static PickedReceiptPhoto? ToPhoto(FileResult? result)
