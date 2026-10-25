@@ -111,6 +111,9 @@
 	<!-- Tankerkönig-API-Schlüssel: Übernahme ohne MSBuild-Eigenschaft, siehe MSBuild\TankerkoenigApiKey.targets (Schlüssel gelangt nie ins Build-Log). -->
 	<Import Project="MSBuild\TankerkoenigApiKey.targets" />
 
+	<!-- Windows-App-Icon mit mehreren Größen (16 bis 256 px), siehe MSBuild\WindowsAppIcon.targets. -->
+	<Import Project="MSBuild\WindowsAppIcon.targets" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
+
 	<ItemGroup>
 		<Compile Include="..\TestSupport\TestDataPaths.cs" Link="TestSupport\TestDataPaths.cs" />
 	</ItemGroup>
