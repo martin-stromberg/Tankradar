@@ -9,6 +9,15 @@ public class NavigationE2ETests : E2ETestBase
 {
     private static readonly string[] TabTitles = ["Favoriten", "Karte", "Tankbuch", "Optionen"];
 
+    // Je Reiter ein Element im Seiteninhalt, das erst nach dem Aufbau der Seite existiert.
+    private static readonly Dictionary<string, string> ContentIds = new()
+    {
+        ["Favoriten"] = "Favorites.Refresh",
+        ["Karte"] = "Search.Submit",
+        ["Tankbuch"] = "Tankbook.AddVehicle",
+        ["Optionen"] = "Settings.Loaded",
+    };
+
     /// <summary>
     /// Prüft, dass die App startet, die AppShell mit vier Tabs anzeigt, durch alle Bereiche navigiert und wieder zur Startseite zurückkehrt.
     /// </summary>
@@ -34,10 +43,11 @@ public class NavigationE2ETests : E2ETestBase
         foreach (var tabTitle in TabTitles)
         {
             // Der Seitentitel steht nur in der Kopfzeile der Shell, nicht noch einmal als Überschrift im Seiteninhalt.
-            NavigateToTab(tabTitle);
+            NavigateToTab(tabTitle, ContentIds[tabTitle]);
+            WaitForPageTitle(tabTitle);
             Assert.Single(MainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.Text).And(cf.ByName(tabTitle))));
         }
 
-        NavigateToTab(TabTitles[0]);
+        NavigateToTab(TabTitles[0], ContentIds[TabTitles[0]]);
     }
 }

@@ -60,6 +60,7 @@
                             <Label Text="{Binding Name}" MaxLines="2" LineBreakMode="TailTruncation"
                                    Style="{StaticResource headline-lg}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   SemanticProperties.HeadingLevel="Level1"
                                    AutomationId="FavoriteGroup.Name" />
                             <Label Text="{Binding Description}" MaxLines="4" LineBreakMode="TailTruncation"
                                    IsVisible="{Binding HasDescription}"

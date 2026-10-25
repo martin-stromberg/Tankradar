@@ -139,6 +139,19 @@ public abstract class E2ETestBase : IDisposable
     }
 
     /// <summary>
+    /// Wartet, bis die Kopfzeile der Shell den Seitentitel anzeigt (z. B. nach der Rückkehr aus der Detailansicht); schlägt sonst fehl.
+    /// </summary>
+    /// <param name="title">Der erwartete Seitentitel (z. B. Karte).</param>
+    protected void WaitForPageTitle(string title)
+    {
+        // Ein UIA-Timeout zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
+        if (!TransientWait.Until(() => IsShellTitle(title), TimeSpan.FromSeconds(30), out _))
+        {
+            Xunit.Assert.Fail($"Der Seitentitel '{title}' wurde nicht angezeigt.");
+        }
+    }
+
+    /// <summary>
     /// Prüft, ob die Kopfzeile der Shell (Windows: Text mit der AutomationId <c>title</c>) den Seitentitel anzeigt.
     /// Der Seitentitel ersetzt die frühere Überschrift im Seiteninhalt als Signal für die angezeigte Seite.
     /// </summary>

@@ -54,15 +54,6 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     }
 
     /// <summary>
-    /// Wartet, bis die Kopfzeile der Shell den Seitentitel anzeigt (z. B. nach der Rückkehr aus der Detailansicht).
-    /// </summary>
-    /// <param name="title">Der erwartete Seitentitel (z. B. Karte).</param>
-    protected void WaitForPageTitle(string title)
-    {
-        WaitUntil(() => IsShellTitle(title), $"Der Seitentitel '{title}' wurde nicht angezeigt.");
-    }
-
-    /// <summary>
     /// Prüft, ob ein Element mit der AutomationId aktuell existiert.
     /// </summary>
     /// <param name="automationId">Die AutomationId.</param>
