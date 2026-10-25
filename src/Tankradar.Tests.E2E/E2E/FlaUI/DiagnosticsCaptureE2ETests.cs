@@ -19,7 +19,7 @@ public class DiagnosticsCaptureE2ETests : E2ETestBase
         try
         {
             // Erst auf eine gerenderte Seite warten, damit der Screenshot Inhalt zeigen kann.
-            NavigateToTab("Optionen", "SettingsPage.Headline");
+            NavigateToTab("Optionen", "Settings.Loaded");
             var exception = Assert.Throws<InvalidOperationException>(
                 () => RunWithDiagnostics(() => throw new InvalidOperationException("absichtlicher Fehlschlag"), "Beispieltest"));
             Assert.Equal("absichtlicher Fehlschlag", exception.Message);

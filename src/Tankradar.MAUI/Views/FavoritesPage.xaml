@@ -55,11 +55,6 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
-            <Label Text="Favoriten"
-                   Style="{StaticResource headline-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                   AutomationId="FavoritesPage.Headline" />
-
             <!-- Offline-Hinweis in der Kopfzeile (einheitlich mit Karte und Detailansicht) -->
             <Border Padding="{StaticResource space-md}"
                     StrokeThickness="0"

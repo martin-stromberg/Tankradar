@@ -1,3 +1,12 @@
+## 2026-10-25 — Korrektur: Doppelte Seitenüberschriften entfernt (Version 0.1.27)
+
+- Anwenderwunsch (TestFlight rc.12): Der Seitenname stand zweimal da, im App-Kopf als Titel und noch einmal als große Überschrift oben im Inhalt. Entfernt wurde die Überschrift im Inhalt der Seiten Favoriten, Karte, Tankbuch, Optionen und Tank- und Ladevorgänge. Der Titel in der Navigationsleiste bleibt und wird von der Sprachausgabe als Seitenname angesagt.
+- Bewusst behalten: Stationsname in der Detailansicht und Gruppenname in der Favoritengruppe (dynamische Information, der Seitentitel ist nur „Stationsdetails“ bzw. „Favoritengruppe“) sowie alle Abschnittsüberschriften (z. B. „Ansicht“, „Suchen nach“). Auf der Vorgangsseite ist der Fahrzeugname jetzt die oberste Überschrift (Ebene 1).
+- Windows: Die Shell zeigt den Seitentitel in ihrer Kopfzeile (UI-Automation-Text `title`); damit bleibt der Titel auf iOS und Windows sichtbar, es war keine weitere Änderung nötig.
+- Tests: E2E-Tests erkennen die Seite jetzt am Seitentitel der Shell statt an den entfernten `*Page.Headline`-Elementen (`E2ETestBase.NavigateToTab`, `WaitForPageTitle`); neuer Unit-Test `PageTitleRedundancyTests` prüft alle Seiten-XAML-Dateien. Die Titel stehen unverändert in der Navigationsleiste (Tankbuch, Vorgänge, Stationsdetails und Favoritengruppe aus den `PageTitle`-Konstanten, Favoriten, Karte und Optionen als Literal in XAML); keine Konstante wurde dadurch überflüssig.
+- Nachbesserung nach Abnahme: Stationsname und Gruppenname sind als Überschrift Ebene 1 ausgezeichnet; der unsichtbare Prüftext der Optionen steht am Ende der Seite (kein Zusatzabstand oben); E2E-Navigationstest wartet je Reiter erst auf ein Inhaltselement, dann auf den Titel; ungenutzte Konstante `FavoritesTexts.GroupsHeading` entfernt.
+- Keine Schemaänderung.
+
 ## 2026-10-25 — Korrektur: Foto aufnehmen auf dem iPhone, MAUI 10.0.120 (Version 0.1.26)
 
 - Fehler (TestFlight rc.12): „Foto aufnehmen“ endete nach der Kamera-Freigabe sofort mit „Das Foto konnte nicht übernommen werden.“. Ursache: `MediaPicker.PhotoAsync` in .NET MAUI bis 10.0.51 fordert für die Aufnahme zusätzlich `Permissions.PhotosAddOnly` an; ohne `NSPhotoLibraryAddUsageDescription` wirft das eine `PermissionException`. Upstream entfernt den Aufruf mit dotnet/maui#34287 (ab 10.0.60).

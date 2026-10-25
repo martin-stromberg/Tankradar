@@ -133,6 +133,7 @@
                             <Label Text="{Binding Name}" MaxLines="3" LineBreakMode="TailTruncation"
                                    Style="{StaticResource headline-lg}"
                                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   SemanticProperties.HeadingLevel="Level1"
                                    AutomationId="Detail.Name" />
                             <Label Text="{Binding SubNameText}" MaxLines="3" LineBreakMode="TailTruncation"
                                    IsVisible="{Binding HasSubName}"

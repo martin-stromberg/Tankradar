@@ -79,13 +79,14 @@ public abstract class E2ETestBase : IDisposable
     }
 
     /// <summary>
-    /// Wechselt auf den Reiter und wartet, bis die seitenspezifische Überschrift (AutomationId) sichtbar ist.
+    /// Wechselt auf den Reiter und wartet, bis die Zielseite erkannt ist: entweder an einem Element mit der angegebenen AutomationId
+    /// oder (ohne Angabe) am Seitentitel der Shell-Kopfzeile, der dem Reiternamen entsprechen muss.
     /// Bleibt der Seitenwechsel aus, wird der Reiter mit begrenzten Wiederholungen erneut ausgewählt
     /// (abwechselnd per SelectionItemPattern und InvokePattern; es werden keine Mausklicks verwendet).
     /// </summary>
     /// <param name="tabTitle">Titel des Reiters (z. B. Optionen).</param>
-    /// <param name="pageAutomationId">AutomationId eines Elements, das nur auf der Zielseite existiert.</param>
-    protected void NavigateToTab(string tabTitle, string pageAutomationId)
+    /// <param name="pageAutomationId">AutomationId eines Elements, das nur auf der Zielseite existiert; <see langword="null"/> prüft den Seitentitel der Shell.</param>
+    protected void NavigateToTab(string tabTitle, string? pageAutomationId = null)
     {
         const int maxAttempts = 5;
         var attemptTimeout = TimeSpan.FromSeconds(5);
@@ -122,7 +123,9 @@ public abstract class E2ETestBase : IDisposable
             var deadline = DateTime.UtcNow + attemptTimeout;
             while (DateTime.UtcNow < deadline)
             {
-                if (MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(pageAutomationId)) is not null)
+                if (pageAutomationId is null
+                    ? IsShellTitle(tabTitle)
+                    : MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(pageAutomationId)) is not null)
                 {
                     return;
                 }
@@ -132,7 +135,34 @@ public abstract class E2ETestBase : IDisposable
         }
 
         throw new Xunit.Sdk.XunitException(
-            $"Nach {maxAttempts} Versuchen wurde der Seitenwechsel auf Reiter '{tabTitle}' nicht erkannt (erwartete AutomationId '{pageAutomationId}').");
+            $"Nach {maxAttempts} Versuchen wurde der Seitenwechsel auf Reiter '{tabTitle}' nicht erkannt (erwartet: {(pageAutomationId is null ? $"Seitentitel '{tabTitle}'" : $"AutomationId '{pageAutomationId}'")}).");
+    }
+
+    /// <summary>
+    /// Wartet, bis die Kopfzeile der Shell den Seitentitel anzeigt (z. B. nach der Rückkehr aus der Detailansicht); schlägt sonst fehl.
+    /// </summary>
+    /// <param name="title">Der erwartete Seitentitel (z. B. Karte).</param>
+    protected void WaitForPageTitle(string title)
+    {
+        // Ein UIA-Timeout zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
+        if (!TransientWait.Until(() => IsShellTitle(title), TimeSpan.FromSeconds(30), out _))
+        {
+            Xunit.Assert.Fail($"Der Seitentitel '{title}' wurde nicht angezeigt.");
+        }
+    }
+
+    /// <summary>
+    /// Prüft, ob die Kopfzeile der Shell (Windows: Text mit der AutomationId <c>title</c>) den Seitentitel anzeigt.
+    /// Der Seitentitel ersetzt die frühere Überschrift im Seiteninhalt als Signal für die angezeigte Seite.
+    /// </summary>
+    /// <param name="title">Der erwartete Seitentitel (z. B. Karte).</param>
+    /// <returns><see langword="true"/>, wenn der Titel angezeigt wird.</returns>
+    protected bool IsShellTitle(string title)
+    {
+        var element = TransientRetry.Run(
+            () => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("title")),
+            $"Suche des Seitentitels '{title}'");
+        return string.Equals(element?.Name, title, StringComparison.Ordinal);
     }
 
     private AutomationElement? FindTab(string title)

@@ -92,7 +92,7 @@ public abstract class FavoritesE2ETestBase : SearchE2ETestBase
     /// <param name="expectedGroups">Die erwarteten Gruppennamen in Reihenfolge.</param>
     protected void OpenFavorites(params string[] expectedGroups)
     {
-        NavigateToTab("Favoriten", "FavoritesPage.Headline");
+        NavigateToTab("Favoriten");
         WaitForTexts("Favorites.Group.Name", expectedGroups);
     }
 

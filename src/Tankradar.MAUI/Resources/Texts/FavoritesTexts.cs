@@ -21,11 +21,6 @@ public static class FavoritesTexts
     public const string GroupPageTitle = "Favoritengruppe";
 
     /// <summary>
-    /// Überschrift der Gruppenliste.
-    /// </summary>
-    public const string GroupsHeading = "Favoritengruppen";
-
-    /// <summary>
     /// Hinweis, dass es noch keine Gruppen gibt.
     /// </summary>
     public const string NoGroups = "Noch keine Favoritengruppen. Öffne eine Tankstelle und füge sie in der Detailansicht über „Zu Favoriten hinzufügen“ einer Gruppe hinzu, oder lege hier eine Gruppe an.";

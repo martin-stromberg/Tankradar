@@ -61,7 +61,7 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
             Assert.Equal("1,859 Euro pro Liter", WaitForAutomationId("Detail.Price.SuperE5").Name);
             Assert.Matches(AgePattern, WaitForAutomationId("Detail.Age.SuperE5").Name);
             Press("NavigationViewBackButton");
-            WaitForAutomationId("FavoritesPage.Headline");
+            WaitForPageTitle("Favoriten");
 
             Tankbook.OpenTankbook();
             Tankbook.CreateVehicle("Golf", "Diesel", "10000", string.Empty);
