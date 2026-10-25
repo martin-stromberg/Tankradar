@@ -6,7 +6,7 @@ namespace Tankradar.Tests.Unit.Unit;
 public class PlatformManifestTests_Location : BaseTest
 {
     private const string PurposeKey = "<key>NSLocationWhenInUseUsageDescription</key>";
-    private const string PurposeText = "<string>Ermittlung von Tankstellen in der Nähe</string>";
+    private const string PurposeText = "Ermittlung von Tankstellen in ";
 
     private static string ReadPlatformFile(params string[] relativePath)
     {

@@ -256,6 +256,12 @@ public abstract class E2ETestBase : IDisposable
     /// </summary>
     private void CloseApplicationAndWait()
     {
+        // Nach einem vor dem App-Start abgebrochenen Konstruktor gibt es keine App, die beendet werden müsste.
+        if (Application is null)
+        {
+            return;
+        }
+
         Process? process = null;
         try
         {
