@@ -10,6 +10,8 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
+Korrektur (Version 0.1.26): „Foto aufnehmen“ im Tankbuch-Formular endete auf dem iPhone sofort mit einer Fehlermeldung (.NET MAUI 10.0.20 forderte zusätzlich die Berechtigung „Fotos hinzufügen“ an). Die App nutzt jetzt .NET MAUI 10.0.120 (`MauiVersion` in der csproj), die Info.plist enthält nur noch die Kamera- und die Standortbeschreibung, und fehlende Berechtigungen werden mit einem Hinweis auf die iOS-Einstellungen gemeldet ([ADR 0016](docs/adr/0016-maui-version-and-photo-permissions.md)).
+
 Schritt 17a (Version 0.1.23): Die App hat ein eigenes Icon (weiße Zapfsäule mit gelbem Blitz auf Teal-Grün-Verlauf) für Windows und iOS sowie einen passenden Startbildschirm.
 
 Stand: Entwicklungsschritt 16 umgesetzt (Version 0.1.21): Export des Tankbuchs auf der Seite „Tank- und Ladevorgänge“ – Bereich „Export“ mit Format
@@ -61,6 +63,8 @@ Bereichen (Favoriten, Karte, Tankbuch, Optionen), zentrales Design-System, Testi
   ```powershell
   dotnet workload install maui-windows ios
   ```
+
+  Die Version der Pakete `Microsoft.Maui.*` (aktuell 10.0.120) legt `MauiVersion` in `src/Tankradar.MAUI/Tankradar.MAUI.csproj` fest; sie wird per NuGet geladen und muss nicht der installierten Workload entsprechen.
 
 - Windows 10 (Build 19041) oder neuer für die Windows-Zielplattform
 - Für einen tatsächlichen iOS-Build wird zusätzlich ein Mac mit Xcode benötigt (siehe Abschnitt

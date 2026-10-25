@@ -59,7 +59,7 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
   Kennung, **ohne Fremdschlüssel**. So bleibt der Vorgang unabhängig vom Preis-Cache und von der Sicherung. Ändert man den
   Namen von Hand, entfällt die Kennung.
 - **Belegfoto** über `IReceiptPhotoPicker`: `MediaPicker` (Fotomediathek; „Foto aufnehmen“ nur mit Kamera). `PickPhotoAsync`
-  ist in .NET MAUI 10 veraltet, deshalb `PickPhotosAsync` mit `SelectionLimit = 1`. Im Testmodus liefert
+  ist in .NET MAUI 10 veraltet, deshalb `PickPhotosAsync` mit `SelectionLimit = 1`. Fehlende Berechtigung und fehlende Geräteunterstützung meldet der Picker als `ReceiptPhotoAccessException` ([ADR 0016](0016-maui-version-and-photo-permissions.md)). Im Testmodus liefert
   `TestReceiptPhotoPicker` die Datei aus `TANKATLAS_TEST_RECEIPT_PHOTO`. Das Foto wird unverändert nach
   `<Datenverzeichnis>/receipts/<Guid>.<Endung>` kopiert und erhält den Dateischutz der Datenbank
   (`IDatabaseFileProtector.ProtectFile`, iOS `CompleteUntilFirstUserAuthentication`). Gespeichert wird nur der Dateiname.

@@ -1,3 +1,11 @@
+## 2026-10-25 — Korrektur: Foto aufnehmen auf dem iPhone, MAUI 10.0.120 (Version 0.1.26)
+
+- Fehler (TestFlight rc.12): „Foto aufnehmen“ endete nach der Kamera-Freigabe sofort mit „Das Foto konnte nicht übernommen werden.“. Ursache: `MediaPicker.PhotoAsync` in .NET MAUI 10.0.20 fordert für die Aufnahme zusätzlich `Permissions.PhotosAddOnly` an; ohne `NSPhotoLibraryAddUsageDescription` wirft das eine `PermissionException`. Upstream entfernt den Aufruf mit dotnet/maui#34287 (ab 10.0.90).
+- `Microsoft.Maui.*` auf 10.0.120 (neueste stabile 10.0.x) angehoben: `<MauiVersion>10.0.120</MauiVersion>` in `Tankradar.MAUI.csproj`, damit Controls, Core, Essentials und Resizetizer in jedem Job gleich sind; die CI-Workloads (`dotnet workload restore`, gepinnte iOS-Workload) bleiben unverändert. Keine weitere neue oder aktualisierte Abhängigkeit. ADR 0016.
+- `NSPhotoLibraryUsageDescription` aus der iOS-`Info.plist` entfernt (Gerätetest: nicht nötig; in 10.0.120 fordern `PickPhotosAsync` ab iOS 14 und die Aufnahme keine Fotos-Berechtigung an). MacCatalyst unverändert. Tests (`IosProjectFilesTests`, `PlatformManifestTests_Photos`, `test-ios-deployment.ps1`) und Datenschutzangaben angepasst.
+- Bessere Fehlermeldungen im Tankbuch-Formular: Neue Ausnahme `ReceiptPhotoAccessException` kapselt `PermissionException` und `FeatureNotSupportedException` in `MauiReceiptPhotoPicker`; bei verweigerter Freigabe erscheint „Kein Zugriff auf die Kamera. Erlaube den Zugriff in den Einstellungen unter Tankatlas.“ (bzw. „…auf die Fotos…“), bei fehlender Geräteunterstützung ein eigener Hinweis; sonstige Fehler behalten die allgemeine Meldung. Die Meldung wird weiterhin angesagt, das Protokoll nennt nur Ausnahmetyp und Grund. Unit-Tests `TankbookEntryFormViewModelTests_PhotoAccess`, `TankbookEntryTextsTests_Messages`.
+- Keine Schemaänderung; `MtouchInterpreter` und `TrimmerRootAssembly` unverändert.
+
 ## 2026-10-25 — iOS-Auslieferung, Datenschutzangaben und Icon-Härtungen (Tankradar Schritt 18, Teil A)
 
 - `scripts/iOS-Deployment.ps1`: Mindestversion iOS 16 wird in der IPA-Validierung geprüft (`MinimumOSVersion`), fehlende Werte werden je Aktion gesammelt mit Parameter, Umgebungsvariable und Herkunft gemeldet, ohne andere Aktionen zu blockieren (`upload` braucht keine Signierung mehr); die Validierung prüft zusätzlich die Größe des Marketing-Icons (1024 x 1024 px).

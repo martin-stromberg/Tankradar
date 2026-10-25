@@ -26,7 +26,7 @@ Dieses Dokument bereitet die Datenschutzangaben vor, die App Store Connect für 
 
 ## Kamera und Fotos
 
-Kamera und Fotoauswahl dienen ausschließlich dem Belegfoto eines Tank- oder Ladevorgangs. Die Fotos liegen im App-Datenverzeichnis, mit Dateischutz, und gehören auf Wunsch zur lokalen Sicherung. Der Schlüssel `NSPhotoLibraryUsageDescription` bleibt gesetzt, weil die Foto-Auswahl des Betriebssystems ihn beim Speichern bzw. Auswählen verlangen kann und ein fehlender Schlüssel die App beendet; ob er auf iOS 16 und neuer entbehrlich ist, ist auf einem Gerät zu prüfen (offen, siehe ADR 0015).
+Kamera und Fotoauswahl dienen ausschließlich dem Belegfoto eines Tank- oder Ladevorgangs. Die Fotos liegen im App-Datenverzeichnis, mit Dateischutz, und gehören auf Wunsch zur lokalen Sicherung. Die App fragt nur nach dem Kamerazugriff (beim ersten „Foto aufnehmen“). „Foto auswählen“ öffnet die Foto-Auswahl des Betriebssystems; die App erhält nur das gewählte Foto, ohne Zugriff auf die übrige Fotomediathek, und fragt dafür nicht nach einer Berechtigung (Gerätetest, [ADR 0016](../../adr/0016-maui-version-and-photo-permissions.md)).
 
 ## Schlüssel in der Keychain – korrekte Formulierung
 

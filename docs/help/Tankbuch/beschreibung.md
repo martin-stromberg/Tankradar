@@ -102,7 +102,7 @@ Ungültige Eingaben werden nicht gespeichert. Die Meldungen stehen direkt unter 
 
 ## Belegfoto
 
-Mit **Foto auswählen** übernehmen Sie ein Foto aus der Fotomediathek. Mit **Foto aufnehmen** fotografieren Sie den Beleg; das ist nur auf Geräten mit Kamera sichtbar. Das Foto wird unverändert als Kopie in den App-Daten abgelegt. **Foto entfernen** nimmt es wieder heraus. Brechen Sie das Formular ab, wird ein neu ausgewähltes Foto verworfen. In der Liste blendet **Beleg anzeigen** das Foto ein und **Beleg ausblenden** wieder aus. Fehlt die Datei, erscheint „Das Belegfoto ist nicht mehr vorhanden.“ Unter Windows kann die Vorschau eines HEIC-Fotos ohne die HEIF-Erweiterung leer bleiben; das Foto bleibt trotzdem gespeichert.
+Mit **Foto auswählen** übernehmen Sie ein Foto aus der Fotomediathek. Mit **Foto aufnehmen** fotografieren Sie den Beleg; das ist nur auf Geräten mit Kamera sichtbar. Beim ersten Aufnehmen fragt iOS nach dem Kamerazugriff; die Fotoauswahl braucht keine Freigabe. Haben Sie die Kamera abgelehnt, erscheint „Kein Zugriff auf die Kamera. Erlaube den Zugriff in den Einstellungen unter Tankatlas.“ – dort lässt sich der Zugriff nachträglich erlauben. Das Foto wird unverändert als Kopie in den App-Daten abgelegt. **Foto entfernen** nimmt es wieder heraus. Brechen Sie das Formular ab, wird ein neu ausgewähltes Foto verworfen. In der Liste blendet **Beleg anzeigen** das Foto ein und **Beleg ausblenden** wieder aus. Fehlt die Datei, erscheint „Das Belegfoto ist nicht mehr vorhanden.“ Unter Windows kann die Vorschau eines HEIC-Fotos ohne die HEIF-Erweiterung leer bleiben; das Foto bleibt trotzdem gespeichert.
 
 ## Löschen
 

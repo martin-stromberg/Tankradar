@@ -51,7 +51,8 @@ Belegfotos:
 - `IReceiptPhotoStore` / `ReceiptPhotoStore`: `<Datenverzeichnis>/receipts/<Guid>.<Endung>`, nur Endungen `.jpg`, `.jpeg`, `.png`, `.heic`, `.heif` mit passender Dateisignatur (`DetectExtension`; ein falsch benanntes Foto erhält die Endung des erkannten Formats) und höchstens 20 MB, unveränderte Kopie, Dateischutz über `IDatabaseFileProtector.ProtectFile`; nur Dateinamen im Format der Ablage werden akzeptiert (kein Pfad).
 - Das Formular sperrt „Foto auswählen“/„Foto aufnehmen“ während einer laufenden Auswahl und löscht ein Foto, das erst nach dem Schließen oder Neuöffnen des Formulars fertig wird. `IReceiptPhotoStore.Delete` wirft nicht (Fehler werden protokolliert).
 - `IReceiptPhotoPicker`: `MauiReceiptPhotoPicker` (`MediaPicker.PickPhotosAsync` mit `SelectionLimit = 1`, `CapturePhotoAsync` nur bei `IsCaptureSupported`); im Testmodus (`TANKATLAS_TEST_DATA_PATH`) `TestReceiptPhotoPicker` mit der Datei aus `TANKATLAS_TEST_RECEIPT_PHOTO` (Auswahl über `ReceiptPhotoPickerSelector`).
-- iOS/MacCatalyst: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription` in `Info.plist`.
+- iOS: nur `NSCameraUsageDescription` in `Info.plist` (Fotoauswahl über PHPicker ohne Berechtigung); MacCatalyst: `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`.
+- Fehler: `MauiReceiptPhotoPicker` übersetzt `PermissionException` und `FeatureNotSupportedException` in `ReceiptPhotoAccessException` (`ReceiptPhotoAccessProblem.PermissionDenied`/`NotSupported`); `TankbookEntryFormViewModel` zeigt dafür `TankbookEntryTexts.GetPhotoAccessError` (Hinweis auf die iOS-Einstellungen), sagt sie an und protokolliert nur Ausnahmetyp und Grund. Sonstige Fehler: `PhotoFailed`. Version der MAUI-Pakete: [ADR 0016](../../adr/0016-maui-version-and-photo-permissions.md).
 
 Export (Schritt 16, [ADR 0013](../../adr/0013-tankbook-export.md); keine Schemaänderung, keine neue Abhängigkeit):
 
