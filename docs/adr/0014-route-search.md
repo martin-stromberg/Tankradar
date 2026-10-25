@@ -46,8 +46,9 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
   Die frühere Grenze (15 Abfragen, 400 km, 1 s) entfällt. Nach der Antwort von Tankerkönig wird die Grenze angepasst und hier mit Quelle festgehalten; bis dahin trägt der Auftraggeber das Restrisiko,
   dass die Minutengrenze strenger auszulegen ist.
 - **Takt:** Die Abfragen laufen **strikt nacheinander**, ohne Parallelität, ohne Hintergrundabfragen und ohne automatische Wiederholung der Gesamtsuche. `RouteQueryPacer` erzwingt den Mindestabstand
-  zwischen zwei Abfragen, die den Preisdienst tatsächlich erreichen (Zeitpunkt nach Abschluss der Abfrage, monotone Uhr), auch **über mehrere Routensuchen hinweg**; aus dem Cache bediente Abfragen
-  (5 Minuten) warten nicht. Die Wartezeit ist abbrechbar; die Fortschrittsanzeige nennt schon währenddessen die anstehende Abfrage („Tankstellen werden gesucht (2 von 3)“), und **Suche abbrechen**
+  zwischen zwei Abfragen, die den Preisdienst tatsächlich erreichen: Jede Abfrage reserviert einen Absendezeitpunkt (monotone Uhr), frühestens ein Intervall nach dem zuvor reservierten, auch **über mehrere
+  Routensuchen und gleichzeitige Aufrufer hinweg**; die Reservierung gilt auch bei Abbruch während der laufenden Anfrage, nur ein Abbruch in der Wartezeit gibt sie frei. Abfragen, die der Such-Cache (5 Minuten)
+  bedient (`IFuelPriceService.IsSearchCached`), warten nicht. Die Wartezeit ist abbrechbar; die Fortschrittsanzeige nennt schon währenddessen die anstehende Abfrage („Tankstellen werden gesucht (2 von 3)“), und **Suche abbrechen**
   beendet die Suche. Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung (`RequestThrottle`, 1 s, nicht verkürzbar) wie die normale Suche; die Routensuche umgeht sie
   nicht, sie wartet nur länger. Eine Suche dauert damit höchstens rund 20 s zuzüglich Routing.
 - Meldet eine Abfrage einen Fehler (auch Rückfall auf den Cache mit Fehlergrund), bricht die Suche ab; Teilergebnisse würden Lücken entlang der Route verschweigen.

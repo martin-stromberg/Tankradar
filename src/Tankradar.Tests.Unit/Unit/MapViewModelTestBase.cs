@@ -59,6 +59,7 @@ public abstract class MapViewModelTestBase : BaseTest
 
     /// <summary>
     /// Die Verbindungserkennung.
+    /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeConnectionMonitor Connection { get; } = new();
 

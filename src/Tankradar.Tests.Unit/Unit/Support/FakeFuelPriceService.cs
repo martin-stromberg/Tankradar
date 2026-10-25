@@ -116,6 +116,12 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     }
 
     /// <inheritdoc />
+    public bool IsSearchCached(StationSearchQuery query)
+    {
+        return false;
+    }
+
+    /// <inheritdoc />
     public Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
     {
         Queries.Add(query);

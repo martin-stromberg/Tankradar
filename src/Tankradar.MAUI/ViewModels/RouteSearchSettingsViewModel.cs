@@ -26,6 +26,7 @@ public class RouteSearchSettingsViewModel : BaseViewModel
     private bool _isSyncing;
     private bool _isChecking;
     private string? _statusMessage;
+    private CancellationTokenSource? _checkCancellation;
 
     /// <summary>
     /// Erstellt das ViewModel.
@@ -252,6 +253,7 @@ public class RouteSearchSettingsViewModel : BaseViewModel
     /// </summary>
     public override void OnDisappearing()
     {
+        _checkCancellation?.Cancel();
         KeyInput = string.Empty;
     }
 
@@ -323,6 +325,20 @@ public class RouteSearchSettingsViewModel : BaseViewModel
             return;
         }
 
+        // Sofort sperren: Ein Doppeltipp darf nicht zwei Anfragen auslösen.
+        IsChecking = true;
+        try
+        {
+            await CheckCoreAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            IsChecking = false;
+        }
+    }
+
+    private async Task CheckCoreAsync()
+    {
         var isEntered = _keyInput.Trim().Length > 0;
         string? candidate;
         if (isEntered)
@@ -353,12 +369,18 @@ public class RouteSearchSettingsViewModel : BaseViewModel
             return;
         }
 
-        IsChecking = true;
         StatusMessage = RouteSettingsTexts.Checking;
+        using var cancellation = new CancellationTokenSource();
+        _checkCancellation = cancellation;
         try
         {
-            var result = await _checker.CheckAsync(candidate).ConfigureAwait(true);
+            var result = await _checker.CheckAsync(candidate, cancellation.Token).ConfigureAwait(true);
             StatusMessage = RouteSettingsTexts.GetCheckMessage(result) + (isEntered && result == RoutingKeyCheckResult.Valid ? RouteSettingsTexts.NotSavedYet : string.Empty);
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // Die Seite wurde verlassen: keine Meldung mehr für einen verlassenen Bildschirm.
+            StatusMessage = null;
         }
         catch (Exception ex)
         {
@@ -367,7 +389,7 @@ public class RouteSearchSettingsViewModel : BaseViewModel
         }
         finally
         {
-            IsChecking = false;
+            _checkCancellation = null;
         }
     }
 

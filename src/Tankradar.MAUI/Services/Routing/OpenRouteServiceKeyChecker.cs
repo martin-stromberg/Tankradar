@@ -68,7 +68,15 @@ public sealed class OpenRouteServiceKeyChecker : IRoutingKeyChecker
             request.Headers.TryAddWithoutValidation("Authorization", normalized);
             request.Content = new StringContent(ProbeBody, Encoding.UTF8, new MediaTypeHeaderValue("application/json"));
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
-            return Map((int)response.StatusCode);
+            var status = (int)response.StatusCode;
+            var mapped = Map(status);
+            if (mapped is RoutingKeyCheckResult.Unavailable or RoutingKeyCheckResult.Unreachable)
+            {
+                // Der Status enthält keinen Schlüssel und macht z. B. eine falsche Basisadresse diagnostizierbar.
+                _logger.LogWarning("Die Prüfung des Routing-Schlüssels erhielt Status {Status}.", status);
+            }
+
+            return mapped;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

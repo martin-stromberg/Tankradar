@@ -42,7 +42,7 @@ public interface IRouteStationSearchService
 /// <summary>
 /// Fragt die Umkreisabfragen strikt nacheinander ab, dedupliziert nach Kennung, filtert nach dem Abstand zur Route und sortiert nach der Position entlang der Route.
 /// Zwischen zwei Abfragen, die den Preisdienst tatsächlich erreichen, liegt mindestens <see cref="RouteSearchOptions.MinQueryInterval"/> (Wartezeit, abbrechbar);
-/// aus dem Cache bediente Abfragen warten nicht. Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung.
+/// Abfragen, die der Such-Cache des Preisdienstes bedient, warten nicht (<see cref="IFuelPriceService.IsSearchCached"/>). Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung.
 /// </summary>
 public sealed class RouteStationSearchService : IRouteStationSearchService
 {
@@ -81,14 +81,13 @@ public sealed class RouteStationSearchService : IRouteStationSearchService
             var point = queryPoints[index];
 
             // Die Wartezeit liegt nach der Fortschrittsmeldung: Die Anzeige nennt die anstehende Abfrage („2 von 3“), während gewartet wird.
-            await _pacer.WaitAsync(cancellationToken).ConfigureAwait(false);
-            var result = await _priceService
-                .SearchNearbyAsync(new StationSearchQuery(point.Latitude, point.Longitude, point.RadiusKm, fuelTypes), cancellationToken)
-                .ConfigureAwait(false);
-            if (result.Source == PriceDataSource.Live || (result.Failure != PriceFailure.None && result.Failure != PriceFailure.Offline))
+            var query = new StationSearchQuery(point.Latitude, point.Longitude, point.RadiusKm, fuelTypes);
+            if (!_priceService.IsSearchCached(query))
             {
-                _pacer.MarkQueried();
+                await _pacer.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
+
+            var result = await _priceService.SearchNearbyAsync(query, cancellationToken).ConfigureAwait(false);
 
             if (result.Failure != PriceFailure.None)
             {

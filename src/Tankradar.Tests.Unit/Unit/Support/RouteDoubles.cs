@@ -37,6 +37,17 @@ public sealed class ScriptedFuelPriceService : IFuelPriceService
         return new StationSearchResult([], PriceDataSource.Live, PriceFailure.None);
     }
 
+    /// <summary>
+    /// Bestimmt, welche Abfragen der Such-Cache bedienen würde (<see cref="IFuelPriceService.IsSearchCached"/>); ohne Angabe keine.
+    /// </summary>
+    public Func<StationSearchQuery, bool> Cached { get; set; } = _ => false;
+
+    /// <inheritdoc />
+    public bool IsSearchCached(StationSearchQuery query)
+    {
+        return Cached(query);
+    }
+
     /// <inheritdoc />
     public async Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
     {

@@ -440,7 +440,7 @@ public partial class MapViewModel
         }
 
         var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
-        var request = new RouteSearchRequest(startPosition, startPosition is null ? _startInput : null, _destinationInput, snapshot.DistanceKm, fuelTypes);
+        var request = new RouteSearchRequest(startPosition, startPosition is null ? snapshot.StartInput : null, snapshot.DestinationInput, snapshot.DistanceKm, fuelTypes);
         var progress = new ContextProgress(this, cancellation);
         var result = await _routeSearchService.SearchAsync(request, progress, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();

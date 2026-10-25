@@ -41,20 +41,18 @@ public class RouteQueryPacerTests : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass ohne vorherige Abfrage nicht gewartet wird und danach der Rest bis zum Mindestabstand abgewartet wird.
+    /// Prüft die Reservierung: Die erste Abfrage wartet nicht, die nächste ein Intervall nach der ersten, eine spätere nur den Rest.
     /// </summary>
     [Fact]
-    public async Task WaitAsync_WaitsOnlyTheRemainingInterval()
+    public async Task WaitAsync_ReservesSlotsOneIntervalApart()
     {
         var pacer = CreatePacer();
 
         await pacer.WaitAsync(CancellationToken.None);
         Assert.Empty(_delay.Delays);
 
-        pacer.MarkQueried();
         _clock.Advance(TimeSpan.FromSeconds(4));
         await pacer.WaitAsync(CancellationToken.None);
-
         Assert.Equal([TimeSpan.FromSeconds(6)], _delay.Delays);
 
         _delay.Delays.Clear();
@@ -64,13 +62,51 @@ public class RouteQueryPacerTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft die Nebenläufigkeit: Gleichzeitige Aufrufer erhalten aufeinanderfolgende Zeitpunkte im Abstand des Intervalls und passieren nicht beide ungebremst.
+    /// </summary>
+    [Fact]
+    public async Task WaitAsync_ConcurrentCallers_GetConsecutiveSlots()
+    {
+        var pacer = CreatePacer();
+        var holdDelays = new TaskCompletionSource();
+        _delay.Hold = holdDelays.Task;
+
+        await pacer.WaitAsync(CancellationToken.None);
+        var second = pacer.WaitAsync(CancellationToken.None);
+        var third = pacer.WaitAsync(CancellationToken.None);
+        holdDelays.SetResult();
+        await Task.WhenAll(second, third);
+
+        Assert.Equal([TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20)], _delay.Delays.Order());
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Abbruch in der Wartezeit die Reservierung wieder freigibt (es wurde nichts gesendet).
+    /// </summary>
+    [Fact]
+    public async Task WaitAsync_CancelledWhileWaiting_ReleasesSlot()
+    {
+        var pacer = CreatePacer();
+        await pacer.WaitAsync(CancellationToken.None);
+        using var cancellation = new CancellationTokenSource();
+        _delay.OnDelay = cancellation.Cancel;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pacer.WaitAsync(cancellation.Token));
+        _delay.OnDelay = null;
+        _delay.Delays.Clear();
+        await pacer.WaitAsync(CancellationToken.None);
+
+        Assert.Equal([TimeSpan.FromSeconds(10)], _delay.Delays);
+    }
+
+    /// <summary>
     /// Prüft, dass ein Abbruch die Wartezeit beendet.
     /// </summary>
     [Fact]
     public async Task WaitAsync_Cancellation_EndsTheWait()
     {
         var pacer = new RouteQueryPacer(new RouteSearchOptions(), new TaskDelay(), TimeProvider.System);
-        pacer.MarkQueried();
+        await pacer.WaitAsync(CancellationToken.None);
         using var cancellation = new CancellationTokenSource();
         cancellation.CancelAfter(50);
 
@@ -114,7 +150,7 @@ public class RouteQueryPacerTests : BaseTest
     [Fact]
     public async Task SearchAsync_CachedQueries_DoNotWait()
     {
-        _prices.Respond = (_, _) => new StationSearchResult([], PriceDataSource.Cache, PriceFailure.None);
+        _prices.Cached = _ => true;
         var service = new RouteStationSearchService(_prices, CreatePacer());
 
         await service.SearchAsync(_route, Queries(), 2, Fuels, null, CancellationToken.None);
@@ -156,23 +192,44 @@ public class RouteQueryPacerTests : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass ein Fehler der Preisabfrage (der den Dienst erreicht hat) ebenfalls den Takt vermerkt, ein Offline-Fehler dagegen nicht.
+    /// Prüft, dass eine Cache-Antwort nach einer Live-Suche nicht wartet, auch wenn die letzte Live-Abfrage erst kurz zurückliegt.
     /// </summary>
     [Fact]
-    public async Task SearchAsync_FailureMarksQueryUnlessOffline()
+    public async Task SearchAsync_LiveThenCachedSearch_DoesNotWait()
     {
-        var pacer = CreatePacer();
-        var service = new RouteStationSearchService(_prices, pacer);
-        _prices.Respond = (_, _) => new StationSearchResult([], PriceDataSource.OfflineFallback, PriceFailure.Offline);
+        var service = new RouteStationSearchService(_prices, CreatePacer());
         await service.SearchAsync(_route, Queries(), 2, Fuels, null, CancellationToken.None);
-        await pacer.WaitAsync(CancellationToken.None);
+        _delay.Delays.Clear();
+        _clock.Advance(TimeSpan.FromSeconds(3));
+        _prices.Cached = _ => true;
+
+        await service.SearchAsync(_route, Queries(), 2, Fuels, null, CancellationToken.None);
+
         Assert.Empty(_delay.Delays);
+        Assert.Equal(6, _prices.Queries.Count);
+    }
 
-        _prices.Respond = (_, _) => new StationSearchResult([], PriceDataSource.OfflineFallback, PriceFailure.Unreachable);
+    /// <summary>
+    /// Prüft, dass eine während der Anfrage abgebrochene Abfrage ihren Zeitpunkt behält: Die nächste Suche wartet trotzdem.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_CancelledWhileQueryIsInFlight_NextSearchStillWaits()
+    {
+        using var cancellation = new CancellationTokenSource();
+        _prices.Respond = (_, _) =>
+        {
+            cancellation.Cancel();
+            cancellation.Token.ThrowIfCancellationRequested();
+            return RouteStationFactory.Live();
+        };
+        var service = new RouteStationSearchService(_prices, CreatePacer());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.SearchAsync(_route, Queries(), 2, Fuels, null, cancellation.Token));
+        _prices.Respond = (_, _) => RouteStationFactory.Live();
+        _clock.Advance(TimeSpan.FromSeconds(2));
+
         await service.SearchAsync(_route, Queries(), 2, Fuels, null, CancellationToken.None);
-        await pacer.WaitAsync(CancellationToken.None);
 
-        Assert.Equal([TimeSpan.FromSeconds(10)], _delay.Delays);
+        Assert.Equal(TimeSpan.FromSeconds(8), _delay.Delays[0]);
     }
 
     private sealed class AdvancingDelay : IDelay
@@ -188,13 +245,19 @@ public class RouteQueryPacerTests : BaseTest
 
         public Action? OnDelay { get; set; }
 
-        public Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
+        public Task? Hold { get; set; }
+
+        public async Task DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
         {
             Delays.Add(delay);
             OnDelay?.Invoke();
             cancellationToken.ThrowIfCancellationRequested();
+            if (Hold is { } hold)
+            {
+                await hold;
+            }
+
             _clock.Advance(delay);
-            return Task.CompletedTask;
         }
     }
 }

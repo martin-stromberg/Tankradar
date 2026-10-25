@@ -11,7 +11,7 @@ namespace Tankradar.MAUI.Services.Routing;
 public static class RouteSampler
 {
     /// <summary>
-    /// Berechnet, bis zu welcher Routenlänge bei dem gewählten Abstand gesucht werden kann: die längere Grenze aus <see cref="RouteSearchOptions.MaxRouteLengthKm"/>
+    /// Berechnet, bis zu welcher Routenlänge bei dem gewählten Abstand gesucht werden kann: die kürzere Grenze aus <see cref="RouteSearchOptions.MaxRouteLengthKm"/>
     /// und der Strecke, die <see cref="RouteSearchOptions.MaxQueries"/> Abfragen lückenlos überdecken.
     /// </summary>
     /// <param name="distanceKm">Der Abstand zur Route in Kilometern.</param>

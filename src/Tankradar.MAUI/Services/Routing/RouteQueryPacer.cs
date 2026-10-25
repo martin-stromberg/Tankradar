@@ -3,9 +3,11 @@ using Tankradar.MAUI.Services.Pricing;
 namespace Tankradar.MAUI.Services.Routing;
 
 /// <summary>
-/// Sorgt für den Mindestabstand zwischen den Preisabfragen der Routensuche (<see cref="RouteSearchOptions.MinQueryInterval"/>), auch über mehrere Suchen hinweg.
-/// Der Abstand gilt zusätzlich zur allgemeinen Drosselung des Preisdienstes (<see cref="RequestThrottle"/>), über die alle Abfragen der App laufen; die Routensuche
-/// umgeht diese also nicht, sie wartet nur länger. Die Zeit wird monoton gemessen, damit Änderungen der Systemuhr den Abstand nicht verkürzen.
+/// Sorgt für den Mindestabstand zwischen den Preisabfragen der Routensuche (<see cref="RouteSearchOptions.MinQueryInterval"/>), auch über mehrere Suchen hinweg und
+/// bei gleichzeitigen Aufrufern. Jede Abfrage reserviert einen Zeitpunkt (Absendezeitpunkt): der erste Aufrufer sofort, jeder weitere frühestens ein Intervall nach dem
+/// vorherigen reservierten Zeitpunkt. Die Reservierung gilt auch, wenn die Abfrage danach abgebrochen wird, während sie unterwegs ist; nur ein Abbruch in der Wartezeit
+/// (es wurde nichts gesendet) gibt sie wieder frei. Der Abstand gilt zusätzlich zur allgemeinen Drosselung des Preisdienstes (<see cref="RequestThrottle"/>), über die alle
+/// Abfragen der App laufen; die Routensuche umgeht diese also nicht, sie wartet nur länger. Die Zeit wird monoton gemessen.
 /// </summary>
 public sealed class RouteQueryPacer
 {
@@ -13,7 +15,7 @@ public sealed class RouteQueryPacer
     private readonly RouteSearchOptions _options;
     private readonly IDelay _delay;
     private readonly TimeProvider _timeProvider;
-    private long? _lastQuery;
+    private long? _nextSlot;
 
     /// <summary>
     /// Erstellt den Taktgeber.
@@ -29,32 +31,47 @@ public sealed class RouteQueryPacer
     }
 
     /// <summary>
-    /// Wartet bei Bedarf, bis seit der letzten vermerkten Abfrage der Mindestabstand vergangen ist.
+    /// Reserviert den nächsten Zeitpunkt für eine Abfrage und wartet bei Bedarf bis dahin. Die Abfrage darf unmittelbar danach gesendet werden und muss dann auch gesendet werden.
     /// </summary>
-    /// <param name="cancellationToken">Abbruchsignal; ein Abbruch beendet auch die Wartezeit.</param>
-    /// <returns>Ein Task, der abgeschlossen ist, sobald die nächste Abfrage gesendet werden darf.</returns>
+    /// <param name="cancellationToken">Abbruchsignal; ein Abbruch beendet die Wartezeit und gibt die Reservierung wieder frei.</param>
+    /// <returns>Ein Task, der abgeschlossen ist, sobald die Abfrage gesendet werden darf.</returns>
     public async Task WaitAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        long? previous;
+        long slot;
         TimeSpan remaining;
         lock (_gate)
         {
-            remaining = _lastQuery is { } last ? _options.MinQueryInterval - _timeProvider.GetElapsedTime(last) : TimeSpan.Zero;
+            var now = _timeProvider.GetTimestamp();
+            previous = _nextSlot;
+            slot = previous is { } next && _timeProvider.GetElapsedTime(now, next) > TimeSpan.Zero ? next : now;
+            remaining = _timeProvider.GetElapsedTime(now, slot);
+            _nextSlot = slot + (long)(_options.MinQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
         }
 
-        if (remaining > TimeSpan.Zero)
+        if (remaining <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        var reserved = slot + (long)(_options.MinQueryInterval.TotalSeconds * _timeProvider.TimestampFrequency);
+        try
         {
             await _delay.DelayAsync(remaining, cancellationToken).ConfigureAwait(false);
         }
-    }
-
-    /// <summary>
-    /// Vermerkt, dass soeben eine Abfrage an den Preisdienst gegangen ist.
-    /// </summary>
-    public void MarkQueried()
-    {
-        lock (_gate)
+        catch (OperationCanceledException)
         {
-            _lastQuery = _timeProvider.GetTimestamp();
+            lock (_gate)
+            {
+                // Es wurde nichts gesendet: Nur wenn niemand nach uns reserviert hat, wird der Zeitpunkt wieder frei.
+                if (_nextSlot == reserved)
+                {
+                    _nextSlot = previous;
+                }
+            }
+
+            throw;
         }
     }
 }
