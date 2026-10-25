@@ -707,6 +707,8 @@ vorbereitet: Standortnutzung, Weitergabe von Adress- und Routeneingaben an Geoko
 Routing-Dienst, keine Weitergabe von Fahrzeug- und Tankbuchdaten. Hilfsfunktionen des Skripts, die
 ohne Mac lauffähig sind, werden automatisiert getestet. Die Nutzung des Skripts wird dokumentiert.
 
+**Zusatz aus der Abnahme von Schritt 17a (Härtungen, optional):** Windows-ICO mit mehreren Bildgrößen (16–256 px) statt nur 64 px; in der iOS-Prüfung das 1024-px-App-Store-Icon auf Größe und Deckung kontrollieren und den ersten TestFlight-Upload mit neuem Icon auf Annahme prüfen; Icon-Prüfung in `create-review-version.ps1` gegen veraltete Dateien im Publish-Verzeichnis absichern; Unit-Tests der Icon-Ressourcen per XML-Auswertung statt Textsuche; ungenaue Angaben „Kacheln/Startmenü“ in `changes.log` korrigieren.
+
 **Abhängigkeiten:** 3, 13, 17
 
 **Betroffene Bereiche:** iOS-Auslieferung, Signierung, Datenschutzangaben, CI
