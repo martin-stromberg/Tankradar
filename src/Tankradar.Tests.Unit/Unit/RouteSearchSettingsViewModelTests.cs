@@ -250,6 +250,29 @@ public class RouteSearchSettingsViewModelTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass das Verlassen der Seite eine laufende Prüfung abbricht und danach keine Meldung für den verlassenen Bildschirm bleibt.
+    /// </summary>
+    [Fact]
+    public async Task Check_LeavingPageDuringCheck_CancelsItWithoutMessage()
+    {
+        await AppearAsync();
+        var checker = new CancellableChecker();
+        var viewModel = new RouteSearchSettingsViewModel(_access, checker, _connection, _links, _logger);
+        viewModel.KeyInput = Key;
+
+        viewModel.CheckKeyCommand.Execute(null);
+        var running = viewModel.LastActionTask;
+        await checker.Started.Task;
+        viewModel.OnDisappearing();
+        await running;
+
+        Assert.True(checker.WasCancelled);
+        Assert.Null(viewModel.StatusMessage);
+        Assert.False(viewModel.IsChecking);
+        Assert.Equal(string.Empty, viewModel.KeyInput);
+    }
+
+    /// <summary>
     /// Prüft den Schalter: Ohne Schlüssel bleibt er aus, mit Schlüssel lässt er sich ein- und ausschalten und wirkt auf den Zugang.
     /// </summary>
     [Fact]
@@ -372,6 +395,29 @@ public class RouteSearchSettingsViewModelTests : BaseTest
         Assert.Equal(checks.Count, checks.Distinct().Count());
         Assert.Equal(string.Empty, RouteSettingsTexts.GetKeyErrorMessage(RoutingKeyError.None));
         Assert.All(new[] { RoutingKeyError.Empty, RoutingKeyError.TooLong, RoutingKeyError.InvalidCharacters }, error => Assert.NotEmpty(RouteSettingsTexts.GetKeyErrorMessage(error)));
+    }
+
+    private sealed class CancellableChecker : MAUI.Services.Routing.IRoutingKeyChecker
+    {
+        public TaskCompletionSource Started { get; } = new();
+
+        public bool WasCancelled { get; private set; }
+
+        public async Task<RoutingKeyCheckResult> CheckAsync(string key, CancellationToken cancellationToken = default)
+        {
+            Started.SetResult();
+            try
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                WasCancelled = true;
+                throw;
+            }
+
+            return RoutingKeyCheckResult.Valid;
+        }
     }
 
     private sealed class GatedChecker : MAUI.Services.Routing.IRoutingKeyChecker

@@ -50,7 +50,7 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
   Routensuchen und gleichzeitige Aufrufer hinweg**; die Reservierung gilt auch bei Abbruch während der laufenden Anfrage, nur ein Abbruch in der Wartezeit gibt sie frei. Abfragen, die der Such-Cache (5 Minuten)
   bedient (`IFuelPriceService.IsSearchCached`), warten nicht. Die Wartezeit ist abbrechbar; die Fortschrittsanzeige nennt schon währenddessen die anstehende Abfrage („Tankstellen werden gesucht (2 von 3)“), und **Suche abbrechen**
   beendet die Suche. Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung (`RequestThrottle`, 1 s, nicht verkürzbar) wie die normale Suche; die Routensuche umgeht sie
-  nicht, sie wartet nur länger. Eine Suche dauert damit höchstens rund 20 s zuzüglich Routing.
+  nicht, sie wartet nur länger. Eine Suche dauert damit höchstens rund 20 s zuzüglich Routing; folgt sie direkt auf eine frühere Suche, kommt für die erste Abfrage bis zu 10 s Wartezeit hinzu.
 - Meldet eine Abfrage einen Fehler (auch Rückfall auf den Cache mit Fehlergrund), bricht die Suche ab; Teilergebnisse würden Lücken entlang der Route verschweigen.
 - Altbestand (nicht Teil dieser Entscheidung): Auch Umkreissuche und Favoritenpreise können mehr als eine Anfrage pro Minute auslösen; das ist bei der Klärung mit Tankerkönig mitzubedenken.
 
