@@ -262,6 +262,41 @@ runs:
         if [ -z "$ipa" ]; then ipa="${ipas[0]}"; fi
         cp "$ipa" release-ios.ipa
 
+    # IPA-Prüfung vor dem Upload (Gegenstück zu Invoke-IpaValidation in scripts/iOS-Deployment.ps1; die
+    # Fehlertexte sind identisch und werden von scripts/test-ios-deployment.ps1 verglichen). Geprüft wird das
+    # Ergebnis im Paket: Privacy-Manifest, Verschlüsselungsangabe, Gerätefamilie, Mindestversion iOS 16 und
+    # Größe des Marketing-Icons. Ein Fehler beendet den Schritt, bevor etwas hochgeladen wird.
+    - name: Validate iOS package
+      if: ${{ steps.mode.outputs.signed == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        TMP="$(mktemp -d)"
+        trap 'rm -rf "$TMP"' EXIT
+        ditto -x -k release-ios.ipa "$TMP" 2>/dev/null || unzip -q release-ios.ipa -d "$TMP"
+        APP="$(find "$TMP/Payload" -maxdepth 1 -name '*.app' | head -1)"
+        if [ -z "$APP" ]; then echo "::error::Kein .app-Bundle in der IPA gefunden"; exit 1; fi
+        fail() { echo "::error::$1"; exit 1; }
+        if [ ! -f "$APP/PrivacyInfo.xcprivacy" ]; then fail "FEHLER: PrivacyInfo.xcprivacy fehlt im Bundle-Root"; fi
+        plutil -lint "$APP/PrivacyInfo.xcprivacy" >/dev/null 2>&1 || fail "FEHLER: PrivacyInfo.xcprivacy ist kein gueltiges plist"
+        FAMILY=$(plutil -extract UIDeviceFamily json -o - "$APP/Info.plist" 2>/dev/null || echo '[]')
+        echo "$FAMILY" | grep -q '1' || fail "FEHLER: UIDeviceFamily ohne iPhone (1): $FAMILY"
+        ENC=$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "$APP/Info.plist" 2>/dev/null || echo '?')
+        [ "$ENC" = "false" ] || [ "$ENC" = "0" ] || fail "FEHLER: ITSAppUsesNonExemptEncryption nicht false: $ENC"
+        MINOS=$(plutil -extract MinimumOSVersion raw -o - "$APP/Info.plist" 2>/dev/null || echo '')
+        MINOS_MAJOR=${MINOS%%.*}
+        case "$MINOS_MAJOR" in ''|*[!0-9]*) fail "FEHLER: MinimumOSVersion fehlt oder ist nicht lesbar: $MINOS";; esac
+        [ "$MINOS_MAJOR" -ge 16 ] || fail "FEHLER: MinimumOSVersion $MINOS ist kleiner als 16.0"
+        ICON_BLOCK=$(xcrun assetutil --info "$APP/Assets.car" 2>/dev/null | awk 'BEGIN{RS="}"} /appiconItunesArtwork/' | head -40 || true)
+        ICON_W=$(echo "$ICON_BLOCK" | grep -i '"PixelWidth"' | head -1 | tr -dc '0-9')
+        ICON_H=$(echo "$ICON_BLOCK" | grep -i '"PixelHeight"' | head -1 | tr -dc '0-9')
+        if [ -z "$ICON_W" ] || [ -z "$ICON_H" ]; then
+          echo "::warning::WARNUNG: Groesse des Marketing-Icons konnte nicht gelesen werden - Pruefung uebersprungen"
+        elif [ "$ICON_W" != "1024" ] || [ "$ICON_H" != "1024" ]; then
+          fail "FEHLER: Marketing-Icon ist ${ICON_W}x${ICON_H} px, erwartet 1024x1024"
+        fi
+        echo "IPA-Prüfung bestanden (MinimumOSVersion $MINOS)."
+
     # TestFlight-Upload: läuft nur bei signiertem Build und gesetzten API-Key-Secrets.
     # iTMSTransporter liegt auf den Runnern nicht in Transporter.app - gesucht wird in den Apple-Standardorten
     # (gleiche Liste wie Get-TransporterFindScript in scripts/iOS-Deployment.ps1).

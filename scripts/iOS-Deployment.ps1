@@ -42,6 +42,16 @@
         TANKRADAR_IOS_BUNDLE_ID       -> Bundle-ID der App (wird als ApplicationId uebergeben);
                                           ohne Angabe gilt der Standardwert aus der csproj
 
+    Mindestversion: Die App unterstuetzt iOS 16 (SupportedOSPlatformVersion in der csproj). Die IPA-
+    Validierung (store/upload) bricht ab, wenn MinimumOSVersion in der Info.plist kleiner als 16 ist.
+
+    Fehlende Werte: Jede Aktion prueft nur ihre eigenen Werte und meldet alle fehlenden gesammelt mit
+    Parametername, Umgebungsvariable und Herkunft (Apple Developer, App Store Connect). Beispiel: 'upload'
+    benoetigt nur den App-Store-Connect-Zugang, 'device' nur Zertifikat und Profil, 'build' und
+    'simulator' nichts davon; ein fehlender Wert blockiert also nie eine andere Aktion.
+
+    Datenschutz: Berechtigungstexte, Privacy-Manifest und App-Store-Angaben siehe docs/help/Datenschutz.
+
     Hinweis: 'store' erhoeht die Buildnummer (<ApplicationVersion>) in der csproj; die
     Aenderung bleibt als normale Working-Copy-Aenderung stehen und kann committet werden.
     Lokale Auswahlen werden in .ios-deploy.user.json (nicht versioniert) gemerkt, Laufprotokolle
@@ -374,18 +384,65 @@ function Resolve-CodesigningInteractive {
     if ($CodesignKey -and $CodesignProvision) { Save-DeployPrefs -Action $Action }
 }
 
+# Liefert die fehlenden Werte der angegebenen Aktion (reine Funktion, keine Ausgabe, kein Abbruch).
+# Jede Aktion nennt nur ihre eigenen Werte: 'upload' verlangt keine Signierung, 'device' keinen
+# App-Store-Connect-Zugang, 'build'/'simulator'/'list' nichts. So blockiert ein fehlender Wert
+# nie eine andere Aktion. Jeder Eintrag nennt Parameter, Umgebungsvariable und die Herkunft des Werts.
+function Get-MissingDeployValues {
+    param([string]$Action)
+    $missing = New-Object System.Collections.Generic.List[object]
+    $needsSigning = $Action -in @("device", "store")
+    $needsStoreAccess = $Action -in @("store", "upload")
+    if ($needsSigning) {
+        if (-not $CodesignKey) {
+            $missing.Add([pscustomobject]@{ Parameter = "-CodesignKey"; Variable = "TANKRADAR_IOS_CODESIGN_KEY"; Hint = "Name des Zertifikats aus dem Schluesselbund des Mac (security find-identity -v -p codesigning), z. B. 'Apple Distribution: Name (TEAMID)'; die Team-ID (TEAMID) steht in Klammern am Ende und im Apple-Developer-Konto unter Mitgliedschaft." }) | Out-Null
+        }
+        if (-not $CodesignProvision) {
+            $missing.Add([pscustomobject]@{ Parameter = "-CodesignProvision"; Variable = "TANKRADAR_IOS_PROVISIONING_PROFILE"; Hint = "Name des Provisioning-Profils aus dem Apple-Developer-Konto (Zertifikate, IDs und Profile); es muss zur Bundle-ID passen und auf dem Mac installiert sein." }) | Out-Null
+        }
+    }
+    if ($needsStoreAccess) {
+        if (-not $ApiKeyPath) {
+            $missing.Add([pscustomobject]@{ Parameter = "-ApiKeyPath"; Variable = "TANKRADAR_IOS_API_KEY_PATH"; Hint = "Pfad der .p8-Datei des API-Schluessels aus App Store Connect (Benutzer und Zugriff, Integrationen); ausserhalb des Repository ablegen." }) | Out-Null
+        }
+        if (-not $ApiKeyId) {
+            $missing.Add([pscustomobject]@{ Parameter = "-ApiKeyId"; Variable = "TANKRADAR_IOS_API_KEY_ID"; Hint = "Schluessel-ID aus App Store Connect (Benutzer und Zugriff, Integrationen)." }) | Out-Null
+        }
+        if (-not $ApiIssuerId) {
+            $missing.Add([pscustomobject]@{ Parameter = "-ApiIssuerId"; Variable = "TANKRADAR_IOS_API_ISSUER_ID"; Hint = "Issuer-ID aus App Store Connect (Benutzer und Zugriff, Integrationen, oben auf der Seite)." }) | Out-Null
+        }
+    }
+    return $missing.ToArray()
+}
+
+# Gibt die fehlenden Werte gesammelt mit Herkunftshinweis aus. Rueckgabe: Anzahl.
+function Write-MissingDeployValues {
+    param([string]$Action, [object[]]$Missing)
+    if (-not $Missing -or $Missing.Count -eq 0) { return 0 }
+    Write-Host "Fehler: Fehlende Pflichtparameter fuer die Aktion '$Action':" -ForegroundColor Red
+    foreach ($m in $Missing) {
+        Write-Host "  $($m.Parameter) / $($m.Variable)" -ForegroundColor Red
+        Write-Host "      Woher: $($m.Hint)" -ForegroundColor Yellow
+    }
+    Write-Host "Andere Aktionen sind davon nicht betroffen (z. B. build und simulator benoetigen diese Werte nicht)." -ForegroundColor Gray
+    return $Missing.Count
+}
+
+# Prueft einen Versionstext (z. B. MinimumOSVersion) gegen die Mindestversion iOS 16
+# (gleich SupportedOSPlatformVersion der csproj; der Test in test-ios-deployment.ps1 vergleicht beides).
+function Test-MinimumOsVersion {
+    param([string]$VersionText, [int]$MinimumMajor = 16)
+    if ([string]::IsNullOrWhiteSpace($VersionText)) { return $false }
+    if ($VersionText.Trim() -notmatch '^(\d+)(\.\d+)*$') { return $false }
+    return ([int]$Matches[1] -ge $MinimumMajor)
+}
+
 function Assert-CodesigningForAction {
     param([string]$Action)
-    if ($Action -eq "simulator" -or $Action -eq "build") { return }
+    if ($Action -in @("simulator", "build", "upload")) { return }
     Resolve-CodesigningInteractive -Action $Action
-    if (-not $CodesignKey) {
-        Write-Host "Fehler: -CodesignKey bzw. TANKRADAR_IOS_CODESIGN_KEY ist nicht gesetzt." -ForegroundColor Red
-        exit 1
-    }
-    if (-not $CodesignProvision) {
-        Write-Host "Fehler: -CodesignProvision bzw. TANKRADAR_IOS_PROVISIONING_PROFILE ist nicht gesetzt." -ForegroundColor Red
-        exit 1
-    }
+    $missing = @(Get-MissingDeployValues -Action $Action)
+    if ((Write-MissingDeployValues -Action $Action -Missing $missing) -gt 0) { exit 1 }
 }
 
 $script:TranscriptStarted = $false
@@ -414,17 +471,8 @@ function Stop-DeployLog {
 function Assert-StorePrerequisites {
     param([string]$Action)
     Resolve-CodesigningInteractive -Action $Action
-    $missing = @()
-    if (-not $CodesignKey) { $missing += "-CodesignKey / TANKRADAR_IOS_CODESIGN_KEY" }
-    if (-not $CodesignProvision) { $missing += "-CodesignProvision / TANKRADAR_IOS_PROVISIONING_PROFILE" }
-    if (-not $ApiKeyPath) { $missing += "-ApiKeyPath / TANKRADAR_IOS_API_KEY_PATH" }
-    if (-not $ApiKeyId) { $missing += "-ApiKeyId / TANKRADAR_IOS_API_KEY_ID" }
-    if (-not $ApiIssuerId) { $missing += "-ApiIssuerId / TANKRADAR_IOS_API_ISSUER_ID" }
-    if ($missing) {
-        Write-Host "Fehler: Fehlende Pflichtparameter fuer den Store-Upload:" -ForegroundColor Red
-        foreach ($m in $missing) { Write-Host "  $m" -ForegroundColor Red }
-        exit 1
-    }
+    $missing = @(Get-MissingDeployValues -Action $Action)
+    if ((Write-MissingDeployValues -Action $Action -Missing $missing) -gt 0) { exit 1 }
     if ($CodesignKey -match 'Development') {
         Write-Host "Fehler: -CodesignKey ('$CodesignKey') ist ein Development-Zertifikat." -ForegroundColor Red
         Write-Host "Fuer App Store/TestFlight wird ein 'Apple Distribution'-Zertifikat benoetigt." -ForegroundColor Yellow
@@ -743,6 +791,12 @@ FAMILY=`$(plutil -extract UIDeviceFamily json -o - "`$APP/Info.plist" 2>/dev/nul
 echo "`$FAMILY" | grep -q '1' || { echo "FEHLER: UIDeviceFamily ohne iPhone (1): `$FAMILY"; exit 1; }
 ENC=`$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - "`$APP/Info.plist" 2>/dev/null || echo '?')
 [ "`$ENC" = "false" ] || [ "`$ENC" = "0" ] || { echo "FEHLER: ITSAppUsesNonExemptEncryption nicht false: `$ENC"; exit 1; }
+echo "==> Pruefe Mindestversion iOS"
+# SupportedOSPlatformVersion der csproj (iOS 16) landet als MinimumOSVersion in der Info.plist.
+MINOS=`$(plutil -extract MinimumOSVersion raw -o - "`$APP/Info.plist" 2>/dev/null || echo '')
+MINOS_MAJOR=`${MINOS%%.*}
+case "`$MINOS_MAJOR" in ''|*[!0-9]*) echo "FEHLER: MinimumOSVersion fehlt oder ist nicht lesbar: `$MINOS"; exit 1;; esac
+[ "`$MINOS_MAJOR" -ge 16 ] || { echo "FEHLER: MinimumOSVersion `$MINOS ist kleiner als 16.0"; exit 1; }
 echo "==> Pruefe App-Icon-Kodierung"
 # ITMS-90717 lehnt Icons mit Transparenz ab. Der Resizetizer erzeugt
 # grundsaetzlich RGBA; actool kodiert ARGB - das ist bei vollstaendig
@@ -753,6 +807,15 @@ if [ -n "`$ICON_ENC" ]; then
     echo "Marketing-Icon-Encoding:`$ICON_ENC"
 else
     echo "WARNUNG: Assets.car/appicon konnte nicht gelesen werden - Icon-Check uebersprungen"
+fi
+echo "==> Pruefe Groesse des Marketing-Icons (1024 x 1024)"
+ICON_BLOCK=`$(xcrun assetutil --info "`$APP/Assets.car" 2>/dev/null | awk 'BEGIN{RS="}"} /appiconItunesArtwork/' | head -40 || true)
+ICON_W=`$(echo "`$ICON_BLOCK" | grep -i '"PixelWidth"' | head -1 | tr -dc '0-9')
+ICON_H=`$(echo "`$ICON_BLOCK" | grep -i '"PixelHeight"' | head -1 | tr -dc '0-9')
+if [ -z "`$ICON_W" ] || [ -z "`$ICON_H" ]; then
+    echo "WARNUNG: Groesse des Marketing-Icons konnte nicht gelesen werden - Pruefung uebersprungen"
+elif [ "`$ICON_W" != "1024" ] || [ "`$ICON_H" != "1024" ]; then
+    echo "FEHLER: Marketing-Icon ist `${ICON_W}x`${ICON_H} px, erwartet 1024x1024"; exit 1
 fi
 echo "==> iTMSTransporter -m verify"
 # altool ist bei Apple deprecated; iTMSTransporter nutzt dieselbe

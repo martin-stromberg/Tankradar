@@ -33,7 +33,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Foto eines Tankbelegs auswählen</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Ermittlung von Tankstellen in der Nähe</string>
+	<string>Zur Ermittlung von Tankstellen in deiner Nähe und – wenn du es wählst – als Startpunkt einer Route.</string>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 </dict>
