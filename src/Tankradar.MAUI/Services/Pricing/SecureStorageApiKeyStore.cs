@@ -16,7 +16,7 @@ public sealed class SecureStorageApiKeyStore : IApiKeyStore
     public const string RoutingStorageKey = "tankatlas.routing-api-key";
 
     /// <summary>
-    /// Speicherschlüssel des Schalters „Routensuche aktivieren“ (gerätelokal, nicht Teil der Sicherung).
+    /// Speicherschlüssel des Schalters „Routensuche aktivieren“ (in der Keychain des Geräts, nicht Teil der Sicherung der App; Zugriffsklasse AfterFirstUnlock, nicht mit iCloud synchronisiert, aber in verschlüsselten Gerätesicherungen enthalten).
     /// </summary>
     public const string RoutingEnabledStorageKey = "tankatlas.routing-enabled";
 
