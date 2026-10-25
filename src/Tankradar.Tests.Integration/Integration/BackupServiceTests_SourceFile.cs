@@ -8,6 +8,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft, dass ein Fehler beim Lesen der Sicherungsdatenbank (abgeschnittene oder beschädigte Datei) als ungültige Datei gemeldet wird und nicht als
 /// vorübergehender Fehler der Umgebung, den ein erneuter Versuch beheben könnte; die Livedaten bleiben dabei unverändert.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_SourceFile : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
