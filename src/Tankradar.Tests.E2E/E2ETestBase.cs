@@ -201,14 +201,7 @@ public abstract class E2ETestBase : IDisposable
             return;
         }
 
-        try
-        {
-            Application.Close();
-        }
-        catch (Exception)
-        {
-            // Best-effort: Der Prozess kann bereits beendet sein.
-        }
+        CloseApplicationAndWait();
 
         // Bei einem vor der Initialisierung abgebrochenen Start kann die Automation fehlen; das Aufräumen darf die Startausnahme nicht verdecken.
         ((IDisposable?)Automation)?.Dispose();
@@ -242,17 +235,7 @@ public abstract class E2ETestBase : IDisposable
     /// </summary>
     protected void RestartApplication()
     {
-        var processId = Application.ProcessId;
-        try
-        {
-            Application.Close();
-        }
-        catch (Exception)
-        {
-            // Best-effort: Der Prozess kann bereits beendet sein.
-        }
-
-        WaitForProcessExit(processId);
+        CloseApplicationAndWait();
         LaunchApplication();
     }
 
@@ -267,20 +250,35 @@ public abstract class E2ETestBase : IDisposable
         RestartApplication();
     }
 
-    private static void WaitForProcessExit(int processId)
+    /// <summary>
+    /// Schließt die App und wartet auf das Prozessende, damit der Testlauf nicht vor dem Abbau der App (Finalizer der WinRT-Objekte) weiterläuft;
+    /// bleibt der Prozess bestehen, wird er samt Prozessbaum beendet. Ein Absturz beim Beenden (0xC0000005) wird im Testprotokoll vermerkt.
+    /// </summary>
+    private void CloseApplicationAndWait()
     {
+        Process? process = null;
         try
         {
-            using var process = Process.GetProcessById(processId);
+            process = Process.GetProcessById(Application.ProcessId);
+            Application.Close();
             if (!process.WaitForExit(TimeSpan.FromSeconds(15)))
             {
+                Console.Error.WriteLine($"Hinweis: Die Tankatlas-App (PID {process.Id}) wurde nach 15 s nicht beendet und wird beendet.");
                 process.Kill(entireProcessTree: true);
                 process.WaitForExit(TimeSpan.FromSeconds(10));
             }
+            else if (process.ExitCode == AccessViolationExitCode)
+            {
+                Console.Error.WriteLine($"Hinweis: Die Tankatlas-App (PID {process.Id}) endete mit 0xC0000005 (Zugriffsverletzung beim Beenden, siehe ADR 0015).");
+            }
         }
-        catch (ArgumentException)
+        catch (Exception)
         {
-            // Der Prozess ist bereits beendet.
+            // Best-effort: Der Prozess kann bereits beendet sein.
+        }
+        finally
+        {
+            process?.Dispose();
         }
     }
 
@@ -321,6 +319,8 @@ public abstract class E2ETestBase : IDisposable
     }
 
     private const int MaxStarts = 2;
+
+    private const int AccessViolationExitCode = unchecked((int)0xC0000005);
 
     private static UIA3Automation CreateAutomation()
     {

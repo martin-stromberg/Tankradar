@@ -37,10 +37,29 @@ internal static class OffscreenWindow
         SetWindowLongPtr(handle, GwlExStyle, new IntPtr(style | WsExToolWindow | WsExNoActivate));
         MoveOffscreen(handle);
 
-        // Die Handler bleiben bewusst angemeldet (einmaliges Hauptfenster im Testmodus); Rückgabewerte der Win32-Aufrufe sind hier unkritisch.
-        // Die Plattform setzt die Fensterposition beim Aktivieren und bei Größenänderungen ggf. neu; daher erneut wegschieben.
-        window.Activated += (_, _) => MoveOffscreen(handle);
-        window.SizeChanged += (_, _) => MoveOffscreen(handle);
+        // Rückgabewerte der Win32-Aufrufe sind hier unkritisch. Die Plattform setzt die Fensterposition beim Aktivieren und bei Größenänderungen
+        // ggf. neu; daher erneut wegschieben. Beim Schließen werden die Handler abgemeldet, damit das Fenster beim Beenden der App keine
+        // Verweise auf die Ereignisquellen mehr hält (Befund zu 0xC0000005 beim Beenden, siehe ADR 0015).
+        void OnActivated(object sender, global::Microsoft.UI.Xaml.WindowActivatedEventArgs args)
+        {
+            MoveOffscreen(handle);
+        }
+
+        void OnSizeChanged(object sender, global::Microsoft.UI.Xaml.WindowSizeChangedEventArgs args)
+        {
+            MoveOffscreen(handle);
+        }
+
+        void OnClosed(object sender, global::Microsoft.UI.Xaml.WindowEventArgs args)
+        {
+            window.Activated -= OnActivated;
+            window.SizeChanged -= OnSizeChanged;
+            window.Closed -= OnClosed;
+        }
+
+        window.Activated += OnActivated;
+        window.SizeChanged += OnSizeChanged;
+        window.Closed += OnClosed;
     }
 
     private static void MoveOffscreen(IntPtr handle)
