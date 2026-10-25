@@ -6,7 +6,7 @@
 
 | Komponente | Aufgabe |
 |-----------|---------|
-| `src/Tankradar.MAUI/Platforms/iOS/Info.plist` | Berechtigungstexte (nur Kamera, Fotos, Standort bei Nutzung), `ITSAppUsesNonExemptEncryption` = false, Geräteangaben |
+| `src/Tankradar.MAUI/Platforms/iOS/Info.plist` | Berechtigungstexte (nur Kamera und Standort bei Nutzung), `ITSAppUsesNonExemptEncryption` = false, Geräteangaben |
 | `src/Tankradar.MAUI/Platforms/iOS/Resources/PrivacyInfo.xcprivacy` | Privacy-Manifest: kein Tracking, erfasste Datenart, Required-Reason-APIs; landet im Bundle-Root |
 | `IDatabaseFileProtector` / `DatabaseFileProtector` | setzt unter iOS `NSFileProtectionCompleteUntilFirstUserAuthentication` für Datenbank (mit `-wal`/`-shm`), Belegfotos, Sicherungsdateien und Exportdateien; außerhalb von iOS ohne Wirkung |
 | `SecureStorageApiKeyStore` / `CredentialLockerApiKeyStore` | Schlüssel in Keychain (iOS, Zugriffsklasse AfterFirstUnlock durch `SecureStorage`) bzw. Credential Locker (Windows) |

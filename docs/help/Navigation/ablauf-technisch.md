@@ -51,7 +51,7 @@ Beteiligte Komponenten:
 - `Resources/DesignSystem.xaml` — Quelle der referenzierten Farb-Tokens
 - MAUI Shell-Navigation (built-in)
 
-Hinweis: In der aktuell verwendeten MAUI-Version (`Microsoft.Maui.Controls` 10.0.20) existieren keine `Shell.TabBar*Shadow*`- oder `Shell.TabBar*Bold*`-Attached-Properties. Der im Designentwurf gezeigte Schatten der TabBar und die Halbfett-Schrift des aktiven Tab-Titels sind daher mit Bordmitteln nicht nachbildbar und wurden als bekannte, akzeptierte Abweichung nicht umgesetzt.
+Hinweis: In der aktuell verwendeten MAUI-Version (`Microsoft.Maui.Controls` 10.0.120) existieren keine `Shell.TabBar*Shadow*`- oder `Shell.TabBar*Bold*`-Attached-Properties. Der im Designentwurf gezeigte Schatten der TabBar und die Halbfett-Schrift des aktiven Tab-Titels sind daher mit Bordmitteln nicht nachbildbar und wurden als bekannte, akzeptierte Abweichung nicht umgesetzt.
 
 Jede der vier Views trägt außerdem auf ihrem Headline-`Label` (Style `headline-lg`) eine feste `AutomationId` (`FavoritesPage.Headline`, `MapPage.Headline`, `TankbookPage.Headline`, `SettingsPage.Headline`). `NavigationE2ETests.AppStartsAndNavigatesThroughAllTabs()` (`Tankradar.Tests.E2E`) sucht nach jedem Tab-Klick gezielt nach der zur jeweiligen Seite gehörenden `AutomationId` statt nach dem — auch am Tab selbst treffenden — Tab-Namen, und weist damit einen tatsächlichen Seitenwechsel nach statt nur eines Namenstreffers.
 

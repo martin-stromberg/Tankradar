@@ -10,7 +10,7 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-, Namespace- und
 Assembly-Namen (`Tankradar.*`), Repository sowie die Umgebungsvariablen `TANKRADAR_*`.
 
-Korrektur (Version 0.1.26): „Foto aufnehmen“ im Tankbuch-Formular endete auf dem iPhone sofort mit einer Fehlermeldung (.NET MAUI 10.0.20 forderte zusätzlich die Berechtigung „Fotos hinzufügen“ an). Die App nutzt jetzt .NET MAUI 10.0.120 (`MauiVersion` in der csproj), die Info.plist enthält nur noch die Kamera- und die Standortbeschreibung, und fehlende Berechtigungen werden mit einem Hinweis auf die iOS-Einstellungen gemeldet ([ADR 0016](docs/adr/0016-maui-version-and-photo-permissions.md)).
+Korrektur (Version 0.1.26): „Foto aufnehmen“ im Tankbuch-Formular endete auf dem iPhone sofort mit einer Fehlermeldung (.NET MAUI 10.0.0 im iOS-Build der CI forderte zusätzlich die Berechtigung „Fotos hinzufügen“ an). Die App nutzt jetzt .NET MAUI 10.0.120 (bisher je nach Umgebung 10.0.0 bis 10.0.110) (`MauiVersion` in der csproj), die Info.plist enthält nur noch die Kamera- und die Standortbeschreibung, die Aufnahme wird als JPEG übernommen, und fehlende Berechtigungen werden mit einem Hinweis auf die iOS-Einstellungen gemeldet ([ADR 0016](docs/adr/0016-maui-version-and-photo-permissions.md)).
 
 Schritt 17a (Version 0.1.23): Die App hat ein eigenes Icon (weiße Zapfsäule mit gelbem Blitz auf Teal-Grün-Verlauf) für Windows und iOS sowie einen passenden Startbildschirm.
 
