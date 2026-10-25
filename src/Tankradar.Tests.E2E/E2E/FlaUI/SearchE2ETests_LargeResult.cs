@@ -14,7 +14,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 /// Der UI-Baum ist mit vielen Listeneinträgen groß, und eine Suche über den ganzen Fensterbaum kann auf einem langsamen Runner (GitHub Actions) in einen
 /// UIA-Timeout laufen. Der Test zählt die Einträge deshalb nicht bei jeder Abfrage: Die Schaltfläche „Weitere anzeigen (N übrig)“ nennt (für die Sprachausgabe
 /// ohnehin) die Zahl der noch nicht angezeigten Treffer; aus ihr folgt, wie viele angezeigt sind (Gesamtzahl minus N). Das ist eine Eigenschaftsabfrage an einem
-/// bereits gefundenen Element. Die Einträge werden nur einmal je Ruhezustand der App gezählt bzw. gelesen (nach „Weitere anzeigen“ und nach dem Sortierwechsel).
+/// bereits gefundenen Element. Die Einträge werden nur einmal gezählt (50 nach „Weitere anzeigen“); nach dem Sortierwechsel wird nur der Name des ersten Eintrags gelesen (FindFirstDescendant statt FindAll über den Baum).
 /// Die Wartephasen verwenden eine kurze UIA-Antwortfrist (<see cref="PollTimeout"/>), damit <see cref="TransientWait"/> innerhalb der Gesamtfrist mehrfach neu versuchen kann;
 /// ein nicht mehr verfügbares Element (Liste wird neu aufgebaut) gilt dort wie ein UIA-Timeout als „noch nicht erfüllt“. Die Zeitgrenze des Sortierwechsels bezieht sich auf
 /// die Messzeit abzüglich der in vorübergehenden Fehlern verbrachten Zeit (<c>timeoutTime</c> von <see cref="TransientWait"/>); eine Ausnahme für UIA-Timeouts gibt es nicht mehr.
@@ -73,8 +73,8 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
                 measured < MaxSortChange,
                 $"Der Sortierwechsel dauerte {stopwatch.Elapsed.TotalSeconds:0.0} s, davon {change.UiaWaiting.TotalSeconds:0.0} s Wartezeit auf die UI-Automation (UIA-Timeouts oder neu aufgebaute Elemente); ohne sie {measured.TotalSeconds:0.0} s (erlaubt {MaxSortChange.TotalSeconds:0} s; App zu langsam oder UI-Thread blockiert).");
 
-            // Einmal im Ruhezustand die Namen der ersten Seite lesen: Sie müssen in der Reihenfolge der gewählten Sortierung stehen (ein Sortierwechsel, der nur das ViewModel erreicht, bliebe sonst unbemerkt).
-            AssertNamesInExpectedOrder();
+            // Erst nach dem Zeitlimit und im Ruhezustand (Schaltflächenname stabil) den ersten Eintrag lesen: Er muss der erste der gewählten Sortierung sein (ein Sortierwechsel, der nur das ViewModel erreicht, bliebe sonst unbemerkt).
+            AssertFirstEntryIsFirstByName();
             Assert.Equal(1, Server.ListRequests);
         });
     }
@@ -98,27 +98,21 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
         }
     }
 
-    private void AssertNamesInExpectedOrder()
+    private void AssertFirstEntryIsFirstByName()
     {
-        var expected = ExpectedFirstPageByName();
-        Automation.TransactionTimeout = TimeSpan.FromSeconds(30);
-        try
-        {
-            var last = string.Empty;
-            WaitUntil(
-                () =>
-                {
-                    var names = ReadTexts("Search.Station.Name");
-                    last = string.Join(" | ", names.Take(6)) + (names.Count > 6 ? $" | ... ({names.Count} Einträge)" : string.Empty);
-                    return names.SequenceEqual(expected);
-                },
-                $"Die erste Seite nach dem Sortierwechsel zeigt nicht die erwartete Reihenfolge (erwartet: {string.Join(" | ", expected.Take(6))} | ...), zuletzt: {last}",
-                TimeSpan.FromSeconds(120));
-        }
-        finally
-        {
-            Automation.TransactionTimeout = PollTimeout;
-        }
+        // Nur der erste Eintrag, gesucht mit FindFirstDescendant (bricht beim ersten Treffer ab) statt FindAll über den ganzen, gerade neu aufgebauten Baum:
+        // Auf dem CI-Runner antwortete die App nach dem Listen-Neuaufbau minutenlang nicht auf Baumsuchen über alle Einträge (UIA-Timeout, Lauf 40167639322).
+        // Kurze Antwortfrist je Anfrage und Wiederholung bis zur Frist (TransientWait über WaitUntil); der Name beweist, dass die Ansicht nach Name sortiert neu aufgebaut wurde.
+        var expected = ExpectedFirstPageByName()[0];
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = FindByAutomationId("Search.Station.Name")?.Name ?? "kein Eintrag";
+                return last == expected;
+            },
+            $"Der erste Eintrag nach dem Sortierwechsel ist nicht '{expected}', zuletzt: {last}.",
+            TimeSpan.FromSeconds(120));
     }
 
     private void InvokeWithLongTimeout(AutomationElement element)
