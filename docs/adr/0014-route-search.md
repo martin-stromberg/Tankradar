@@ -84,7 +84,7 @@ Beschränkung auf ausdrücklich ausgelöste Suchen begrenzt.
   **Schlüssel prüfen** (eine einzelne Testanfrage `POST v2/directions/driving-car` mit festen Koordinaten, ohne Wiederholung; Rückmeldung gültig / abgelehnt / nicht erreichbar / Kontingent), **Schlüssel entfernen**
   und der Schalter **Routensuche aktivieren**, der erst mit gespeichertem Schlüssel bedienbar ist.
 - Ablage: Credential Locker (`Tankatlas/RoutingApi`, Schalter `Tankatlas/RoutingEnabled`) bzw. Keychain (`tankatlas.routing-api-key`, `tankatlas.routing-enabled`) über die vorhandene Abstraktion
-  `IApiKeyStore` (neu: `RemoveAsync`). Der Schlüssel steht nur im Kopf `Authorization`, wird nie angezeigt, protokolliert oder in Meldungen/Adressen übernommen; das Eingabefeld wird nach dem Speichern und
+  `IApiKeyStore` (neu: `RemoveAsync`). „Gerätelokal“ ist ungenau: `SecureStorage` legt Keychain-Einträge mit „AfterFirstUnlock“ an (nicht „ThisDeviceOnly“); sie sind nicht mit iCloud synchronisiert, können aber in verschlüsselten Gerätesicherungen enthalten sein (siehe ADR 0015). Der Schlüssel steht nur im Kopf `Authorization`, wird nie angezeigt, protokolliert oder in Meldungen/Adressen übernommen; das Eingabefeld wird nach dem Speichern und
   beim Verlassen der Seite geleert.
 - **Aktivierung:** Die Routensuche ist aktiv, wenn der Schalter an **und** ein Schlüssel gespeichert ist (`IRouteSearchAccess.IsEnabledAsync`). Nur dann ist `SearchMode.Route` in der Kartensuche sichtbar,
   und nur dann liefert der Zugang dem Routingdienst einen Schlüssel – ohne Aktivierung erfolgt kein Aufruf an OpenRouteService. Das Entfernen des Schlüssels schaltet die Routensuche aus. Ein Wechsel

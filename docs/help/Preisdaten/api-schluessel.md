@@ -65,7 +65,7 @@ teilten sich Kontingent und Missbrauchsrisiko.
   (feste Koordinaten, keine eigenen Daten) und meldet verständlich: gültig, abgelehnt, Dienst nicht erreichbar oder Kontingent aufgebraucht.
 - **Aktivieren:** Der Schalter **Routensuche aktivieren** ist erst bedienbar, wenn ein Schlüssel gespeichert ist. Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar, und nur dann
   gehen Aufrufe an OpenRouteService. Der Wechsel wirkt ohne Neustart. **Schlüssel entfernen** schaltet die Routensuche aus.
-- **Ablage:** sichere Ablage des Geräts (Windows: Credential Locker „Tankatlas/RoutingApi“, Schalter „Tankatlas/RoutingEnabled“; iOS: Keychain „tankatlas.routing-api-key“ und „tankatlas.routing-enabled“).
+- **Ablage:** Keychain des Geräts bzw. Credential Locker (Windows: Credential Locker „Tankatlas/RoutingApi“, Schalter „Tankatlas/RoutingEnabled“; iOS: Keychain „tankatlas.routing-api-key“ und „tankatlas.routing-enabled“). Die Einträge liegen nicht in der Sicherung der App; iOS-Keychain-Einträge (Zugriffsklasse „AfterFirstUnlock“) können in verschlüsselten Gerätesicherungen (Finder/iTunes) enthalten sein und werden nicht mit iCloud synchronisiert.
   Der Schlüssel wird nie angezeigt, protokolliert oder in Meldungen und Adressen übernommen (er steht nur im Anfragekopf `Authorization`).
 - **Sicherung:** Schlüssel und Schalter gehören nicht zur lokalen Sicherung. Nach einer Wiederherstellung auf einem Gerät ohne Schlüssel ist die Routensuche aus; auf demselben Gerät bleibt sie unverändert.
 - **Adresse:** `https://api.heigit.org/openrouteservice/` (Directions: `v2/directions/driving-car`). Die frühere Adresse `api.openrouteservice.org` wird vom Anbieter Anfang November 2026 abgeschaltet
