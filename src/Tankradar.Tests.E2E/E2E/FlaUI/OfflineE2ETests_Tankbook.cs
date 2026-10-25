@@ -67,8 +67,11 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
             Tankbook.CreateVehicle("Golf", "Diesel", "10000", string.Empty);
             Tankbook.OpenEntries("Golf");
             Tankbook.Press("TankbookEntries.Add");
-            var chip = Tankbook.WaitFor("TankbookEntries.Form.KnownStation.0");
-            Assert.Equal("Alpha Tankstelle", chip.Name);
+            // Den Namen erst lesen, wenn der Chip ihn meldet: Direkt nach dem Öffnen des Formulars kann das Element noch ohne Name-Eigenschaft sein
+            // (PropertyNotSupportedException, CI-Lauf 40211571649).
+            Tankbook.WaitUntil(
+                () => Tankbook.Find("TankbookEntries.Form.KnownStation.0")?.Properties.Name.ValueOrDefault == "Alpha Tankstelle",
+                "Das Formular bietet 'Alpha Tankstelle' nicht als bekannte Tankstelle an.");
             Tankbook.Press("TankbookEntries.Form.KnownStation.0");
             Tankbook.WaitUntil(
                 () => Tankbook.Find("TankbookEntries.Form.KnownStation.0")?.Properties.HelpText.ValueOrDefault == "Ausgewählt",
