@@ -50,24 +50,27 @@ public sealed class FakeMediaPicker : IMediaPicker
     /// <inheritdoc />
     public Task<FileResult?> PickPhotoAsync(MediaPickerOptions? options = null)
     {
-        throw new NotSupportedException();
+        // Einzelauswahl wie die Mehrfachauswahl: erstes Ergebnis.
+        PickOptions = options;
+        return Exception is { } exception ? Task.FromException<FileResult?>(exception) : Task.FromResult(PickResults?.FirstOrDefault());
     }
 
     /// <inheritdoc />
     public Task<FileResult?> CaptureVideoAsync(MediaPickerOptions? options = null)
     {
-        throw new NotSupportedException();
+        // Videos nutzt die App nicht; das Double verhält sich wie die Fotoaufnahme.
+        return CapturePhotoAsync(options);
     }
 
     /// <inheritdoc />
     public Task<FileResult?> PickVideoAsync(MediaPickerOptions? options = null)
     {
-        throw new NotSupportedException();
+        return PickPhotoAsync(options);
     }
 
     /// <inheritdoc />
     public Task<List<FileResult>> PickVideosAsync(MediaPickerOptions? options = null)
     {
-        throw new NotSupportedException();
+        return PickPhotosAsync(options);
     }
 }
