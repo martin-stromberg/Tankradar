@@ -23,7 +23,7 @@ public sealed class FakeReceiptPhotoPicker : IReceiptPhotoPicker
     public TaskCompletionSource? Gate { get; set; }
 
     /// <summary>
-    /// Die Ausnahme, die der nächste Aufruf auslöst (z. B. <see cref="ReceiptPhotoAccessException"/>); <see langword="null"/> löst keine aus.
+    /// Die Ausnahme, die jeder Aufruf auslöst, bis sie auf <see langword="null"/> zurückgesetzt wird (z. B. <see cref="ReceiptPhotoAccessException"/>).
     /// </summary>
     public Exception? NextException { get; set; }
 

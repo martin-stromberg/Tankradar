@@ -91,6 +91,18 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
     }
 
     /// <summary>
+    /// Legt ein Fahrzeug an, öffnet die Seite und das Formular für einen neuen Vorgang.
+    /// </summary>
+    /// <returns>Die Seite mit geöffnetem Formular.</returns>
+    protected async Task<TankbookEntriesViewModel> OpenFormAsync()
+    {
+        var vehicle = await CreateVehicleAsync();
+        var viewModel = await OpenAsync(vehicle.Id);
+        viewModel.AddEntryCommand.Execute(null);
+        return viewModel;
+    }
+
+    /// <summary>
     /// Führt einen Befehl des Formulars aus und wartet Speichern und Neuladen ab.
     /// </summary>
     /// <param name="viewModel">Die Seite.</param>

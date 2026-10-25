@@ -8,14 +8,6 @@ namespace Tankradar.Tests.Unit.Unit;
 /// </summary>
 public class TankbookEntryFormViewModelTests_PhotoAccess : TankbookEntriesViewModelTestBase
 {
-    private async Task<MAUI.ViewModels.TankbookEntriesViewModel> OpenFormAsync()
-    {
-        var vehicle = await CreateVehicleAsync();
-        var viewModel = await OpenAsync(vehicle.Id);
-        viewModel.AddEntryCommand.Execute(null);
-        return viewModel;
-    }
-
     /// <summary>
     /// Prüft, dass eine verweigerte Kamera-Freigabe eine eigene Meldung mit Hinweis auf die Einstellungen liefert, angesagt wird und nur der Ausnahmetyp ins Protokoll gelangt.
     /// </summary>
@@ -28,7 +20,7 @@ public class TankbookEntryFormViewModelTests_PhotoAccess : TankbookEntriesViewMo
 
         await PressFormAsync(viewModel, viewModel.Form.CapturePhotoCommand);
 
-        const string expected = "Kein Zugriff auf die Kamera. Erlaube den Zugriff in den Einstellungen unter Tankatlas.";
+        const string expected = "Kein Zugriff auf die Kamera. Bitte erlaube den Kamerazugriff in den Einstellungen unter „Tankatlas“.";
         Assert.Equal(expected, viewModel.Form.PhotoError);
         Assert.True(viewModel.Form.HasPhotoError);
         Assert.Equal([expected], Announcer.Announcements);
@@ -49,7 +41,7 @@ public class TankbookEntryFormViewModelTests_PhotoAccess : TankbookEntriesViewMo
 
         await PressFormAsync(viewModel, viewModel.Form.PickPhotoCommand);
 
-        Assert.Equal("Kein Zugriff auf die Fotos. Erlaube den Zugriff in den Einstellungen unter Tankatlas.", viewModel.Form.PhotoError);
+        Assert.Equal("Kein Zugriff auf die Fotos. Bitte erlaube den Fotozugriff in den Einstellungen unter „Tankatlas“.", viewModel.Form.PhotoError);
         Assert.Equal([viewModel.Form.PhotoError], Announcer.Announcements);
     }
 
@@ -101,5 +93,27 @@ public class TankbookEntryFormViewModelTests_PhotoAccess : TankbookEntriesViewMo
 
         Assert.False(viewModel.Form.HasPhotoError);
         Assert.True(viewModel.Form.HasPhoto);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Abbruch durch den Nutzer weder Meldung noch Ansage erzeugt und die Befehle wieder ausführbar sind.
+    /// </summary>
+    /// <param name="capture"><see langword="true"/> für die Aufnahme, <see langword="false"/> für die Auswahl.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UserCancel_ShowsNoMessage(bool capture)
+    {
+        var viewModel = await OpenFormAsync();
+        Picker.IsCaptureSupported = true;
+        Picker.NextExtension = null;
+
+        await PressFormAsync(viewModel, capture ? viewModel.Form.CapturePhotoCommand : viewModel.Form.PickPhotoCommand);
+
+        Assert.False(viewModel.Form.HasPhotoError);
+        Assert.Empty(Announcer.Announcements);
+        Assert.False(viewModel.Form.HasPhoto);
+        Assert.True(viewModel.Form.PickPhotoCommand.CanExecute(null));
+        Assert.True(viewModel.Form.CapturePhotoCommand.CanExecute(null));
     }
 }

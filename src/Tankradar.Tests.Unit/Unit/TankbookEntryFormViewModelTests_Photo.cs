@@ -8,14 +8,6 @@ namespace Tankradar.Tests.Unit.Unit;
 /// </summary>
 public class TankbookEntryFormViewModelTests_Photo : TankbookEntriesViewModelTestBase
 {
-    private async Task<MAUI.ViewModels.TankbookEntriesViewModel> OpenFormAsync()
-    {
-        var vehicle = await CreateVehicleAsync();
-        var viewModel = await OpenAsync(vehicle.Id);
-        viewModel.AddEntryCommand.Execute(null);
-        return viewModel;
-    }
-
     /// <summary>
     /// Prüft, dass ein ausgewähltes Foto in die Ablage übernommen und mit dem Vorgang gespeichert wird.
     /// </summary>

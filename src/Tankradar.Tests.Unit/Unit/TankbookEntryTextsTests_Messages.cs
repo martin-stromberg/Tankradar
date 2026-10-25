@@ -38,8 +38,8 @@ public class TankbookEntryTextsTests_Messages : BaseTest
         Assert.Equal("Das Foto ist zu groß (höchstens 20 MB).", TankbookEntryTexts.GetPhotoError(ReceiptPhotoError.TooLarge));
         Assert.Equal("Dieses Dateiformat wird nicht unterstützt. Bitte wähle ein JPG-, PNG- oder HEIC-Foto.", TankbookEntryTexts.GetPhotoError(ReceiptPhotoError.UnsupportedFormat));
         Assert.Equal("Das Foto konnte nicht übernommen werden.", TankbookEntryTexts.GetPhotoError(ReceiptPhotoError.Failed));
-        Assert.Equal("Kein Zugriff auf die Kamera. Erlaube den Zugriff in den Einstellungen unter Tankatlas.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.PermissionDenied, capture: true));
-        Assert.Equal("Kein Zugriff auf die Fotos. Erlaube den Zugriff in den Einstellungen unter Tankatlas.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.PermissionDenied, capture: false));
+        Assert.Equal("Kein Zugriff auf die Kamera. Bitte erlaube den Kamerazugriff in den Einstellungen unter „Tankatlas“.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.PermissionDenied, capture: true));
+        Assert.Equal("Kein Zugriff auf die Fotos. Bitte erlaube den Fotozugriff in den Einstellungen unter „Tankatlas“.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.PermissionDenied, capture: false));
         Assert.Equal("Auf diesem Gerät ist keine Fotoaufnahme möglich. Du kannst stattdessen ein Foto auswählen.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.NotSupported, capture: true));
         Assert.Equal("Auf diesem Gerät ist keine Fotoauswahl möglich.", TankbookEntryTexts.GetPhotoAccessError(ReceiptPhotoAccessProblem.NotSupported, capture: false));
 

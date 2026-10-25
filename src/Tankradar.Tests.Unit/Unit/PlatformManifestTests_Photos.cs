@@ -18,7 +18,7 @@ public class PlatformManifestTests_Photos : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass iOS nur die Kamera begründet: Die Fotoauswahl des Systems (PHPicker) und die Aufnahme brauchen ab .NET MAUI 10.0.90 keine Fotos-Berechtigung (ADR 0016).
+    /// Prüft, dass iOS nur die Kamera begründet: Die Fotoauswahl des Systems (PHPicker) und die Aufnahme brauchen ab .NET MAUI 10.0.60 keine Fotos-Berechtigung (ADR 0016).
     /// </summary>
     [Fact]
     public void InfoPlist_iOS_ContainsOnlyCameraDescription()

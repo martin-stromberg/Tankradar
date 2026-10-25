@@ -231,8 +231,8 @@ public static class TankbookEntryTexts
     {
         return (problem, capture) switch
         {
-            (ReceiptPhotoAccessProblem.PermissionDenied, true) => "Kein Zugriff auf die Kamera. Erlaube den Zugriff in den Einstellungen unter Tankatlas.",
-            (ReceiptPhotoAccessProblem.PermissionDenied, false) => "Kein Zugriff auf die Fotos. Erlaube den Zugriff in den Einstellungen unter Tankatlas.",
+            (ReceiptPhotoAccessProblem.PermissionDenied, true) => "Kein Zugriff auf die Kamera. Bitte erlaube den Kamerazugriff in den Einstellungen unter „Tankatlas“.",
+            (ReceiptPhotoAccessProblem.PermissionDenied, false) => "Kein Zugriff auf die Fotos. Bitte erlaube den Fotozugriff in den Einstellungen unter „Tankatlas“.",
             (ReceiptPhotoAccessProblem.NotSupported, true) => "Auf diesem Gerät ist keine Fotoaufnahme möglich. Du kannst stattdessen ein Foto auswählen.",
             (ReceiptPhotoAccessProblem.NotSupported, false) => "Auf diesem Gerät ist keine Fotoauswahl möglich.",
             _ => PhotoFailed,
