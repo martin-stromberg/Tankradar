@@ -39,6 +39,25 @@ public class FuelPriceServiceTests_Search : FuelPriceServiceTestBase
     }
 
     /// <summary>
+    /// Prüft <see cref="MAUI.Services.Pricing.IFuelPriceService.IsSearchCached"/>: erst nach einem erfolgreichen Abruf, nur für dieselbe Suche und nur innerhalb der Cache-Lebensdauer.
+    /// </summary>
+    [Fact]
+    public async Task IsSearchCached_ReflectsSearchCacheAndLifetime()
+    {
+        SeedTwoStations();
+        Assert.False(Service.IsSearchCached(Query()));
+
+        await Service.SearchNearbyAsync(Query());
+
+        Assert.True(Service.IsSearchCached(Query()));
+        Assert.True(Service.IsSearchCached(Query([FuelType.Diesel])));
+        Assert.False(Service.IsSearchCached(Query(radius: 10)));
+        Clock.Advance(TimeSpan.FromMinutes(6));
+        Assert.False(Service.IsSearchCached(Query()));
+        Assert.Throws<ArgumentNullException>(() => Service.IsSearchCached(null!));
+    }
+
+    /// <summary>
     /// Prüft, dass nur Stationen mit Preisen der gewählten Sorten erscheinen und nur deren Preise enthalten sind.
     /// </summary>
     [Fact]

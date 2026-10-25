@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Map;
 using Tankradar.MAUI.Models.Pricing;
+using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
@@ -11,16 +12,17 @@ using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.Services.Search;
 
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse mit filterbarer und sortierbarer Ergebnisliste
+/// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse sowie Suche entlang einer Route mit filterbarer und sortierbarer Ergebnisliste
 /// und alternativer Kartenansicht der Ergebnisse. Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert
 /// (die Karte hält die Suchposition ausschließlich im Arbeitsspeicher bis zur nächsten Suche); die Adresseingabe wird nicht gespeichert.
 /// </summary>
-public class MapViewModel : BaseViewModel
+public partial class MapViewModel : BaseViewModel
 {
     /// <summary>
     /// Anzahl der Tankstellen, die auf einmal in der Liste dargestellt werden (weitere über „Weitere anzeigen“).
@@ -57,6 +59,9 @@ public class MapViewModel : BaseViewModel
     private string _addressText = string.Empty;
     private string? _resolvedPlace;
     private readonly List<ChoiceOptionViewModel<SearchMode>> _modeOptions;
+    private IReadOnlyList<ChoiceOptionViewModel<SearchMode>> _visibleModeOptions;
+    private bool _routeSearchEnabled;
+    private SynchronizationContext? _routeAccessContext;
     private readonly List<RadiusOptionViewModel> _radiusOptions;
     private IReadOnlyList<StationListItem> _allStations = NoStations;
     private int _visibleCount = PageSize;
@@ -73,6 +78,8 @@ public class MapViewModel : BaseViewModel
     /// <param name="locationService">Dienst zur Standortermittlung.</param>
     /// <param name="geocodingService">Dienst zur Umwandlung einer Adresse in eine Position.</param>
     /// <param name="priceService">Preisdienst für die Umkreissuche.</param>
+    /// <param name="routeSearchService">Dienst für die Suche entlang einer Route.</param>
+    /// <param name="routeAccess">Zugang zur Routensuche: nur bei aktivierter Routensuche (Schlüssel gespeichert und Schalter an) ist die Suchart „Route“ wählbar.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
     /// <param name="navigator">Die Navigation zur Detailansicht einer Tankstelle.</param>
@@ -82,6 +89,8 @@ public class MapViewModel : BaseViewModel
         ILocationService locationService,
         IGeocodingService geocodingService,
         IFuelPriceService priceService,
+        IRouteSearchService routeSearchService,
+        IRouteSearchAccess routeAccess,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
         IStationNavigator navigator,
@@ -91,6 +100,8 @@ public class MapViewModel : BaseViewModel
         _locationService = locationService;
         _geocodingService = geocodingService;
         _priceService = priceService;
+        _routeSearchService = routeSearchService;
+        _routeAccess = routeAccess;
         _connection = connection;
         _timeProvider = timeProvider;
         _navigator = navigator;
@@ -110,7 +121,7 @@ public class MapViewModel : BaseViewModel
             _modeOptions.Add(new ChoiceOptionViewModel<SearchMode>(value, SearchTexts.GetModeLabel(value), OnModeSelected));
         }
 
-        ModeOptions = _modeOptions;
+        _visibleModeOptions = _modeOptions.Where(option => option.Value != SearchMode.Route).ToList();
         SyncModeSelection();
         ClearAddressCommand = new Command(ClearAddress);
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
@@ -125,19 +136,34 @@ public class MapViewModel : BaseViewModel
         _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
+        ClearStartCommand = new Command(ClearStart);
+        ClearDestinationCommand = new Command(ClearDestination);
+        InitializeRouteOptions();
         ShowMoreCommand = new Command(ShowMore);
         OpenStationCommand = new Command<StationListItem>(OpenStation);
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
+        CancelRouteSearchCommand = new Command(CancelRouteSearch);
         LastSearchTask = Task.CompletedTask;
         LastSettingsTask = Task.CompletedTask;
+        LastRouteAccessTask = Task.CompletedTask;
         _isOffline = !_connection.IsOnline;
+        PropertyChanged += OnOwnPropertyChanged;
     }
 
     /// <summary>
-    /// Die wählbaren Sucharten („Aktueller Standort“, „Adresse, Ort oder PLZ“).
+    /// Die wählbaren Sucharten („Aktueller Standort“, „Adresse, Ort oder PLZ“ und – nur bei aktivierter Routensuche – „Route“).
+    /// Die Liste wird ersetzt, wenn die Routensuche in den Optionen ein- oder ausgeschaltet wird.
     /// </summary>
-    public IReadOnlyList<ChoiceOptionViewModel<SearchMode>> ModeOptions { get; }
+    public IReadOnlyList<ChoiceOptionViewModel<SearchMode>> ModeOptions
+    {
+        get { return _visibleModeOptions; }
+    }
+
+    /// <summary>
+    /// Der zuletzt gestartete Abgleich mit dem Zustand der Routensuche (für Tests und Abwarten).
+    /// </summary>
+    public Task LastRouteAccessTask { get; private set; }
 
     /// <summary>
     /// Gibt an, ob rund um eine eingegebene Adresse gesucht wird (Eingabefeld und Quellenangabe sichtbar).
@@ -296,12 +322,18 @@ public class MapViewModel : BaseViewModel
     /// <summary>
     /// Gibt an, ob in der Kartenansicht der Hinweis „Noch keine Ergebnisse“ erscheint.
     /// </summary>
-    public bool ShowMapHint => IsMapView && !HasMapContent && !ShowEmptyState && !HasStatusMessage;
+    public bool ShowMapHint
+    {
+        get { return IsMapView && (HasMapRoute || (!HasMapContent && !ShowEmptyState && !HasStatusMessage)); }
+    }
 
     /// <summary>
-    /// Der Hinweis der Kartenansicht ohne Ergebnisse.
+    /// Der Hinweis der Kartenansicht: ohne Ergebnisse der Hinweis zum Starten einer Suche, bei einer Routensuche die Beschreibung der eingezeichneten Route.
     /// </summary>
-    public string MapHintText => MapTexts.NoResults;
+    public string MapHintText
+    {
+        get { return _routeResult is { Status: RouteSearchStatus.Success } ? RouteMapHintText : MapTexts.NoResults; }
+    }
 
     /// <summary>
     /// Gibt an, ob Markierungen oder eine Suchposition für die Karte vorliegen.
@@ -449,11 +481,14 @@ public class MapViewModel : BaseViewModel
         if (!_subscribed)
         {
             _connection.ConnectionChanged += OnConnectionChanged;
+            _routeAccessContext = SynchronizationContext.Current;
+            _routeAccess.Changed += OnRouteAccessChanged;
             _subscribed = true;
         }
 
         UpdateOfflineState();
         LastSettingsTask = LoadSettingsAsync();
+        LastRouteAccessTask = RefreshRouteAvailabilityAsync();
     }
 
     /// <summary>
@@ -464,10 +499,13 @@ public class MapViewModel : BaseViewModel
         if (_subscribed)
         {
             _connection.ConnectionChanged -= OnConnectionChanged;
+            _routeAccess.Changed -= OnRouteAccessChanged;
             _subscribed = false;
         }
 
+        // Der abgebrochene Lauf räumt nicht mehr selbst auf (er ist nicht mehr „aktuell“): Fortschritt leeren und „Suchen“ freigeben.
         CancelSearch();
+        RouteProgressText = null;
         IsBusy = false;
     }
 
@@ -478,6 +516,12 @@ public class MapViewModel : BaseViewModel
     public async Task SearchAsync()
     {
         CancelSearch();
+        if (_searchMode == SearchMode.Route)
+        {
+            await SearchRouteAsync().ConfigureAwait(true);
+            return;
+        }
+
         if (!SearchRadius.IsValid(_radiusKm))
         {
             IsBusy = false;
@@ -495,13 +539,23 @@ public class MapViewModel : BaseViewModel
             return;
         }
 
+        await RunGuardedSearchAsync(cancellation => RunSearchAsync(_radiusKm, cancellation.Token), LogSearchFailure).ConfigureAwait(true);
+    }
+
+    private void LogSearchFailure(Exception ex)
+    {
+        _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+    }
+
+    private async Task RunGuardedSearchAsync(Func<CancellationTokenSource, Task> work, Action<Exception> logFailure, Action? onFinished = null)
+    {
         var cancellation = new CancellationTokenSource();
         _searchCancellation = cancellation;
         IsBusy = true;
         try
         {
             StatusMessage = null;
-            await RunSearchAsync(_radiusKm, cancellation.Token).ConfigureAwait(true);
+            await work(cancellation).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -509,8 +563,9 @@ public class MapViewModel : BaseViewModel
         }
         catch (Exception ex) when (IsCurrent(cancellation))
         {
-            // Nur der Typ wird protokolliert: Ausnahmetexte könnten die Anfrage samt Position enthalten.
-            _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
+            // Nur der Typ wird protokolliert: Ausnahmetexte könnten Orte oder Positionen enthalten.
+            logFailure(ex);
+
             ClearResult();
             StatusMessage = SearchTexts.SearchFailed;
         }
@@ -519,6 +574,8 @@ public class MapViewModel : BaseViewModel
             if (IsCurrent(cancellation))
             {
                 _searchCancellation = null;
+                onFinished?.Invoke();
+
                 IsBusy = false;
                 cancellation.Dispose();
             }
@@ -588,12 +645,10 @@ public class MapViewModel : BaseViewModel
 
         var filter = FuelFilterOptions.FirstOrDefault(option => option.IsSelected)?.FuelType;
         var sort = _sortOptions.FirstOrDefault(option => option.IsSelected)?.Value ?? ResultSortOrder.Price;
-        _allStations = StationResultBuilder.Build(
-            _lastResult.Stations,
-            _settings.FuelTypes,
-            filter,
-            sort,
-            _timeProvider.GetUtcNow().UtcDateTime);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        _allStations = _routeResult is { Status: RouteSearchStatus.Success } route
+            ? StationResultBuilder.BuildForRoute(route.Stations, _settings.FuelTypes, filter, sort, now)
+            : StationResultBuilder.Build(_lastResult.Stations, _settings.FuelTypes, filter, sort, now);
 
         // Die Karte zeigt die gesamte Ergebnismenge (nicht nur die dargestellte Listenseite); maßgeblich ist die gefilterte, sonst die zuerst gewählte Sorte.
         MapMarkers = MapMarkerBuilder.Build(_allStations, StationResultBuilder.ResolveFuelType(_settings.FuelTypes, filter));
@@ -692,16 +747,27 @@ public class MapViewModel : BaseViewModel
 
     private void OnModeSelected(ChoiceOptionViewModel<SearchMode> selected)
     {
-        if (_searchMode == selected.Value)
+        ChangeMode(selected.Value);
+    }
+
+    private void ChangeMode(SearchMode mode)
+    {
+        if (_searchMode == mode)
         {
+            SyncModeSelection();
             return;
         }
 
         CancelSearch();
         IsBusy = false;
-        _searchMode = selected.Value;
+        _searchMode = mode;
         SyncModeSelection();
         OnPropertyChanged(nameof(IsAddressMode));
+        OnPropertyChanged(nameof(IsRouteMode));
+        OnPropertyChanged(nameof(IsRadiusVisible));
+        OnPropertyChanged(nameof(EmptyStateText));
+        OnPropertyChanged(nameof(IsRouteSearching));
+        OnPropertyChanged(nameof(RouteInputsEnabled));
         ClearResult();
         StatusMessage = null;
     }
@@ -777,6 +843,8 @@ public class MapViewModel : BaseViewModel
             return;
         }
 
+        // Der abgebrochene Lauf ist nicht mehr „aktuell“ und räumt seinen Fortschrittstext nicht mehr weg.
+        RouteProgressText = null;
         running.Cancel();
         running.Dispose();
     }
@@ -884,6 +952,7 @@ public class MapViewModel : BaseViewModel
 
     private void ClearResult()
     {
+        ClearRouteState();
         _lastResult = null;
         SourceNote = null;
         ResolvedPlace = null;

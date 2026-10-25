@@ -26,6 +26,12 @@ public partial class StationMapView : ContentView
     public static readonly BindableProperty OriginProperty;
 
     /// <summary>
+    /// Bindbare Eigenschaft <see cref="Route"/>.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public static readonly BindableProperty RouteProperty;
+
+    /// <summary>
     /// Bindbare Eigenschaft <see cref="ResultVersion"/>.
     /// </summary>
     /// <returns>Der Wert.</returns>
@@ -47,6 +53,11 @@ public partial class StationMapView : ContentView
         OriginProperty = BindableProperty.Create(
         nameof(Origin),
         typeof(MapOrigin),
+        typeof(StationMapView),
+        propertyChanged: OnMarkersChanged);
+        RouteProperty = BindableProperty.Create(
+        nameof(Route),
+        typeof(MapRoute),
         typeof(StationMapView),
         propertyChanged: OnMarkersChanged);
         ResultVersionProperty = BindableProperty.Create(
@@ -71,6 +82,8 @@ public partial class StationMapView : ContentView
     private readonly Dictionary<string, Button> _markerButtons = [];
     private MapViewport? _viewport;
     private Border? _originMarker;
+    private Border? _destinationMarker;
+    private readonly MapRouteDrawable _routeDrawable = new();
     private bool _fitPending;
     private double _lastPanX;
     private double _lastPanY;
@@ -82,6 +95,7 @@ public partial class StationMapView : ContentView
     public StationMapView()
     {
         InitializeComponent();
+        RouteLayer.Drawable = _routeDrawable;
         Surface.SizeChanged += (_, _) => OnSurfaceSizeChanged();
         Surface.HandlerChanged += (_, _) => AttachPointerInput();
         Surface.Unloaded += (_, _) => DetachPointerInput();
@@ -113,6 +127,15 @@ public partial class StationMapView : ContentView
     {
         get => (MapOrigin?)GetValue(OriginProperty);
         set => SetValue(OriginProperty, value);
+    }
+
+    /// <summary>
+    /// Die eingezeichnete Route einer Routensuche; <see langword="null"/> ohne Route.
+    /// </summary>
+    public MapRoute? Route
+    {
+        get => (MapRoute?)GetValue(RouteProperty);
+        set => SetValue(RouteProperty, value);
     }
 
     /// <summary>
@@ -192,6 +215,13 @@ public partial class StationMapView : ContentView
             points.Add((origin.Latitude, origin.Longitude));
         }
 
+        if (Route is { } route)
+        {
+            // Die Begrenzungsbox der Route: Start, Ziel und alle Punkte dazwischen liegen darin.
+            points.Add((route.Bounds.MinLatitude, route.Bounds.MinLongitude));
+            points.Add((route.Bounds.MaxLatitude, route.Bounds.MaxLongitude));
+        }
+
         _viewport = MapViewport.Fit(points, Surface.Width, Surface.Height, FitPadding);
         Render();
     }
@@ -253,6 +283,12 @@ public partial class StationMapView : ContentView
             MarkerLayer.Remove(_originMarker);
             _originMarker = null;
         }
+
+        if (_destinationMarker is not null)
+        {
+            MarkerLayer.Remove(_destinationMarker);
+            _destinationMarker = null;
+        }
     }
 
     private void Render()
@@ -263,6 +299,7 @@ public partial class StationMapView : ContentView
         }
 
         RenderTiles(viewport);
+        RenderRoute(viewport);
         RenderMarkers(viewport);
         ZoomLabel.Text = MapTexts.FormatZoom(viewport.Zoom);
     }
@@ -297,6 +334,20 @@ public partial class StationMapView : ContentView
             AbsoluteLayout.SetLayoutBounds(image, new Rect(tile.Left, tile.Top, MapViewport.TileSize, MapViewport.TileSize));
             AbsoluteLayout.SetLayoutFlags(image, Microsoft.Maui.Layouts.AbsoluteLayoutFlags.None);
         }
+    }
+
+    private void RenderRoute(MapViewport viewport)
+    {
+        if (Route is not { } route)
+        {
+            _routeDrawable.Lines = [];
+            RouteLayer.IsVisible = false;
+            return;
+        }
+
+        _routeDrawable.Lines = MapRouteProjector.Project(viewport, route.Points);
+        RouteLayer.IsVisible = true;
+        RouteLayer.Invalidate();
     }
 
     private void StartTileLoad(TileKey key, Image image)
@@ -382,6 +433,7 @@ public partial class StationMapView : ContentView
         }
 
         RenderOrigin(viewport);
+        RenderDestination(viewport);
         CountLabel.Text = selection.IsTruncated
             ? MapTexts.FormatStationCountLimited(selection.InViewport, markers.Count, selection.Rendered.Count)
             : MapTexts.FormatStationCount(selection.InViewport, markers.Count);
@@ -446,6 +498,45 @@ public partial class StationMapView : ContentView
 
         AbsoluteLayout.SetLayoutBounds(_originMarker, new Rect(x - 11, y - 11, 22, 22));
         AbsoluteLayout.SetLayoutFlags(_originMarker, Microsoft.Maui.Layouts.AbsoluteLayoutFlags.None);
+    }
+
+    private void RenderDestination(MapViewport viewport)
+    {
+        if (Route is not { } route)
+        {
+            return;
+        }
+
+        var destination = route.Destination;
+        if (!viewport.Contains(destination.Latitude, destination.Longitude))
+        {
+            if (_destinationMarker is not null)
+            {
+                MarkerLayer.Remove(_destinationMarker);
+                _destinationMarker = null;
+            }
+
+            return;
+        }
+
+        var (x, y) = viewport.ToScreen(destination.Latitude, destination.Longitude);
+        if (_destinationMarker is null)
+        {
+            _destinationMarker = new Border
+            {
+                BackgroundColor = Color.FromArgb("#1E293B"),
+                Stroke = Colors.White,
+                StrokeThickness = 3,
+                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 4 },
+                InputTransparent = true,
+                AutomationId = "Map.Destination",
+            };
+            SemanticProperties.SetDescription(_destinationMarker, MapTexts.RouteDestination);
+            MarkerLayer.Add(_destinationMarker);
+        }
+
+        AbsoluteLayout.SetLayoutBounds(_destinationMarker, new Rect(x - 11, y - 11, 22, 22));
+        AbsoluteLayout.SetLayoutFlags(_destinationMarker, Microsoft.Maui.Layouts.AbsoluteLayoutFlags.None);
     }
 
     private static string FirstLetter(string name)

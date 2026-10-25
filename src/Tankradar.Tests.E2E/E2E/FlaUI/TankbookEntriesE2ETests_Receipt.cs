@@ -73,8 +73,9 @@ public class TankbookEntriesE2ETests_Receipt : TankbookE2ETestBase
     }
 
     /// <summary>
-    /// Wartet, bis das Element den Namen trägt. Der Name wird über die Eigenschaftsabfrage mit Rückgabe eines Standardwerts gelesen: Direkt nach dem Neuaufbau
-    /// des Elements meldet die UI-Automation die Eigenschaft kurz nicht (PropertyNotSupportedException), das gilt hier als „noch nicht erfüllt“.
+    /// Wartet, bis das Element den Namen trägt. Suche und Lesen des Namens laufen innerhalb von <see cref="TransientWait"/>: Direkt nach dem Neuaufbau des Elements
+    /// meldet die UI-Automation die Eigenschaft kurz nicht (PropertyNotSupportedException bei der Abfrage mit Standardwert) oder das Element ist zwischen Suche und Lesen nicht mehr
+    /// verfügbar (ElementNotAvailableException); beides gilt wie ein UIA-Timeout als „noch nicht erfüllt“, gewartet wird bis zur Frist.
     /// </summary>
     /// <param name="automationId">Die AutomationId des Elements.</param>
     /// <param name="expected">Der erwartete Name.</param>

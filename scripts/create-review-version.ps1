@@ -115,6 +115,15 @@ if (-not (Test-Path $publishDir)) {
     exit 1
 }
 
+# Pruefung: Der Resizetizer muss das App-Icon (Windows-ICO, Taskleistengroessen, Kacheln) erzeugt haben; sonst startet die App mit dem Standardsymbol.
+foreach ($iconFile in @("appicon.ico", "appiconLogo.targetsize-16.png", "appiconLogo.targetsize-32.png", "appiconLogo.targetsize-256.png", "appiconStoreLogo.scale-400.png")) {
+    if (-not (Test-Path (Join-Path $publishDir $iconFile))) {
+        Remove-Item -Path $versionDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Error "Die Icon-Ressource '$iconFile' fehlt in der Build-Ausgabe ($publishDir). Es wurde kein Zwischenstand erzeugt."
+        exit 1
+    }
+}
+
 Write-Host "Kopiere Build-Ausgabe nach '$binDir' ..."
 Copy-Item -Path $publishDir -Destination $binDir -Recurse -Force
 

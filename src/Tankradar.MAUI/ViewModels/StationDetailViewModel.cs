@@ -274,7 +274,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             origin.Name,
             origin.SubName,
             origin.AddressText,
-            origin.DistanceText,
+            GetDistanceText(origin),
             origin.OpeningStatusText,
             origin.PriceLines,
             origin.HasUnconfirmedPrice,
@@ -460,7 +460,15 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             return;
         }
 
-        Detail = StationDetailBuilder.Build(_station, settings.FuelTypes, _origin?.DistanceKm, _timeProvider.GetUtcNow().UtcDateTime);
+        var detail = StationDetailBuilder.Build(_station, settings.FuelTypes, _origin?.DistanceKm, _timeProvider.GetUtcNow().UtcDateTime);
+
+        // Bei einer Routensuche ist die Entfernung die Streckenposition und braucht denselben Text wie die Liste („ab Start“, „abseits der Route“).
+        Detail = _origin is { HasRouteOffset: true } routeOrigin ? detail with { DistanceText = GetDistanceText(routeOrigin) } : detail;
+    }
+
+    private static string GetDistanceText(StationListItem origin)
+    {
+        return origin.HasRouteOffset ? $"{origin.DistanceText}, {origin.RouteOffsetText}" : origin.DistanceText;
     }
 
     private async Task<AppSettings?> LoadSettingsAsync()

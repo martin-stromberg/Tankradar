@@ -21,6 +21,12 @@ public interface IApiKeyStore
     /// <param name="apiKey">Der Schlüssel.</param>
     /// <returns>Ein Task, der nach dem Speichern abgeschlossen ist.</returns>
     Task SetAsync(string apiKey);
+
+    /// <summary>
+    /// Entfernt den gespeicherten Schlüssel; ein nicht vorhandener Schlüssel ist kein Fehler.
+    /// </summary>
+    /// <returns>Ein Task, der nach dem Entfernen abgeschlossen ist.</returns>
+    Task RemoveAsync();
 }
 
 /// <summary>
@@ -142,6 +148,13 @@ public sealed class InMemoryApiKeyStore : IApiKeyStore
     public Task SetAsync(string apiKey)
     {
         _value = apiKey;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task RemoveAsync()
+    {
+        _value = null;
         return Task.CompletedTask;
     }
 }

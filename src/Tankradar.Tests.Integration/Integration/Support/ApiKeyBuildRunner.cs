@@ -12,18 +12,25 @@ namespace Tankradar.Tests.Integration.Integration.Support;
 /// </summary>
 public sealed class ApiKeyBuildRunner : IDisposable
 {
-    private const string PrimaryVariable = "TANKRADAR_FUEL_PRICE_API_KEY";
-    private const string SecretVariable = "FUEL_PRICE_API_KEY";
+    private static readonly string[] AllVariables =
+    [
+        "TANKRADAR_FUEL_PRICE_API_KEY",
+        "FUEL_PRICE_API_KEY",
+    ];
+
     private readonly string _directory;
+    private readonly ApiKeyBuildProfile _profile;
 
     /// <summary>
     /// Legt ein temporäres Verzeichnis für das Testprojekt an.
     /// </summary>
-    public ApiKeyBuildRunner()
+    /// <param name="profile">Die einzubindende Schlüsselübernahme; ohne Angabe die des Tankerkönig-Schlüssels.</param>
+    public ApiKeyBuildRunner(ApiKeyBuildProfile? profile = null)
     {
+        _profile = profile ?? ApiKeyBuildProfile.Tankerkoenig;
         _directory = Path.Combine(Path.GetTempPath(), "tankradar-keybuild-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_directory);
-        LocalPropsPath = Path.Combine(_directory, "tankerkoenig.local.props");
+        LocalPropsPath = Path.Combine(_directory, _profile.LocalPropsFileName);
     }
 
     /// <summary>
@@ -37,16 +44,17 @@ public sealed class ApiKeyBuildRunner : IDisposable
     /// <param name="key">Der Platzhalterschlüssel.</param>
     public void WriteLocalProps(string key)
     {
-        File.WriteAllText(LocalPropsPath, "<Project><PropertyGroup><TankerkoenigApiKey>" + key + "</TankerkoenigApiKey></PropertyGroup></Project>");
+        File.WriteAllText(LocalPropsPath, "<Project><PropertyGroup><" + _profile.MetadataName + ">" + key + "</" + _profile.MetadataName + "></PropertyGroup></Project>");
     }
 
     /// <summary>
     /// Baut das Testprojekt mit diagnostischer Ausführlichkeit und Binlog.
     /// </summary>
-    /// <param name="primary">Wert von <c>TANKRADAR_FUEL_PRICE_API_KEY</c> oder <see langword="null"/>.</param>
-    /// <param name="secret">Wert von <c>FUEL_PRICE_API_KEY</c> oder <see langword="null"/>.</param>
+    /// <param name="primary">Wert der vorrangigen Umgebungsvariable des Profils oder <see langword="null"/>.</param>
+    /// <param name="secret">Wert der Umgebungsvariable des Profils mit dem Namen des Secrets oder <see langword="null"/>.</param>
+    /// <param name="extraEnvironment">Weitere Variablen (z. B. die des anderen Schlüssels, um deren Trennung zu prüfen) oder <see langword="null"/>.</param>
     /// <returns>Das Ergebnis des Builds.</returns>
-    public ApiKeyBuildResult Build(string? primary, string? secret)
+    public ApiKeyBuildResult Build(string? primary, string? secret, IReadOnlyDictionary<string, string>? extraEnvironment = null)
     {
         var targets = LocateTargets();
         var project = Path.Combine(_directory, "KeyProbe.csproj");
@@ -56,7 +64,7 @@ public sealed class ApiKeyBuildRunner : IDisposable
             + "  <PropertyGroup>\n"
             + "    <TargetFramework>net10.0</TargetFramework>\n"
             + "    <OutputType>Library</OutputType>\n"
-            + "    <TankerkoenigLocalPropsFile>" + LocalPropsPath + "</TankerkoenigLocalPropsFile>\n"
+            + "    <" + _profile.LocalPropsProperty + ">" + LocalPropsPath + "</" + _profile.LocalPropsProperty + ">\n"
             + "  </PropertyGroup>\n"
             + "  <Import Project=\"" + targets + "\" />\n"
             + "</Project>\n");
@@ -76,18 +84,26 @@ public sealed class ApiKeyBuildRunner : IDisposable
         }
 
         // Die echten Variablen des Anwenders dürfen nie in den Test gelangen.
-        info.Environment.Remove(PrimaryVariable);
-        info.Environment.Remove(SecretVariable);
+        foreach (var variable in AllVariables)
+        {
+            info.Environment.Remove(variable);
+        }
+
         info.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         info.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
         if (primary is not null)
         {
-            info.Environment[PrimaryVariable] = primary;
+            info.Environment[_profile.PrimaryVariable] = primary;
         }
 
         if (secret is not null)
         {
-            info.Environment[SecretVariable] = secret;
+            info.Environment[_profile.SecretVariable] = secret;
+        }
+
+        foreach (var (name, value) in extraEnvironment ?? new Dictionary<string, string>())
+        {
+            info.Environment[name] = value;
         }
 
         using var process = Process.Start(info) ?? throw new InvalidOperationException("dotnet konnte nicht gestartet werden.");
@@ -114,12 +130,23 @@ public sealed class ApiKeyBuildRunner : IDisposable
     /// <returns>Der eingebettete Wert.</returns>
     public static string? ReadEmbeddedKey(string assemblyPath)
     {
+        return ReadEmbeddedKey(assemblyPath, ApiKeyBuildProfile.Tankerkoenig.MetadataName);
+    }
+
+    /// <summary>
+    /// Liest ein Assembly-Metadatum der gebauten Testassembly.
+    /// </summary>
+    /// <param name="assemblyPath">Der Pfad der Assembly.</param>
+    /// <param name="metadataName">Der Name des Metadatums.</param>
+    /// <returns>Der eingebettete Wert oder <see langword="null"/>, wenn das Metadatum fehlt.</returns>
+    public static string? ReadEmbeddedKey(string assemblyPath, string metadataName)
+    {
         var context = new AssemblyLoadContext("key-probe", isCollectible: true);
         try
         {
             using var stream = new MemoryStream(File.ReadAllBytes(assemblyPath));
             var assembly = context.LoadFromStream(stream);
-            return assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "TankerkoenigApiKey")?.Value;
+            return assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == metadataName)?.Value;
         }
         finally
         {
@@ -174,12 +201,12 @@ public sealed class ApiKeyBuildRunner : IDisposable
         return Encoding.Latin1.GetString(memory.ToArray());
     }
 
-    private static string LocateTargets()
+    private string LocateTargets()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "Tankradar.MAUI", "MSBuild", "TankerkoenigApiKey.targets");
+            var candidate = Path.Combine(directory.FullName, "src", "Tankradar.MAUI", "MSBuild", _profile.TargetsFileName);
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -188,7 +215,7 @@ public sealed class ApiKeyBuildRunner : IDisposable
             directory = directory.Parent;
         }
 
-        throw new FileNotFoundException("TankerkoenigApiKey.targets wurde nicht gefunden.");
+        throw new FileNotFoundException(_profile.TargetsFileName + " wurde nicht gefunden.");
     }
 }
 

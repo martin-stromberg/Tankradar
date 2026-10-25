@@ -13,9 +13,11 @@ using Tankradar.MAUI.Services.Location;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
+using Tankradar.TestSupport;
 
 namespace Tankradar.MAUI;
 
@@ -84,6 +86,7 @@ public static class MauiProgram
             Environment.GetEnvironmentVariable,
             () => new MauiBackupSharer()));
         AddGeocodingServices(builder.Services);
+        AddRoutingServices(builder.Services);
         AddMapServices(builder.Services);
         builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
             Environment.GetEnvironmentVariable,
@@ -98,6 +101,14 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookStatisticsViewModel>();
         builder.Services.AddTransient<TankbookExportViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddSingleton<ILinkOpener>(_ => new LauncherLinkOpener(IsTestMode()));
+        builder.Services.AddTransient(provider => new RouteSearchSettingsViewModel(
+            provider.GetRequiredService<IRouteSearchAccess>(),
+            provider.GetRequiredService<IRoutingKeyChecker>(),
+            provider.GetRequiredService<IConnectionMonitor>(),
+            provider.GetRequiredService<ILinkOpener>(),
+            provider.GetRequiredService<ILogger<RouteSearchSettingsViewModel>>(),
+            maskKeyInput: !IsTestMode()));
         builder.Services.AddTransient<BackupViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();
@@ -123,6 +134,11 @@ public static class MauiProgram
         return builder.Build();
     }
 
+    private static bool IsTestMode()
+    {
+        return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable));
+    }
+
     private static void AddGeocodingServices(IServiceCollection services)
     {
         services.AddSingleton(_ => GeocodingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
@@ -140,6 +156,70 @@ public static class MauiProgram
             var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
             return new NominatimGeocodingService(client, options, throttle, provider.GetRequiredService<ILogger<NominatimGeocodingService>>());
         });
+    }
+
+    /// <summary>
+    /// Registriert die Dienste der Routensuche (Routingdienst, Stationssuche entlang der Route, Gesamtablauf). Voraussetzung sind die Registrierungen von <c>IGeocodingService</c>, <c>IFuelPriceService</c>, <c>IDelay</c>, <c>TimeProvider</c> und Logging.
+    /// </summary>
+    /// <param name="services">Die Dienstesammlung.</param>
+    public static void AddRoutingServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => RoutingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
+        services.AddSingleton(_ => RouteSearchOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton<RouteQueryPacer>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider.GetRequiredService<RoutingOptions>();
+
+            // Eigener HTTP-Client und eigene Drosselung: keine automatischen Weiterleitungen (der Schlüssel steht im Anfragekopf
+            // und darf nie an einen anderen Host gehen), begrenzte Antwortgröße.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                MaxResponseContentBufferSize = 4 * 1024 * 1024,
+            };
+            var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+            return new RoutingTransport(client, throttle);
+        });
+        services.AddSingleton<IRouteSearchAccess>(provider =>
+        {
+            // Schlüssel und Schalter liegen gerätelokal in der sicheren Ablage (Credential Locker bzw. Keychain), nie im Build und nie in der Sicherung.
+#if WINDOWS
+            return RouteSearchAccess.Create(
+                Environment.GetEnvironmentVariable,
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingResource),
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingEnabledResource),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
+#else
+            return RouteSearchAccess.Create(
+                Environment.GetEnvironmentVariable,
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingStorageKey),
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingEnabledStorageKey),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
+#endif
+        });
+        services.AddSingleton<IRoutingService>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
+            return new OpenRouteServiceClient(
+                transport.Client,
+                provider.GetRequiredService<IRouteSearchAccess>(),
+                provider.GetRequiredService<RoutingOptions>(),
+                provider.GetRequiredService<IDelay>(),
+                transport.Throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceClient>>());
+        });
+        services.AddSingleton<IRoutingKeyChecker>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
+            return new OpenRouteServiceKeyChecker(
+                transport.Client,
+                provider.GetRequiredService<RoutingOptions>(),
+                transport.Throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceKeyChecker>>());
+        });
+        services.AddSingleton<IRouteStationSearchService, RouteStationSearchService>();
+        services.AddSingleton<IRouteSearchService, RouteSearchService>();
     }
 
     private static void AddMapServices(IServiceCollection services)

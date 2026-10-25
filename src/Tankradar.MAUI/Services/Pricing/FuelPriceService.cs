@@ -20,6 +20,13 @@ public interface IFuelPriceService
     Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gibt an, ob eine Umkreissuche aus dem Such-Cache bedient würde (innerhalb der Cache-Lebensdauer erfolgreich abgerufen), also keinen Abruf auslöst.
+    /// </summary>
+    /// <param name="query">Die Suchanfrage.</param>
+    /// <returns><see langword="true"/>, wenn <see cref="SearchNearbyAsync"/> keinen Abruf beim Preisdienst auslösen würde.</returns>
+    bool IsSearchCached(StationSearchQuery query);
+
+    /// <summary>
     /// Ruft die Details einer Tankstelle ab. Fehler beim Abruf führen zum Rückfall auf die zuletzt bekannten Daten, nicht zu einer Ausnahme.
     /// </summary>
     /// <param name="stationId">Die Kennung der Tankstelle (UUID).</param>
@@ -142,6 +149,14 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
             _logger.LogWarning("Umkreissuche nicht möglich ({Failure}); es werden die zuletzt bekannten Preise geliefert.", ex.Failure);
             return await SearchFallbackAsync(query, ex.Failure, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <inheritdoc />
+    public bool IsSearchCached(StationSearchQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        return _searchCache.TryGetValue(CacheKey(query), out var cachedAt) && now - cachedAt < _options.CacheLifetime;
     }
 
     /// <inheritdoc />

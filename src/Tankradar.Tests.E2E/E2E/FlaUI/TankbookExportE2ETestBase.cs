@@ -242,6 +242,28 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
         return string.Concat("(", text, ")");
     }
 
+    /// <summary>
+    /// Liest den Monat aus der Überschrift des Kalenders. Die Sprache der Überschrift folgt der Anzeigesprache des Betriebssystems, nicht der App
+    /// (der CI-Runner zeigt „October 2026“, ein deutsches System „Oktober 2026“); deshalb werden die angegebene Kultur, Englisch und die invariante Kultur versucht.
+    /// </summary>
+    /// <param name="text">Der Text der Überschrift.</param>
+    /// <param name="culture">Die zuerst versuchte Kultur.</param>
+    /// <param name="month">Der gelesene Monat (erster Tag).</param>
+    /// <returns><see langword="true"/>, wenn der Text als Monat gelesen werden konnte.</returns>
+    private static bool TryParseMonth(string? text, CultureInfo culture, out DateTime month)
+    {
+        foreach (var candidate in new[] { culture, CultureInfo.GetCultureInfo("en-US"), CultureInfo.InvariantCulture })
+        {
+            if (DateTime.TryParseExact(text, "MMMM yyyy", candidate, DateTimeStyles.None, out month))
+            {
+                return true;
+            }
+        }
+
+        month = default;
+        return false;
+    }
+
     private static DateTime ReadCalendarMonth(AutomationElement view, CultureInfo culture)
     {
         DateTime? month = null;
@@ -250,7 +272,7 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
             {
                 var header = view.FindFirstDescendant(cf => cf.ByAutomationId("HeaderButton"))?.Name;
                 var text = header?.Replace("‎", string.Empty, StringComparison.Ordinal);
-                return DateTime.TryParseExact(text, "MMMM yyyy", culture, DateTimeStyles.None, out var parsed) && (month = parsed) is not null;
+                return TryParseMonth(text, culture, out var parsed) && (month = parsed) is not null;
             },
             "Der Kalender zeigt keinen Monat an.");
         return month!.Value;

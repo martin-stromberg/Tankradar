@@ -27,8 +27,15 @@ public class SettingsViewModel : BaseViewModel
     /// <param name="logger">Logger für Lade- und Speicherfehler.</param>
     /// <param name="dataSource">Die Karte „Datenquelle“ (Quellenangabe und Preisdienst-Prüfung); optional, damit die Einstellungen auch ohne Preisdienst nutzbar sind.</param>
     /// <param name="backup">Die Karte „Sicherung“; optional, damit die Einstellungen auch ohne Sicherungsdienst nutzbar sind. Nach einer Wiederherstellung werden die Einstellungen neu geladen.</param>
-    public SettingsViewModel(ISettingsService settingsService, ILogger<SettingsViewModel> logger, DataSourceViewModel? dataSource = null, BackupViewModel? backup = null)
+    /// <param name="routeSearch">Die Karte „Routensuche“ (Schlüssel und Schalter); optional, damit die Einstellungen auch ohne Routensuche nutzbar sind.</param>
+    public SettingsViewModel(
+        ISettingsService settingsService,
+        ILogger<SettingsViewModel> logger,
+        DataSourceViewModel? dataSource = null,
+        BackupViewModel? backup = null,
+        RouteSearchSettingsViewModel? routeSearch = null)
     {
+        RouteSearch = routeSearch;
         _settingsService = settingsService;
         _logger = logger;
         DataSource = dataSource;
@@ -55,6 +62,16 @@ public class SettingsViewModel : BaseViewModel
     /// Die Karte „Datenquelle“; <see langword="null"/>, wenn kein Preisdienst eingebunden ist.
     /// </summary>
     public DataSourceViewModel? DataSource { get; }
+
+    /// <summary>
+    /// Die Karte „Routensuche“; <see langword="null"/>, wenn keine Routensuche eingebunden ist.
+    /// </summary>
+    public RouteSearchSettingsViewModel? RouteSearch { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Karte „Routensuche“ angezeigt wird.
+    /// </summary>
+    public bool HasRouteSearch => RouteSearch is not null;
 
     /// <summary>
     /// Gibt an, ob die Karte „Datenquelle“ angezeigt wird.
@@ -203,7 +220,16 @@ public class SettingsViewModel : BaseViewModel
     {
         DataSource?.OnAppearing();
         Backup?.OnAppearing();
+        RouteSearch?.OnAppearing();
         _ = LoadAsync();
+    }
+
+    /// <summary>
+    /// Meldet das Verlassen der Seite an die Karte „Routensuche“ (leert das Schlüsselfeld).
+    /// </summary>
+    public override void OnDisappearing()
+    {
+        RouteSearch?.OnDisappearing();
     }
 
     /// <summary>

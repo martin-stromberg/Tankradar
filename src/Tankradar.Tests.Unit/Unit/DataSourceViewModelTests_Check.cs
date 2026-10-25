@@ -141,6 +141,11 @@ public class DataSourceViewModelTests_Check : BaseTest
             return Exception is not null ? throw Exception : Task.FromResult(Outcome);
         }
 
+        public bool IsSearchCached(StationSearchQuery query)
+        {
+            return false;
+        }
+
         public Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new StationSearchResult([], PriceDataSource.OfflineFallback, PriceFailure.None));

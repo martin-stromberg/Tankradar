@@ -86,7 +86,6 @@ jobs:
         with:
           release-version: ${{ steps.version.outputs.version }}
           release-tag: ${{ steps.version.outputs.tag }}
-          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
 
       - name: Create GitHub release
         # Beide Wege (automatisch auf main, manuell per Tag) nutzen die gh CLI (Vorlage, Abschnitt 11.3).
@@ -147,4 +146,3 @@ jobs:
           api-key-p8: ${{ secrets.IOS_API_KEY_P8 }}
           xcode-version: ${{ vars.IOS_XCODE_VERSION }}
           fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
-          routing-api-key: ${{ secrets.ROUTING_API_KEY }}

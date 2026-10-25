@@ -63,10 +63,6 @@ inputs:
     description: API-Schlüssel des Kraftstoffpreis-Dienstes (aus GitHub Secrets); darf leer sein.
     required: false
     default: ''
-  routing-api-key:
-    description: API-Schlüssel des Routing-Dienstes (aus GitHub Secrets); darf leer sein.
-    required: false
-    default: ''
 
 outputs:
   signed:
@@ -215,7 +211,6 @@ runs:
         CODESIGN_KEY: ${{ inputs.codesign-key }}
         PROFILE_NAME: ${{ inputs.provisioning-profile }}
         TANKRADAR_FUEL_PRICE_API_KEY: ${{ inputs.fuel-price-api-key }}
-        TANKRADAR_ROUTING_API_KEY: ${{ inputs.routing-api-key }}
         RUN_ATTEMPT: ${{ github.run_attempt }}
         IncludeAndroidTarget: 'false'
         IncludeMacCatalystTarget: 'false'

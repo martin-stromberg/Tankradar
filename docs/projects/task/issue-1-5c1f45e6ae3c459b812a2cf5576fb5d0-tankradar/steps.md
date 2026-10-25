@@ -26,5 +26,6 @@ Hinweis: Schritt-Branches verwenden das Trennzeichen `--` statt `/`, da Git kein
 | 15 | Lokale Sicherung und Wiederherstellung | 11, 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15-sicherung` | Fertig |
 | 15a | Anzeigename von Tankstellen und erster Verbrauch ab Startstand | 10, 11, 13, 14, 15 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-15a-anzeigename-verbrauch` | Fertig |
 | 16 | Export des Tankbuchs als CSV oder PDF | 14 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-16-export` | Fertig |
-| 17 | Tankstellen entlang einer Route | 7, 9 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-17-route` | Offen |
+| 17 | Tankstellen entlang einer Route | 7, 9 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-17-route` | Fertig |
+| 17a | App-Icon | 1 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-17a-app-icon` | Fertig |
 | 18 | iOS-Build, Signierung und TestFlight-Auslieferung | 3, 13, 17 | `task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar--schritt-18-ios-auslieferung` | Offen |

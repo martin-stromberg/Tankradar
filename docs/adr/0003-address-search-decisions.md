@@ -44,3 +44,6 @@ Die Adressauflösung erfolgt über OpenStreetMap-Nominatim, dessen Nutzungsricht
 
 Wird die Preisquelle später gewechselt oder erweitert, können Radiusgrenze und Länderbeschränkung ohne
 Änderung des Ablaufs angepasst werden (`SearchRadius`, Parameter in `NominatimGeocodingService`).
+
+Die Routensuche (Schritt 17) nutzt dieselbe Auflösung für Start und Ziel, nacheinander mit dem Mindestabstand von 1,1 s;
+siehe [ADR 0014](0014-route-search.md).
