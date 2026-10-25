@@ -260,7 +260,15 @@ public abstract class E2ETestBase : IDisposable
         try
         {
             process = Process.GetProcessById(Application.ProcessId);
-            Application.Close();
+            try
+            {
+                Application.Close();
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine($"Hinweis: Application.Close() schlug fehl ({exception.GetType().Name}); der Prozess wird trotzdem abgewartet.");
+            }
+
             if (!process.WaitForExit(TimeSpan.FromSeconds(15)))
             {
                 Console.Error.WriteLine($"Hinweis: Die Tankatlas-App (PID {process.Id}) wurde nach 15 s nicht beendet und wird beendet.");
@@ -272,7 +280,7 @@ public abstract class E2ETestBase : IDisposable
                 Console.Error.WriteLine($"Hinweis: Die Tankatlas-App (PID {process.Id}) endete mit 0xC0000005 (Zugriffsverletzung beim Beenden, siehe ADR 0015).");
             }
         }
-        catch (Exception)
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             // Best-effort: Der Prozess kann bereits beendet sein.
         }

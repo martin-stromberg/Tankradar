@@ -116,7 +116,6 @@ if (-not $reportedVersion -or -not $reportedVersion.StartsWith("$Version.")) {
 }
 Write-Host "Die App meldet die Version $reportedVersion."
 
-$publishDir = Join-Path $repoRoot "src\Tankradar.MAUI\bin\Release\$targetFramework\win-x64\publish"
 
 if (-not (Test-Path $publishDir)) {
     Write-Error "Erwartetes Build-Ausgabeverzeichnis wurde nicht gefunden: $publishDir"
