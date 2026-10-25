@@ -23,7 +23,7 @@ public static class TankbookTexts
     /// <summary>
     /// Einleitung der Seite.
     /// </summary>
-    public const string Intro = "Deine Fahrzeuge. Alle Angaben bleiben auf diesem Gerät.";
+    public const string Intro = "Alle Angaben bleiben auf diesem Gerät.";
 
     /// <summary>
     /// Überschrift der Fahrzeugliste.
