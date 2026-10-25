@@ -92,19 +92,18 @@ class WindowsPackageKeyPolicyTests(unittest.TestCase):
         env = {}
         for step in action['runs']['steps']:
             env.update(step.get('env') or {})
-        for name in ['TANKRADAR_FUEL_PRICE_API_KEY', 'FUEL_PRICE_API_KEY', 'TANKRADAR_ROUTING_API_KEY', 'ROUTING_API_KEY']:
+        for name in ['TANKRADAR_FUEL_PRICE_API_KEY', 'FUEL_PRICE_API_KEY']:
             self.assertIn(name, env)
             self.assertEqual('', str(env[name]).strip(), name)
 
     def test_windows_package_action_has_no_key_inputs(self):
         action = MODULE.load(MODULE.ROOT / '.github' / 'actions' / 'build-and-package' / 'action.yml')
         for name in action.get('inputs') or {}:
-            self.assertNotRegex(name, r'(?i)routing|fuel|price|key')
+            self.assertNotRegex(name, r'(?i)fuel|price|key')
 
-    def test_package_script_clears_routing_variables(self):
+    def test_package_script_has_no_routing_key_handling(self):
         script = (MODULE.ROOT / 'scripts' / 'package-windows.ps1').read_text(encoding='utf-8')
-        for name in ['TANKRADAR_ROUTING_API_KEY', 'ROUTING_API_KEY', 'RoutingLocalPropsFile']:
-            self.assertIn(name, script)
+        self.assertNotRegex(script, r'(?i)routing')
 
 
 if __name__ == '__main__':

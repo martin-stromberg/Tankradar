@@ -56,7 +56,6 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | Name | Inhalt | Pflicht |
 |---|---|---|
 | `FUEL_PRICE_API_KEY` | API-Schlüssel des Kraftstoffpreis-Dienstes; nur für den iOS-Build (TestFlight) | optional (ohne Schlüssel zeigt die App nur zuletzt bekannte Preise) |
-| `ROUTING_API_KEY` | API-Schlüssel des Routing-Dienstes (OpenRouteService); nur für den iOS-Build, das Windows-Paket enthält ihn nie | optional (ohne Schlüssel meldet die Routensuche „nicht verfügbar“) |
 | `IOS_CODESIGN_KEY` | Name der Signierungsidentität, z. B. `Apple Distribution: Firma (TEAMID)` | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE` | Name des Provisioning-Profils (wie im Developer-Portal) | für signierten iOS-Build |
 | `IOS_PROVISIONING_PROFILE_BASE64` | `.mobileprovision`-Datei, Base64-kodiert | für signierten iOS-Build |
@@ -66,7 +65,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | `IOS_API_ISSUER_ID` | Issuer-ID des App-Store-Connect-API-Keys | für TestFlight-Upload |
 | `IOS_API_KEY_P8` | Inhalt der `.p8`-Datei des API-Keys (Klartext, mehrzeilig) | für TestFlight-Upload |
 
-Der Schlüssel `FUEL_PRICE_API_KEY` steht nur dem iOS-Build als Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY` zur Verfügung (das Repository ist öffentlich: das Windows-Paket wird ohne Schlüssel gebaut, die `.ipa` nicht als Artefakt hochgeladen). `ROUTING_API_KEY` steht nur dem iOS-Build als `TANKRADAR_ROUTING_API_KEY` zur Verfügung (die Aktion `build-and-package` für das Windows-Paket hat keine Routing-Eingabe mehr). Die App übernimmt den Schlüssel beim Build als Tankerkönig-Schlüssel (er gelangt nie ins Build-Log; empfohlen ist eine regelmäßige Rotation, da er in der iOS-App selbst zwangsläufig enthalten ist) (siehe [Preisdaten](../Preisdaten/index.md)).
+Der Schlüssel `FUEL_PRICE_API_KEY` steht nur dem iOS-Build als Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY` zur Verfügung (das Repository ist öffentlich: das Windows-Paket wird ohne Schlüssel gebaut, die `.ipa` nicht als Artefakt hochgeladen). Für die Routensuche gibt es kein Secret: Jeder Anwender trägt seinen eigenen OpenRouteService-Schlüssel in den Optionen ein (siehe [API-Schlüssel](../Preisdaten/api-schluessel.md)). Die App übernimmt den Schlüssel beim Build als Tankerkönig-Schlüssel (er gelangt nie ins Build-Log; empfohlen ist eine regelmäßige Rotation, da er in der iOS-App selbst zwangsläufig enthalten ist) (siehe [Preisdaten](../Preisdaten/index.md)).
 
 Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("datei.p12"))`
 (auf dem Mac: `base64 -i datei.p12 | pbcopy`).

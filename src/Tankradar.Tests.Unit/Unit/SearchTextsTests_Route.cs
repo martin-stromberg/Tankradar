@@ -46,7 +46,59 @@ public class SearchTextsTests_Route : BaseTest
             SearchTexts.FormatRouteSummary("Berlin", "Hamburg", 288.6, 12, 2));
         Assert.Contains("1 Tankstelle ", SearchTexts.FormatRouteSummary("A", "B", 10, 1, 5), StringComparison.Ordinal);
         Assert.Equal("Route von A nach B eingezeichnet, 3 Tankstellen", SearchTexts.FormatRouteMapHint("A", "B", 3));
-        Assert.Equal("Die Route ist zu lang. Es werden Routen bis 400 km unterstützt.", SearchTexts.FormatRouteTooLong(400));
+    }
+
+    /// <summary>
+    /// Prüft die Einzahl im Kartenhinweis („1 Tankstelle“) und die richtige Mehrzahl bei null Treffern.
+    /// </summary>
+    [Fact]
+    public void FormatRouteMapHint_UsesSingularForOneStation()
+    {
+        Assert.Equal("Route von A nach B eingezeichnet, 1 Tankstelle", SearchTexts.FormatRouteMapHint("A", "B", 1));
+        Assert.Equal("Route von A nach B eingezeichnet, 0 Tankstellen", SearchTexts.FormatRouteMapHint("A", "B", 0));
+    }
+
+    /// <summary>
+    /// Prüft, dass kurze Routen mit einer Nachkommastelle angegeben werden (nicht „0 km“) und längere in ganzen Kilometern.
+    /// </summary>
+    /// <param name="lengthKm">Die Länge in Kilometern.</param>
+    /// <param name="expected">Der erwartete Text.</param>
+    [Theory]
+    [InlineData(0.4, "0,4 km")]
+    [InlineData(8.04, "8,0 km")]
+    [InlineData(9.94, "9,9 km")]
+    [InlineData(9.96, "10 km")]
+    [InlineData(40.0, "40 km")]
+    [InlineData(288.6, "289 km")]
+    public void FormatRouteLength_ShowsDecimalBelowTenKilometers(double lengthKm, string expected)
+    {
+        Assert.Equal(expected, SearchTexts.FormatRouteLength(lengthKm));
+        Assert.Contains(expected, SearchTexts.FormatRouteSummary("A", "B", lengthKm, 2, 2), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft den Hinweis zur Abfragegrenze: Er nennt die Routenlänge, den Abstand und die bei diesem Abstand durchsuchbare Länge.
+    /// </summary>
+    [Fact]
+    public void FormatRouteLimit_NamesRouteLengthDistanceAndSearchableLength()
+    {
+        var text = SearchTexts.FormatRouteLimit(new RouteLimit(5, 200.2, 114));
+
+        Assert.Contains("200 km", text, StringComparison.Ordinal);
+        Assert.Contains("5 km Abstand", text, StringComparison.Ordinal);
+        Assert.Contains("bis 114 km", text, StringComparison.Ordinal);
+        Assert.Contains("kürzere Strecke", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Prüft, dass die Meldung der Abfragegrenze nur mit Angaben erscheint und sonst (Routingdienst lehnt ab) der allgemeine Hinweis gilt.
+    /// </summary>
+    [Fact]
+    public void GetRouteMessage_RouteTooLong_UsesLimitOnlyWhenPresent()
+    {
+        Assert.Equal(SearchTexts.FormatRouteLimit(new RouteLimit(2, 300, 131)), SearchTexts.GetRouteMessage(RouteSearchResult.FailLimit(new RouteLimit(2, 300, 131))));
+        Assert.Equal(SearchTexts.RouteTooLongForService, SearchTexts.GetRouteMessage(RouteSearchResult.Fail(RouteSearchStatus.RouteTooLong)));
+        Assert.Equal(SearchTexts.RouteTooLongForService, SearchTexts.GetRoutingMessage(RoutingFailure.RouteTooLong));
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Services.Routing;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Unit.Unit;
 
@@ -19,7 +20,10 @@ public class RouteSearchOptionsTests_Validation : BaseTest
 
         Assert.Equal(25, options.QueryRadiusKm);
         Assert.Equal(0.95, options.CoverageFactor);
-        Assert.Equal(15, options.MaxQueries);
+        Assert.Equal(3, options.MaxQueries);
+        Assert.Equal(RouteSearchOptions.DefaultMaxQueries, options.MaxQueries);
+        Assert.Equal(TimeSpan.FromSeconds(10), options.MinQueryInterval);
+        Assert.Equal(RouteSearchOptions.DefaultMinQueryInterval, options.MinQueryInterval);
         Assert.Equal(400, options.MaxRouteLengthKm);
         Assert.Equal(0.2, options.SamePlaceKm);
     }
@@ -60,5 +64,42 @@ public class RouteSearchOptionsTests_Validation : BaseTest
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { MaxQueries = 0 }.Validate());
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { MaxRouteLengthKm = 0 }.Validate());
         Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { SamePlaceKm = -1 }.Validate());
+        Assert.Throws<InvalidOperationException>(() => new RouteSearchOptions { MinQueryInterval = TimeSpan.FromSeconds(-1) }.Validate());
+    }
+
+    /// <summary>
+    /// Prüft, dass außerhalb des Testmodus immer die Standardwerte gelten, auch wenn die Testvariablen gesetzt sind.
+    /// </summary>
+    [Fact]
+    public void FromEnvironment_OutsideTestMode_UsesDefaultsAndIgnoresTestVariables()
+    {
+        var options = RouteSearchOptions.FromEnvironment(name => name == TestDataPaths.RouteQueryIntervalEnvironmentVariable ? "5" : null);
+
+        Assert.Equal(RouteSearchOptions.DefaultMinQueryInterval, options.MinQueryInterval);
+        Assert.Equal(RouteSearchOptions.DefaultMaxQueries, options.MaxQueries);
+    }
+
+    /// <summary>
+    /// Prüft, dass im Testmodus der Mindestabstand 0 ist oder aus der Testvariablen stammt (ungültige Werte ergeben 0).
+    /// </summary>
+    /// <param name="value">Der Wert der Testvariable in Millisekunden.</param>
+    /// <param name="expectedMilliseconds">Der erwartete Mindestabstand in Millisekunden.</param>
+    [Theory]
+    [InlineData(null, 0)]
+    [InlineData("250", 250)]
+    [InlineData("abc", 0)]
+    [InlineData("-5", 0)]
+    public void FromEnvironment_TestMode_ShortensTheInterval(string? value, int expectedMilliseconds)
+    {
+        var options = RouteSearchOptions.FromEnvironment(name => name switch
+        {
+            var n when n == TestDataPaths.TestDataPathEnvironmentVariable => "testdata",
+            var n when n == TestDataPaths.RouteQueryIntervalEnvironmentVariable => value,
+            _ => null,
+        });
+
+        Assert.Equal(TimeSpan.FromMilliseconds(expectedMilliseconds), options.MinQueryInterval);
+        Assert.Equal(RouteSearchOptions.DefaultMaxQueries, options.MaxQueries);
+        Assert.Throws<ArgumentNullException>(() => RouteSearchOptions.FromEnvironment(null!));
     }
 }

@@ -21,6 +21,12 @@ public interface IApiKeyStore
     /// <param name="apiKey">Der Schlüssel.</param>
     /// <returns>Ein Task, der nach dem Speichern abgeschlossen ist.</returns>
     Task SetAsync(string apiKey);
+
+    /// <summary>
+    /// Entfernt den gespeicherten Schlüssel; ein nicht vorhandener Schlüssel ist kein Fehler.
+    /// </summary>
+    /// <returns>Ein Task, der nach dem Entfernen abgeschlossen ist.</returns>
+    Task RemoveAsync();
 }
 
 /// <summary>
@@ -46,16 +52,10 @@ public sealed class ApiKeyProvider : IApiKeyProvider
     /// </summary>
     public const string BuildKeyMetadataName = "TankerkoenigApiKey";
 
-    /// <summary>
-    /// Name des Assembly-Metadatums, das den beim Build mitgegebenen Schlüssel des Routingdienstes trägt.
-    /// </summary>
-    public const string RoutingBuildKeyMetadataName = "RoutingApiKey";
-
     private readonly IApiKeyStore _store;
     private readonly Func<string?> _buildTimeKey;
     private readonly Func<string, string?> _getEnvironmentVariable;
     private readonly ILogger<ApiKeyProvider> _logger;
-    private readonly string _testKeyEnvironmentVariable;
 
     /// <summary>
     /// Erstellt den Provider.
@@ -64,15 +64,12 @@ public sealed class ApiKeyProvider : IApiKeyProvider
     /// <param name="buildTimeKey">Liefert den beim Build mitgegebenen Schlüssel.</param>
     /// <param name="getEnvironmentVariable">Liefert Umgebungsvariablen.</param>
     /// <param name="logger">Logger (protokolliert nie den Schlüssel).</param>
-    /// <param name="testKeyEnvironmentVariable">Name der Umgebungsvariable, die im Testmodus den Schlüssel vorgibt; Standard ist die Variable des Preisdienstes.</param>
     public ApiKeyProvider(
         IApiKeyStore store,
         Func<string?> buildTimeKey,
         Func<string, string?> getEnvironmentVariable,
-        ILogger<ApiKeyProvider> logger,
-        string testKeyEnvironmentVariable = PriceApiOptions.ApiKeyEnvironmentVariable)
+        ILogger<ApiKeyProvider> logger)
     {
-        _testKeyEnvironmentVariable = testKeyEnvironmentVariable;
         _store = store;
         _buildTimeKey = buildTimeKey;
         _getEnvironmentVariable = getEnvironmentVariable;
@@ -85,19 +82,9 @@ public sealed class ApiKeyProvider : IApiKeyProvider
     /// <returns>Der Schlüssel oder <see langword="null"/>, wenn beim Build keiner mitgegeben wurde.</returns>
     public static string? ReadBuildTimeKey()
     {
-        return ReadBuildTimeKey(BuildKeyMetadataName);
-    }
-
-    /// <summary>
-    /// Liest einen beim Build mitgegebenen Schlüssel aus den Assembly-Metadaten.
-    /// </summary>
-    /// <param name="metadataName">Der Name des Assembly-Metadatums.</param>
-    /// <returns>Der Schlüssel oder <see langword="null"/>, wenn beim Build keiner mitgegeben wurde.</returns>
-    public static string? ReadBuildTimeKey(string metadataName)
-    {
         var value = typeof(ApiKeyProvider).Assembly
             .GetCustomAttributes<AssemblyMetadataAttribute>()
-            .FirstOrDefault(attribute => attribute.Key == metadataName)?.Value;
+            .FirstOrDefault(attribute => attribute.Key == BuildKeyMetadataName)?.Value;
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
@@ -108,7 +95,7 @@ public sealed class ApiKeyProvider : IApiKeyProvider
         if (testMode)
         {
             // Im Testmodus nie der echte Build-Schlüssel: nur der Test-Schlüssel aus der Umgebung.
-            return _getEnvironmentVariable(_testKeyEnvironmentVariable) is { Length: > 0 } testKey ? testKey.Trim() : null;
+            return _getEnvironmentVariable(PriceApiOptions.ApiKeyEnvironmentVariable) is { Length: > 0 } testKey ? testKey.Trim() : null;
         }
 
         string? stored = null;
@@ -161,6 +148,13 @@ public sealed class InMemoryApiKeyStore : IApiKeyStore
     public Task SetAsync(string apiKey)
     {
         _value = apiKey;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task RemoveAsync()
+    {
+        _value = null;
         return Task.CompletedTask;
     }
 }

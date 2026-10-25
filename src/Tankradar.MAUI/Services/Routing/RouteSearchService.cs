@@ -103,7 +103,8 @@ public sealed class RouteSearchService : IRouteSearchService
 
         if (!RouteSampler.TryCreateQueryPoints(route, request.DistanceKm, _options, out var queryPoints))
         {
-            return RouteSearchResult.Fail(RouteSearchStatus.RouteTooLong);
+            // Vor der ersten Preisabfrage abgelehnt; der Hinweis nennt, bis zu welcher Länge bei diesem Abstand gesucht werden kann.
+            return RouteSearchResult.FailLimit(new RouteLimit(request.DistanceKm, route.LengthKm, RouteSampler.MaxSearchLengthKm(request.DistanceKm, _options)));
         }
 
         var stations = await _stationSearch

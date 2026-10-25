@@ -9,6 +9,7 @@ namespace Tankradar.MAUI.ViewModels;
 public abstract class ChoiceOptionBase : BaseViewModel, IChoiceOption
 {
     private bool _isSelected;
+    private bool _isEnabled = true;
 
     /// <summary>
     /// Erstellt die Option.
@@ -33,6 +34,15 @@ public abstract class ChoiceOptionBase : BaseViewModel, IChoiceOption
 
     /// <inheritdoc />
     public string SelectionHint => IsSelected ? ChoiceTexts.Selected : string.Empty;
+
+    /// <summary>
+    /// Gibt an, ob die Option bedienbar ist; sie ist es standardmäßig und wird nur vorübergehend gesperrt (z. B. während einer laufenden Suche).
+    /// </summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        internal set => SetProperty(ref _isEnabled, value);
+    }
 
     /// <summary>
     /// Gibt an, ob die Option ausgewählt ist; ein Auswählen durch den Anwender meldet die Änderung an den Besitzer.

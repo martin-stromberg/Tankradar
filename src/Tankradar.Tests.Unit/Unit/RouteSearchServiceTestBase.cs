@@ -30,7 +30,7 @@ public abstract class RouteSearchServiceTestBase : BaseTest
         Geocoding.Results[StartText] = GeocodingResult.Success(new GeoPosition(52.52, 13.405), "Berlin-Mitte");
         Geocoding.Results[DestinationText] = GeocodingResult.Success(new GeoPosition(52.88, 13.405), "Oranienburg, Brandenburg");
         Routing.Result = RoutingResult.Success(RouteTestData.NorthFromBerlin(0.36));
-        Service = new RouteSearchService(Geocoding, Routing, new RouteStationSearchService(Prices), new RouteSearchOptions());
+        Service = new RouteSearchService(Geocoding, Routing, RouteTestOptions.StationSearch(Prices), RouteTestOptions.Relaxed());
     }
 
     /// <summary>

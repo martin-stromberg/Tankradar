@@ -126,8 +126,8 @@ Entscheidungen und Begründungen: [ADR 0014](../../adr/0014-route-search.md).
 | `RouteSearchService` (`IRouteSearchService`) | Ablauf: Verfügbarkeit des Routingdienstes, Start/Ziel über `IGeocodingService`, Abstand < 200 m = `SamePlace`, Route über `IRoutingService`, `RouteSampler`, `RouteStationSearchService` |
 | `OpenRouteServiceClient` (`IRoutingService`) | `POST v2/directions/driving-car`, Schlüssel im Kopf `Authorization`, 15 s Zeitlimit, 3 Versuche (1 s, 2 s), Drosselung 1,5 s, Fehlerabbildung auf `RoutingFailure` |
 | `PolylineDecoder`, `RouteGeometry`, `RouteProfile` | Dekodierung (Genauigkeit 5), Haversine, Abstand/Streckenposition (`Locate`), `PointAt`, Vereinfachung (Douglas-Peucker) |
-| `RouteSampler` | Abfragepunkte: Schritt = 2 · (25 − d) · 0,95, Radius ⌈s/2/0,95 + d⌉ (1 bis 25 km), höchstens 15 Abfragen und 400 km |
-| `RouteStationSearchService` | Umkreisabfragen strikt nacheinander (`IFuelPriceService.SearchNearbyAsync`), Deduplizierung, Filter nach Abstand, Sortierung nach Streckenposition; Abbruch bei Fehler |
+| `RouteSampler` | Abfragepunkte: Schritt = 2 · (25 − d) · 0,95, Radius ⌈s/2/0,95 + d⌉ (1 bis 25 km), höchstens `RouteSearchOptions.MaxQueries` (3) Abfragen, `MaxSearchLengthKm` je Abstand; zu lange Routen: `RouteSearchResult.Limit` |
+| `RouteStationSearchService` | Umkreisabfragen strikt nacheinander (`IFuelPriceService.SearchNearbyAsync`), Deduplizierung, Filter nach Abstand, Sortierung nach Streckenposition; Abbruch bei Fehler; `RouteQueryPacer` erzwingt `MinQueryInterval` (10 s) zwischen Abfragen, die den Preisdienst erreichen (auch suchübergreifend, abbrechbar; Cache-Treffer warten nicht); alle Abfragen laufen weiter über die allgemeine Drosselung des Preisdienstes |
 | `StationResultBuilder.BuildForRoute` | `DistanceKm` = Streckenposition, `RouteOffsetKm`; sonst dieselbe Filter-, Preis- und Sortierlogik |
 | `MapRouteProjector`, `MapRouteDrawable`, `StationMapView.Route` | Projektion/Zuschnitt der Linie auf den Ausschnitt, Zeichnen unter den Markern, Ziel `Map.Destination`, Anpassung des Ausschnitts |
 
@@ -135,5 +135,5 @@ AutomationIds: `Search.Mode.Route`, `Search.Route.StartKind.CurrentLocation|Addr
 `Search.RouteDistance.{1|2|5|10}`, `Search.Route.Summary`, `Search.Route.Progress`, `Search.Attribution.Routing`, `Search.Station.RouteOffset`, `Map.Destination`.
 
 Testmodus: `TANKRADAR_ROUTING_URL` (Adresse des Mocks `MockOpenRouteServiceServer`; ohne Adresse wird die Routenberechnung verweigert) und
-`TANKRADAR_ROUTING_TEST_API_KEY` (nur im Testmodus). Tests rufen nie Produktivendpunkte. Datenschutz: Route, Orte und Positionen bleiben im Arbeitsspeicher
+`TANKRADAR_ROUTING_TEST_API_KEY` (nur im Testmodus; belegt die In-Memory-Ablage von `RouteSearchAccess` mit Schlüssel und eingeschaltetem Schalter vor), `TANKRADAR_ROUTE_QUERY_INTERVAL_MS` (Abstand der Preisabfragen, Standard im Testmodus 0). Schlüssel und Schalter: `IRouteSearchAccess`/`RouteSearchAccess` (Credential Locker bzw. Keychain, gerätelokal, nicht in der Sicherung); Prüfung per `OpenRouteServiceKeyChecker`; Karte in den Optionen: `RouteSearchSettingsViewModel` (`Settings.Route.*`). `MapViewModel` zeigt `SearchMode.Route` nur bei `IsEnabledAsync()` und reagiert auf `Changed`. Tests rufen nie Produktivendpunkte. Datenschutz: Route, Orte und Positionen bleiben im Arbeitsspeicher
 des `MapViewModel`; es gibt keine Migration.

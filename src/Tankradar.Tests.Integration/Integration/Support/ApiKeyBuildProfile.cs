@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.Integration.Integration.Support;
 
 /// <summary>
-/// Beschreibt eine der beiden Schlüsselübernahmen beim Build (Tankerkönig oder OpenRouteService).
+/// Beschreibt eine Schlüsselübernahme beim Build (Tankerkönig-Schlüssel).
 /// </summary>
 /// <param name="TargetsFileName">Der Dateiname des MSBuild-Ziels.</param>
 /// <param name="PrimaryVariable">Der Name der vorrangigen Umgebungsvariable.</param>
@@ -29,16 +29,4 @@ public sealed record ApiKeyBuildProfile(
         "tankerkoenig.local.props",
         "TankerkoenigLocalPropsFile",
         "TankerkoenigApiKey");
-
-    /// <summary>
-    /// Die Schlüsselübernahme des OpenRouteService-Schlüssels.
-    /// </summary>
-    /// <returns>Der Wert.</returns>
-    public static ApiKeyBuildProfile Routing { get; } = new(
-        "RoutingApiKey.targets",
-        "TANKRADAR_ROUTING_API_KEY",
-        "ROUTING_API_KEY",
-        "routing.local.props",
-        "RoutingLocalPropsFile",
-        "RoutingApiKey");
 }

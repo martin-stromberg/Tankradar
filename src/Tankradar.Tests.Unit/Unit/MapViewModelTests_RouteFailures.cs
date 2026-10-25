@@ -45,11 +45,12 @@ public class MapViewModelTests_RouteFailures : MapViewModelRouteTestBase
     public async Task Search_RouteTooLong_ShowsLimitInMessage()
     {
         await PrepareRouteAsync();
-        RouteSearch.Result = RouteSearchResult.Fail(RouteSearchStatus.RouteTooLong);
+        RouteSearch.Result = RouteSearchResult.FailLimit(new RouteLimit(2, 300, 131.1));
 
         await SearchAsync();
 
-        Assert.Contains("400 km", ViewModel.StatusMessage, StringComparison.Ordinal);
+        Assert.Contains("131 km", ViewModel.StatusMessage, StringComparison.Ordinal);
+        Assert.Contains("2 km Abstand", ViewModel.StatusMessage, StringComparison.Ordinal);
     }
 
     /// <summary>

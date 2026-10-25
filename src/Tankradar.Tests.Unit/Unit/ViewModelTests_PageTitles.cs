@@ -60,6 +60,7 @@ public class ViewModelTests_PageTitles : BaseTest
             new FakeGeocodingService(),
             new FakeFuelPriceService(),
             new FakeRouteSearchService(),
+            new FakeRouteSearchAccess(),
             new FakeConnectionMonitor(),
             TimeProvider.System,
             new FakeStationNavigator(),

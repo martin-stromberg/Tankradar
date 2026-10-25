@@ -1,3 +1,15 @@
+## 2026-10-25 — Korrekturrunde 1 zu Schritt 17 (Tankstellen entlang einer Route)
+
+- Eigener OpenRouteService-Schlüssel je Anwender statt Build-Einbindung: `RoutingApiKey.targets`, `routing.local.props`, `TANKRADAR_ROUTING_API_KEY`/`ROUTING_API_KEY`, das Secret in den Workflows und die Sonderbehandlung in `package-windows.ps1`, `build-and-package` und `validate-workflows.py` sind entfernt (Tankerkönig-Schlüssel unverändert).
+- Neue Karte „Routensuche“ in den Optionen: verdecktes Schlüsselfeld, Hinweis und Schaltfläche zur Beantragung bei OpenRouteService, „Schlüssel speichern/prüfen/entfernen“ (Prüfung per einzelner Testanfrage mit Rückmeldung gültig/abgelehnt/nicht erreichbar/Kontingent) und Schalter „Routensuche aktivieren“, der nur mit gespeichertem Schlüssel bedienbar ist. Ablage in Credential Locker bzw. Keychain, gerätelokal, nicht in der Sicherung; der Schlüssel wird nie angezeigt, protokolliert oder in Meldungen übernommen.
+- Die Suchart „Route“ ist nur bei aktivierter Routensuche sichtbar und nur dann gehen Aufrufe an OpenRouteService; Wechsel wirken ohne Neustart, Entfernen des Schlüssels schaltet die Routensuche aus.
+- Neue Basisadresse `https://api.heigit.org/openrouteservice/` (die alte Adresse wird Anfang November 2026 abgeschaltet); Mock-Server und Tests folgen dem neuen Pfad.
+- Vorläufige Abfragegrenze bis zur Klärung mit Tankerkönig: höchstens 3 Umkreisabfragen je Routensuche mit mindestens 10 s Abstand (auch suchübergreifend, abbrechbar, zentral in `RouteSearchOptions`); zu lange Routen werden vor der ersten Preisabfrage mit Angabe der durchsuchbaren Länge abgelehnt; Fortschritt während der Wartezeit und Schaltfläche „Suche abbrechen“.
+- Zusammenfassung und Kartenhinweis beschreiben die Anfrage (Abstand, Startart); Chips und Eingaben sind während der Suche gesperrt. Nach Verlassen der Seite während der Suche wird der Fortschrittstext geleert und „Suchen“ freigegeben.
+- Kleinigkeiten: „1 Tankstelle“ im Kartenhinweis, Routenlänge unter 10 km mit Nachkommastelle, Detailansicht nennt „ab Start“ und den Abstand zur Route.
+- Tests: Unit (Zugang, Schlüsselprüfung, Einstellungen-Karte, Abfragetakt, Verfügbarkeit, Anfrageparameter), Integration (Abfragegrenze, Sicherung ohne Schlüssel), E2E `RouteE2ETests_Settings`.
+- Dokumentation: ADR 0014, README, `docs/help/` (Suche, Preisdaten, CI/CD).
+
 ## 2026-10-20 — Tankstellen entlang einer Route (Tankradar Schritt 17)
 
 - Neue Suchart „Route“ im Bereich „Karte“: Start (aktueller Standort, sofern erlaubt, oder Adresse/Ort/PLZ), Ziel und Abstand zur Route (1, 2, 5, 10 km, Standard 2 km). Start und Ziel löst die vorhandene Nominatim-Auflösung auf (Mindestabstand 1,1 s), die Route für ein Auto berechnet OpenRouteService (nur HTTPS, Zeitlimit 15 s, bis zu 3 Versuche mit zunehmender Wartezeit, Drosselung)

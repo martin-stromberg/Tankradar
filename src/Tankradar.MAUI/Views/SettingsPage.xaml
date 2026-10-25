@@ -187,6 +187,88 @@
             </Border>
 
             <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasRouteSearch}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding RouteSearch}" x:DataType="vm:RouteSearchSettingsViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Settings.Route.Heading" />
+                    <Label Text="{Binding Hint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.Hint" />
+                    <Label Text="{Binding SignupHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.SignupHint" />
+                    <Button Text="{Binding SignupButtonText}"
+                            Command="{Binding OpenSignupCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Settings.Route.Signup" />
+                    <Label Text="{Binding KeyStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Route.KeyStatus" />
+                    <Entry Text="{Binding KeyInput}"
+                           Placeholder="{Binding KeyPlaceholder}"
+                           IsPassword="{Binding IsKeyMasked}"
+                           MaxLength="512"
+                           IsTextPredictionEnabled="False"
+                           IsSpellCheckEnabled="False"
+                           MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                           SemanticProperties.Description="{Binding KeyPlaceholder}"
+                           AutomationId="Settings.Route.KeyInput" />
+                    <FlexLayout Wrap="Wrap">
+                        <Button Text="{Binding SaveButtonText}"
+                                Command="{Binding SaveKeyCommand}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookButton}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Save" />
+                        <Button Text="{Binding CheckButtonText}"
+                                Command="{Binding CheckKeyCommand}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Check" />
+                        <Button Text="{Binding RemoveButtonText}"
+                                Command="{Binding RemoveKeyCommand}"
+                                IsVisible="{Binding HasStoredKey}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                TextColor="{StaticResource ColorErrorRed}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Remove" />
+                    </FlexLayout>
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Route.Status" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                        <Switch Grid.Column="0"
+                                IsToggled="{Binding IsRouteSearchEnabled}"
+                                IsEnabled="{Binding HasStoredKey}"
+                                VerticalOptions="Center"
+                                AutomationId="Settings.Route.Switch"
+                                SemanticProperties.Description="{Binding EnableLabel}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding EnableLabel}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               VerticalOptions="Center"
+                               AutomationId="Settings.Route.SwitchLabel" />
+                    </Grid>
+                    <Label Text="{Binding EnableHint}"
+                           IsVisible="{Binding HasEnableHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.EnableHint" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
                     IsVisible="{Binding HasBackup}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding Backup}" x:DataType="vm:BackupViewModel">
                     <Label Text="{Binding Heading}"

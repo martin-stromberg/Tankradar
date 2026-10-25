@@ -18,7 +18,7 @@ public abstract class MapViewModelTestBase : BaseTest
     /// </summary>
     protected MapViewModelTestBase()
     {
-        ViewModel = new MapViewModel(Settings, Location, Geocoding, Prices, RouteSearch, Connection, Clock, Navigator, Logger);
+        ViewModel = new MapViewModel(Settings, Location, Geocoding, Prices, RouteSearch, RouteAccess, Connection, Clock, Navigator, Logger);
     }
 
     /// <summary>
@@ -52,8 +52,13 @@ public abstract class MapViewModelTestBase : BaseTest
     protected FakeRouteSearchService RouteSearch { get; } = new();
 
     /// <summary>
-    /// Die Verbindungserkennung.
+    /// Der Zugang zur Routensuche (standardmäßig mit Schlüssel und eingeschaltet).
     /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakeRouteSearchAccess RouteAccess { get; } = new();
+
+    /// <summary>
+    /// Die Verbindungserkennung.
     /// <returns>Der Wert.</returns>
     protected FakeConnectionMonitor Connection { get; } = new();
 
@@ -93,6 +98,7 @@ public abstract class MapViewModelTestBase : BaseTest
     {
         ViewModel.OnAppearing();
         await ViewModel.LastSettingsTask;
+        await ViewModel.LastRouteAccessTask;
     }
 
     /// <summary>

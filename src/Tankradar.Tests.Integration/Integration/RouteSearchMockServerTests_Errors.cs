@@ -153,7 +153,7 @@ public class RouteSearchMockServerTests_Errors : RouteSearchMockServerTestBase
 
         var viewModel = await SearchWithAsync();
 
-        Assert.Contains("400 km", viewModel.StatusMessage, StringComparison.Ordinal);
+        Assert.Equal(SearchTexts.RouteTooLongForService, viewModel.StatusMessage);
         AssertNoPriceQueriesAndNoResult(viewModel);
     }
 
@@ -167,7 +167,7 @@ public class RouteSearchMockServerTests_Errors : RouteSearchMockServerTestBase
 
         var viewModel = await SearchWithAsync();
 
-        Assert.Contains("zu lang", viewModel.StatusMessage, StringComparison.Ordinal);
+        Assert.Contains("kann nur bis 400 km Länge gesucht werden", viewModel.StatusMessage, StringComparison.Ordinal);
         AssertNoPriceQueriesAndNoResult(viewModel);
     }
 

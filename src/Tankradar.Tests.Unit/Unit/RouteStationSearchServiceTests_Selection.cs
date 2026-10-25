@@ -18,8 +18,8 @@ public class RouteStationSearchServiceTests_Selection : BaseTest
 
     private async Task<RouteStationSearchResult> SearchAsync(int distanceKm = 2)
     {
-        Assert.True(RouteSampler.TryCreateQueryPoints(_route, distanceKm, new RouteSearchOptions(), out var queries));
-        return await new RouteStationSearchService(_prices).SearchAsync(_route, queries, distanceKm, Fuels, null, CancellationToken.None);
+        Assert.True(RouteSampler.TryCreateQueryPoints(_route, distanceKm, RouteTestOptions.Relaxed(), out var queries));
+        return await RouteTestOptions.StationSearch(_prices).SearchAsync(_route, queries, distanceKm, Fuels, null, CancellationToken.None);
     }
 
     /// <summary>
@@ -93,10 +93,10 @@ public class RouteStationSearchServiceTests_Selection : BaseTest
         var shared = RouteStationFactory.At(1, 52.70, 13.405);
         _prices.Respond = (_, _) => RouteStationFactory.Live(shared);
         var longRoute = RouteTestData.NorthFromBerlin(1.5);
-        Assert.True(RouteSampler.TryCreateQueryPoints(longRoute, 2, new RouteSearchOptions(), out var queries));
+        Assert.True(RouteSampler.TryCreateQueryPoints(longRoute, 2, RouteTestOptions.Relaxed(), out var queries));
         Assert.True(queries.Count > 1);
 
-        var result = await new RouteStationSearchService(_prices).SearchAsync(longRoute, queries, 2, Fuels, null, CancellationToken.None);
+        var result = await RouteTestOptions.StationSearch(_prices).SearchAsync(longRoute, queries, 2, Fuels, null, CancellationToken.None);
 
         Assert.Single(result.Stations);
     }

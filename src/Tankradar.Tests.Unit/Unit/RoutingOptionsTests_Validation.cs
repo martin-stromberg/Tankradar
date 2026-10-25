@@ -24,7 +24,8 @@ public class RoutingOptionsTests_Validation : BaseTest
 
         options.Validate();
 
-        Assert.Equal("https://api.openrouteservice.org/", options.BaseUrl.ToString());
+        Assert.Equal("https://api.heigit.org/openrouteservice/", options.BaseUrl.ToString());
+        Assert.Equal(RoutingOptions.DefaultBaseUrl, options.BaseUrl.ToString());
         Assert.Equal(TimeSpan.FromSeconds(15), options.RequestTimeout);
         Assert.Equal(3, options.MaxAttempts);
         Assert.Equal(TimeSpan.FromSeconds(1), options.RetryBaseDelay);

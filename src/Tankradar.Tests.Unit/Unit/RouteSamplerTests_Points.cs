@@ -9,7 +9,7 @@ namespace Tankradar.Tests.Unit.Unit;
 /// </summary>
 public class RouteSamplerTests_Points : BaseTest
 {
-    private static readonly RouteSearchOptions Options = new();
+    private static readonly RouteSearchOptions Options = RouteTestOptions.Relaxed();
 
     /// <summary>
     /// Prüft, dass eine kurze Route eine einzige Abfrage in der Streckenmitte ergibt.
@@ -108,6 +108,52 @@ public class RouteSamplerTests_Points : BaseTest
 
         var strict = new RouteSearchOptions { MaxQueries = 14 };
         Assert.False(RouteSampler.TryCreateQueryPoints(route, 10, strict, out _));
+    }
+
+    /// <summary>
+    /// Prüft die vorläufige Abfragegrenze der Auslieferung: Höchstens drei Abfragen; je Abstand ergibt sich die durchsuchbare Routenlänge (3 × Schritt).
+    /// </summary>
+    /// <param name="distanceKm">Der Abstand zur Route.</param>
+    /// <param name="expectedMaxKm">Die erwartete durchsuchbare Länge.</param>
+    [Theory]
+    [InlineData(1, 136.8)]
+    [InlineData(2, 131.1)]
+    [InlineData(5, 114)]
+    [InlineData(10, 85.5)]
+    public void MaxSearchLengthKm_DefaultOptions_IsThreeSteps(int distanceKm, double expectedMaxKm)
+    {
+        Assert.Equal(expectedMaxKm, RouteSampler.MaxSearchLengthKm(distanceKm, new RouteSearchOptions()), 6);
+    }
+
+    /// <summary>
+    /// Prüft, dass die durchsuchbare Länge an der Grenze genau drei Abfragen ergibt und knapp darüber abgelehnt wird.
+    /// </summary>
+    /// <param name="distanceKm">Der Abstand zur Route.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(5)]
+    [InlineData(10)]
+    public void TryCreateQueryPoints_DefaultOptions_AcceptsUpToLimitAndRejectsAbove(int distanceKm)
+    {
+        var options = new RouteSearchOptions();
+        var max = RouteSampler.MaxSearchLengthKm(distanceKm, options);
+
+        Assert.True(RouteSampler.TryCreateQueryPoints(RouteTestData.NorthFromBerlin((max - 0.5) / 111.195), distanceKm, options, out var accepted));
+        Assert.Equal(3, accepted.Count);
+        Assert.False(RouteSampler.TryCreateQueryPoints(RouteTestData.NorthFromBerlin((max + 0.5) / 111.195), distanceKm, options, out var rejected));
+        Assert.Empty(rejected);
+    }
+
+    /// <summary>
+    /// Prüft die durchsuchbare Länge bei anderen Einstellungen: Die Routenlängengrenze und ein Abstand ab dem Abfrageradius begrenzen sie.
+    /// </summary>
+    [Fact]
+    public void MaxSearchLengthKm_LengthLimitAndExcessiveDistance_AreRespected()
+    {
+        Assert.Equal(50, RouteSampler.MaxSearchLengthKm(2, new RouteSearchOptions { MaxRouteLengthKm = 50 }));
+        Assert.Equal(0, RouteSampler.MaxSearchLengthKm(25, new RouteSearchOptions()));
+        Assert.Throws<ArgumentNullException>(() => RouteSampler.MaxSearchLengthKm(2, null!));
     }
 
     /// <summary>

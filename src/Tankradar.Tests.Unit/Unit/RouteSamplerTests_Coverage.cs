@@ -37,7 +37,7 @@ public class RouteSamplerTests_Coverage : BaseTest
             _ => RouteTestData.Curved(1.2, 0.3, 160),
         };
         Assert.True(route.LengthKm <= 400, "Die Testroute überschreitet die Obergrenze.");
-        Assert.True(RouteSampler.TryCreateQueryPoints(route, distanceKm, new RouteSearchOptions(), out var queries));
+        Assert.True(RouteSampler.TryCreateQueryPoints(route, distanceKm, RouteTestOptions.Relaxed(), out var queries));
         var random = new Random(4711 + (distanceKm * 10) + shape);
         var checkedPoints = 0;
 
@@ -71,7 +71,7 @@ public class RouteSamplerTests_Coverage : BaseTest
     public void TryCreateQueryPoints_StartAndDestination_AreCovered()
     {
         var route = RouteTestData.NorthFromBerlin(0.5);
-        Assert.True(RouteSampler.TryCreateQueryPoints(route, 2, new RouteSearchOptions(), out var queries));
+        Assert.True(RouteSampler.TryCreateQueryPoints(route, 2, RouteTestOptions.Relaxed(), out var queries));
 
         foreach (var along in new[] { 0.0, route.LengthKm })
         {

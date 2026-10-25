@@ -3,7 +3,6 @@ using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services.Geocoding;
-using Tankradar.MAUI.Services.Routing;
 
 namespace Tankradar.MAUI.Resources.Texts;
 
@@ -464,6 +463,16 @@ public static class SearchTexts
     public const string RouteProgressRoute = "Route wird berechnet …";
 
     /// <summary>
+    /// Beschriftung der Schaltfläche, die eine laufende Routensuche abbricht.
+    /// </summary>
+    public const string RouteCancelButton = "Suche abbrechen";
+
+    /// <summary>
+    /// Hinweis, nachdem der Anwender eine laufende Routensuche abgebrochen hat.
+    /// </summary>
+    public const string RouteCancelled = "Die Routensuche wurde abgebrochen.";
+
+    /// <summary>
     /// Formatiert die Entfernung in der Routenliste („12,3 km ab Start“).
     /// </summary>
     /// <param name="alongKm">Die Position entlang der Route in Kilometern.</param>
@@ -495,7 +504,17 @@ public static class SearchTexts
     public static string FormatRouteSummary(string startName, string destinationName, double lengthKm, int stationCount, int distanceKm)
     {
         var stations = stationCount == 1 ? "1 Tankstelle" : $"{stationCount.ToString(German)} Tankstellen";
-        return $"Von {startName} nach {destinationName}, {lengthKm.ToString("0", German)} km, {stations} im Abstand von {distanceKm.ToString(German)} km zur Route";
+        return $"Von {startName} nach {destinationName}, {FormatRouteLength(lengthKm)}, {stations} im Abstand von {distanceKm.ToString(German)} km zur Route";
+    }
+
+    /// <summary>
+    /// Formatiert die Länge einer Route: unter 10 km mit einer Nachkommastelle („8,0 km“, „0,4 km“), sonst in ganzen Kilometern („40 km“).
+    /// </summary>
+    /// <param name="lengthKm">Die Länge in Kilometern.</param>
+    /// <returns>Der Text mit Einheit.</returns>
+    public static string FormatRouteLength(double lengthKm)
+    {
+        return lengthKm < 9.95 ? $"{lengthKm.ToString("0.0", German)} km" : $"{lengthKm.ToString("0", German)} km";
     }
 
     /// <summary>
@@ -507,7 +526,8 @@ public static class SearchTexts
     /// <returns>Der Text.</returns>
     public static string FormatRouteMapHint(string startName, string destinationName, int stationCount)
     {
-        return $"Route von {startName} nach {destinationName} eingezeichnet, {stationCount.ToString(German)} Tankstellen";
+        var stations = stationCount == 1 ? "1 Tankstelle" : $"{stationCount.ToString(German)} Tankstellen";
+        return $"Route von {startName} nach {destinationName} eingezeichnet, {stations}";
     }
 
     /// <summary>
@@ -527,13 +547,20 @@ public static class SearchTexts
     }
 
     /// <summary>
-    /// Formatiert den Hinweis, dass die Route zu lang ist.
+    /// Hinweis, wenn der Routingdienst die Strecke selbst als zu lang ablehnt.
     /// </summary>
-    /// <param name="maxKm">Die längste unterstützte Route in Kilometern.</param>
+    public const string RouteTooLongForService = "Die Route ist zu lang für den Routendienst. Bitte wähle ein näheres Ziel.";
+
+    /// <summary>
+    /// Formatiert den Hinweis, dass die Route mehr Preisabfragen bräuchte, als erlaubt sind, mit der durchsuchbaren Länge bei dem gewählten Abstand.
+    /// </summary>
+    /// <param name="limit">Die Angaben zur Grenze.</param>
     /// <returns>Der Text.</returns>
-    public static string FormatRouteTooLong(double maxKm)
+    public static string FormatRouteLimit(RouteLimit limit)
     {
-        return $"Die Route ist zu lang. Es werden Routen bis {maxKm.ToString("0", German)} km unterstützt.";
+        ArgumentNullException.ThrowIfNull(limit);
+        return $"Die Route ist {FormatRouteLength(limit.RouteLengthKm)} lang. Bei {limit.DistanceKm.ToString(German)} km Abstand zur Route kann nur bis {limit.MaxSearchLengthKm.ToString("0", German)} km Länge gesucht werden, "
+            + "weil die Preisabfragen begrenzt sind. Wähle eine kürzere Strecke oder einen kleineren Abstand.";
     }
 
     /// <summary>
@@ -564,7 +591,7 @@ public static class SearchTexts
             RoutingFailure.Unreachable => RoutingUnreachable,
             RoutingFailure.QuotaExceeded => RoutingQuotaExceeded,
             RoutingFailure.RouteNotFound => RoutingRouteNotFound,
-            RoutingFailure.RouteTooLong => FormatRouteTooLong(RouteSearchOptions.DefaultMaxRouteLengthKm),
+            RoutingFailure.RouteTooLong => RouteTooLongForService,
             RoutingFailure.Rejected => RoutingRejected,
             _ => RoutingInvalidResponse,
         };
@@ -587,7 +614,7 @@ public static class SearchTexts
             RouteSearchStatus.SamePlace => RouteSamePlace,
             RouteSearchStatus.RoutingUnavailable => RoutingUnavailable,
             RouteSearchStatus.RoutingFailed => GetRoutingMessage(result.RoutingFailure),
-            RouteSearchStatus.RouteTooLong => FormatRouteTooLong(RouteSearchOptions.DefaultMaxRouteLengthKm),
+            RouteSearchStatus.RouteTooLong => result.Limit is { } limit ? FormatRouteLimit(limit) : RouteTooLongForService,
             _ => GetFailureMessage(result.PriceFailure, hasStations: false),
         };
     }

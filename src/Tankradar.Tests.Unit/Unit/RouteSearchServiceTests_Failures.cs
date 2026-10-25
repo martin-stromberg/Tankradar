@@ -182,12 +182,47 @@ public class RouteSearchServiceTests_Failures : RouteSearchServiceTestBase
     public async Task SearchAsync_MoreQueriesThanAllowed_ReportsRouteTooLong()
     {
         Routing.Result = RoutingResult.Success(RouteTestData.NorthFromBerlin(150 / 111.195));
-        Service = new RouteSearchService(Geocoding, Routing, new RouteStationSearchService(Prices), new RouteSearchOptions { MaxQueries = 2 });
+        Service = new RouteSearchService(Geocoding, Routing, RouteTestOptions.StationSearch(Prices), new RouteSearchOptions { MaxQueries = 2 });
 
         var result = await SearchAsync();
 
         Assert.Equal(RouteSearchStatus.RouteTooLong, result.Status);
         Assert.Empty(Prices.Queries);
+    }
+
+    /// <summary>
+    /// Prüft die vorläufige Abfragegrenze der Auslieferung (drei Abfragen): Eine zu lange Route wird vor der ersten Preisabfrage mit den Angaben zur Grenze abgelehnt.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_DefaultLimit_RejectsLongRouteBeforeFirstPriceQueryWithLimitDetails()
+    {
+        Routing.Result = RoutingResult.Success(RouteTestData.NorthFromBerlin(200 / 111.195));
+        Service = new RouteSearchService(Geocoding, Routing, RouteTestOptions.StationSearch(Prices), new RouteSearchOptions());
+
+        var result = await SearchAsync();
+
+        Assert.Equal(RouteSearchStatus.RouteTooLong, result.Status);
+        Assert.Empty(Prices.Queries);
+        var limit = Assert.IsType<RouteLimit>(result.Limit);
+        Assert.Equal(2, limit.DistanceKm);
+        Assert.Equal(131.1, limit.MaxSearchLengthKm, 6);
+        Assert.Equal(200, limit.RouteLengthKm, 0);
+    }
+
+    /// <summary>
+    /// Prüft, dass eine Route an der Abfragegrenze (genau drei Abfragen) noch gesucht wird.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_DefaultLimit_RouteWithinLimit_IsSearched()
+    {
+        Routing.Result = RoutingResult.Success(RouteTestData.NorthFromBerlin(130 / 111.195));
+        Service = new RouteSearchService(Geocoding, Routing, RouteTestOptions.StationSearch(Prices), new RouteSearchOptions { MinQueryInterval = TimeSpan.Zero });
+
+        var result = await SearchAsync();
+
+        Assert.Equal(RouteSearchStatus.Success, result.Status);
+        Assert.Equal(3, Prices.Queries.Count);
+        Assert.Null(result.Limit);
     }
 
     /// <summary>

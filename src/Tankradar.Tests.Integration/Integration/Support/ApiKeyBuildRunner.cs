@@ -7,7 +7,7 @@ using System.Text;
 namespace Tankradar.Tests.Integration.Integration.Support;
 
 /// <summary>
-/// Baut ein winziges Testprojekt, das die echte Schlüsselübernahme (<c>TankerkoenigApiKey.targets</c> oder <c>RoutingApiKey.targets</c>) einbindet, und liefert Log, Binlog und den in die Assembly eingebetteten Schlüssel.
+/// Baut ein winziges Testprojekt, das die echte Schlüsselübernahme (<c>TankerkoenigApiKey.targets</c>) einbindet, und liefert Log, Binlog und den in die Assembly eingebetteten Schlüssel.
 /// Die Prozessumgebung des Builds wird vollständig kontrolliert: Die echten Variablen des Anwenders werden entfernt, es kommen ausschließlich Platzhalter zum Einsatz.
 /// </summary>
 public sealed class ApiKeyBuildRunner : IDisposable
@@ -16,8 +16,6 @@ public sealed class ApiKeyBuildRunner : IDisposable
     [
         "TANKRADAR_FUEL_PRICE_API_KEY",
         "FUEL_PRICE_API_KEY",
-        "TANKRADAR_ROUTING_API_KEY",
-        "ROUTING_API_KEY",
     ];
 
     private readonly string _directory;

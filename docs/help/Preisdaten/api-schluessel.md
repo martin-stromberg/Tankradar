@@ -57,22 +57,19 @@ Der beim Build mitgegebene Schlüssel steht als Metadatum in der ausgelieferten 
 
 ## Schlüssel des Routingdienstes (OpenRouteService)
 
-Die Routensuche (Schritt 17) braucht einen eigenen Schlüssel von <https://openrouteservice.org>. Er wird wie der Tankerkönig-Schlüssel behandelt:
+Die Routensuche (Schritt 17) braucht einen eigenen, kostenlosen Schlüssel von <https://openrouteservice.org/dev/#/signup>. **Jeder Anwender beantragt ihn selbst**; er wird nicht beim Build
+eingebunden (kein Secret, keine Umgebungsvariable, keine `routing.local.props`), denn ein eingebauter Schlüssel wäre aus der öffentlich verfügbaren App auslesbar, und alle Nutzer
+teilten sich Kontingent und Missbrauchsrisiko.
 
-- **Lokal:** Umgebungsvariable `TANKRADAR_ROUTING_API_KEY`, dann `ROUTING_API_KEY` (Name des GitHub-Secrets), dann die nicht versionierte Datei
-  `routing.local.props` im Repository-Root (fällt unter `*.local.props` der `.gitignore`):
-
-  ```xml
-  <Project>
-    <PropertyGroup>
-      <RoutingApiKey>IHR-SCHLUESSEL</RoutingApiKey>
-    </PropertyGroup>
-  </Project>
-  ```
-
-  Die Build-Aufgabe `src/Tankradar.MAUI/MSBuild/RoutingApiKey.targets` arbeitet wie die des Tankerkönig-Schlüssels (Assembly-Metadatum `RoutingApiKey`, nie im Log).
-- **Laufzeit:** sichere Ablage (Windows: Credential Locker „Tankatlas/RoutingApi“, iOS: Keychain „tankatlas.routing-api-key“); der Build-Schlüssel ist maßgeblich.
-- **Windows-Paket:** enthält den Schlüssel nie (öffentlich herunterladbar). `scripts/package-windows.ps1` und die Aktion `build-and-package` leeren die Routing-Variablen
-  und blenden `routing.local.props` aus; `scripts/validate-workflows.py` prüft das. Der iOS-Build erhält das Secret `ROUTING_API_KEY` (`TANKRADAR_ROUTING_API_KEY`).
-- **Ohne Schlüssel:** Die Routensuche meldet „Routensuche nicht verfügbar“; alle anderen Funktionen laufen weiter.
-- **Tests:** nur `TANKRADAR_ROUTING_TEST_API_KEY` im Testmodus (getrennt von der Build-Variablen), Mock `MockOpenRouteServiceServer`, nie ein echter Schlüssel.
+- **Eintragen:** **Optionen** → **Routensuche**: Schlüssel in das verdeckte Feld einfügen, **Schlüssel speichern**. Mit **Schlüssel prüfen** schickt die App eine kleine Testanfrage
+  (feste Koordinaten, keine eigenen Daten) und meldet verständlich: gültig, abgelehnt, Dienst nicht erreichbar oder Kontingent aufgebraucht.
+- **Aktivieren:** Der Schalter **Routensuche aktivieren** ist erst bedienbar, wenn ein Schlüssel gespeichert ist. Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar, und nur dann
+  gehen Aufrufe an OpenRouteService. Der Wechsel wirkt ohne Neustart. **Schlüssel entfernen** schaltet die Routensuche aus.
+- **Ablage:** sichere Ablage des Geräts (Windows: Credential Locker „Tankatlas/RoutingApi“, Schalter „Tankatlas/RoutingEnabled“; iOS: Keychain „tankatlas.routing-api-key“ und „tankatlas.routing-enabled“).
+  Der Schlüssel wird nie angezeigt, protokolliert oder in Meldungen und Adressen übernommen (er steht nur im Anfragekopf `Authorization`).
+- **Sicherung:** Schlüssel und Schalter gehören nicht zur lokalen Sicherung. Nach einer Wiederherstellung auf einem Gerät ohne Schlüssel ist die Routensuche aus; auf demselben Gerät bleibt sie unverändert.
+- **Adresse:** `https://api.heigit.org/openrouteservice/` (Directions: `v2/directions/driving-car`). Die frühere Adresse `api.openrouteservice.org` wird vom Anbieter Anfang November 2026 abgeschaltet
+  (<https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912>).
+- **CI und Windows-Paket:** Weder die Workflows noch `scripts/package-windows.ps1` kennen einen Routing-Schlüssel; das Secret `ROUTING_API_KEY` wird nicht mehr benötigt (ein vorhandenes kann gelöscht werden).
+- **Tests:** Im Testmodus belegt `TANKRADAR_ROUTING_TEST_API_KEY` die Testablage im Speicher vor (Schlüssel gesetzt, Routensuche eingeschaltet); ohne die Variable startet die App ohne Schlüssel.
+  Das Schlüsselfeld ist im Testmodus unverdeckt, damit die UI-Automation es beschreiben kann. Mock: `MockOpenRouteServiceServer`, nie ein echter Schlüssel.

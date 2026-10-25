@@ -297,4 +297,34 @@ public class MapViewModelTests_Route : MapViewModelRouteTestBase
         Assert.Empty(ViewModel.Stations);
         Assert.False(ViewModel.HasMapRoute);
     }
+
+    /// <summary>
+    /// Prüft (Abweichung 3 der Abnahme), dass nach dem Verlassen der Seite während der Suche der Fortschrittstext geleert und „Suchen“ wieder freigegeben ist,
+    /// auch wenn der abgebrochene Lauf selbst nicht mehr aufräumt.
+    /// </summary>
+    [Fact]
+    public async Task OnDisappearing_DuringRouteSearch_ClearsProgressAndReleasesSearch()
+    {
+        await PrepareRouteAsync();
+        var gate = new TaskCompletionSource();
+        RouteSearch.Gate = gate.Task;
+        RouteSearch.ProgressToReport.Add(new RouteSearchProgress(RouteSearchPhase.SearchingStations, 1, 2));
+        RouteSearch.Result = RouteSuccess("A", "B");
+
+        var search = ViewModel.SearchAsync();
+        await WaitUntilAsync(() => ViewModel.HasRouteProgress);
+        Assert.True(ViewModel.IsBusy);
+        Assert.False(ViewModel.IsNotBusy);
+
+        ViewModel.OnDisappearing();
+
+        Assert.Null(ViewModel.RouteProgressText);
+        Assert.False(ViewModel.HasRouteProgress);
+        Assert.False(ViewModel.IsBusy);
+        Assert.True(ViewModel.IsNotBusy);
+        await search;
+        Assert.Null(ViewModel.RouteProgressText);
+        Assert.False(ViewModel.IsBusy);
+        Assert.Null(ViewModel.StatusMessage);
+    }
 }

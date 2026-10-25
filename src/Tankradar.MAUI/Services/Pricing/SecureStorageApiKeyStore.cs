@@ -15,6 +15,11 @@ public sealed class SecureStorageApiKeyStore : IApiKeyStore
     /// </summary>
     public const string RoutingStorageKey = "tankatlas.routing-api-key";
 
+    /// <summary>
+    /// Speicherschlüssel des Schalters „Routensuche aktivieren“ (gerätelokal, nicht Teil der Sicherung).
+    /// </summary>
+    public const string RoutingEnabledStorageKey = "tankatlas.routing-enabled";
+
     private readonly string _storageKey;
 
     /// <summary>
@@ -36,5 +41,12 @@ public sealed class SecureStorageApiKeyStore : IApiKeyStore
     public async Task SetAsync(string apiKey)
     {
         await SecureStorage.Default.SetAsync(_storageKey, apiKey).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public Task RemoveAsync()
+    {
+        SecureStorage.Default.Remove(_storageKey);
+        return Task.CompletedTask;
     }
 }

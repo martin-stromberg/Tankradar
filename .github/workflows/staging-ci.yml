@@ -294,7 +294,6 @@ jobs:
           api-key-p8: ${{ secrets.IOS_API_KEY_P8 }}
           xcode-version: ${{ vars.IOS_XCODE_VERSION }}
           fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
-          routing-api-key: ${{ secrets.ROUTING_API_KEY }}
 
   back-merge-skip:
     needs: detect-backmerge

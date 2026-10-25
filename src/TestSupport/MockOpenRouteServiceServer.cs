@@ -7,7 +7,8 @@ namespace Tankradar.TestSupport;
 
 /// <summary>
 /// Lokaler Mock von OpenRouteService (Directions, Profil Auto) auf einer Loopback-Adresse (ausschließlich für Tests; kein produktiver Endpunkt).
-/// Beantwortet <c>POST v2/directions/driving-car</c> mit einer fest vorgegebenen oder aus Start und Ziel abgeleiteten Route als kodierter Polylinie,
+/// Die Basisadresse trägt wie die neue Adresse des Anbieters (<c>https://api.heigit.org/openrouteservice/</c>) den Pfadanteil <c>/openrouteservice/</c>.
+/// Beantwortet <c>POST {Basisadresse}v2/directions/driving-car</c> mit einer fest vorgegebenen oder aus Start und Ziel abgeleiteten Route als kodierter Polylinie,
 /// verlangt wie das Original den Schlüssel im Kopf <c>Authorization</c> und lässt sich zu Fehlerantworten und Verzögerungen anweisen.
 /// </summary>
 public sealed class MockOpenRouteServiceServer : IDisposable
@@ -16,6 +17,11 @@ public sealed class MockOpenRouteServiceServer : IDisposable
     /// Der Schlüssel, den der Mock akzeptiert.
     /// </summary>
     public const string AcceptedKey = "mock-route-key-for-tests";
+
+    /// <summary>
+    /// Der Pfad der Routenanfrage, den der Mock bedient (Pfadanteil der Basisadresse plus <c>v2/directions/driving-car</c>).
+    /// </summary>
+    public const string DirectionsPath = "/openrouteservice/v2/directions/driving-car";
 
     private readonly HttpListener _listener;
     private readonly object _gate = new();
@@ -36,7 +42,7 @@ public sealed class MockOpenRouteServiceServer : IDisposable
     public MockOpenRouteServiceServer()
     {
         _listener = LoopbackHttpListener.Start(out var port);
-        BaseUrl = new Uri($"http://127.0.0.1:{port}/");
+        BaseUrl = new Uri($"http://127.0.0.1:{port}/openrouteservice/");
         _loop = Task.Run(RunAsync);
     }
 
@@ -316,7 +322,7 @@ public sealed class MockOpenRouteServiceServer : IDisposable
     {
         var received = DateTimeOffset.UtcNow;
         var isDirections = context.Request.HttpMethod == "POST"
-            && (context.Request.Url?.AbsolutePath ?? string.Empty).EndsWith("/v2/directions/driving-car", StringComparison.Ordinal);
+            && string.Equals(context.Request.Url?.AbsolutePath, DirectionsPath, StringComparison.Ordinal);
         string requestBody;
         using (var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8))
         {

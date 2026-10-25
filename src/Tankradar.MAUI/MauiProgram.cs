@@ -17,6 +17,7 @@ using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.MAUI.Views;
+using Tankradar.TestSupport;
 
 namespace Tankradar.MAUI;
 
@@ -100,6 +101,14 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookStatisticsViewModel>();
         builder.Services.AddTransient<TankbookExportViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddSingleton<ILinkOpener>(_ => new LauncherLinkOpener(IsTestMode()));
+        builder.Services.AddTransient(provider => new RouteSearchSettingsViewModel(
+            provider.GetRequiredService<IRouteSearchAccess>(),
+            provider.GetRequiredService<IRoutingKeyChecker>(),
+            provider.GetRequiredService<IConnectionMonitor>(),
+            provider.GetRequiredService<ILinkOpener>(),
+            provider.GetRequiredService<ILogger<RouteSearchSettingsViewModel>>(),
+            maskKeyInput: !IsTestMode()));
         builder.Services.AddTransient<BackupViewModel>();
         builder.Services.AddTransient<StationDetailViewModel>();
         builder.Services.AddTransient<StationFavoritesViewModel>();
@@ -123,6 +132,11 @@ public static class MauiProgram
 #endif
 
         return builder.Build();
+    }
+
+    private static bool IsTestMode()
+    {
+        return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable));
     }
 
     private static void AddGeocodingServices(IServiceCollection services)
@@ -151,12 +165,13 @@ public static class MauiProgram
     public static void AddRoutingServices(IServiceCollection services)
     {
         services.AddSingleton(_ => RoutingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
-        services.AddSingleton(new RouteSearchOptions());
-        services.AddSingleton<IRoutingService>(provider =>
+        services.AddSingleton(_ => RouteSearchOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton<RouteQueryPacer>();
+        services.AddSingleton(provider =>
         {
             var options = provider.GetRequiredService<RoutingOptions>();
 
-            // Eigener HTTP-Client, eigene Drosselung und eigener Schlüssel: keine automatischen Weiterleitungen (der Schlüssel steht im Anfragekopf
+            // Eigener HTTP-Client und eigene Drosselung: keine automatischen Weiterleitungen (der Schlüssel steht im Anfragekopf
             // und darf nie an einen anderen Host gehen), begrenzte Antwortgröße.
             var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
             {
@@ -164,28 +179,44 @@ public static class MauiProgram
                 MaxResponseContentBufferSize = 4 * 1024 * 1024,
             };
             var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+            return new RoutingTransport(client, throttle);
+        });
+        services.AddSingleton<IRouteSearchAccess>(provider =>
+        {
+            // Schlüssel und Schalter liegen gerätelokal in der sicheren Ablage (Credential Locker bzw. Keychain), nie im Build und nie in der Sicherung.
 #if WINDOWS
-            var store = ApiKeyStoreSelector.Create(
+            return RouteSearchAccess.Create(
                 Environment.GetEnvironmentVariable,
-                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingResource));
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingResource),
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingEnabledResource),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
 #else
-            var store = ApiKeyStoreSelector.Create(
+            return RouteSearchAccess.Create(
                 Environment.GetEnvironmentVariable,
-                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingStorageKey));
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingStorageKey),
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingEnabledStorageKey),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
 #endif
-            var keyProvider = new ApiKeyProvider(
-                store,
-                () => ApiKeyProvider.ReadBuildTimeKey(ApiKeyProvider.RoutingBuildKeyMetadataName),
-                Environment.GetEnvironmentVariable,
-                provider.GetRequiredService<ILogger<ApiKeyProvider>>(),
-                RoutingOptions.ApiKeyEnvironmentVariable);
+        });
+        services.AddSingleton<IRoutingService>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
             return new OpenRouteServiceClient(
-                client,
-                keyProvider,
-                options,
+                transport.Client,
+                provider.GetRequiredService<IRouteSearchAccess>(),
+                provider.GetRequiredService<RoutingOptions>(),
                 provider.GetRequiredService<IDelay>(),
-                throttle,
+                transport.Throttle,
                 provider.GetRequiredService<ILogger<OpenRouteServiceClient>>());
+        });
+        services.AddSingleton<IRoutingKeyChecker>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
+            return new OpenRouteServiceKeyChecker(
+                transport.Client,
+                provider.GetRequiredService<RoutingOptions>(),
+                transport.Throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceKeyChecker>>());
         });
         services.AddSingleton<IRouteStationSearchService, RouteStationSearchService>();
         services.AddSingleton<IRouteSearchService, RouteSearchService>();

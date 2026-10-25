@@ -35,11 +35,9 @@ runs:
       # erwartet genau diese Namen.
       shell: pwsh
       env:
-        # Das Windows-Paket enthält bewusst nie den Tankerkönig- oder den OpenRouteService-Schlüssel (öffentlich herunterladbar): Quellen explizit leeren.
+        # Das Windows-Paket enthält bewusst nie den Tankerkönig-Schlüssel (öffentlich herunterladbar): Quellen explizit leeren.
         TANKRADAR_FUEL_PRICE_API_KEY: ''
         FUEL_PRICE_API_KEY: ''
-        TANKRADAR_ROUTING_API_KEY: ''
-        ROUTING_API_KEY: ''
       run: >
         ./scripts/package-windows.ps1
         -Version '${{ inputs.release-version }}'

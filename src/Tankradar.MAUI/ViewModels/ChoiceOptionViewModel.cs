@@ -32,6 +32,11 @@ public interface IChoiceOption
     /// Zugänglichkeitshinweis zum Auswahlzustand („Ausgewählt“ oder leer).
     /// </summary>
     string SelectionHint { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Option bedienbar ist (z. B. nicht während einer laufenden Suche).
+    /// </summary>
+    bool IsEnabled { get; }
 }
 
 /// <summary>

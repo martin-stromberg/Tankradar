@@ -150,14 +150,17 @@ public abstract class SearchMockServerTestBase : IDisposable
     /// <param name="routingUrl">Die Adresse des Routingdienstes oder <see langword="null"/> für den Mock-Server.</param>
     /// <param name="key">Der Schlüssel des Routingdienstes.</param>
     /// <param name="requestTimeout">Das Zeitlimit je Anfrage an den Routingdienst oder <see langword="null"/> für 3 Sekunden.</param>
+    /// <param name="searchOptions">Die Einstellungen der Routensuche oder <see langword="null"/> für bis zu 15 Abfragen ohne Mindestabstand (die Grenzen der Auslieferung prüfen eigene Tests).</param>
     /// <returns>Der Dienst.</returns>
     protected RouteSearchService CreateRouteSearch(
         IFuelPriceService prices,
         IGeocodingService? geocoding = null,
         Uri? routingUrl = null,
         string? key = MockOpenRouteServiceServer.AcceptedKey,
-        TimeSpan? requestTimeout = null)
+        TimeSpan? requestTimeout = null,
+        RouteSearchOptions? searchOptions = null)
     {
+        searchOptions ??= new RouteSearchOptions { MaxQueries = 15, MinQueryInterval = TimeSpan.Zero };
         var options = new RoutingOptions
         {
             BaseUrl = routingUrl ?? Routing.BaseUrl,
@@ -174,7 +177,8 @@ public abstract class SearchMockServerTestBase : IDisposable
             delay,
             new RequestThrottle(options.MinRequestInterval, delay, TimeProvider.System),
             new RecordingLogger<OpenRouteServiceClient>(_logSink));
-        return new RouteSearchService(geocoding ?? CreateGeocoding(), client, new RouteStationSearchService(prices), new RouteSearchOptions());
+        var pacer = new RouteQueryPacer(searchOptions, delay, TimeProvider.System);
+        return new RouteSearchService(geocoding ?? CreateGeocoding(), client, new RouteStationSearchService(prices, pacer), searchOptions);
     }
 
     /// <summary>
@@ -194,10 +198,23 @@ public abstract class SearchMockServerTestBase : IDisposable
             geocoding ?? CreateGeocoding(),
             service,
             routeSearch ?? CreateRouteSearch(service, geocoding),
+            CreateRouteAccess(),
             Connection,
             Clock,
             new NullStationNavigator(),
             new RecordingLogger<MapViewModel>(_logSink));
+    }
+
+    /// <summary>
+    /// Erstellt den Zugang zur Routensuche im Speicher mit Platzhalter-Schlüssel und eingeschalteter Routensuche.
+    /// </summary>
+    /// <returns>Der Zugang.</returns>
+    protected RouteSearchAccess CreateRouteAccess()
+    {
+        var access = new RouteSearchAccess(new InMemoryApiKeyStore(), new InMemoryApiKeyStore(), new RecordingLogger<RouteSearchAccess>(_logSink));
+        access.SaveKeyAsync(MockOpenRouteServiceServer.AcceptedKey).GetAwaiter().GetResult();
+        access.SetEnabledAsync(true).GetAwaiter().GetResult();
+        return access;
     }
 
     /// <summary>

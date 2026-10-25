@@ -18,6 +18,11 @@ public sealed class CredentialLockerApiKeyStore : IApiKeyStore
     /// </summary>
     public const string RoutingResource = "Tankatlas/RoutingApi";
 
+    /// <summary>
+    /// Ressourcenname des Schalters „Routensuche aktivieren“ (gerätelokal, nicht Teil der Sicherung).
+    /// </summary>
+    public const string RoutingEnabledResource = "Tankatlas/RoutingEnabled";
+
     private const string UserName = "api-key";
     private const int ElementNotFound = unchecked((int)0x80070490);
 
@@ -54,6 +59,22 @@ public sealed class CredentialLockerApiKeyStore : IApiKeyStore
     {
         var vault = new PasswordVault();
         vault.Add(new PasswordCredential(_resource, UserName, apiKey));
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task RemoveAsync()
+    {
+        try
+        {
+            var vault = new PasswordVault();
+            vault.Remove(vault.Retrieve(_resource, UserName));
+        }
+        catch (Exception ex) when (ex.HResult == ElementNotFound)
+        {
+            // Ein nicht vorhandener Eintrag ist beim Entfernen kein Fehler.
+        }
+
         return Task.CompletedTask;
     }
 }

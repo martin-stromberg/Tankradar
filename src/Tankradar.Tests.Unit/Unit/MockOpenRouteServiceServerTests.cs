@@ -136,8 +136,22 @@ public class MockOpenRouteServiceServerTests : BaseTest
         Assert.Equal(2, _server.RequestTimes.Count);
         Assert.Equal(Body, _server.LastRequestBody);
         Assert.Equal(MockOpenRouteServiceServer.AcceptedKey, _server.LastAuthorization);
-        Assert.Equal("/v2/directions/driving-car", _server.LastRawRequest);
+        Assert.Equal("/openrouteservice/v2/directions/driving-car", _server.LastRawRequest);
+        Assert.Equal(MockOpenRouteServiceServer.DirectionsPath, _server.LastRawRequest);
+        Assert.EndsWith("/openrouteservice/", _server.BaseUrl.AbsolutePath, StringComparison.Ordinal);
         Assert.Equal("Test/1.0", _server.LastUserAgent);
+    }
+
+    /// <summary>
+    /// Prüft, dass die frühere Adresse ohne den Pfadanteil <c>/openrouteservice/</c> (Pfad der abgeschalteten Adresse) nicht bedient wird.
+    /// </summary>
+    [Fact]
+    public async Task Post_PathWithoutProviderPrefix_Returns404AndIsNotCounted()
+    {
+        using var response = await PostAsync(path: "/v2/directions/driving-car");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, _server.Requests);
     }
 
     /// <summary>

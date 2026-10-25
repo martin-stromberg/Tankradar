@@ -9,9 +9,10 @@ namespace Tankradar.MAUI.Services.Routing;
 public sealed class RoutingOptions
 {
     /// <summary>
-    /// Produktive Basisadresse von OpenRouteService.
+    /// Produktive Basisadresse von OpenRouteService (Directions unter <c>v2/directions/driving-car</c>). Die frühere Adresse <c>api.openrouteservice.org</c>
+    /// wird vom Anbieter Anfang November 2026 abgeschaltet (https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912).
     /// </summary>
-    public const string DefaultBaseUrl = "https://api.openrouteservice.org/";
+    public const string DefaultBaseUrl = "https://api.heigit.org/openrouteservice/";
 
     /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus den Endpunkt überschreibt (z. B. auf einen Mock-Server).
@@ -19,7 +20,7 @@ public sealed class RoutingOptions
     public const string BaseUrlEnvironmentVariable = TestDataPaths.RoutingUrlEnvironmentVariable;
 
     /// <summary>
-    /// Name der Umgebungsvariable, die im Testmodus einen API-Schlüssel vorgibt (wird nie gespeichert).
+    /// Name der Umgebungsvariable, die im Testmodus einen API-Schlüssel vorgibt (liegt nur im Arbeitsspeicher der Testablage und schaltet die Routensuche ein).
     /// </summary>
     public const string ApiKeyEnvironmentVariable = TestDataPaths.RoutingTestApiKeyEnvironmentVariable;
 

@@ -41,6 +41,11 @@ public static class TestDataPaths
     public const string RoutingTestApiKeyEnvironmentVariable = "TANKRADAR_ROUTING_TEST_API_KEY";
 
     /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus den Mindestabstand zwischen zwei Preisabfragen einer Routensuche in Millisekunden vorgibt (ohne Angabe: 0).
+    /// </summary>
+    public const string RouteQueryIntervalEnvironmentVariable = "TANKRADAR_ROUTE_QUERY_INTERVAL_MS";
+
+    /// <summary>
     /// Name der Umgebungsvariable, die im Testmodus einen festen Standort im Format <c>breite,länge</c> (invariante Kultur) vorgibt.
     /// </summary>
     public const string TestLocationEnvironmentVariable = "TANKATLAS_TEST_LOCATION";

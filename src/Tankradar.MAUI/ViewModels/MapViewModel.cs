@@ -59,6 +59,9 @@ public partial class MapViewModel : BaseViewModel
     private string _addressText = string.Empty;
     private string? _resolvedPlace;
     private readonly List<ChoiceOptionViewModel<SearchMode>> _modeOptions;
+    private IReadOnlyList<ChoiceOptionViewModel<SearchMode>> _visibleModeOptions;
+    private bool _routeSearchEnabled;
+    private SynchronizationContext? _routeAccessContext;
     private readonly List<RadiusOptionViewModel> _radiusOptions;
     private IReadOnlyList<StationListItem> _allStations = NoStations;
     private int _visibleCount = PageSize;
@@ -76,6 +79,7 @@ public partial class MapViewModel : BaseViewModel
     /// <param name="geocodingService">Dienst zur Umwandlung einer Adresse in eine Position.</param>
     /// <param name="priceService">Preisdienst für die Umkreissuche.</param>
     /// <param name="routeSearchService">Dienst für die Suche entlang einer Route.</param>
+    /// <param name="routeAccess">Zugang zur Routensuche: nur bei aktivierter Routensuche (Schlüssel gespeichert und Schalter an) ist die Suchart „Route“ wählbar.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis).</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
     /// <param name="navigator">Die Navigation zur Detailansicht einer Tankstelle.</param>
@@ -86,6 +90,7 @@ public partial class MapViewModel : BaseViewModel
         IGeocodingService geocodingService,
         IFuelPriceService priceService,
         IRouteSearchService routeSearchService,
+        IRouteSearchAccess routeAccess,
         IConnectionMonitor connection,
         TimeProvider timeProvider,
         IStationNavigator navigator,
@@ -96,6 +101,7 @@ public partial class MapViewModel : BaseViewModel
         _geocodingService = geocodingService;
         _priceService = priceService;
         _routeSearchService = routeSearchService;
+        _routeAccess = routeAccess;
         _connection = connection;
         _timeProvider = timeProvider;
         _navigator = navigator;
@@ -115,7 +121,7 @@ public partial class MapViewModel : BaseViewModel
             _modeOptions.Add(new ChoiceOptionViewModel<SearchMode>(value, SearchTexts.GetModeLabel(value), OnModeSelected));
         }
 
-        ModeOptions = _modeOptions;
+        _visibleModeOptions = _modeOptions.Where(option => option.Value != SearchMode.Route).ToList();
         SyncModeSelection();
         ClearAddressCommand = new Command(ClearAddress);
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
@@ -137,15 +143,27 @@ public partial class MapViewModel : BaseViewModel
         OpenStationCommand = new Command<StationListItem>(OpenStation);
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
+        CancelRouteSearchCommand = new Command(CancelRouteSearch);
         LastSearchTask = Task.CompletedTask;
         LastSettingsTask = Task.CompletedTask;
+        LastRouteAccessTask = Task.CompletedTask;
         _isOffline = !_connection.IsOnline;
+        PropertyChanged += OnOwnPropertyChanged;
     }
 
     /// <summary>
-    /// Die wählbaren Sucharten („Aktueller Standort“, „Adresse, Ort oder PLZ“).
+    /// Die wählbaren Sucharten („Aktueller Standort“, „Adresse, Ort oder PLZ“ und – nur bei aktivierter Routensuche – „Route“).
+    /// Die Liste wird ersetzt, wenn die Routensuche in den Optionen ein- oder ausgeschaltet wird.
     /// </summary>
-    public IReadOnlyList<ChoiceOptionViewModel<SearchMode>> ModeOptions { get; }
+    public IReadOnlyList<ChoiceOptionViewModel<SearchMode>> ModeOptions
+    {
+        get { return _visibleModeOptions; }
+    }
+
+    /// <summary>
+    /// Der zuletzt gestartete Abgleich mit dem Zustand der Routensuche (für Tests und Abwarten).
+    /// </summary>
+    public Task LastRouteAccessTask { get; private set; }
 
     /// <summary>
     /// Gibt an, ob rund um eine eingegebene Adresse gesucht wird (Eingabefeld und Quellenangabe sichtbar).
@@ -463,11 +481,14 @@ public partial class MapViewModel : BaseViewModel
         if (!_subscribed)
         {
             _connection.ConnectionChanged += OnConnectionChanged;
+            _routeAccessContext = SynchronizationContext.Current;
+            _routeAccess.Changed += OnRouteAccessChanged;
             _subscribed = true;
         }
 
         UpdateOfflineState();
         LastSettingsTask = LoadSettingsAsync();
+        LastRouteAccessTask = RefreshRouteAvailabilityAsync();
     }
 
     /// <summary>
@@ -478,10 +499,13 @@ public partial class MapViewModel : BaseViewModel
         if (_subscribed)
         {
             _connection.ConnectionChanged -= OnConnectionChanged;
+            _routeAccess.Changed -= OnRouteAccessChanged;
             _subscribed = false;
         }
 
+        // Der abgebrochene Lauf räumt nicht mehr selbst auf (er ist nicht mehr „aktuell“): Fortschritt leeren und „Suchen“ freigeben.
         CancelSearch();
+        RouteProgressText = null;
         IsBusy = false;
     }
 
@@ -723,19 +747,27 @@ public partial class MapViewModel : BaseViewModel
 
     private void OnModeSelected(ChoiceOptionViewModel<SearchMode> selected)
     {
-        if (_searchMode == selected.Value)
+        ChangeMode(selected.Value);
+    }
+
+    private void ChangeMode(SearchMode mode)
+    {
+        if (_searchMode == mode)
         {
+            SyncModeSelection();
             return;
         }
 
         CancelSearch();
         IsBusy = false;
-        _searchMode = selected.Value;
+        _searchMode = mode;
         SyncModeSelection();
         OnPropertyChanged(nameof(IsAddressMode));
         OnPropertyChanged(nameof(IsRouteMode));
         OnPropertyChanged(nameof(IsRadiusVisible));
         OnPropertyChanged(nameof(EmptyStateText));
+        OnPropertyChanged(nameof(IsRouteSearching));
+        OnPropertyChanged(nameof(RouteInputsEnabled));
         ClearResult();
         StatusMessage = null;
     }
@@ -811,6 +843,8 @@ public partial class MapViewModel : BaseViewModel
             return;
         }
 
+        // Der abgebrochene Lauf ist nicht mehr „aktuell“ und räumt seinen Fortschrittstext nicht mehr weg.
+        RouteProgressText = null;
         running.Cancel();
         running.Dispose();
     }

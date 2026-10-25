@@ -36,6 +36,22 @@ public class MauiProgramTests_RoutingServices : BaseTest
         Assert.IsType<OpenRouteServiceClient>(provider.GetRequiredService<IRoutingService>());
         Assert.IsType<RouteStationSearchService>(provider.GetRequiredService<IRouteStationSearchService>());
         Assert.IsType<RouteSearchService>(provider.GetRequiredService<IRouteSearchService>());
+        Assert.IsType<RouteSearchAccess>(provider.GetRequiredService<IRouteSearchAccess>());
+        Assert.IsType<OpenRouteServiceKeyChecker>(provider.GetRequiredService<IRoutingKeyChecker>());
+        Assert.Equal(RouteSearchOptions.DefaultMaxQueries, provider.GetRequiredService<RouteSearchOptions>().MaxQueries);
+    }
+
+    /// <summary>
+    /// Prüft, dass Routenberechnung und Schlüsselprüfung dieselbe Drosselung nutzen und der Routingdienst den Zugang (nicht einen Build-Schlüssel) als Schlüsselquelle erhält.
+    /// </summary>
+    [Fact]
+    public void AddRoutingServices_SharesTransportAndAccess()
+    {
+        using var provider = BuildProvider();
+
+        Assert.Same(provider.GetRequiredService<RoutingTransport>(), provider.GetRequiredService<RoutingTransport>());
+        Assert.Same(provider.GetRequiredService<IRouteSearchAccess>(), provider.GetRequiredService<IRouteSearchAccess>());
+        Assert.Same(provider.GetRequiredService<RouteQueryPacer>(), provider.GetRequiredService<RouteQueryPacer>());
     }
 
     /// <summary>

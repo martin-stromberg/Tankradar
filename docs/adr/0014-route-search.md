@@ -2,7 +2,7 @@
 
 ## Status
 
-Angenommen (2026-10-20)
+Angenommen (2026-10-20); Änderungen nach Korrekturrunde 1 (2026-10-20/25): eigener Schlüssel je Anwender, neue Adresse, vorläufige Abfragegrenze
 
 ## Kontext
 
@@ -29,35 +29,40 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
   Wegen s ≤ Schritt ist s/2/0,95 + d ≤ 25; der Radius ist also zulässig und überdeckt die Tankstelle. Der Faktor 0,95 fängt Rundungs- und
   Projektionsfehler ab. Ein Test (`RouteSamplerTests_Coverage`) belegt das mit Zufallspunkten für alle Stufen, gerade und gekrümmte Routen
   und die Enden der Route.
-- Rechenbeispiele: d = 2 km, Schritt 43,7 km; 100 km ergeben 3 Abfragen (s = 33,3 km, R = 19 km), 400 km ergeben 10 Abfragen.
-  d = 10 km, Schritt 28,5 km; 400 km ergeben 15 Abfragen (s = 26,7 km, R = 24 km).
+- Rechenbeispiele (ohne Abfragegrenze): d = 2 km, Schritt 43,7 km; 100 km ergeben 3 Abfragen (s = 33,3 km, R = 19 km). Mit der vorläufigen Grenze von 3 Abfragen sind Routen
+  bis 3 × Schritt durchsuchbar: 136,8 km (d = 1), 131,1 km (d = 2), 114 km (d = 5), 85,5 km (d = 10).
 - Die Auswahl filtert anschließend exakt: Eine Tankstelle gehört zur Route, wenn ihr Abstand zur Streckenlinie ≤ d ist (lokale Projektion
   in Kilometer, Fußpunkt auf der Teilstrecke, Haversine zum Fußpunkt). Dubletten (Station-ID) entfallen; sortiert wird nach der Position
-  entlang der Route, bei Gleichstand nach Kennung. Bei Schleifen gilt die kleinere Streckenposition.
+  entlang der Route, bei Gleichstand nach Kennung. Bei Schleifen gewinnt das nächstgelegene Teilstück; die kleinere Streckenposition zählt nur bei Gleichstand (1e-9).
 
 ### Obergrenze, Takt und Nutzungsbedingungen von Tankerkönig
 
-- Höchstens **15 Abfragen** und **400 km** Routenlänge je Suche (`RouteSearchOptions`); bei Überschreitung bricht die Suche mit einer
-  Meldung ab, es wird nicht still gekürzt. Bei d = 10 km ergeben 400 km genau 15 Abfragen.
-- Die Abfragen laufen **strikt nacheinander** mit dem vorhandenen Mindestabstand von 1 s (`RequestThrottle`, nicht verkürzbar), ohne
-  Parallelität, ohne Hintergrundabfragen und ohne automatische Wiederholung der Gesamtsuche. Identische Abfragepunkte sind deterministisch
-  und werden vom Such-Cache (5 Minuten) bedient. Eine Suche dauert damit höchstens rund 15 s zuzüglich Routing.
-- Meldet eine Abfrage einen Fehler (auch Rückfall auf den Cache mit Fehlergrund), bricht die Suche ab; Teilergebnisse würden Lücken
-  entlang der Route verschweigen.
-- Nutzungsbedingungen: Beim Schreiben dieses ADR (2026-10-20) war die Seite der API (`https://creativecommons.tankerkoenig.de`) nicht
-  abrufbar (HTTP 502), `https://www.tankerkoenig.de` nennt nur die Lizenz CC BY 4.0 und verweist auf die API-Seite. Die Bemessung folgt
-  deshalb den bereits dokumentierten Regeln des Projekts (Mindestabstand 1 s, Radius ≤ 25 km, kein Hintergrundabruf, Cache 5 Minuten;
-  siehe `docs/help/Preisdaten/beschreibung.md`) und ist bewusst konservativ. **Zu prüfen bleibt**, ob die aktuellen Bedingungen eine
-  strengere Grenze nennen; die Konstanten stehen zentral in `RouteSearchOptions` und `PriceApiOptions` und werden nur dort angepasst.
+- **Wortlaut der Nutzungsbedingungen** (abgerufen 2026-10-20 von `https://creativecommons.tankerkoenig.de`, Schreibfehler im Original): Die Umkreissuche ist „auf einen radius von 25km und die
+  Abfragefrequenz auf einen requet/Minute beschränkt“. Unter „API-Requests“: „Apps, Websites und andere Systeme: Requests on Demand – auf Useraktion – durchführen“; „Regelmäßige, nicht explizit
+  vom User initiierte Requests sind zu vermeiden“; zu Massendaten: „Die API ist dazu allerdings nicht geeignet und Versuche, das durchzuführen werden geblockt (und API-Keys deaktiviert).“
+- **Abweichung 1 (vorläufig):** Die Routensuche läuft ausschließlich auf Nutzeraktion, braucht aber mehrere Umkreisabfragen. Bis zur Klärung mit Tankerkönig (Entscheidung des Anwenders vom
+  2026-10-20) gilt: **höchstens 3 Umkreisabfragen je Routensuche** mit **mindestens 10 s Abstand** (`RouteSearchOptions.DefaultMaxQueries`, `DefaultMinQueryInterval`; nur dort anzupassen). Routen, die mehr
+  Abfragen bräuchten, werden **vor der ersten Preisabfrage** mit einem Hinweis abgelehnt, der die bei gewähltem Abstand durchsuchbare Länge nennt (`RouteSearchResult.Limit`); es wird nicht still gekürzt.
+  Die frühere Grenze (15 Abfragen, 400 km, 1 s) entfällt. Nach der Antwort von Tankerkönig wird die Grenze angepasst und hier mit Quelle festgehalten; bis dahin trägt der Auftraggeber das Restrisiko,
+  dass die Minutengrenze strenger auszulegen ist.
+- **Takt:** Die Abfragen laufen **strikt nacheinander**, ohne Parallelität, ohne Hintergrundabfragen und ohne automatische Wiederholung der Gesamtsuche. `RouteQueryPacer` erzwingt den Mindestabstand
+  zwischen zwei Abfragen, die den Preisdienst tatsächlich erreichen (Zeitpunkt nach Abschluss der Abfrage, monotone Uhr), auch **über mehrere Routensuchen hinweg**; aus dem Cache bediente Abfragen
+  (5 Minuten) warten nicht. Die Wartezeit ist abbrechbar; die Fortschrittsanzeige nennt schon währenddessen die anstehende Abfrage („Tankstellen werden gesucht (2 von 3)“), und **Suche abbrechen**
+  beendet die Suche. Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung (`RequestThrottle`, 1 s, nicht verkürzbar) wie die normale Suche; die Routensuche umgeht sie
+  nicht, sie wartet nur länger. Eine Suche dauert damit höchstens rund 20 s zuzüglich Routing.
+- Meldet eine Abfrage einen Fehler (auch Rückfall auf den Cache mit Fehlergrund), bricht die Suche ab; Teilergebnisse würden Lücken entlang der Route verschweigen.
+- Altbestand (nicht Teil dieser Entscheidung): Auch Umkreissuche und Favoritenpreise können mehr als eine Anfrage pro Minute auslösen; das ist bei der Klärung mit Tankerkönig mitzubedenken.
 
 ### Aufhebung des Ausschlusses kombinierter Abfragen
 
 Der Ausschluss im Projektplan galt größeren Radien um einen Punkt. Die Radiussuche bleibt **eine** Abfrage (Radius ≤ 25 km). Eine Strecke
-lässt sich dagegen fachlich nicht mit einer Abfrage abdecken; die Routensuche ist durch Obergrenze (15), Drosselung (1 s), Cache und die
+lässt sich dagegen fachlich nicht mit einer Abfrage abdecken; die Routensuche ist durch Obergrenze (3), Mindestabstand (10 s), Cache und die
 Beschränkung auf ausdrücklich ausgelöste Suchen begrenzt.
 
 ### Routing-Dienst
 
+- Basisadresse: `https://api.heigit.org/openrouteservice/` (Quelle: Ankündigung des Anbieters, https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912;
+  die frühere Adresse `api.openrouteservice.org` wird Anfang November 2026 abgeschaltet). Der Mock-Server bildet den Pfadanteil `/openrouteservice/` nach.
 - `POST {BaseUrl}v2/directions/driving-car` mit `coordinates` (Länge, Breite) und `instructions=false`; der Schlüssel steht im Kopf
   `Authorization`, nie in der Adresse. Ausgewertet werden `routes[0].geometry` (kodierte Polylinie, Genauigkeit 5) und nur diese; die Länge
   folgt aus den Punkten. Dekodierung und Geometrie sind selbst implementiert (kein Paket, keine Reflexion).
@@ -69,28 +74,37 @@ Beschränkung auf ausdrücklich ausgelöste Suchen begrenzt.
   die Suche „selber Ort“ ohne Routing-Aufruf.
 - Quellenangabe in der Oberfläche: „Routen: OpenRouteService, Geodaten © OpenStreetMap-Mitwirkende“.
 
-### Schlüssel `ROUTING_API_KEY`
+### Schlüssel des Anwenders (statt Build-Einbindung)
 
-- Wie der Tankerkönig-Schlüssel: Build-Einbindung über `MSBuild/RoutingApiKey.targets` (Quellen nacheinander `TANKRADAR_ROUTING_API_KEY`,
-  `ROUTING_API_KEY`, nicht versionierte `routing.local.props` mit Element `RoutingApiKey`; Assembly-Metadatum `RoutingApiKey`; Log nur
-  „vorhanden: ja/nein“), zur Laufzeit Credential Locker (`Tankatlas/RoutingApi`) bzw. Keychain (`tankatlas.routing-api-key`). Im Testmodus
-  gilt nur `TANKRADAR_ROUTING_TEST_API_KEY` (getrennt von der Build-Variablen), Ablage im Speicher.
-- Das **Windows-Paket enthält den Schlüssel nie** (öffentlich herunterladbar): `package-windows.ps1` und die Aktion `build-and-package`
-  leeren die Routing-Variablen und blenden die lokale Datei aus; die Workflow-Prüfung erzwingt das. iOS-Builds betten ihn aus dem Secret ein.
-- Fehlt der Schlüssel, meldet die Routensuche „nicht verfügbar“ (`RouteSearchStatus.RoutingUnavailable`) ohne jeden externen Aufruf;
-  die übrige App bleibt nutzbar.
+- Die App ist öffentlich verfügbar: Ein eingebauter Schlüssel wäre auslesbar, und alle Nutzer teilten sich Kontingent und Missbrauchsrisiko des Projektkontos (Entscheidung des Anwenders vom 2026-10-20).
+  Daher gibt es **keine Build-Einbindung** mehr: `RoutingApiKey.targets`, `routing.local.props`, die Variablen `TANKRADAR_ROUTING_API_KEY`/`ROUTING_API_KEY`, das Secret und die Sonderbehandlung in
+  `package-windows.ps1`, `build-and-package` und `validate-workflows.py` sind entfernt. Der Tankerkönig-Schlüssel ist unverändert.
+- Jeder Anwender beantragt einen eigenen Schlüssel (https://openrouteservice.org/dev/#/signup) und trägt ihn in den **Optionen** → **Routensuche** ein: verdecktes Feld, **Schlüssel speichern**,
+  **Schlüssel prüfen** (eine einzelne Testanfrage `POST v2/directions/driving-car` mit festen Koordinaten, ohne Wiederholung; Rückmeldung gültig / abgelehnt / nicht erreichbar / Kontingent), **Schlüssel entfernen**
+  und der Schalter **Routensuche aktivieren**, der erst mit gespeichertem Schlüssel bedienbar ist.
+- Ablage: Credential Locker (`Tankatlas/RoutingApi`, Schalter `Tankatlas/RoutingEnabled`) bzw. Keychain (`tankatlas.routing-api-key`, `tankatlas.routing-enabled`) über die vorhandene Abstraktion
+  `IApiKeyStore` (neu: `RemoveAsync`). Der Schlüssel steht nur im Kopf `Authorization`, wird nie angezeigt, protokolliert oder in Meldungen/Adressen übernommen; das Eingabefeld wird nach dem Speichern und
+  beim Verlassen der Seite geleert.
+- **Aktivierung:** Die Routensuche ist aktiv, wenn der Schalter an **und** ein Schlüssel gespeichert ist (`IRouteSearchAccess.IsEnabledAsync`). Nur dann ist `SearchMode.Route` in der Kartensuche sichtbar,
+  und nur dann liefert der Zugang dem Routingdienst einen Schlüssel – ohne Aktivierung erfolgt kein Aufruf an OpenRouteService. Das Entfernen des Schlüssels schaltet die Routensuche aus. Ein Wechsel
+  wirkt ohne Neustart (Ereignis `Changed` und Neulesen beim Erscheinen der Seite); war „Route“ gewählt, geht die Karte zurück auf den Standardmodus, eine laufende Suche wird abgebrochen.
+- **Sicherung (Schritt 15):** Schlüssel und Schalter liegen nicht in der Datenbank und sind kein Teil der Sicherung (Integrationstest `BackupServiceTests_RouteKey`). Eine Wiederherstellung berührt sie nicht; auf einem
+  Gerät ohne Schlüssel ist die Routensuche danach aus. Es gibt keine Migration.
+- Testmodus: `TANKRADAR_ROUTING_TEST_API_KEY` belegt die In-Memory-Ablage mit Schlüssel und eingeschaltetem Schalter vor (ohne die Variable startet die App ohne Schlüssel); das Schlüsselfeld ist im Testmodus
+  unverdeckt, weil ein Passwortfeld per UI-Automation nicht beschreibbar ist. Im Testmodus ohne `TANKRADAR_ROUTING_URL` meldet die App „nicht verfügbar“ und ruft nichts auf.
+- Kein Aufruf ohne Schlüssel: Fehlt der Schlüssel, meldet die Routensuche „nicht verfügbar“ (`RouteSearchStatus.RoutingUnavailable`); die übrige App bleibt nutzbar.
 
 ### Datenschutz
 
 Start-/Zieltexte, Positionen und Route leben nur im Arbeitsspeicher des `MapViewModel`; es gibt keine Tabelle, Einstellung, Datei, Sicherung
 oder Protokollzeile dazu (Statuswerte und Zählungen ausgenommen). Die Tankerkönig-Abfragen speichern wie bisher Stationen und Preise
-(öffentliche Daten); durch bis zu 15 Abfragen kann der Bestand bekannter Stationen auch Stationen außerhalb des Bandes enthalten. Das ist
+(öffentliche Daten); durch bis zu 3 Abfragen kann der Bestand bekannter Stationen auch Stationen außerhalb des Bandes enthalten. Das ist
 akzeptiert (wie bei Radius- und Adresssuche). Tests belegen, dass keine Routen- oder Adressdaten gespeichert oder protokolliert werden.
 
 ### Darstellung
 
 Das Ergebnis nutzt Liste, Karte, Filter, Preise mit Alter, Hinweise, Preisniveau-Farben und Sortierungen. „Entfernung“ ist die Position
-entlang der Route („12,3 km ab Start“), zusätzlich „0,8 km abseits der Route“. Die Karte zeichnet die vereinfachte Linie (Douglas-Peucker,
+entlang der Route („12,3 km ab Start“), zusätzlich „0,8 km abseits der Route“ (auch in der Detailansicht). Zusammenfassung und Kartenhinweis beschreiben die Anfrage (Abstand, Startart und Orte zum Zeitpunkt des Suchstarts); Chips und Eingaben sind während der Suche gesperrt. Routenlängen unter 10 km werden mit einer Nachkommastelle angegeben. Die Karte zeichnet die vereinfachte Linie (Douglas-Peucker,
 höchstens 1500 Punkte, beim Zeichnen zusätzlich nach Zoomstufe zusammengefasst und auf den Ausschnitt zugeschnitten) unter den Markern,
 markiert Start (Ursprungsmarkierung) und Ziel und passt den Ausschnitt an die Begrenzungsbox an. Die Schaltfläche „Weitere anzeigen“ heißt
 jetzt „Weitere anzeigen (N übrig)“, damit die Sprachausgabe „weitere“ nicht doppelt liest.
@@ -98,5 +112,6 @@ jetzt „Weitere anzeigen (N übrig)“, damit die Sprachausgabe „weitere“ n
 ## Folgen
 
 - Neue Dienste unter `Services/Routing/`, Presenter-Logik in `MapViewModel.Route.cs`.
-- Eine Routensuche belastet Tankerkönig mit bis zu 15 Abfragen; die Konstanten sind zentral und prüfbar.
+- Eine Routensuche belastet Tankerkönig mit höchstens 3 Abfragen im Abstand von mindestens 10 s; die Konstanten sind zentral und prüfbar. Die Grenze ist vorläufig bis zur Klärung mit Tankerkönig.
+- Der Anwender braucht einen eigenen OpenRouteService-Schlüssel; ohne ihn bleibt die Suchart „Route“ unsichtbar.
 - Die Aufhebung des Ausschlusses betrifft nur die Routensuche.

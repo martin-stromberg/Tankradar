@@ -19,11 +19,13 @@ public class MapViewModelTests_Address : MapViewModelTestBase
     }
 
     /// <summary>
-    /// Prüft, dass die Suche zunächst am aktuellen Standort erfolgt und alle Sucharten (Standort, Adresse, Route) angeboten werden.
+    /// Prüft, dass die Suche zunächst am aktuellen Standort erfolgt und alle Sucharten (Standort, Adresse und – bei aktivierter Routensuche – Route) angeboten werden.
     /// </summary>
     [Fact]
-    public void Default_IsCurrentLocationMode()
+    public async Task Default_IsCurrentLocationMode()
     {
+        await AppearAsync();
+
         Assert.False(ViewModel.IsAddressMode);
         Assert.Equal([SearchMode.CurrentLocation, SearchMode.Address, SearchMode.Route], ViewModel.ModeOptions.Select(option => option.Value));
         Assert.Equal(SearchTexts.ModeCurrentLocation, ViewModel.ModeOptions[0].Label);

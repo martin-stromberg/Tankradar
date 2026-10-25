@@ -21,6 +21,7 @@ public partial class MapViewModel
     private const int MapRouteMaxPoints = 1500;
 
     private readonly IRouteSearchService _routeSearchService;
+    private readonly IRouteSearchAccess _routeAccess;
     private readonly List<ChoiceOptionViewModel<RouteStartKind>> _routeStartOptions = [];
     private readonly List<RadiusOptionViewModel> _routeDistanceOptions = [];
     private RouteStartKind _routeStartKind = RouteStartKind.CurrentLocation;
@@ -31,6 +32,7 @@ public partial class MapViewModel
     private MapRoute? _mapRoute;
     private string? _routeSummary;
     private string? _routeProgressText;
+    private RouteSearchSnapshot? _routeSnapshot;
 
     /// <summary>
     /// Gibt an, ob nach einer Route gesucht wird (Start, Ziel und Abstand sichtbar).
@@ -39,6 +41,28 @@ public partial class MapViewModel
     {
         get { return _searchMode == SearchMode.Route; }
     }
+
+    /// <summary>
+    /// Gibt an, ob gerade eine Routensuche läuft (Fortschritt und Schaltfläche „Suche abbrechen“ sichtbar).
+    /// </summary>
+    public bool IsRouteSearching
+    {
+        get { return IsBusy && IsRouteMode; }
+    }
+
+    /// <summary>
+    /// Gibt an, ob die Eingaben der Routensuche (Startart, Start, Ziel, Abstand) bedienbar sind; während einer laufenden Suche sind sie gesperrt,
+    /// damit Zusammenfassung und Kartenhinweis zu den Parametern der Anfrage passen.
+    /// </summary>
+    public bool RouteInputsEnabled
+    {
+        get { return !IsRouteSearching; }
+    }
+
+    /// <summary>
+    /// Befehl zum Abbrechen einer laufenden Routensuche.
+    /// </summary>
+    public ICommand CancelRouteSearchCommand { get; }
 
     /// <summary>
     /// Gibt an, ob die Radiuswahl der Umkreissuche sichtbar ist (nicht bei der Routensuche).
@@ -243,9 +267,10 @@ public partial class MapViewModel
         get
         {
             var result = _routeResult;
-            return result is null
+            var snapshot = _routeSnapshot;
+            return result is null || snapshot is null
                 ? MapTexts.NoResults
-                : SearchTexts.FormatRouteMapHint(GetStartName(result), GetDestinationName(result), result.Stations.Count);
+                : SearchTexts.FormatRouteMapHint(GetStartName(result, snapshot), GetDestinationName(result, snapshot), result.Stations.Count);
         }
     }
 
@@ -255,7 +280,7 @@ public partial class MapViewModel
     /// <param name="kind">Die Startart.</param>
     public void SelectStartKind(RouteStartKind kind)
     {
-        if (_routeStartKind == kind)
+        if (_routeStartKind == kind || !RouteInputsEnabled)
         {
             SyncStartKindSelection();
             return;
@@ -273,6 +298,11 @@ public partial class MapViewModel
     /// </summary>
     public void ClearStart()
     {
+        if (!RouteInputsEnabled)
+        {
+            return;
+        }
+
         StartInput = string.Empty;
         StatusMessage = null;
     }
@@ -282,6 +312,11 @@ public partial class MapViewModel
     /// </summary>
     public void ClearDestination()
     {
+        if (!RouteInputsEnabled)
+        {
+            return;
+        }
+
         DestinationInput = string.Empty;
         StatusMessage = null;
     }
@@ -297,10 +332,22 @@ public partial class MapViewModel
         SyncStartKindSelection();
         foreach (var step in RouteDistance.Options)
         {
-            _routeDistanceOptions.Add(new RadiusOptionViewModel(step, option => RouteDistanceKm = option.RadiusKm));
+            _routeDistanceOptions.Add(new RadiusOptionViewModel(step, OnRouteDistanceSelected));
         }
 
         SyncRouteDistanceSelection();
+    }
+
+    private void OnRouteDistanceSelected(RadiusOptionViewModel option)
+    {
+        if (!RouteInputsEnabled)
+        {
+            // Während der Suche bleibt der Abstand der Anfrage maßgeblich.
+            SyncRouteDistanceSelection();
+            return;
+        }
+
+        RouteDistanceKm = option.RadiusKm;
     }
 
     private void SyncStartKindSelection()
@@ -375,8 +422,14 @@ public partial class MapViewModel
             return;
         }
 
+        // Die Parameter der Anfrage werden festgehalten; Zusammenfassung und Kartenhinweis beschreiben die Anfrage, nicht den späteren Zustand der Oberfläche.
+        var snapshot = new RouteSearchSnapshot(
+            _routeDistanceKm,
+            _routeStartKind == RouteStartKind.CurrentLocation,
+            NormalizedOrEmpty(_startInput),
+            NormalizedOrEmpty(_destinationInput));
         GeoPosition? startPosition = null;
-        if (_routeStartKind == RouteStartKind.CurrentLocation)
+        if (snapshot.StartIsCurrentLocation)
         {
             startPosition = await ResolveCurrentLocationAsync(settings, token).ConfigureAwait(true);
             token.ThrowIfCancellationRequested();
@@ -387,14 +440,14 @@ public partial class MapViewModel
         }
 
         var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
-        var request = new RouteSearchRequest(startPosition, startPosition is null ? _startInput : null, _destinationInput, _routeDistanceKm, fuelTypes);
+        var request = new RouteSearchRequest(startPosition, startPosition is null ? _startInput : null, _destinationInput, snapshot.DistanceKm, fuelTypes);
         var progress = new ContextProgress(this, cancellation);
         var result = await _routeSearchService.SearchAsync(request, progress, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
-        ApplyRouteResult(result, startPosition is not null);
+        ApplyRouteResult(result, snapshot);
     }
 
-    private void ApplyRouteResult(RouteSearchResult result, bool startIsCurrentLocation)
+    private void ApplyRouteResult(RouteSearchResult result, RouteSearchSnapshot snapshot)
     {
         if (result.Status != RouteSearchStatus.Success || result.Route is null || result.StartPosition is null || result.DestinationPosition is null)
         {
@@ -405,11 +458,12 @@ public partial class MapViewModel
 
         ClearRouteState();
         _routeResult = result;
+        _routeSnapshot = snapshot;
         _lastResult = new StationSearchResult(result.Stations.Select(station => station.Station).ToList(), PriceDataSource.Live, PriceFailure.None);
-        Origin = new MapOrigin(startIsCurrentLocation ? MapOriginKind.CurrentLocation : MapOriginKind.SearchedPlace, result.StartPosition.Latitude, result.StartPosition.Longitude);
+        Origin = new MapOrigin(snapshot.StartIsCurrentLocation ? MapOriginKind.CurrentLocation : MapOriginKind.SearchedPlace, result.StartPosition.Latitude, result.StartPosition.Longitude);
         MapRoute = new MapRoute(result.Route.Simplify(Math.Max(0.005, result.Route.LengthKm / 5000), MapRouteMaxPoints));
         MapResultVersion++;
-        RouteSummary = SearchTexts.FormatRouteSummary(GetStartName(result), GetDestinationName(result), result.LengthKm, result.Stations.Count, _routeDistanceKm);
+        RouteSummary = SearchTexts.FormatRouteSummary(GetStartName(result, snapshot), GetDestinationName(result, snapshot), result.LengthKm, result.Stations.Count, snapshot.DistanceKm);
         ApplyFilterAndSort();
         StatusMessage = null;
         SourceNote = null;
@@ -418,19 +472,14 @@ public partial class MapViewModel
         OnPropertyChanged(nameof(MapHintText));
     }
 
-    private string GetStartName(RouteSearchResult result)
+    private static string GetStartName(RouteSearchResult result, RouteSearchSnapshot snapshot)
     {
-        if (_routeStartKind == RouteStartKind.CurrentLocation)
-        {
-            return SearchTexts.RouteStartCurrentLocation;
-        }
-
-        return NonEmpty(result.StartName) ?? NormalizedOrEmpty(_startInput);
+        return snapshot.StartIsCurrentLocation ? SearchTexts.RouteStartCurrentLocation : NonEmpty(result.StartName) ?? snapshot.StartInput;
     }
 
-    private string GetDestinationName(RouteSearchResult result)
+    private static string GetDestinationName(RouteSearchResult result, RouteSearchSnapshot snapshot)
     {
-        return NonEmpty(result.DestinationName) ?? NormalizedOrEmpty(_destinationInput);
+        return NonEmpty(result.DestinationName) ?? snapshot.DestinationInput;
     }
 
     private static string? NonEmpty(string? value)
@@ -447,6 +496,7 @@ public partial class MapViewModel
     private void ClearRouteState()
     {
         _routeResult = null;
+        _routeSnapshot = null;
         MapRoute = null;
         RouteSummary = null;
         RouteProgressText = null;
@@ -460,6 +510,99 @@ public partial class MapViewModel
             RouteProgressText = SearchTexts.FormatRouteProgress(progress);
         }
     }
+
+    private void CancelRouteSearch()
+    {
+        if (!IsRouteSearching)
+        {
+            return;
+        }
+
+        CancelSearch();
+        IsBusy = false;
+        ClearResult();
+        StatusMessage = SearchTexts.RouteCancelled;
+    }
+
+    private void OnOwnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(IsBusy))
+        {
+            return;
+        }
+
+        // Während einer laufenden Routensuche sind die Chips gesperrt.
+        var enabled = RouteInputsEnabled;
+        foreach (var option in _routeStartOptions)
+        {
+            option.IsEnabled = enabled;
+        }
+
+        foreach (var option in _routeDistanceOptions)
+        {
+            option.IsEnabled = enabled;
+        }
+
+        OnPropertyChanged(nameof(IsRouteSearching));
+        OnPropertyChanged(nameof(RouteInputsEnabled));
+    }
+
+    private async Task RefreshRouteAvailabilityAsync()
+    {
+        bool enabled;
+        try
+        {
+            enabled = await _routeAccess.IsEnabledAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Der Zustand der Routensuche konnte nicht gelesen werden ({ExceptionType}).", ex.GetType().Name);
+            enabled = false;
+        }
+
+        ApplyRouteAvailability(enabled);
+    }
+
+    private void OnRouteAccessChanged(object? sender, EventArgs e)
+    {
+        // Das Ereignis kann auf einem Hintergrundthread eintreffen; die Oberfläche wird im Kontext der Seite aktualisiert.
+        var context = _routeAccessContext;
+        if (context is null)
+        {
+            LastRouteAccessTask = RefreshRouteAvailabilityAsync();
+            return;
+        }
+
+        context.Post(_ => LastRouteAccessTask = RefreshRouteAvailabilityAsync(), null);
+    }
+
+    private void ApplyRouteAvailability(bool enabled)
+    {
+        if (_routeSearchEnabled == enabled)
+        {
+            return;
+        }
+
+        _routeSearchEnabled = enabled;
+        if (!enabled && _searchMode == SearchMode.Route)
+        {
+            // Die Routensuche wurde ausgeschaltet: laufende Suche abbrechen, Ergebnis verwerfen und zurück auf den Standardmodus.
+            ChangeMode(SearchMode.CurrentLocation);
+        }
+
+        _visibleModeOptions = enabled ? _modeOptions : _modeOptions.Where(option => option.Value != SearchMode.Route).ToList();
+        OnPropertyChanged(nameof(ModeOptions));
+    }
+
+    /// <summary>
+    /// Die Parameter einer Routensuche zum Zeitpunkt der Anfrage.
+    /// </summary>
+    /// <param name="DistanceKm">Der Abstand zur Route.</param>
+    /// <param name="StartIsCurrentLocation">Gibt an, ob ab dem aktuellen Standort gesucht wurde.</param>
+    /// <param name="StartInput">Der normalisierte Starttext.</param>
+    /// <param name="DestinationInput">Der normalisierte Zieltext.</param>
+    /// <returns>Der Wert.</returns>
+    private sealed record RouteSearchSnapshot(int DistanceKm, bool StartIsCurrentLocation, string StartInput, string DestinationInput);
 
     /// <summary>
     /// Meldet den Fortschritt im Kontext der Oberfläche, von dem aus die Suche gestartet wurde, und ignoriert Meldungen abgelöster Suchen.

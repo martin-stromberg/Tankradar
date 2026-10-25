@@ -65,6 +65,12 @@ public sealed class RouteSearchResult
     public PriceFailure PriceFailure { get; private init; }
 
     /// <summary>
+    /// Bei <see cref="RouteSearchStatus.RouteTooLong"/> wegen der Abfragegrenze: Abstand, Routenlänge und durchsuchbare Länge; sonst <see langword="null"/>
+    /// (z. B. wenn der Routingdienst die Route selbst als zu lang ablehnt).
+    /// </summary>
+    public RouteLimit? Limit { get; private init; }
+
+    /// <summary>
     /// Die Länge der Route in Kilometern; bei <see cref="RouteSearchStatus.Success"/> gesetzt, sonst 0.
     /// </summary>
     public double LengthKm
@@ -118,6 +124,17 @@ public sealed class RouteSearchResult
         }
 
         return new RouteSearchResult(status);
+    }
+
+    /// <summary>
+    /// Erstellt ein Ergebnis für eine Route, die mehr Preisabfragen bräuchte, als die Abfragegrenze zulässt.
+    /// </summary>
+    /// <param name="limit">Die Angaben zur Grenze.</param>
+    /// <returns>Das Ergebnis.</returns>
+    public static RouteSearchResult FailLimit(RouteLimit limit)
+    {
+        ArgumentNullException.ThrowIfNull(limit);
+        return new RouteSearchResult(RouteSearchStatus.RouteTooLong) { Limit = limit };
     }
 
     /// <summary>

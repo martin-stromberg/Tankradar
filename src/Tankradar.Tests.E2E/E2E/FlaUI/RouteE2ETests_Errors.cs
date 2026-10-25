@@ -97,7 +97,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
     }
 
     /// <summary>
-    /// Prüft die Meldung bei zu langer Route (Mock liefert rund 600 km) und dass keine Tankstellen abgefragt werden.
+    /// Prüft die Meldung der Abfragegrenze bei zu langer Route (Mock liefert rund 600 km, bei 2 km Abstand sind 131 km durchsuchbar) und dass keine Tankstellen abgefragt werden.
     /// </summary>
     [Fact]
     public void RouteTooLong_ShowsMessageWithoutPriceQueries()
@@ -106,7 +106,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
         {
             Routing.SetRoute([(52.52, 13.405), (50.0, 13.405), (47.2, 13.405)]);
 
-            SearchExpecting("10115", "Oranienburg", "Die Route ist zu lang. Es werden Routen bis 400 km unterstützt.");
+            SearchExpecting("10115", "Oranienburg", "Die Route ist 592 km lang. Bei 2 km Abstand zur Route kann nur bis 131 km Länge gesucht werden, weil die Preisabfragen begrenzt sind. Wähle eine kürzere Strecke oder einen kleineren Abstand.");
 
             Assert.Equal(1, Routing.Requests);
             Assert.Equal(0, Server.ListRequests);

@@ -64,6 +64,7 @@
                     Command="{Binding SelectCommand}"
                     Style="{StaticResource SearchChipButton}"
                     SemanticProperties.Hint="{Binding SelectionHint}"
+                    IsEnabled="{Binding IsEnabled}"
                     AutomationId="{Binding AutomationKey, StringFormat='Search.RouteDistance.{0}'}">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
@@ -79,6 +80,7 @@
                     Command="{Binding SelectCommand}"
                     Style="{StaticResource SearchChipButton}"
                     SemanticProperties.Hint="{Binding SelectionHint}"
+                    IsEnabled="{Binding IsEnabled}"
                     AutomationId="{Binding AutomationKey, StringFormat='Search.Route.StartKind.{0}'}">
                 <Button.Triggers>
                     <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
@@ -241,6 +243,7 @@
                                    Text="{Binding StartInput}"
                                    Placeholder="{x:Static texts:SearchTexts.RouteStartPlaceholder}"
                                    MaxLength="200"
+                                   IsEnabled="{Binding RouteInputsEnabled}"
                                    ReturnType="Next"
                                    IsTextPredictionEnabled="False"
                                    IsSpellCheckEnabled="False"
@@ -251,6 +254,7 @@
                                     Text="{x:Static texts:SearchTexts.RouteStartClear}"
                                     Command="{Binding ClearStartCommand}"
                                     IsVisible="{Binding HasStartInput}"
+                                    IsEnabled="{Binding RouteInputsEnabled}"
                                     Style="{StaticResource SearchChipButton}"
                                     Margin="0"
                                     AutomationId="Search.Route.Start.Clear" />
@@ -263,6 +267,7 @@
                                    Text="{Binding DestinationInput}"
                                    Placeholder="{x:Static texts:SearchTexts.RouteDestinationPlaceholder}"
                                    MaxLength="200"
+                                   IsEnabled="{Binding RouteInputsEnabled}"
                                    ReturnType="Search"
                                    ReturnCommand="{Binding SearchCommand}"
                                    IsTextPredictionEnabled="False"
@@ -274,6 +279,7 @@
                                     Text="{x:Static texts:SearchTexts.RouteDestinationClear}"
                                     Command="{Binding ClearDestinationCommand}"
                                     IsVisible="{Binding HasDestinationInput}"
+                                    IsEnabled="{Binding RouteInputsEnabled}"
                                     Style="{StaticResource SearchChipButton}"
                                     Margin="0"
                                     AutomationId="Search.Route.Destination.Clear" />
@@ -313,6 +319,12 @@
                            Style="{StaticResource body-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                            AutomationId="Search.Route.Progress" />
+                    <Button Text="{x:Static texts:SearchTexts.RouteCancelButton}"
+                            Command="{Binding CancelRouteSearchCommand}"
+                            IsVisible="{Binding IsRouteSearching}"
+                            Style="{StaticResource SearchChipButton}"
+                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                            AutomationId="Search.Route.Cancel" />
                 </VerticalStackLayout>
             </Border>
 

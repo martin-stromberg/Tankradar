@@ -47,17 +47,14 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 
 Write-Host "Veröffentliche Windows-App $Version (unpackaged, self-contained, win-x64, ohne Installer) ..."
-# Das Windows-Paket ist öffentlich herunterladbar und enthält deshalb nie den Tankerkönig- oder den OpenRouteService-Schlüssel:
-# Umgebungsvariablen leeren und die lokalen props-Dateien ausblenden.
+# Das Windows-Paket ist öffentlich herunterladbar und enthält deshalb nie den Tankerkönig-Schlüssel:
+# Umgebungsvariablen leeren und die lokale props-Datei ausblenden.
 Remove-Item Env:TANKRADAR_FUEL_PRICE_API_KEY -ErrorAction SilentlyContinue
 Remove-Item Env:FUEL_PRICE_API_KEY -ErrorAction SilentlyContinue
-Remove-Item Env:TANKRADAR_ROUTING_API_KEY -ErrorAction SilentlyContinue
-Remove-Item Env:ROUTING_API_KEY -ErrorAction SilentlyContinue
 $noLocalProps = Join-Path ([System.IO.Path]::GetTempPath()) "tankradar-no-local-props.props"
 & dotnet publish $project `
     --configuration Release `
     -p:TankerkoenigLocalPropsFile=$noLocalProps `
-    -p:RoutingLocalPropsFile=$noLocalProps `
     --framework $framework `
     -p:WindowsPackageType=None `
     -p:SelfContained=true `

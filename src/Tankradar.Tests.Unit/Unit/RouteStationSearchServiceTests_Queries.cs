@@ -18,7 +18,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
 
     private IReadOnlyList<RouteQueryPoint> Queries(int distanceKm = 2)
     {
-        Assert.True(RouteSampler.TryCreateQueryPoints(_route, distanceKm, new RouteSearchOptions(), out var queries));
+        Assert.True(RouteSampler.TryCreateQueryPoints(_route, distanceKm, RouteTestOptions.Relaxed(), out var queries));
         return queries;
     }
 
@@ -30,7 +30,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
     {
         var queries = Queries();
 
-        await new RouteStationSearchService(_prices).SearchAsync(_route, queries, 2, Fuels, null, CancellationToken.None);
+        await RouteTestOptions.StationSearch(_prices).SearchAsync(_route, queries, 2, Fuels, null, CancellationToken.None);
 
         Assert.Equal(queries.Count, _prices.Queries.Count);
         Assert.Equal(1, _prices.MaxConcurrent);
@@ -56,7 +56,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
             ? new StationSearchResult([], PriceDataSource.OfflineFallback, PriceFailure.Unreachable)
             : RouteStationFactory.Live(RouteStationFactory.At(index + 1, 52.6 + (index * 0.1), 13.405));
 
-        var result = await new RouteStationSearchService(_prices).SearchAsync(_route, queries, 2, Fuels, null, CancellationToken.None);
+        var result = await RouteTestOptions.StationSearch(_prices).SearchAsync(_route, queries, 2, Fuels, null, CancellationToken.None);
 
         Assert.Equal(PriceFailure.Unreachable, result.Failure);
         Assert.Empty(result.Stations);
@@ -82,7 +82,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
         };
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => new RouteStationSearchService(_prices).SearchAsync(_route, queries, 2, Fuels, null, cancellation.Token));
+            () => RouteTestOptions.StationSearch(_prices).SearchAsync(_route, queries, 2, Fuels, null, cancellation.Token));
 
         Assert.Single(_prices.Queries);
     }
@@ -96,7 +96,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
         var queries = Queries();
         var progress = new ListProgress();
 
-        await new RouteStationSearchService(_prices).SearchAsync(_route, queries, 2, Fuels, progress, CancellationToken.None);
+        await RouteTestOptions.StationSearch(_prices).SearchAsync(_route, queries, 2, Fuels, progress, CancellationToken.None);
 
         Assert.Equal(queries.Count, progress.Reports.Count);
         Assert.All(progress.Reports, report => Assert.Equal(RouteSearchPhase.SearchingStations, report.Phase));
@@ -110,7 +110,7 @@ public class RouteStationSearchServiceTests_Queries : BaseTest
     [Fact]
     public async Task SearchAsync_NoQueryPoints_ReturnsEmptyResult()
     {
-        var result = await new RouteStationSearchService(_prices).SearchAsync(_route, [], 2, Fuels, null, CancellationToken.None);
+        var result = await RouteTestOptions.StationSearch(_prices).SearchAsync(_route, [], 2, Fuels, null, CancellationToken.None);
 
         Assert.Empty(result.Stations);
         Assert.Empty(_prices.Queries);
