@@ -28,7 +28,8 @@ public static class TransientRetry
     public const int DefaultMaxAttempts = 3;
 
     /// <summary>
-    /// Prüft, ob eine Ausnahme ein vorübergehender UIA-Timeout ist (<see cref="TimeoutException"/> oder <see cref="COMException"/> mit 0x80131505 oder <see cref="Win32Exception"/> mit 0x800705B4, auch als innere Ausnahme).
+    /// Prüft, ob eine Ausnahme ein vorübergehender UIA-Timeout ist (<see cref="TimeoutException"/>, <see cref="COMException"/> mit 0x80131505 oder 0x800705B4 oder <see cref="Win32Exception"/> mit 0x800705B4, auch als innere Ausnahme).
+    /// Den Windows-Timeout 0x800705B4 meldet die UI-Automation auch als <see cref="COMException"/> aus <c>FindFirst</c> (CI-Lauf 40172732055).
     /// </summary>
     /// <param name="exception">Die Ausnahme.</param>
     /// <returns><see langword="true"/>, wenn ein erneuter Versuch sinnvoll ist.</returns>
@@ -36,7 +37,7 @@ public static class TransientRetry
     {
         for (var current = exception; current is not null; current = current.InnerException!)
         {
-            if (current is TimeoutException || (current is COMException com && com.HResult == UiaTimeoutHResult) || IsWin32Timeout(current))
+            if (current is TimeoutException || (current is COMException com && (com.HResult == UiaTimeoutHResult || com.HResult == Win32TimeoutHResult)) || IsWin32Timeout(current))
             {
                 return true;
             }

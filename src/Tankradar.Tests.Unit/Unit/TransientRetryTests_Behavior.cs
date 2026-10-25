@@ -128,6 +128,7 @@ public class TransientRetryTests_Behavior : BaseTest
     {
         Assert.True(TransientRetry.IsTransient(new TimeoutException()));
         Assert.True(TransientRetry.IsTransient(new COMException("t", TransientRetry.UiaTimeoutHResult)));
+        Assert.True(TransientRetry.IsTransient(new COMException("w", unchecked((int)0x800705B4))));
         Assert.False(TransientRetry.IsTransient(new InvalidOperationException()));
         Assert.False(TransientRetry.IsTransient(new COMException("x", unchecked((int)0x80004005))));
     }
