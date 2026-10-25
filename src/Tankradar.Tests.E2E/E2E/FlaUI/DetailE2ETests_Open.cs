@@ -61,7 +61,7 @@ public class DetailE2ETests_Open : SearchE2ETestBase
             // Die Rückkehr bietet die Kopfleiste der Shell (Zurück-Pfeil); die Seite hat keine eigene Schaltfläche.
             WaitForAutomationId("NavigationViewBackButton").Patterns.Invoke.Pattern.Invoke();
 
-            WaitForAutomationId("MapPage.Headline");
+            WaitForPageTitle("Karte");
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
         });
     }

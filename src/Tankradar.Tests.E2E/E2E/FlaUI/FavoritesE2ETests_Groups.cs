@@ -13,7 +13,7 @@ public class FavoritesE2ETests_Groups : FavoritesE2ETestBase
     {
         RunWithDiagnostics(() =>
         {
-            NavigateToTab("Favoriten", "FavoritesPage.Headline");
+            NavigateToTab("Favoriten");
             WaitForAutomationId("Favorites.Empty");
 
             Press("Favorites.NewGroup");
@@ -47,7 +47,7 @@ public class FavoritesE2ETests_Groups : FavoritesE2ETestBase
     {
         RunWithDiagnostics(() =>
         {
-            NavigateToTab("Favoriten", "FavoritesPage.Headline");
+            NavigateToTab("Favoriten");
             Press("Favorites.NewGroup");
             Type("Favorites.NewName", "Heimat");
             Press("Favorites.NewCreate");

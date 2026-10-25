@@ -38,7 +38,7 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// </summary>
     protected void OpenSettings()
     {
-        NavigateToTab("Optionen", "SettingsPage.Headline");
+        NavigateToTab("Optionen");
         WaitForElement(cf => cf.ByAutomationId("Settings.FuelType.SuperE5.Switch"));
         WaitForAutomationId("Settings.Loaded");
     }
@@ -51,6 +51,15 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     protected AutomationElement WaitForAutomationId(string automationId)
     {
         return WaitForElement(cf => cf.ByAutomationId(automationId));
+    }
+
+    /// <summary>
+    /// Wartet, bis die Kopfzeile der Shell den Seitentitel anzeigt (z. B. nach der Rückkehr aus der Detailansicht).
+    /// </summary>
+    /// <param name="title">Der erwartete Seitentitel (z. B. Karte).</param>
+    protected void WaitForPageTitle(string title)
+    {
+        WaitUntil(() => IsShellTitle(title), $"Der Seitentitel '{title}' wurde nicht angezeigt.");
     }
 
     /// <summary>

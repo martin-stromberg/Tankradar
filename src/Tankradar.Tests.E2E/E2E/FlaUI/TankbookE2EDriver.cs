@@ -14,7 +14,7 @@ public sealed class TankbookE2EDriver
     private readonly Func<Window> _window;
     private readonly Action<string, string> _setFieldValue;
     private readonly Action<Func<bool>, string> _waitUntil;
-    private readonly Action<string, string> _navigateToTab;
+    private readonly Action<string, string?> _navigateToTab;
 
     /// <summary>
     /// Erstellt den Treiber.
@@ -23,7 +23,7 @@ public sealed class TankbookE2EDriver
     /// <param name="setFieldValue">Trägt einen Text in ein Eingabefeld ein und wartet, bis die App ihn übernommen hat.</param>
     /// <param name="waitUntil">Wartet auf eine Bedingung und schlägt sonst mit der Meldung fehl.</param>
     /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationId der Zielseite).</param>
-    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string> navigateToTab)
+    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string?> navigateToTab)
     {
         _window = window;
         _setFieldValue = setFieldValue;
@@ -36,7 +36,7 @@ public sealed class TankbookE2EDriver
     /// </summary>
     public void OpenTankbook()
     {
-        _navigateToTab("Tankbuch", "TankbookPage.Headline");
+        _navigateToTab("Tankbuch", null);
         WaitFor("Tankbook.AddVehicle");
     }
 

@@ -1,3 +1,5 @@
+using FlaUI.Core.Definitions;
+
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
@@ -6,14 +8,6 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class NavigationE2ETests : E2ETestBase
 {
     private static readonly string[] TabTitles = ["Favoriten", "Karte", "Tankbuch", "Optionen"];
-
-    private static readonly Dictionary<string, string> TabAutomationIds = new()
-    {
-        ["Favoriten"] = "FavoritesPage.Headline",
-        ["Karte"] = "MapPage.Headline",
-        ["Tankbuch"] = "TankbookPage.Headline",
-        ["Optionen"] = "SettingsPage.Headline",
-    };
 
     /// <summary>
     /// Prüft, dass die App startet, die AppShell mit vier Tabs anzeigt, durch alle Bereiche navigiert und wieder zur Startseite zurückkehrt.
@@ -39,9 +33,11 @@ public class NavigationE2ETests : E2ETestBase
 
         foreach (var tabTitle in TabTitles)
         {
-            NavigateToTab(tabTitle, TabAutomationIds[tabTitle]);
+            // Der Seitentitel steht nur in der Kopfzeile der Shell, nicht noch einmal als Überschrift im Seiteninhalt.
+            NavigateToTab(tabTitle);
+            Assert.Single(MainWindow.FindAllDescendants(cf => cf.ByControlType(ControlType.Text).And(cf.ByName(tabTitle))));
         }
 
-        NavigateToTab(TabTitles[0], TabAutomationIds[TabTitles[0]]);
+        NavigateToTab(TabTitles[0]);
     }
 }

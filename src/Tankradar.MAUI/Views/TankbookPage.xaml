@@ -23,11 +23,6 @@
         <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
 
             <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                <Label Text="{x:Static texts:TankbookTexts.PageTitle}"
-                       Style="{StaticResource headline-lg}"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                       SemanticProperties.HeadingLevel="Level1"
-                       AutomationId="TankbookPage.Headline" />
                 <Label Text="{x:Static texts:TankbookTexts.Intro}"
                        Style="{StaticResource body-md}"
                        TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />

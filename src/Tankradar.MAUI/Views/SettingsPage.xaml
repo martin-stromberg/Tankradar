@@ -39,11 +39,6 @@
     <ScrollView>
         <VerticalStackLayout Padding="{StaticResource space-md}"
                              Spacing="{StaticResource space-md}">
-            <Label Text="Optionen"
-                   Style="{StaticResource headline-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                   AutomationId="SettingsPage.Headline" />
-
             <Label Text="Einstellungen geladen"
                    IsVisible="{Binding IsLoaded}"
                    Style="{StaticResource body-sm}"

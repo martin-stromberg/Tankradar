@@ -27,7 +27,7 @@ public abstract class HomeE2ETestBase : FavoritesE2ETestBase
     {
         if (expectedGroups.Length == 0)
         {
-            NavigateToTab("Favoriten", "FavoritesPage.Headline");
+            NavigateToTab("Favoriten");
             WaitForAutomationId("Favorites.Empty");
             return;
         }
@@ -123,6 +123,6 @@ public abstract class HomeE2ETestBase : FavoritesE2ETestBase
     protected void LeaveDetail()
     {
         WaitForAutomationId("NavigationViewBackButton").Patterns.Invoke.Pattern.Invoke();
-        WaitForAutomationId("MapPage.Headline");
+        WaitForPageTitle("Karte");
     }
 }

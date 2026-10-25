@@ -117,7 +117,7 @@ public class FavoritesE2ETests_DisplayName : HomeE2ETestBase
             WaitUntil(() => !Exists("Detail.CustomName.Remove"), "Die Schaltfläche zum Entfernen blieb stehen.");
 
             WaitForAutomationId("NavigationViewBackButton").Patterns.Invoke.Pattern.Invoke();
-            WaitForAutomationId("FavoritesPage.Headline");
+            WaitForPageTitle("Favoriten");
             WaitForText("Favorites.Station.Name", Brand);
         });
     }

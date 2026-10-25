@@ -132,7 +132,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// </summary>
     protected void OpenSearch()
     {
-        NavigateToTab("Karte", "MapPage.Headline");
+        NavigateToTab("Karte");
         WaitForAutomationId("Search.Radius.5");
         WaitForAutomationId("Search.Filter.All");
         WaitForAutomationId("Search.Sort.Price");
