@@ -148,3 +148,5 @@ Seite (ADR 0009, 0010).
   Testdoppel abgesichert, wie ADR 0011).
 - Eine spätere Umbenennung von `IBackupSharer` in eine allgemeine Dateiweitergabe ist möglich, sobald ein weiterer Anwendungsfall
   (z. B. Schritt 17) sie rechtfertigt.
+- Nach einer Wiederherstellung schließt nur die Vorgangsseite des betroffenen Fahrzeugs (`ITankbookNavigator.CloseAsync(vehicleId)`);
+  ein noch nicht eingesammeltes ViewModel einer längst geschlossenen Seite schließt nie die offene Seite eines anderen Fahrzeugs.

@@ -23,9 +23,19 @@ public sealed class FakeApiKeyStore : IApiKeyStore
     public bool ThrowOnSet { get; set; }
 
     /// <summary>
+    /// Wenn gesetzt, schlägt das Entfernen fehl.
+    /// </summary>
+    public bool ThrowOnRemove { get; set; }
+
+    /// <summary>
     /// Anzahl der Speichervorgänge.
     /// </summary>
     public int SetCount { get; private set; }
+
+    /// <summary>
+    /// Anzahl der Entfernvorgänge.
+    /// </summary>
+    public int RemoveCount { get; private set; }
 
     /// <inheritdoc />
     public Task<string?> GetAsync()
@@ -43,6 +53,19 @@ public sealed class FakeApiKeyStore : IApiKeyStore
         }
 
         Stored = apiKey;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task RemoveAsync()
+    {
+        RemoveCount++;
+        if (ThrowOnRemove)
+        {
+            throw new InvalidOperationException("Ablage nicht beschreibbar.");
+        }
+
+        Stored = null;
         return Task.CompletedTask;
     }
 }

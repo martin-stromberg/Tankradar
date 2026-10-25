@@ -106,6 +106,11 @@ public static class MapTexts
     public const string LevelClosed = "Geschlossen";
 
     /// <summary>
+    /// Beschreibung der Zielmarkierung einer Route.
+    /// </summary>
+    public const string RouteDestination = "Ziel der Route";
+
+    /// <summary>
     /// Liefert die Beschreibung der markierten Suchposition.
     /// </summary>
     /// <param name="kind">Die Art der Position.</param>

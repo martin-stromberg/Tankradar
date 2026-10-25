@@ -158,7 +158,7 @@ def check_key_policy(label, steps, errors):
         name = step.get('name', '?')
         if uses.startswith('./.github/actions/build-and-package'):
             for key, value in with_block.items():
-                if re.search(r'fuel|price|api[-_]?key', f'{key} {value}', re.IGNORECASE) and 'routing' not in str(key).lower():
+                if re.search(r'fuel|price|api[-_]?key', f'{key} {value}', re.IGNORECASE):
                     errors.append(f'{label}: Windows-Paketschritt "{name}" darf keinen Schlüssel erhalten ({key})')
         if uses.startswith('actions/upload-artifact'):
             check_upload_artifact(label, step, errors)

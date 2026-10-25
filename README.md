@@ -190,8 +190,21 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
   ohne gültigen Wert meldet die Suche im Testmodus, dass der Standort nicht ermittelt werden kann,
 - `TANKATLAS_TEST_BACKUP_IMPORT` – Pfad einer Sicherungsdatei, die „Sicherung aus Datei einspielen“ ohne Systemdialog liefert
   (ohne Wert gilt die Auswahl als abgebrochen); „Teilen“ kopiert im Testmodus nach `<Datenverzeichnis>/test-shared/`,
+- `TANKRADAR_ROUTING_URL` und `TANKRADAR_ROUTING_TEST_API_KEY` – Adresse und Schlüssel eines Routingdienstes (in Tests der lokale
+  `MockOpenRouteServiceServer`; ohne Adresse wird im Testmodus keine Route berechnet; der Schlüssel belegt die Testablage im Speicher vor und schaltet die Routensuche ein),
+- `TANKRADAR_ROUTE_QUERY_INTERVAL_MS` – Mindestabstand der Preisabfragen einer Routensuche im Testmodus in Millisekunden (ohne Wert 0),
 - `TANKRADAR_PRICE_API_URL` und `TANKRADAR_PRICE_API_KEY` – Adresse und Schlüssel eines Preisdienstes
   (in Tests der lokale `MockTankerkoenigServer` aus `src/TestSupport`; ohne Adresse wird im Testmodus kein Abruf ausgeführt).
+
+Die Suchart „Route“ (Schritt 17) zeigt Tankstellen entlang einer Strecke: Start (aktueller Standort oder Adresse) und Ziel werden über
+OpenStreetMap-Nominatim aufgelöst, die Route für ein Auto berechnet OpenRouteService (Quellenangabe „Routen: OpenRouteService, Geodaten ©
+OpenStreetMap-Mitwirkende“), der Abstand zur Route ist 1, 2, 5 oder 10 km (Standard 2 km). Die Tankerkönig-Abfragen entlang der Strecke sind auf
+höchstens 3 je Suche mit mindestens 10 Sekunden Abstand begrenzt (vorläufig, bis Tankerkönig die Zulässigkeit geklärt hat; zu lange Routen werden mit Hinweis
+abgelehnt; [ADR 0014](docs/adr/0014-route-search.md)).
+Den Schlüssel für OpenRouteService beantragt jeder Anwender selbst und trägt ihn in den **Optionen** unter **Routensuche** ein (verdecktes Feld, Prüfung per
+Testanfrage, Schalter **Routensuche aktivieren**). Er liegt nur in der sicheren Ablage des Geräts (Credential Locker bzw. Keychain), wird beim Build nie eingebunden
+und gehört nicht zur Sicherung. Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar und es gehen Aufrufe an OpenRouteService
+(`https://api.heigit.org/openrouteservice/`); siehe [`docs/help/Preisdaten/api-schluessel.md`](docs/help/Preisdaten/api-schluessel.md). Routen, Adressen und Standort werden nicht gespeichert.
 
 Neben der Standortsuche bietet „Karte“ die Suche nach Adresse, Ort oder Postleitzahl (Suchart „Adresse, Ort oder
 PLZ“): Die Eingabe wird erst beim ausdrücklichen Absenden geprüft und über OpenStreetMap-Nominatim in eine

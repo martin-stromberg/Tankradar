@@ -12,10 +12,12 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 /// </summary>
 /// <remarks>
 /// Der UI-Baum ist mit vielen Listeneinträgen groß, und eine Suche über den ganzen Fensterbaum kann auf einem langsamen Runner (GitHub Actions) in einen
-/// UIA-Timeout laufen. Der Test zählt die Einträge deshalb nicht bei jeder Abfrage: Die Schaltfläche „Weitere anzeigen (N weitere)“ nennt (für die Sprachausgabe
+/// UIA-Timeout laufen. Der Test zählt die Einträge deshalb nicht bei jeder Abfrage: Die Schaltfläche „Weitere anzeigen (N übrig)“ nennt (für die Sprachausgabe
 /// ohnehin) die Zahl der noch nicht angezeigten Treffer; aus ihr folgt, wie viele angezeigt sind (Gesamtzahl minus N). Das ist eine Eigenschaftsabfrage an einem
-/// bereits gefundenen Element. Die Einträge werden nur einmal am Ende gezählt. Die Wartephasen verwenden eine kurze UIA-Antwortfrist (<see cref="PollTimeout"/>),
-/// damit <see cref="TransientWait"/> innerhalb der Gesamtfrist mehrfach neu versuchen kann; ein UIA-Timeout wird getrennt von einer zu langsamen App gemeldet.
+/// bereits gefundenen Element. Die Einträge werden nur einmal je Ruhezustand der App gezählt bzw. gelesen (nach „Weitere anzeigen“ und nach dem Sortierwechsel).
+/// Die Wartephasen verwenden eine kurze UIA-Antwortfrist (<see cref="PollTimeout"/>), damit <see cref="TransientWait"/> innerhalb der Gesamtfrist mehrfach neu versuchen kann;
+/// ein nicht mehr verfügbares Element (Liste wird neu aufgebaut) gilt dort wie ein UIA-Timeout als „noch nicht erfüllt“. Die Zeitgrenze des Sortierwechsels bezieht sich auf
+/// die Messzeit abzüglich der in vorübergehenden Fehlern verbrachten Zeit (<c>timeoutTime</c> von <see cref="TransientWait"/>); eine Ausnahme für UIA-Timeouts gibt es nicht mehr.
 /// Einen Container „Search.Results“ gibt es im UIA-Baum nicht (das <c>VerticalStackLayout</c> erzeugt kein Automation-Element), die Suche wird daher nicht auf ihn begrenzt.
 /// </remarks>
 public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
@@ -28,10 +30,8 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
     // Die Gesamtfrist einer Wartephase.
     private static readonly TimeSpan PhaseDeadline = TimeSpan.FromSeconds(90);
 
-    // Höchstdauer des Sortierwechsels ohne UIA-Timeouts; mit Timeouts (die App blockierte den UI-Thread) gilt die großzügigere Grenze.
+    // Höchstdauer des Sortierwechsels, gemessen ohne die in UIA-Timeouts verbrachte Zeit.
     private static readonly TimeSpan MaxSortChange = TimeSpan.FromSeconds(10);
-
-    private static readonly TimeSpan MaxSortChangeWithTimeouts = TimeSpan.FromSeconds(30);
 
     // Antwortfrist einer UIA-Anfrage, die etwas auslöst (Invoke): nicht wiederholbar, daher großzügig.
     private static readonly TimeSpan InvokeTimeout = TimeSpan.FromSeconds(60);
@@ -39,7 +39,7 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
     private AutomationElement? _showMore;
 
     /// <summary>
-    /// Prüft, dass nur die erste Seite angezeigt wird, „Weitere anzeigen“ die nächste ergänzt und ein Sortierwechsel zügig auf die erste Seite zurückführt.
+    /// Prüft, dass nur die erste Seite angezeigt wird, „Weitere anzeigen“ die nächste ergänzt (50 Einträge) und ein Sortierwechsel zügig auf die erste Seite in der richtigen Reihenfolge zurückführt.
     /// </summary>
     [Fact]
     public void LargeResult_ShowsOnePageAndSortChangeStaysFast()
@@ -58,24 +58,67 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
             var remainingOnFirstPage = WaitForRemaining(null, "Die erste Seite der Ergebnisliste wurde nicht angezeigt (keine Schaltfläche „Weitere anzeigen“).").Remaining;
             Assert.True(remainingOnFirstPage >= 300 - PageSize, $"Es sollten mindestens {300 - PageSize} Treffer fehlen, gemeldet: {remainingOnFirstPage}.");
 
+            // Nach „Weitere anzeigen“ und Ruhe der App einmal zählen: Die Zahl der Schaltfläche allein bewiese nicht, dass wirklich 50 Einträge aufgebaut sind.
             InvokeWithLongTimeout(_showMore!);
             WaitForRemaining(remainingOnFirstPage - PageSize, "Die zweite Seite wurde nicht angezeigt.");
+            CountEntries(2 * PageSize);
 
             var stopwatch = Stopwatch.StartNew();
             InvokeWithLongTimeout(sortChip);
             var change = WaitForRemaining(remainingOnFirstPage, "Nach dem Sortierwechsel wird nicht die erste Seite angezeigt.");
             stopwatch.Stop();
 
-            var limit = change.UiaTimeouts == 0 ? MaxSortChange : MaxSortChangeWithTimeouts;
+            var measured = stopwatch.Elapsed - change.UiaWaiting;
             Assert.True(
-                stopwatch.Elapsed < limit,
-                $"Der Sortierwechsel dauerte {stopwatch.Elapsed.TotalSeconds:0.0} s (erlaubt {limit.TotalSeconds:0} s); {change.UiaTimeouts} UIA-Timeouts mit zusammen {change.UiaWaiting.TotalSeconds:0.0} s Wartezeit auf die UI-Automation (ohne Timeouts wären {MaxSortChange.TotalSeconds:0} s erlaubt, App zu langsam oder UI-Thread blockiert).");
+                measured < MaxSortChange,
+                $"Der Sortierwechsel dauerte {stopwatch.Elapsed.TotalSeconds:0.0} s, davon {change.UiaWaiting.TotalSeconds:0.0} s Wartezeit auf die UI-Automation (UIA-Timeouts oder neu aufgebaute Elemente); ohne sie {measured.TotalSeconds:0.0} s (erlaubt {MaxSortChange.TotalSeconds:0} s; App zu langsam oder UI-Thread blockiert).");
 
-            // Einmal zählen, wie viele Einträge tatsächlich in der Liste stehen (die Zahl der Schaltfläche allein bewiese nicht, dass nur eine Seite aufgebaut ist).
-            Automation.TransactionTimeout = TimeSpan.FromSeconds(30);
-            WaitUntil(() => FindAllOrdered("Search.Station.Name").Count == PageSize, $"Die Liste zeigt nicht genau {PageSize} Einträge.", TimeSpan.FromSeconds(120));
+            // Einmal im Ruhezustand die Namen der ersten Seite lesen: Sie müssen in der Reihenfolge der gewählten Sortierung stehen (ein Sortierwechsel, der nur das ViewModel erreicht, bliebe sonst unbemerkt).
+            AssertNamesInExpectedOrder();
             Assert.Equal(1, Server.ListRequests);
         });
+    }
+
+    private static string[] ExpectedFirstPageByName()
+    {
+        // Nach Name sortiert: „Alpha Tankstelle“ und „Beta Tankstelle“ vor den erzeugten „Station 001“ bis „Station 300“ (Mock-Namen); die erste Seite hat 25 Einträge.
+        return ["Alpha Tankstelle", "Beta Tankstelle", .. Enumerable.Range(1, PageSize - 2).Select(number => $"Station {number:D3}")];
+    }
+
+    private void CountEntries(int expected)
+    {
+        Automation.TransactionTimeout = TimeSpan.FromSeconds(30);
+        try
+        {
+            WaitUntil(() => FindAllOrdered("Search.Station.Name").Count == expected, $"Die Liste zeigt nicht genau {expected} Einträge.", TimeSpan.FromSeconds(120));
+        }
+        finally
+        {
+            Automation.TransactionTimeout = PollTimeout;
+        }
+    }
+
+    private void AssertNamesInExpectedOrder()
+    {
+        var expected = ExpectedFirstPageByName();
+        Automation.TransactionTimeout = TimeSpan.FromSeconds(30);
+        try
+        {
+            var last = string.Empty;
+            WaitUntil(
+                () =>
+                {
+                    var names = ReadTexts("Search.Station.Name");
+                    last = string.Join(" | ", names.Take(6)) + (names.Count > 6 ? $" | ... ({names.Count} Einträge)" : string.Empty);
+                    return names.SequenceEqual(expected);
+                },
+                $"Die erste Seite nach dem Sortierwechsel zeigt nicht die erwartete Reihenfolge (erwartet: {string.Join(" | ", expected.Take(6))} | ...), zuletzt: {last}",
+                TimeSpan.FromSeconds(120));
+        }
+        finally
+        {
+            Automation.TransactionTimeout = PollTimeout;
+        }
     }
 
     private void InvokeWithLongTimeout(AutomationElement element)
@@ -92,7 +135,7 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
         }
     }
 
-    [GeneratedRegex(@"\((\d[\d.]*) weitere\)")]
+    [GeneratedRegex(@"\((\d[\d.]*) übrig\)")]
     private static partial Regex RemainingPattern();
 
     /// <summary>
@@ -101,53 +144,42 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
     /// </summary>
     /// <param name="expected">Die erwartete Zahl oder <see langword="null"/>.</param>
     /// <param name="failureMessage">Die Beschreibung des erwarteten Zustands für die Fehlermeldung.</param>
-    /// <returns>Die gelesene Zahl, die in UIA-Timeouts verbrachte Zeit und deren Anzahl.</returns>
+    /// <returns>Die gelesene Zahl und die in vorübergehenden UIA-Fehlern verbrachte Zeit.</returns>
     private PhaseResult WaitForRemaining(int? expected, string failureMessage)
     {
-        var uiaWaiting = TimeSpan.Zero;
-        var uiaTimeouts = 0;
         var seen = "keine Schaltfläche";
         var total = Stopwatch.StartNew();
         var result = 0;
         var reached = TransientWait.Until(
             () =>
             {
-                var started = Stopwatch.StartNew();
-                try
+                var remaining = ReadRemaining();
+                seen = remaining?.ToString(CultureInfo.InvariantCulture) ?? "keine Schaltfläche";
+                if (remaining is { } value && (expected is null || value == expected))
                 {
-                    var remaining = ReadRemaining();
-                    seen = remaining?.ToString(CultureInfo.InvariantCulture) ?? "keine Schaltfläche";
-                    if (remaining is { } value && (expected is null || value == expected))
-                    {
-                        result = value;
-                        return true;
-                    }
+                    result = value;
+                    return true;
+                }
 
-                    return false;
-                }
-                catch (Exception ex) when (TransientRetry.IsTransient(ex))
-                {
-                    uiaWaiting += started.Elapsed;
-                    uiaTimeouts++;
-                    throw;
-                }
+                return false;
             },
             PhaseDeadline,
-            out var lastTimeout);
+            out var lastTimeout,
+            out var uiaWaiting);
 
         if (!reached)
         {
             var uia = lastTimeout is null
                 ? "Die UI-Automation hat jeweils geantwortet."
-                : $"Die UI-Automation antwortete {uiaTimeouts}-mal nicht rechtzeitig (UIA-Timeout, zusammen {uiaWaiting.TotalSeconds:0.0} s): {lastTimeout.Message}";
+                : $"Die UI-Automation antwortete zeitweise nicht rechtzeitig oder das Element war nicht verfügbar (zusammen {uiaWaiting.TotalSeconds:0.0} s): {lastTimeout.Message}";
             Assert.Fail($"{failureMessage} Nach {total.Elapsed.TotalSeconds:0.0} s zuletzt gelesen: {seen}, erwartet: {expected?.ToString(CultureInfo.InvariantCulture) ?? "eine Zahl"}. {uia}");
         }
 
-        return new PhaseResult(result, uiaWaiting, uiaTimeouts);
+        return new PhaseResult(result, uiaWaiting);
     }
 
     /// <summary>
-    /// Liest die Zahl der noch nicht angezeigten Treffer aus dem Namen der Schaltfläche „Weitere anzeigen (N weitere)“.
+    /// Liest die Zahl der noch nicht angezeigten Treffer aus dem Namen der Schaltfläche „Weitere anzeigen (N übrig)“.
     /// Das einmal gefundene Element wird weiterverwendet (kein Durchsuchen des großen Baums je Abfrage); nur wenn es nicht mehr verfügbar ist, wird neu gesucht.
     /// </summary>
     /// <returns>Die Zahl oder <see langword="null"/>, wenn die Schaltfläche nicht (mehr) vorhanden ist.</returns>
@@ -185,17 +217,14 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
 
     private sealed class PhaseResult
     {
-        public PhaseResult(int remaining, TimeSpan uiaWaiting, int uiaTimeouts)
+        public PhaseResult(int remaining, TimeSpan uiaWaiting)
         {
             Remaining = remaining;
             UiaWaiting = uiaWaiting;
-            UiaTimeouts = uiaTimeouts;
         }
 
         public int Remaining { get; }
 
         public TimeSpan UiaWaiting { get; }
-
-        public int UiaTimeouts { get; }
     }
 }

@@ -39,6 +39,7 @@
             </Grid.GestureRecognizers>
 
             <AbsoluteLayout x:Name="TileLayer" InputTransparent="True" />
+            <GraphicsView x:Name="RouteLayer" InputTransparent="True" IsVisible="False" AutomationId="Map.Route" />
             <AbsoluteLayout x:Name="MarkerLayer" />
 
             <!-- Zähler und Zoomstufe (Designentwurf: Zähler-Chip oben links) -->

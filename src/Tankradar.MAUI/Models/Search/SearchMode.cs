@@ -14,4 +14,9 @@ public enum SearchMode
     /// Suche rund um eine eingegebene Adresse, einen Ort oder eine Postleitzahl (benötigt keinen Standort).
     /// </summary>
     Address,
+
+    /// <summary>
+    /// Suche entlang einer Route von einem Start zu einem Ziel (Start: aktueller Standort oder Adresse).
+    /// </summary>
+    Route,
 }

@@ -54,3 +54,22 @@ Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testm
 ## Hinweis zur Sicherheit des Build-Schlüssels
 
 Der beim Build mitgegebene Schlüssel steht als Metadatum in der ausgelieferten Assembly und ist daraus lesbar. Bei der iOS-App (TestFlight) ist das unvermeidbar, weil es kein Backend gibt, das den Schlüssel verwaltet; bei lokalen Windows-Builds liegt die Assembly nur auf Ihrem Rechner (Zwischenstände unter `review-versions/` nicht weitergeben). Er steht nicht im Quellcode und in keinem öffentlich herunterladbaren Windows-Paket. Verwenden Sie für den iOS-Build einen eigenen, jederzeit rotierbaren Schlüssel und tauschen Sie ihn bei Verdacht auf Weitergabe aus (empfohlen: regelmäßige Rotation, neuen Wert im Secret `FUEL_PRICE_API_KEY` hinterlegen).
+
+## Schlüssel des Routingdienstes (OpenRouteService)
+
+Die Routensuche (Schritt 17) braucht einen eigenen, kostenlosen Schlüssel von <https://openrouteservice.org/dev/#/signup>. **Jeder Anwender beantragt ihn selbst**; er wird nicht beim Build
+eingebunden (kein Secret, keine Umgebungsvariable, keine `routing.local.props`), denn ein eingebauter Schlüssel wäre aus der öffentlich verfügbaren App auslesbar, und alle Nutzer
+teilten sich Kontingent und Missbrauchsrisiko.
+
+- **Eintragen:** **Optionen** → **Routensuche**: Schlüssel in das verdeckte Feld einfügen, **Schlüssel speichern**. Mit **Schlüssel prüfen** schickt die App eine kleine Testanfrage
+  (feste Koordinaten, keine eigenen Daten) und meldet verständlich: gültig, abgelehnt, Dienst nicht erreichbar oder Kontingent aufgebraucht.
+- **Aktivieren:** Der Schalter **Routensuche aktivieren** ist erst bedienbar, wenn ein Schlüssel gespeichert ist. Nur bei aktivierter Routensuche ist die Suchart „Route“ sichtbar, und nur dann
+  gehen Aufrufe an OpenRouteService. Der Wechsel wirkt ohne Neustart. **Schlüssel entfernen** schaltet die Routensuche aus.
+- **Ablage:** sichere Ablage des Geräts (Windows: Credential Locker „Tankatlas/RoutingApi“, Schalter „Tankatlas/RoutingEnabled“; iOS: Keychain „tankatlas.routing-api-key“ und „tankatlas.routing-enabled“).
+  Der Schlüssel wird nie angezeigt, protokolliert oder in Meldungen und Adressen übernommen (er steht nur im Anfragekopf `Authorization`).
+- **Sicherung:** Schlüssel und Schalter gehören nicht zur lokalen Sicherung. Nach einer Wiederherstellung auf einem Gerät ohne Schlüssel ist die Routensuche aus; auf demselben Gerät bleibt sie unverändert.
+- **Adresse:** `https://api.heigit.org/openrouteservice/` (Directions: `v2/directions/driving-car`). Die frühere Adresse `api.openrouteservice.org` wird vom Anbieter Anfang November 2026 abgeschaltet
+  (<https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912>).
+- **CI und Windows-Paket:** Weder die Workflows noch `scripts/package-windows.ps1` kennen einen Routing-Schlüssel; das Secret `ROUTING_API_KEY` wird nicht mehr benötigt (ein vorhandenes kann gelöscht werden).
+- **Tests:** Im Testmodus belegt `TANKRADAR_ROUTING_TEST_API_KEY` die Testablage im Speicher vor (Schlüssel gesetzt, Routensuche eingeschaltet); ohne die Variable startet die App ohne Schlüssel.
+  Das Schlüsselfeld ist im Testmodus unverdeckt, damit die UI-Automation es beschreiben kann. Mock: `MockOpenRouteServiceServer`, nie ein echter Schlüssel.

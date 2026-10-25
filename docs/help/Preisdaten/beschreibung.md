@@ -14,6 +14,8 @@ Die Preisdaten sind die Grundlage für die [Umkreissuche](../Suche/index.md) sow
 - **Tankstellendetails:** Name, Adresse, Preise je Sorte und Öffnungszeiten, soweit die Quelle sie liefert.
 - **Preise der Favoriten:** Die Startseite fragt die Preise der favorisierten Tankstellen gezielt über deren Kennungen ab (bis zu 10 Tankstellen je Anfrage) statt per Umkreissuche. Eine Tankstelle, deren Preise innerhalb der letzten fünf Minuten erfolgreich abgerufen wurden, wird beim Öffnen der Startseite nicht erneut abgefragt; **Preise aktualisieren** erzwingt den Abruf.
 
+- **Routensuche:** Die Suche entlang einer Route stellt höchstens 3 Umkreisabfragen mit mindestens 10 Sekunden Abstand, jeweils nur auf Nutzeraktion. Die Nutzungsbedingungen (abgerufen 2026-10-20) nennen für die Umkreissuche „einen Radius von 25 km“ und „die Abfragefrequenz auf einen Request/Minute beschränkt“, erlauben Apps aber „Requests on Demand – auf Useraktion“; Massenabrufe werden geblockt. Die Grenze ist vorläufig bis zur Klärung mit Tankerkönig ([ADR 0014](../../adr/0014-route-search.md)).
+
 Angaben, die die Quelle nicht liefert (zum Beispiel Zahlungsmöglichkeiten), werden nicht erfunden, sondern später in der Oberfläche ausgeblendet. Der Hinweis **Automatentankstelle** wird abgeleitet, wenn die Quelle „durchgehend geöffnet“ meldet oder alle Öffnungszeiten rund um die Uhr gelten.
 
 ### Aktualität der Preise

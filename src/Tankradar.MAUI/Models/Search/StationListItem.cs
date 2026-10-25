@@ -16,6 +16,8 @@ namespace Tankradar.MAUI.Models.Search;
 /// <param name="Longitude">Der Längengrad der Tankstelle; <see langword="null"/>, wenn die Quelle keine gültige Position liefert.</param>
 /// <param name="IsOpen">Gibt an, ob die Tankstelle laut Quelle geöffnet ist; <see langword="null"/>, wenn unbekannt.</param>
 /// <param name="SubName">Der klein darunter angezeigte Stammdatenname der Quelle; leer, wenn er dem <paramref name="Name"/> entspricht.</param>
+/// <param name="RouteOffsetKm">Der Abstand zur Route in Kilometern; nur bei der Routensuche gesetzt.</param>
+/// <param name="RouteOffsetText">Der Abstand zur Route als Text; leer außerhalb der Routensuche.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationListItem(
     string Id,
@@ -30,8 +32,18 @@ public sealed record StationListItem(
     double? Latitude = null,
     double? Longitude = null,
     bool? IsOpen = null,
-    string SubName = "")
+    string SubName = "",
+    double? RouteOffsetKm = null,
+    string RouteOffsetText = "")
 {
+    /// <summary>
+    /// Gibt an, ob der Abstand zur Route bekannt ist (nur bei der Routensuche).
+    /// </summary>
+    public bool HasRouteOffset
+    {
+        get { return RouteOffsetText.Length > 0; }
+    }
+
     /// <summary>
     /// Gibt an, ob der Stammdatenname klein unter dem Namen angezeigt wird.
     /// </summary>
