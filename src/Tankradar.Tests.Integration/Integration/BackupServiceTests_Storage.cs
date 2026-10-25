@@ -10,6 +10,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft den Zustand der Dateien nach Erstellen und Wiederherstellen: WAL-Modus der Livedatenbank, keine gelöschten Inhalte im Schnappschuss und
 /// keine Sicherung, die die Grenzen der Wiederherstellung überschreitet.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Storage : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

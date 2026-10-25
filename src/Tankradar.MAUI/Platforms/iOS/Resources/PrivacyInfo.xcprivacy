@@ -3,7 +3,8 @@
 This is the minimum required version of the Apple Privacy Manifest for .NET MAUI apps.
 The contents below are needed because of APIs that are used in the .NET framework and .NET MAUI SDK.
 
-You are responsible for adding extra entries as needed for your application.
+Zusaetzliche Eintraege dieser App: Standort (PreciseLocation, nur App-Funktion), FileTimestamp 3B52.1
+(vom Anwender gewaehlte Sicherungs-/Exportdatei) und UserDefaults CA92.1. Begruendung: docs/adr/0015-ios-delivery-and-privacy.md.
 
 More information: https://aka.ms/maui-privacy-manifest
 -->
@@ -35,6 +36,7 @@ More information: https://aka.ms/maui-privacy-manifest
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
                 <string>C617.1</string>
+                <string>3B52.1</string>
             </array>
         </dict>
         <dict>
@@ -54,7 +56,10 @@ More information: https://aka.ms/maui-privacy-manifest
             </array>
         </dict>
         <!--
-            The entry below is only needed when you're using the Preferences API in your app.
+            Preferences API: MAUI Essentials (Preferences, Versionsinformationen) kann UserDefaults nutzen,
+            auch wenn die App selbst keine Einstellungen dort ablegt; deshalb vorsorglich deklariert (CA92.1:
+            Zugriff nur auf Daten der eigenen App). Siehe docs/adr/0015-ios-delivery-and-privacy.md.
+        -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
@@ -62,7 +67,7 @@ More information: https://aka.ms/maui-privacy-manifest
             <array>
                 <string>CA92.1</string>
             </array>
-        </dict> -->
+        </dict>
     </array>
 </dict>
 </plist>

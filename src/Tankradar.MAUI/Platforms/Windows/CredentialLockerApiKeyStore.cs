@@ -19,7 +19,7 @@ public sealed class CredentialLockerApiKeyStore : IApiKeyStore
     public const string RoutingResource = "Tankatlas/RoutingApi";
 
     /// <summary>
-    /// Ressourcenname des Schalters „Routensuche aktivieren“ (gerätelokal, nicht Teil der Sicherung).
+    /// Ressourcenname des Schalters „Routensuche aktivieren“ (im Credential Locker dieses Windows-Kontos, nicht Teil der Sicherung der App).
     /// </summary>
     public const string RoutingEnabledResource = "Tankatlas/RoutingEnabled";
 

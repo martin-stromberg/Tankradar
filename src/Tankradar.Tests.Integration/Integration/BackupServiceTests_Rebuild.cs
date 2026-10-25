@@ -14,6 +14,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft den Neuaufbau der Datenbank beim Einspielen: Präparierte Objekte der Sicherung (Trigger auch mit reserviertem Präfix, View, <c>CHECK</c>, Zähler, Migrationssperre,
 /// Kollation, zusätzliche Spalte, Tabelle und Index) gelangen nie in die Livedatenbank, die Daten bleiben vollständig, die App funktioniert danach, und nichts hängt.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Rebuild : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

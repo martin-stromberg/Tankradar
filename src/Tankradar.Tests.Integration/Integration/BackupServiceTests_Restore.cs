@@ -7,6 +7,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Prüft das Wiederherstellen auf einer echten SQLite-Datei: Überschreiben der geänderten Daten, Ersetzen der Fotos, Dateischutz, Zwischenspeicher und Aufräumen.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Restore : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

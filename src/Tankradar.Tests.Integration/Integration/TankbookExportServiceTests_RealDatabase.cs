@@ -32,7 +32,7 @@ public class TankbookExportServiceTests_RealDatabase : IDisposable
 
     private TankbookExportService CreateExportService()
     {
-        return new TankbookExportService(CreateVehicleService(), CreateEntryService(), new CachePaths(_database.DataDirectory), Clock, new RecordingLogger<TankbookExportService>());
+        return new TankbookExportService(CreateVehicleService(), CreateEntryService(), new CachePaths(_database.DataDirectory), new NoOpProtector(), Clock, new RecordingLogger<TankbookExportService>());
     }
 
     private async Task<Vehicle> SeedAsync(string name = "Käfer", VehicleFuelKind fuelKind = VehicleFuelKind.Diesel)
@@ -147,6 +147,17 @@ public class TankbookExportServiceTests_RealDatabase : IDisposable
     {
         _database.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    private sealed class NoOpProtector : IDatabaseFileProtector
+    {
+        public void Protect(string databasePath)
+        {
+        }
+
+        public void ProtectFile(string filePath)
+        {
+        }
     }
 
     private sealed class CachePaths : IAppDataPathProvider

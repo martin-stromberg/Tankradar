@@ -10,6 +10,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Prüft das Erstellen einer Sicherung auf einer echten SQLite-Datei: Umfang, Manifest, Dateischutz, Aufräumen und Vollständigkeit nach der Wiederherstellung.
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Create : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

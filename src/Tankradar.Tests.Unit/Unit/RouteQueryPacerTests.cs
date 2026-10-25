@@ -30,7 +30,7 @@ public class RouteQueryPacerTests : BaseTest
 
     private RouteQueryPacer CreatePacer()
     {
-        return new RouteQueryPacer(new RouteSearchOptions(), _delay, _clock);
+        return new RouteQueryPacer(new RouteSearchOptions { QueryIntervalReserve = TimeSpan.Zero }, _delay, _clock);
     }
 
     private IReadOnlyList<RouteQueryPoint> Queries()
@@ -59,6 +59,45 @@ public class RouteQueryPacerTests : BaseTest
         _clock.Advance(TimeSpan.FromSeconds(10));
         await pacer.WaitAsync(CancellationToken.None);
         Assert.Empty(_delay.Delays);
+    }
+
+    /// <summary>
+    /// Prüft, dass auf den Mindestabstand die Reserve aufgeschlagen wird (Standard 1,25 s: allgemeine Drosselung von 1 s plus 250 ms).
+    /// </summary>
+    [Fact]
+    public async Task WaitAsync_UsesIntervalPlusReserve()
+    {
+        var pacer = new RouteQueryPacer(new RouteSearchOptions(), _delay, _clock);
+
+        await pacer.WaitAsync(CancellationToken.None);
+        await pacer.WaitAsync(CancellationToken.None);
+        await pacer.WaitAsync(CancellationToken.None);
+
+        Assert.Equal(TimeSpan.FromMilliseconds(1250), RouteSearchOptions.DefaultQueryIntervalReserve);
+        Assert.Equal([TimeSpan.FromSeconds(11.25), TimeSpan.FromSeconds(11.25)], _delay.Delays);
+    }
+
+    /// <summary>
+    /// Prüft, dass ohne Mindestabstand auch keine Reserve gilt und ein Abbruch in der Wartezeit die Reserve mit freigibt.
+    /// </summary>
+    [Fact]
+    public async Task WaitAsync_ReserveOnlyAppliesWithInterval_AndIsReleasedOnCancel()
+    {
+        var withoutInterval = new RouteSearchOptions { MinQueryInterval = TimeSpan.Zero };
+        Assert.Equal(TimeSpan.Zero, withoutInterval.EffectiveQueryInterval);
+        Assert.Equal(TimeSpan.FromSeconds(11.25), new RouteSearchOptions().EffectiveQueryInterval);
+
+        var pacer = new RouteQueryPacer(new RouteSearchOptions(), _delay, _clock);
+        await pacer.WaitAsync(CancellationToken.None);
+        using var cancellation = new CancellationTokenSource();
+        _delay.OnDelay = cancellation.Cancel;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pacer.WaitAsync(cancellation.Token));
+        _delay.OnDelay = null;
+        _delay.Delays.Clear();
+
+        await pacer.WaitAsync(CancellationToken.None);
+
+        Assert.Equal([TimeSpan.FromSeconds(11.25)], _delay.Delays);
     }
 
     /// <summary>

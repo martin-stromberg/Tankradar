@@ -183,7 +183,7 @@ public static class MauiProgram
         });
         services.AddSingleton<IRouteSearchAccess>(provider =>
         {
-            // Schlüssel und Schalter liegen gerätelokal in der sicheren Ablage (Credential Locker bzw. Keychain), nie im Build und nie in der Sicherung.
+            // Schlüssel und Schalter liegen in der Keychain des Geräts (iOS) bzw. im Credential Locker (Windows), nie im Build und nie in der Sicherung der App; iOS-Keychain-Einträge können in verschlüsselten Gerätesicherungen enthalten sein und werden nicht mit iCloud synchronisiert.
 #if WINDOWS
             return RouteSearchAccess.Create(
                 Environment.GetEnvironmentVariable,

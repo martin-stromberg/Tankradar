@@ -9,6 +9,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// Prüft die Robustheit der Wiederherstellung: bestehendes Journal vor einer neuen Wiederherstellung, fehlgeschlagenes Zurücknehmen,
 /// kurzzeitig gehaltene Datenbankdatei und eine nicht lesbare Datei in der Liste. Die Sperren-Tests gelten nur unter Windows (dort erzwingt das Betriebssystem Dateisperren).
 /// </summary>
+[Collection(BackupCollection.Name)]
 public class BackupServiceTests_Resilience : IDisposable
 {
     private static readonly byte[] Photo = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
