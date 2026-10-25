@@ -122,7 +122,7 @@ Die Suchart **Route** zeigt Tankstellen entlang einer Strecke mit dem Auto.
 - Die Route berechnet OpenRouteService (Profil Auto, eigener Schlüssel des Anwenders, siehe [API-Schlüssel](../Preisdaten/api-schluessel.md)). Die Suchart ist nur bei aktivierter Routensuche sichtbar.
   Die Preisabfragen erfolgen entlang der Strecke: **höchstens 3 Abfragen** je Suche, nacheinander im Abstand von **mindestens 10 Sekunden** zuzüglich einer kleinen Reserve von 0,25 Sekunden (vorläufige Grenze, siehe
   [ADR 0014](../../adr/0014-route-search.md)). Daraus folgt die durchsuchbare Länge: 137 km bei 1 km Abstand, 131 km bei 2 km, 114 km bei 5 km und 85 km bei 10 km. Die Länge wird in der Meldung abgerundet; bei 1 km Abstand schlägt sie keinen kleineren Abstand mehr vor. Längere Routen werden vor der
-  ersten Preisabfrage mit einem Hinweis abgelehnt, der die durchsuchbare Länge nennt. Eine Suche dauert bis zu etwa 20 Sekunden; der Fortschritt („Tankstellen werden gesucht (2 von 3) …“) bleibt auch
+  ersten Preisabfrage mit einem Hinweis abgelehnt, der die durchsuchbare Länge nennt. Eine Suche dauert bis zu etwa 23 Sekunden; der Fortschritt („Tankstellen werden gesucht (2 von 3) …“) bleibt auch
   während der Wartezeit sichtbar, **Suche abbrechen** ist jederzeit möglich. Wiederholte Suchen nutzen den Cache. Zusammenfassung und Kartenhinweis beschreiben die Anfrage (Abstand, Start), auch
   wenn danach Eingaben geändert werden; während der Suche sind Chips und Eingaben gesperrt.
 - **Ergebnis:** Liste und Karte mit den gewohnten Filtern, Preisen mit Alter, Hinweisen, Preisniveau-Farben und Sortierungen. Die **Entfernung** ist die Position

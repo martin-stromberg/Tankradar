@@ -62,7 +62,7 @@ public class RouteQueryPacerTests : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass auf den Mindestabstand die Reserve aufgeschlagen wird (Standard 250 ms).
+    /// Prüft, dass auf den Mindestabstand die Reserve aufgeschlagen wird (Standard 1,25 s: allgemeine Drosselung von 1 s plus 250 ms).
     /// </summary>
     [Fact]
     public async Task WaitAsync_UsesIntervalPlusReserve()
@@ -73,8 +73,8 @@ public class RouteQueryPacerTests : BaseTest
         await pacer.WaitAsync(CancellationToken.None);
         await pacer.WaitAsync(CancellationToken.None);
 
-        Assert.Equal(TimeSpan.FromMilliseconds(250), RouteSearchOptions.DefaultQueryIntervalReserve);
-        Assert.Equal([TimeSpan.FromSeconds(10.25), TimeSpan.FromSeconds(10.25)], _delay.Delays);
+        Assert.Equal(TimeSpan.FromMilliseconds(1250), RouteSearchOptions.DefaultQueryIntervalReserve);
+        Assert.Equal([TimeSpan.FromSeconds(11.25), TimeSpan.FromSeconds(11.25)], _delay.Delays);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class RouteQueryPacerTests : BaseTest
     {
         var withoutInterval = new RouteSearchOptions { MinQueryInterval = TimeSpan.Zero };
         Assert.Equal(TimeSpan.Zero, withoutInterval.EffectiveQueryInterval);
-        Assert.Equal(TimeSpan.FromSeconds(10.25), new RouteSearchOptions().EffectiveQueryInterval);
+        Assert.Equal(TimeSpan.FromSeconds(11.25), new RouteSearchOptions().EffectiveQueryInterval);
 
         var pacer = new RouteQueryPacer(new RouteSearchOptions(), _delay, _clock);
         await pacer.WaitAsync(CancellationToken.None);
@@ -97,7 +97,7 @@ public class RouteQueryPacerTests : BaseTest
 
         await pacer.WaitAsync(CancellationToken.None);
 
-        Assert.Equal([TimeSpan.FromSeconds(10.25)], _delay.Delays);
+        Assert.Equal([TimeSpan.FromSeconds(11.25)], _delay.Delays);
     }
 
     /// <summary>

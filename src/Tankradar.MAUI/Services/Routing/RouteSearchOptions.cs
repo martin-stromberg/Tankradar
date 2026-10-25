@@ -28,10 +28,10 @@ public sealed class RouteSearchOptions
 
     /// <summary>
     /// Die Standardreserve auf den Mindestabstand: Der Takt wird ab der Reservierung gemessen, die Abfrage verlässt die App aber erst nach der allgemeinen
-    /// Drosselung des Preisdienstes (<c>RequestThrottle</c>) und dem Verbindungsaufbau; die Reserve deckt diese Verzögerung, damit der tatsächliche Abstand nicht unter den Mindestabstand fällt.
+    /// Drosselung des Preisdienstes (<c>RequestThrottle</c>, bis 1 s) und dem Verbindungsaufbau; die Reserve (1 s Drosselung plus 250 ms) deckt diese Verzögerung, damit der tatsächliche Abstand nicht unter den Mindestabstand fällt.
     /// </summary>
     /// <returns>Der Wert.</returns>
-    public static readonly TimeSpan DefaultQueryIntervalReserve = TimeSpan.FromMilliseconds(250);
+    public static readonly TimeSpan DefaultQueryIntervalReserve = TimeSpan.FromMilliseconds(1250);
 
     /// <summary>
     /// Der größte Radius einer Umkreisabfrage beim Preisdienst in Kilometern.

@@ -810,8 +810,8 @@ else
 fi
 echo "==> Pruefe Groesse des Marketing-Icons (1024 x 1024)"
 ICON_BLOCK=`$(xcrun assetutil --info "`$APP/Assets.car" 2>/dev/null | awk 'BEGIN{RS="}"} /appiconItunesArtwork/' | head -40 || true)
-ICON_W=`$(echo "`$ICON_BLOCK" | grep -i '"PixelWidth"' | head -1 | tr -dc '0-9')
-ICON_H=`$(echo "`$ICON_BLOCK" | grep -i '"PixelHeight"' | head -1 | tr -dc '0-9')
+ICON_W=`$(echo "`$ICON_BLOCK" | grep -i '"PixelWidth"' | head -1 | tr -dc '0-9' || true)
+ICON_H=`$(echo "`$ICON_BLOCK" | grep -i '"PixelHeight"' | head -1 | tr -dc '0-9' || true)
 if [ -z "`$ICON_W" ] || [ -z "`$ICON_H" ]; then
     echo "WARNUNG: Groesse des Marketing-Icons konnte nicht gelesen werden - Pruefung uebersprungen"
 elif [ "`$ICON_W" != "1024" ] || [ "`$ICON_H" != "1024" ]; then

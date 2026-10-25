@@ -10,12 +10,12 @@ Dieses Dokument bereitet die Datenschutzangaben vor, die App Store Connect für 
 
 | Zweck | Empfänger | Übermittelte Daten | Gespeichert vom Entwickler? |
 |-------|-----------|--------------------|-----------------------------|
-| Tankstellen und Preise in der Nähe, Routensuche (Tankstellen entlang der Route) | Tankerkönig (Daten: MTS-K) | Koordinaten des Suchmittelpunkts bzw. der Routenabschnitte und Radius, zusammen mit dem in die App eingebauten Zugangsschlüssel; technisch bedingt die IP-Adresse | Nein (kein eigener Server) |
+| Tankstellen und Preise in der Nähe, Routensuche (Tankstellen entlang der Route), Preise der Favoriten, Tankstellendetails | Tankerkönig (Daten: MTS-K) | Koordinaten des Suchmittelpunkts bzw. der Routenabschnitte und Radius; bei Favoritenpreisen und Detailansicht die Kennungen der betreffenden Tankstellen (ohne Bezug zum Anwender); jeweils zusammen mit dem in die App eingebauten Zugangsschlüssel; technisch bedingt die IP-Adresse | Nein (kein eigener Server) |
 | Adress-, Orts- und PLZ-Suche, Start und Ziel einer Route | Nominatim (OpenStreetMap) | eingegebener Suchtext, technisch bedingt die IP-Adresse | Nein |
 | Routenberechnung | OpenRouteService (HeiGIT), nur wenn die Routensuche aktiviert ist | Start- und Zielkoordinaten, mit dem **eigenen** Schlüssel des Anwenders | Nein |
 | Kartendarstellung | OpenStreetMap-Kachelserver | Kachelkoordinaten des sichtbaren Kartenausschnitts, technisch bedingt die IP-Adresse | Nein |
 
-**Nicht** übertragen werden: Fahrzeuge, Tank- und Ladevorgänge, Belegfotos, Favoriten, Notizen, Einstellungen, Sicherungen und Exporte. Es gibt keine Analyse-, Absturzberichts- oder Werbe-Bausteine und keine Verfolgung über Apps oder Websites hinweg.
+**Nicht** übertragen werden: Fahrzeuge, Tank- und Ladevorgänge, Belegfotos, die Favoritenliste als solche (übertragen werden nur die Tankstellenkennungen für die Preisabfrage, siehe oben), Notizen, Einstellungen, Sicherungen und Exporte. Es gibt keine Analyse-, Absturzberichts- oder Werbe-Bausteine und keine Verfolgung über Apps oder Websites hinweg.
 
 ## Standort
 
