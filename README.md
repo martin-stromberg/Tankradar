@@ -205,7 +205,7 @@ wirkt nicht mehr) aktiviert; nur dann gelten zusätzlich
 Die Suchart „Route“ (Schritt 17) zeigt Tankstellen entlang einer Strecke: Start (aktueller Standort oder Adresse) und Ziel werden über
 OpenStreetMap-Nominatim aufgelöst, die Route für ein Auto berechnet OpenRouteService (Quellenangabe „Routen: OpenRouteService, Geodaten ©
 OpenStreetMap-Mitwirkende“), der Abstand zur Route ist 1, 2, 5 oder 10 km (Standard 2 km). Die Tankerkönig-Abfragen entlang der Strecke sind auf
-höchstens 3 je Suche mit mindestens 10 Sekunden Abstand begrenzt (vorläufig, bis Tankerkönig die Zulässigkeit geklärt hat; zu lange Routen werden mit Hinweis
+höchstens 3 je Suche mit mindestens 10 Sekunden Abstand begrenzt (zu lange Routen werden mit Hinweis
 abgelehnt; [ADR 0014](docs/adr/0014-route-search.md)).
 Den Schlüssel für OpenRouteService beantragt jeder Anwender selbst und trägt ihn in den **Optionen** unter **Routensuche** ein (verdecktes Feld, Prüfung per
 Testanfrage, Schalter **Routensuche aktivieren**). Er liegt in der Keychain des Geräts (iOS) bzw. im Credential Locker (Windows), wird beim Build nie eingebunden

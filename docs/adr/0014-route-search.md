@@ -2,7 +2,7 @@
 
 ## Status
 
-Angenommen (2026-10-20); Änderungen nach Korrekturrunde 1 (2026-10-20/25): eigener Schlüssel je Anwender, neue Adresse, vorläufige Abfragegrenze
+Angenommen (2026-10-20); Änderungen nach Korrekturrunde 1 (2026-10-20/25): eigener Schlüssel je Anwender, neue Adresse, Abfragegrenze (seit 2026-10-26 endgültig)
 
 ## Kontext
 
@@ -29,7 +29,7 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
   Wegen s ≤ Schritt ist s/2/0,95 + d ≤ 25; der Radius ist also zulässig und überdeckt die Tankstelle. Der Faktor 0,95 fängt Rundungs- und
   Projektionsfehler ab. Ein Test (`RouteSamplerTests_Coverage`) belegt das mit Zufallspunkten für alle Stufen, gerade und gekrümmte Routen
   und die Enden der Route.
-- Rechenbeispiele (ohne Abfragegrenze): d = 2 km, Schritt 43,7 km; 100 km ergeben 3 Abfragen (s = 33,3 km, R = 19 km). Mit der vorläufigen Grenze von 3 Abfragen sind Routen
+- Rechenbeispiele (ohne Abfragegrenze): d = 2 km, Schritt 43,7 km; 100 km ergeben 3 Abfragen (s = 33,3 km, R = 19 km). Mit der Grenze von 3 Abfragen sind Routen
   bis 3 × Schritt durchsuchbar: 136,8 km (d = 1), 131,1 km (d = 2), 114 km (d = 5), 85,5 km (d = 10).
 - Die Auswahl filtert anschließend exakt: Eine Tankstelle gehört zur Route, wenn ihr Abstand zur Streckenlinie ≤ d ist (lokale Projektion
   in Kilometer, Fußpunkt auf der Teilstrecke, Haversine zum Fußpunkt). Dubletten (Station-ID) entfallen; sortiert wird nach der Position
@@ -40,8 +40,8 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
 - **Wortlaut der Nutzungsbedingungen** (abgerufen 2026-10-20 von `https://creativecommons.tankerkoenig.de`, Schreibfehler im Original): Die Umkreissuche ist „auf einen radius von 25km und die
   Abfragefrequenz auf einen requet/Minute beschränkt“. Unter „API-Requests“: „Apps, Websites und andere Systeme: Requests on Demand – auf Useraktion – durchführen“; „Regelmäßige, nicht explizit
   vom User initiierte Requests sind zu vermeiden“; zu Massendaten: „Die API ist dazu allerdings nicht geeignet und Versuche, das durchzuführen werden geblockt (und API-Keys deaktiviert).“
-- **Abweichung 1 (vorläufig):** Die Routensuche läuft ausschließlich auf Nutzeraktion, braucht aber mehrere Umkreisabfragen. Bis zur Klärung mit Tankerkönig (Entscheidung des Anwenders vom
-  2026-10-20) gilt: **höchstens 3 Umkreisabfragen je Routensuche** mit **mindestens 10 s Abstand** (`RouteSearchOptions.DefaultMaxQueries`, `DefaultMinQueryInterval`; nur dort anzupassen). Routen, die mehr
+- **Abweichung 1:** Die Routensuche läuft ausschließlich auf Nutzeraktion, braucht aber mehrere Umkreisabfragen. Es gilt (Entscheidung des Anwenders vom 2026-10-20, am 2026-10-26 ohne
+  Rückfrage bei Tankerkönig als endgültig bestätigt): **höchstens 3 Umkreisabfragen je Routensuche** mit **mindestens 10 s Abstand** (`RouteSearchOptions.DefaultMaxQueries`, `DefaultMinQueryInterval`; nur dort anzupassen). Routen, die mehr
   Abfragen bräuchten, werden **vor der ersten Preisabfrage** mit einem Hinweis abgelehnt, der die bei gewähltem Abstand durchsuchbare Länge nennt (`RouteSearchResult.Limit`); es wird nicht still gekürzt.
   Die frühere Grenze (15 Abfragen, 400 km, 1 s) entfällt. Nach der Antwort von Tankerkönig wird die Grenze angepasst und hier mit Quelle festgehalten; bis dahin trägt der Auftraggeber das Restrisiko,
   dass die Minutengrenze strenger auszulegen ist.
@@ -51,7 +51,7 @@ dauerhaft speichern, keine neue Abhängigkeit (iOS: `MtouchInterpreter` und `Tri
   bedient (`IFuelPriceService.IsSearchCached`), warten nicht. Die Wartezeit ist abbrechbar; die Fortschrittsanzeige nennt schon währenddessen die anstehende Abfrage („Tankstellen werden gesucht (2 von 3)“), und **Suche abbrechen**
   beendet die Suche. Alle Abfragen laufen über denselben Preisdienst und dessen allgemeine Drosselung (`RequestThrottle`, 1 s, nicht verkürzbar) wie die normale Suche; die Routensuche umgeht sie
   nicht, sie wartet nur länger. Die Reserve (Schritt 18) deckt die Verzögerung zwischen Reservierung und tatsächlichem Absenden: die allgemeine Drosselung von bis zu 1 s (nicht verkürzbar; sie greift, wenn kurz zuvor z. B. Favoritenpreise abgefragt wurden) plus 250 ms für den Verbindungsaufbau (gemessen rund 13 ms). Weil auch die vorherige Abfrage bis zu 1 s verzögert sein kann, braucht es die volle Sekunde in der Reserve; der Abstand zwischen zwei gesendeten Abfragen fällt so nicht unter 10 s (Korrektur aus der Abnahme von Schritt 18, zuvor 250 ms). Sie gilt nur, wenn ein Mindestabstand gilt (im Testmodus ohne Abstand entfällt sie). Eine Suche dauert damit höchstens rund 22,5 s zuzüglich Routing; folgt sie direkt auf eine frühere Suche, kommt für die erste Abfrage bis zu 11,25 s Wartezeit hinzu. Die Grenzmeldung nennt die durchsuchbare Länge abgerundet und schlägt bei 1 km Abstand keinen kleineren Abstand vor.
-  Stand der Tankerkönig-Klärung (Schritt 18): Eine Antwort liegt im Repository nicht vor, die Grenze (3 Abfragen, 10 s) bleibt daher unverändert und vorläufig.
+  Stand 2026-10-26: Der Anwender belässt die Grenze (3 Abfragen, 10 s) dauerhaft; eine Klärung mit Tankerkönig ist nicht mehr vorgesehen.
 - Meldet eine Abfrage einen Fehler (auch Rückfall auf den Cache mit Fehlergrund), bricht die Suche ab; Teilergebnisse würden Lücken entlang der Route verschweigen.
 - Altbestand (nicht Teil dieser Entscheidung): Auch Umkreissuche und Favoritenpreise können mehr als eine Anfrage pro Minute auslösen; das ist bei der Klärung mit Tankerkönig mitzubedenken.
 
@@ -114,6 +114,6 @@ jetzt „Weitere anzeigen (N übrig)“, damit die Sprachausgabe „weitere“ n
 ## Folgen
 
 - Neue Dienste unter `Services/Routing/`, Presenter-Logik in `MapViewModel.Route.cs`.
-- Eine Routensuche belastet Tankerkönig mit höchstens 3 Abfragen im Abstand von mindestens 10 s; die Konstanten sind zentral und prüfbar. Die Grenze ist vorläufig bis zur Klärung mit Tankerkönig.
+- Eine Routensuche belastet Tankerkönig mit höchstens 3 Abfragen im Abstand von mindestens 10 s; die Konstanten sind zentral und prüfbar. Die Grenze gilt dauerhaft (Entscheidung des Anwenders vom 2026-10-26).
 - Der Anwender braucht einen eigenen OpenRouteService-Schlüssel; ohne ihn bleibt die Suchart „Route“ unsichtbar.
 - Die Aufhebung des Ausschlusses betrifft nur die Routensuche.
