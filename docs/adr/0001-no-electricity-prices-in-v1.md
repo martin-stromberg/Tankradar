@@ -28,9 +28,10 @@ implementiert:
   Strom/Ladetyp, Strompreise in Detailansicht/Startseite/„In der Nähe", Ladestationen als Favoriten,
   Sicherung von Strompreisständen)
 
-Diese Entscheidung wurde vom Stakeholder am 2026-09-28 getroffen (siehe
-`docs/projects/task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar/project-plan.md`, Abschnitt
-„Grobe Vorgehensentscheidungen", Zeile „Keine Strompreise in 1.0").
+Diese Entscheidung wurde vom Stakeholder am 2026-09-28 getroffen (Projektplan zu Issue #1,
+Abschnitt „Grobe Vorgehensentscheidungen", Zeile „Keine Strompreise in 1.0"). Begründung: In
+Deutschland gibt es keine offizielle, frei nutzbare Strompreis-API; das Ladesäulenregister der
+Bundesnetzagentur liefert nur Standorte und Leistung.
 
 Erhalten bleiben alle Funktionen, die keine Strompreisquelle voraussetzen:
 

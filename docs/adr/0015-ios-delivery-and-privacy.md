@@ -39,7 +39,7 @@ Die Reihenfolge nach Name, Preis und Entfernung ist durch ViewModel-Tests (`MapV
 
 - Der Abfragetakt (ADR 0014) erhält eine Reserve `QueryIntervalReserve` (1,25 s: allgemeine Drosselung bis 1 s plus 250 ms) auf den Mindestabstand von 10 s, gemessen ab der Reservierung. Eine Rückmeldung des tatsächlichen Absendezeitpunkts aus dem Preisdienst wurde nicht gebaut (Schnittstellenänderung unverhältnismäßig); die Reserve deckt die gemessene Verzögerung. Ohne Mindestabstand (Testmodus) gilt keine Reserve.
 - Die Grenzmeldung rundet die durchsuchbare Länge ab und schlägt bei 1 km Abstand keinen kleineren Abstand vor. Der E2E-Test `RouteE2ETests_Cancel` prüft „Suche abbrechen“ (nur UIA-Muster).
-- **Abfragegrenze:** Eine Antwort von Tankerkönig liegt im Repository nicht vor; die Grenze (3 Abfragen, 10 s) bleibt unverändert und vorläufig (ADR 0014).
+- **Abfragegrenze:** Eine Antwort von Tankerkönig liegt im Repository nicht vor; die Grenze (3 Abfragen, 10 s) bleibt unverändert; am 2026-10-26 hat der Anwender sie als endgültig bestätigt (ADR 0014).
 
 ### Wackeliger Test `Restore_WithPooledConnectionHoldingWal_Succeeds`
 
