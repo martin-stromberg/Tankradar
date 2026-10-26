@@ -1,3 +1,11 @@
+## 2026-10-26 — Einrichtungsdialog beim ersten Start (Issue #17)
+
+- Beim ersten Start nach einer Installation fragt eine Einrichtung einmalig nach den Spritsorten (Super E5, Super E10, Diesel; alle vorausgewählt). Mit „Speichern“ wird die Auswahl übernommen (mindestens eine Sorte), mit „Überspringen“ werden alle Sorten übernommen. Die Einrichtung erscheint danach nicht mehr.
+- Die Auswahl wird in derselben Einstellung gespeichert wie der Bereich „Spritsorten“ in den Optionen; dort lässt sie sich jederzeit ändern. Der Erststart wird über die vorhandene Einstellungszeile erkannt; es gibt keine Schemaänderung und keine neue Migration.
+- Bestandsinstallationen, die nie in den Optionen gespeichert haben, sehen die Einrichtung nach dem Update einmalig. Nach einer Wiederherstellung erscheint sie nur, wenn die Sicherung keine Einstellungen enthält, und dann erst beim nächsten Start.
+- Die Einrichtung ist als Überlagerung innerhalb der App umgesetzt, nicht als Dialog des Betriebssystems (ADR 0017).
+- Dokumentation: `docs/help/Einstellungen/` (Beschreibung, Ablauf für Anwender, Technischer Ablauf) und `docs/adr/0017-einrichtungsdialog.md`.
+
 ## 2026-10-25 — Korrektur: Doppelte Seitenüberschriften entfernt (Version 0.1.27)
 
 - Anwenderwunsch (TestFlight rc.12): Der Seitenname stand zweimal da, im App-Kopf als Titel und noch einmal als große Überschrift oben im Inhalt. Entfernt wurde die Überschrift im Inhalt der Seiten Favoriten, Karte, Tankbuch, Optionen und Tank- und Ladevorgänge. Der Titel in der Navigationsleiste bleibt und wird von der Sprachausgabe als Seitenname angesagt.

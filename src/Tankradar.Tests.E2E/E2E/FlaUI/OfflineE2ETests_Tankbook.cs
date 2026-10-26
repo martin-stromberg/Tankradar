@@ -21,11 +21,6 @@ public class OfflineE2ETests_Tankbook : HomeE2ETestBase
 
     private TankbookE2EDriver Tankbook { get; }
 
-    private string DatabasePath
-    {
-        get { return Path.Combine(TestDataDirectory, "tankatlas.db"); }
-    }
-
     private void AgeStationDetails()
     {
         using var connection = new SqliteConnection($"Data Source={DatabasePath};Pooling=False;Default Timeout=5");

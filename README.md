@@ -174,6 +174,15 @@ Entwicklungs- oder Echtbetriebsdaten kollidieren. Die App selbst löst ihr Daten
 `TANKATLAS_TEST_DATA_PATH` gesetzt, wird dieses Verzeichnis verwendet, andernfalls das reguläre
 Plattform-Datenverzeichnis (`FileSystem.AppDataDirectory`).
 
+## Erststart und Einrichtung
+
+Beim ersten Start nach einer Installation fragt Tankatlas einmalig nach den Spritsorten, die den Anwender interessieren
+(Super E5, Super E10, Diesel; alle vorausgewählt). „Speichern“ übernimmt die Auswahl (mindestens eine Sorte), „Überspringen“
+übernimmt alle drei Sorten. Die Auswahl ist dieselbe Einstellung wie der Bereich „Spritsorten“ in den **Optionen** und lässt
+sich dort jederzeit ändern. Die Einrichtung erscheint danach nicht wieder. Die Einrichtung wird als Überlagerung innerhalb der
+App umgesetzt, nicht als Systemdialog ([ADR 0017](docs/adr/0017-einrichtungsdialog.md)). Details:
+[`docs/help/Einstellungen/`](docs/help/Einstellungen/index.md).
+
 ## Kraftstoffpreise und API-Schlüssel
 
 Die App ruft Preise über die Tankerkönig-API ab (Quellenangabe „Daten: Tankerkönig / MTS-K“, CC BY 4.0,

@@ -6,6 +6,22 @@
 
 Tankatlas ist installiert und gestartet.
 
+## Einrichtung beim ersten Start
+
+Beim ersten Start nach der Installation (auch nach einer Neuinstallation) erscheint vor der Startseite die Einrichtung **Willkommen bei Tankatlas**. Sie überdeckt die App samt Menüleiste, bis Sie sie abschließen.
+
+1. Alle drei Spritsorten **Super E5**, **Super E10** und **Diesel** sind vorausgewählt. Schalten Sie die Sorten aus, die Sie nicht interessieren.
+2. Tippen Sie auf **Speichern**. Ist keine Sorte ausgewählt, erscheint die Meldung „Wähle mindestens eine Spritsorte aus.“ und die Einrichtung bleibt offen.
+3. Alternativ tippen Sie auf **Überspringen**. Dann gelten alle drei Sorten.
+
+Die Auswahl ist dieselbe Einstellung wie die Gruppe **Spritsorten** in den Optionen; dort ändern Sie sie später jederzeit, auch die Reihenfolge (in der Einrichtung gilt die Reihenfolge Super E5, Super E10, Diesel). Nach **Speichern** oder **Überspringen** erscheint die Einrichtung nicht wieder.
+
+Hinweise:
+
+- **Nach einem App-Update:** Haben Sie in einer früheren Version nie eine Einstellung in den Optionen geändert, erscheint die Einrichtung nach dem Update einmalig. Ihre übrigen Daten (Favoriten, Tankbuch) bleiben unverändert.
+- **Nach einer Wiederherstellung:** Enthält die Sicherung Einstellungen, erscheint die Einrichtung nicht. Enthält sie keine, erscheint die Einrichtung beim nächsten Start der App, nicht sofort nach der Wiederherstellung.
+- Kann die Einrichtung nicht gespeichert werden, erscheint „Die Einrichtung konnte nicht gespeichert werden. Bitte versuche es erneut.“ und sie bleibt offen.
+
 ## Schritt-für-Schritt-Anleitung
 
 ### 1. Optionen öffnen
@@ -45,4 +61,4 @@ Ihre Einstellungen sind gespeichert und bleiben auch nach einem Neustart und nac
 
 ## Barrierefreiheit
 
-Alle Schalter und Auswahlfelder sind per Tabulator-Taste erreichbar und mit Enter oder Leertaste bedienbar; Bedienelemente haben mindestens 44 × 44 Punkte Größe. Die Pfeil-Schaltflächen sind für Screenreader als „Nach oben verschieben“ und „Nach unten verschieben“ beschriftet.
+Alle Schalter und Auswahlfelder sind per Tabulator-Taste erreichbar und mit Enter oder Leertaste bedienbar; Bedienelemente haben mindestens 44 × 44 Punkte Größe. Die Pfeil-Schaltflächen sind für Screenreader als „Nach oben verschieben“ und „Nach unten verschieben“ beschriftet. In der Einrichtung beim ersten Start lesen VoiceOver und die Windows-Sprachausgabe Überschrift, Hinweis, die Schalter mit dem Namen der Sorte sowie **Überspringen** und **Speichern** mit einer Beschreibung ihrer Wirkung in dieser Reihenfolge vor.

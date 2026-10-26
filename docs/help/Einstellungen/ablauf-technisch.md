@@ -16,6 +16,19 @@ Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.
 4. `IDatabaseFileProtector.Protect(...)` setzt unter iOS `NSFileProtectionCompleteUntilFirstUserAuthentication` auf Verzeichnis, `tankatlas.db`, `-wal` und `-shm` (`#if IOS`); auf anderen Plattformen geschieht nichts. Es gibt keine zusätzliche Verschlüsselung.
 5. Der Initialisierungs-Task wird zwischengespeichert; bei einer Ausnahme wird er verworfen, sodass ein späterer Zugriff die Initialisierung wiederholt.
 
+### 1a. Einrichtung beim ersten Start
+
+1. `App.CreateWindow` erzeugt `AppShell` über die Fabrik `Func<AppShell>` aus der Dependency Injection. Die Shell erhält `ISetupStatusService`, `SetupViewModel` (Transient) und `ILogger<AppShell>` (`MauiProgram`: `AppShell` als Transient, `ISetupStatusService` → `SetupStatusService` als Singleton).
+2. Nach dem Laden der Shell (`Loaded`) ruft `AppShell.CheckSetupAsync()` `ISetupStatusService.IsSetupRequiredAsync()` auf. `SetupStatusService` wartet auf denselben Lauf von `IDatabaseInitializer.InitializeAsync()` (kein Rennen mit der Migration) und prüft, ob in `UserSettings` die Zeile `Id` = `UserSettingsEntity.SingletonId` existiert. Fehlt sie, ist die Einrichtung nötig.
+3. `AppShell` erzeugt aus dem `DataTemplate` `SetupOverlayTemplate` (`AppShell.xaml`) eine `ContentPage` mit `SetupViewModel` als `BindingContext` und legt sie per `Navigation.PushModalAsync` über Shell und TabBar (keine Route, kein Systemdialog, siehe [ADR 0017](../../adr/0017-einrichtungsdialog.md)). Ein Fehler bei Prüfung oder Anzeige wird protokolliert; die Einrichtung erscheint dann nicht.
+4. `SetupViewModel` zeigt `FuelTypes` aus `AppSettings.CreateDefault()` (alle ausgewählt, Reihenfolge E5, E10, Diesel; `FuelTypeItemViewModel` ohne Verschiebe-Schaltflächen). `SaveAsync()` prüft „mindestens eine Sorte“ (sonst `StatusMessage`, kein Speichern) und speichert `AppSettings.CreateDefault()` mit der Auswahl über `ISettingsService.SaveAsync` (inkl. `Validate`). `SkipAsync()` speichert `AppSettings.CreateDefault()`. Bei Erfolg löst es `Completed` aus, `AppShell` entfernt die Seite (`PopModalAsync`, nur wenn sie die oberste Modalseite ist, sonst wird ein Hinweis protokolliert); bei einem Fehler bleibt sie mit `StatusMessage` offen.
+5. Ab jetzt existiert die Zeile `UserSettings`; `IsSetupRequiredAsync()` liefert bei jedem weiteren Start `false`. Es gibt kein eigenes Kennzeichen, keine Migration und keine Schemaänderung.
+
+Bewusst hingenommene Folgen:
+
+- **Bestandsinstallationen:** Die Zeile `UserSettings` entsteht nur durch `SettingsService.SaveAsync`. Installationen, die nur aktualisiert wurden und nie in den Optionen gespeichert haben, sehen die Einrichtung nach dem Update einmalig. Es gibt keine Datenmigration.
+- **Wiederherstellung:** `BackupViewModel.Restored` lädt nur die Einstellungen neu; der Einrichtungsstatus wird nicht gesondert behandelt. Enthält die wiederhergestellte Datenbank die Zeile, bleibt die Einrichtung aus; fehlt sie, erscheint die Einrichtung beim nächsten Start.
+
 ### 2. Einstellungen laden
 
 1. `SettingsPage` erscheint, `SettingsViewModel.OnAppearing()` startet `LoadAsync()`.
@@ -61,6 +74,7 @@ Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`,
 - `ISettingsService` / `SettingsService`, `AppSettings`, `FuelTypeSelection`
 - `SettingsViewModel`, `FuelTypeItemViewModel`, `ChoiceOptionViewModel<T>`, `SettingsPage`
 - `SettingsTexts` (zentrale UI-Texte, `Resources/Texts/`)
+- Einrichtung beim ersten Start: `ISetupStatusService` / `SetupStatusService`, `SetupViewModel`, `SetupTexts`, `AppShell` (`SetupOverlayTemplate`, `CheckSetupAsync`), `App.CreateWindow`
 - `IAppDataPathProvider` (einzige Quelle des Datenbankpfads)
 
 ## Fehlerbehandlung
@@ -68,12 +82,16 @@ Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`,
 - Fehler beim Laden: Meldung „Die Einstellungen konnten nicht geladen werden.“, Standardwerte, kein Speichern.
 - Fehler beim Speichern: Meldung „Die Einstellung konnte nicht gespeichert werden.“
 - Eine fehlgeschlagene Initialisierung wird nicht dauerhaft gecacht und beim nächsten Zugriff wiederholt.
+- Fehler bei der Erststart-Prüfung oder beim Anzeigen der Einrichtung: Protokolleintrag, die Einrichtung erscheint nicht, die Shell bleibt bedienbar.
+- Fehler beim Speichern der Einrichtung: Meldung „Die Einrichtung konnte nicht gespeichert werden. Bitte versuche es erneut.“, die Einrichtung bleibt offen.
 
 ## Tests
 
 - Unit: `SettingsService`, `SettingsViewModel`, Enums
 - Integration: echte SQLite-Datei, Erststart, Migration älterer Schemastände, Neustart
-- E2E (FlaUI): Einstellungen ändern und App neu starten; `E2ETestBase` isoliert über `TANKATLAS_TEST_DATA_PATH`
+- Unit: `SetupViewModelTests_Selection`, `SetupViewModelTests_Validation`, `SetupViewModelTests_Save`, `SetupViewModelTests_Skip`
+- Integration: `SetupStatusServiceTests_FirstStart` (frische Datenbank, nach dem Speichern, nach einem Neustart)
+- E2E (FlaUI): Einstellungen ändern und App neu starten; `E2ETestBase` isoliert über `TANKATLAS_TEST_DATA_PATH`. Fehlt vor dem Start die Zeile `UserSettings`, beendet `E2ETestBase` die Einrichtung nach dem Start über „Überspringen“ (`CompletesSetupOnStart`, Standard `true`); `SetupE2ETests_*` schalten das ab und prüfen Erscheinen, Speichern, Neustart, Überspringen, Validierung, Änderung in den Optionen und Wiederherstellung
 
 ## Hinweis zu iOS
 

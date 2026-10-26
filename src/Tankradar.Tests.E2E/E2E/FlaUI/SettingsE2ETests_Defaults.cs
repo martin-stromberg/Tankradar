@@ -3,12 +3,13 @@ using FlaUI.Core.Definitions;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Tests: Beim ersten Start zeigen die Optionen die sicheren Standardwerte und genau die geforderten Bedienelemente.
+/// E2E-Tests: Nach dem ersten Start (Einrichtung über die Testbasis mit dem Standardwert abgeschlossen) zeigen die Optionen die sicheren Standardwerte und genau die geforderten Bedienelemente.
+/// Das Erscheinen der Einrichtung selbst prüft <see cref="SetupE2ETests_FirstStart"/>.
 /// </summary>
 public class SettingsE2ETests_Defaults : SettingsE2ETestBase
 {
     /// <summary>
-    /// Prüft, dass ein frischer Start die Standardwerte anzeigt (GPS nur bei Nutzung, Liste, Preis, alle Sorten in der Reihenfolge E5, E10, Diesel, „In der Nähe“ aus).
+    /// Prüft, dass ein frischer, eingerichteter Start die Standardwerte anzeigt (GPS nur bei Nutzung, Liste, Preis, alle Sorten in der Reihenfolge E5, E10, Diesel, „In der Nähe“ aus).
     /// </summary>
     [Fact]
     public void FirstStart_ShowsDefaultValues()
