@@ -95,7 +95,7 @@ public class MapE2ETests_Markers : MapE2ETestBase
             WaitUntil(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Detail.Name"))?.Name == "Beta Tankstelle", "Die Detailansicht von Beta wurde nicht geöffnet.");
             WaitForAutomationId("NavigationViewBackButton").Patterns.Invoke.Pattern.Invoke();
 
-            WaitForAutomationId("MapPage.Headline");
+            WaitForPageTitle("Karte");
             WaitForMapCount("2 von 2 Stationen sichtbar");
             Assert.True(Exists(AlphaMarker));
             Assert.Equal(1, Server.ListRequests);

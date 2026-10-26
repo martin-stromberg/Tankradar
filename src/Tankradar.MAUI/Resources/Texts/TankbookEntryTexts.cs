@@ -1,5 +1,6 @@
 using System.Globalization;
 using Tankradar.MAUI.Models.Tankbook;
+using Tankradar.MAUI.Services.Tankbook;
 
 namespace Tankradar.MAUI.Resources.Texts;
 
@@ -219,6 +220,24 @@ public static class TankbookEntryTexts
     /// Fehlermeldung, wenn ein Foto nicht übernommen werden konnte.
     /// </summary>
     public const string PhotoFailed = "Das Foto konnte nicht übernommen werden.";
+
+    /// <summary>
+    /// Liefert die Meldung, wenn Kamera oder Fotoauswahl nicht genutzt werden können.
+    /// </summary>
+    /// <param name="problem">Der Grund.</param>
+    /// <param name="capture"><see langword="true"/> bei der Aufnahme mit der Kamera, <see langword="false"/> bei der Auswahl aus der Fotomediathek.</param>
+    /// <returns>Der Text.</returns>
+    public static string GetPhotoAccessError(ReceiptPhotoAccessProblem problem, bool capture)
+    {
+        return (problem, capture) switch
+        {
+            (ReceiptPhotoAccessProblem.PermissionDenied, true) => "Kein Zugriff auf die Kamera. Bitte erlaube den Kamerazugriff in den Einstellungen unter „Tankatlas“.",
+            (ReceiptPhotoAccessProblem.PermissionDenied, false) => "Kein Zugriff auf die Fotos. Bitte erlaube den Fotozugriff in den Einstellungen unter „Tankatlas“.",
+            (ReceiptPhotoAccessProblem.NotSupported, true) => "Auf diesem Gerät ist keine Fotoaufnahme möglich. Du kannst stattdessen ein Foto auswählen.",
+            (ReceiptPhotoAccessProblem.NotSupported, false) => "Auf diesem Gerät ist keine Fotoauswahl möglich.",
+            _ => PhotoFailed,
+        };
+    }
 
     /// <summary>
     /// Liefert die Beschriftung einer Art.

@@ -180,11 +180,6 @@
         <VerticalStackLayout Padding="{StaticResource space-md}"
                              Spacing="{StaticResource space-md}">
 
-            <Label Text="Karte"
-                   Style="{StaticResource headline-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                   AutomationId="MapPage.Headline" />
-
             <Border Style="{StaticResource SearchCard}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
                     <Label Text="{x:Static texts:MapTexts.ViewHeading}"

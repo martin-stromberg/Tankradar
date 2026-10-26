@@ -30,8 +30,6 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Foto eines Tankbelegs aufnehmen</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Foto eines Tankbelegs auswählen</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Zur Ermittlung von Tankstellen in deiner Nähe und – wenn du es wählst – als Startpunkt einer Route.</string>
 	<key>XSAppIconAssets</key>

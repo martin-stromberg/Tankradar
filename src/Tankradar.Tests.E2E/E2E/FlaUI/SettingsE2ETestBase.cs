@@ -38,7 +38,7 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// </summary>
     protected void OpenSettings()
     {
-        NavigateToTab("Optionen", "SettingsPage.Headline");
+        NavigateToTab("Optionen");
         WaitForElement(cf => cf.ByAutomationId("Settings.FuelType.SuperE5.Switch"));
         WaitForAutomationId("Settings.Loaded");
     }

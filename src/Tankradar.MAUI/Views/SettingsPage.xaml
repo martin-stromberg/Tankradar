@@ -39,18 +39,6 @@
     <ScrollView>
         <VerticalStackLayout Padding="{StaticResource space-md}"
                              Spacing="{StaticResource space-md}">
-            <Label Text="Optionen"
-                   Style="{StaticResource headline-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                   AutomationId="SettingsPage.Headline" />
-
-            <Label Text="Einstellungen geladen"
-                   IsVisible="{Binding IsLoaded}"
-                   Style="{StaticResource body-sm}"
-                   Opacity="0"
-                   HeightRequest="1"
-                   AutomationId="Settings.Loaded" />
-
             <Label Text="{Binding StatusMessage}"
                    IsVisible="{Binding HasStatusMessage}"
                    Style="{StaticResource body-md}"
@@ -403,6 +391,14 @@
                            AutomationId="Settings.PriceService.Status" />
                 </VerticalStackLayout>
             </Border>
+
+            <!-- Unsichtbares Signal „Einstellungen geladen“ für Tests; am Ende, damit es weder Abstand oben erzeugt noch zuerst vorgelesen wird -->
+            <Label Text="Einstellungen geladen"
+                   IsVisible="{Binding IsLoaded}"
+                   Style="{StaticResource body-sm}"
+                   Opacity="0"
+                   HeightRequest="1"
+                   AutomationId="Settings.Loaded" />
         </VerticalStackLayout>
     </ScrollView>
 

@@ -25,18 +25,13 @@
 
             <!-- Kopf: Fahrzeug -->
             <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                <Label Text="{x:Static texts:TankbookEntryTexts.PageTitle}"
-                       Style="{StaticResource headline-lg}"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                       SemanticProperties.HeadingLevel="Level1"
-                       AutomationId="TankbookEntriesPage.Headline" />
                 <Label Text="{Binding VehicleName}"
                        MaxLines="2"
                        LineBreakMode="TailTruncation"
                        IsVisible="{Binding HasVehicle}"
                        Style="{StaticResource headline-md}"
                        TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                       SemanticProperties.HeadingLevel="Level2"
+                       SemanticProperties.HeadingLevel="Level1"
                        AutomationId="TankbookEntries.Vehicle" />
                 <Label Text="{Binding VehicleDetails}"
                        IsVisible="{Binding HasVehicle}"

@@ -14,7 +14,7 @@ public sealed class TankbookE2EDriver
     private readonly Func<Window> _window;
     private readonly Action<string, string> _setFieldValue;
     private readonly Action<Func<bool>, string> _waitUntil;
-    private readonly Action<string, string> _navigateToTab;
+    private readonly Action<string, string?> _navigateToTab;
 
     /// <summary>
     /// Erstellt den Treiber.
@@ -22,8 +22,8 @@ public sealed class TankbookE2EDriver
     /// <param name="window">Liefert das Hauptfenster der aktuell laufenden App (auch nach einem Neustart).</param>
     /// <param name="setFieldValue">Trägt einen Text in ein Eingabefeld ein und wartet, bis die App ihn übernommen hat.</param>
     /// <param name="waitUntil">Wartet auf eine Bedingung und schlägt sonst mit der Meldung fehl.</param>
-    /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationId der Zielseite).</param>
-    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string> navigateToTab)
+    /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationId der Zielseite; <see langword="null"/> prüft den Seitentitel der Shell).</param>
+    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string?> navigateToTab)
     {
         _window = window;
         _setFieldValue = setFieldValue;
@@ -36,7 +36,7 @@ public sealed class TankbookE2EDriver
     /// </summary>
     public void OpenTankbook()
     {
-        _navigateToTab("Tankbuch", "TankbookPage.Headline");
+        _navigateToTab("Tankbuch", null);
         WaitFor("Tankbook.AddVehicle");
     }
 
