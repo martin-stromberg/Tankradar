@@ -263,8 +263,8 @@ mit `TANKATLAS_TEST_WINDOW=offscreen`, wie die E2E-Tests über `scripts/local-ci
 Alle Design-Token (Farben, Typografie, Spacing, Eckenradien, Schatten, Mindestgröße 44×44 px für
 Bedienelemente) sind zentral in `src/Tankradar.MAUI/Resources/DesignSystem.xaml` definiert und
 folgen dem verbindlichen Designentwurf. Details zur Farbpalette, Typografie und den Komponenten
-sind im projektweiten Design-System-Inventar dokumentiert:
-`docs/projects/task/issue-1-5c1f45e6ae3c459b812a2cf5576fb5d0-tankradar/inventory/design-system.md`.
+sind im Design-System-Inventar dokumentiert:
+[`docs/design-system.md`](docs/design-system.md).
 
 Hell- und Dunkelmodus folgen dem System-Theme (`AppTheme.Unspecified`); Farben werden über
 `AppThemeBinding` auf Light-/Dark-Ressourcen aufgelöst.
