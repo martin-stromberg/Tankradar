@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Conventional-Commits-Validierung für Tankradar.
 
-Prüft alle Commits des aktuellen Branches seit der Divergenz von 'main'
-(lokal oder 'origin/main', falls 'main' lokal nicht existiert) gegen das
-Format 'type(scope): subject' bzw. 'type: subject' (Scope ist optional).
+Prüft alle Commits des aktuellen Branches seit der Divergenz von der
+nächstgelegenen Integrationsbasis ('main' oder 'staging', jeweils lokal oder
+unter 'origin/', siehe resolve_base_ref()) gegen das Format 'type(scope): subject' bzw. 'type: subject' (Scope ist optional).
 
 Erlaubte Types: feat, fix, docs, test, refactor, chore, perf, ci, build,
 style, revert sowie die projekteigenen Types plan (Planungscommit) und merge
@@ -19,7 +19,7 @@ Fehlt bei einem '!' der 'BREAKING CHANGE:'-Footer, wird nur ein Hinweis
 ausgegeben (siehe check_breaking_change()).
 
 Lässt sich eine per --base/--end übergebene Referenz nicht auflösen, wird
-für --base mit Warnung auf stderr auf die main-Referenz zurückgefallen;
+für --base mit Warnung auf stderr auf die main-/staging-Referenz zurückgefallen;
 eine nicht auflösbare --end-Referenz führt zu Exit 1.
 
 Auf eine Prüfung der Groß-/Kleinschreibung am Subject-Anfang wird bewusst
@@ -52,13 +52,30 @@ COMMIT_RE = re.compile(
 BREAKING_CHANGE_BODY_RE = re.compile(r'^BREAKING CHANGE:', re.MULTILINE)
 
 
-def resolve_base_ref():
-    """Findet die main-Referenz (lokal oder origin/main) zur Divergenz-Bestimmung."""
-    for candidate in ('main', 'origin/main'):
-        res = run('git', 'rev-parse', '--verify', '--quiet', candidate)
-        if res.returncode == 0:
-            return candidate
-    return None
+BASE_REF_CANDIDATES = ('main', 'origin/main', 'staging', 'origin/staging')
+
+
+def resolve_base_ref(end_ref='HEAD'):
+    """Findet die Integrationsbasis (main/staging, lokal oder origin) zur Divergenz-Bestimmung.
+
+    Feature-Branches zweigen von 'staging' ab, dessen Historie GitHub-Merge-Commits
+    ("Merge pull request #N ...") enthält, die noch nicht auf 'main' liegen. Gewählt wird
+    daher die vorhandene Kandidatin mit den wenigsten Commits im Bereich <kandidat>..end_ref,
+    damit nur die eigenen Commits des Branches geprüft werden. Bei Gleichstand gewinnt die
+    Reihenfolge in BASE_REF_CANDIDATES (main vor staging).
+    """
+    best_ref = None
+    best_count = None
+    for candidate in BASE_REF_CANDIDATES:
+        if not ref_exists(candidate):
+            continue
+        res = run('git', 'rev-list', '--count', f'{candidate}..{end_ref}')
+        if res.returncode != 0:
+            continue
+        count = int(res.stdout.strip() or 0)
+        if best_count is None or count < best_count:
+            best_ref, best_count = candidate, count
+    return best_ref
 
 
 def ref_exists(ref):
@@ -116,7 +133,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Conventional-Commits-Format-Validierung')
     parser.add_argument(
         '--base', default=None,
-        help='Basis-Referenz für die Divergenz-Bestimmung (Standard: main / origin/main)',
+        help='Basis-Referenz für die Divergenz-Bestimmung (Standard: nächstgelegene von '
+             'main / origin/main / staging / origin/staging)',
     )
     parser.add_argument(
         '--end', default=None,
@@ -133,20 +151,21 @@ def main():
     if root is None:
         return 1
 
-    base_ref = args.base
-    if base_ref is not None and not ref_exists(base_ref):
-        print(f"WARNUNG: Basis-Referenz '{base_ref}' ist lokal nicht auflösbar - Fallback auf main-Referenz.",
-              file=sys.stderr)
-        base_ref = None
-    base_ref = base_ref or resolve_base_ref()
-    if base_ref is None:
-        print('WARNUNG: Keine main-Referenz gefunden (weder lokal noch origin/main) - Commit-Format-Prüfung übersprungen.')
-        return 0
-
     end_ref = args.end or 'HEAD'
     if not ref_exists(end_ref):
         print(f"ERROR: End-Referenz '{end_ref}' ist nicht auflösbar - Commit-Prüfung nicht möglich.", file=sys.stderr)
         return 1
+
+    base_ref = args.base
+    if base_ref is not None and not ref_exists(base_ref):
+        print(f"WARNUNG: Basis-Referenz '{base_ref}' ist lokal nicht auflösbar - Fallback auf main-/staging-Referenz.",
+              file=sys.stderr)
+        base_ref = None
+    base_ref = base_ref or resolve_base_ref(end_ref)
+    if base_ref is None:
+        print('WARNUNG: Keine main-/staging-Referenz gefunden (weder lokal noch origin) - Commit-Format-Prüfung übersprungen.')
+        return 0
+
     commits = commits_since_divergence(base_ref, end_ref)
     if not commits:
         print(f'OK: keine Commits im Bereich {base_ref}..{end_ref} gefunden.')
