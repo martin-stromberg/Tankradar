@@ -71,6 +71,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
         builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
         builder.Services.AddSingleton<IVehicleService, VehicleService>();
+        builder.Services.AddSingleton<IPreferences>(_ => Preferences.Default);
+        builder.Services.AddSingleton<IVehicleSelectionStore>(provider => new PreferencesVehicleSelectionStore(
+            provider.GetRequiredService<IPreferences>(),
+            GetTestPreferencesScope()));
         builder.Services.AddSingleton<ITankbookEntryService, TankbookEntryService>();
         builder.Services.AddSingleton<ITankbookStatisticsService, TankbookStatisticsService>();
         builder.Services.AddSingleton<ITankbookExportService, TankbookExportService>();
@@ -138,6 +142,22 @@ public static class MauiProgram
 #endif
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Liefert im Testmodus einen eigenen Bereich der gerätelokalen Einstellungen je Testdatenverzeichnis, damit sich Testläufe nicht beeinflussen.
+    /// </summary>
+    /// <returns>Der Bereich oder <see langword="null"/> außerhalb des Testmodus.</returns>
+    private static string? GetTestPreferencesScope()
+    {
+        var testDataPath = Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(testDataPath))
+        {
+            return null;
+        }
+
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(testDataPath));
+        return "tankradar.test." + Convert.ToHexString(hash, 0, 8);
     }
 
     private static bool IsTestMode()

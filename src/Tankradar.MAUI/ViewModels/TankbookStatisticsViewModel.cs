@@ -7,7 +7,7 @@ using Tankradar.MAUI.Services.Tankbook;
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// Zustand des Bereichs „Auswertung“ der Seite „Tank- und Ladevorgänge“: ein Block je Art oder ein Hinweis.
+/// Zustand des Bereichs „Auswertung“ des Tabs „Tankbuch“: ein Block je Art oder ein Hinweis.
 /// Ein Ladefehler betrifft nur die Auswertung, nicht die Liste der Vorgänge. Protokolliert werden nie Werte, nur Ausnahmetypen.
 /// </summary>
 public sealed class TankbookStatisticsViewModel : BaseViewModel

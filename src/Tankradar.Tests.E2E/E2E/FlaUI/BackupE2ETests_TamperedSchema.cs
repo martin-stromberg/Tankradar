@@ -87,7 +87,6 @@ public class BackupE2ETests_TamperedSchema : BackupE2ETestBase
         CreateVehicle("Golf", "Diesel", "84350", "5,4");
         Tankbook.OpenEntries("Golf");
         Tankbook.CreateEntry("Alpha Tankstelle", "40", "1,859", string.Empty, "84900");
-        Tankbook.LeaveEntries();
         OpenBackup();
         CreateBackup();
         var path = NewExternalPath(".zip");

@@ -11,20 +11,20 @@ namespace Tankradar.Tests.Unit.Unit;
 public class ViewModelTests_PageTitles : BaseTest
 {
     /// <summary>
-    /// Prüft den Seitentitel des <see cref="TankbookViewModel"/>, das den Fahrzeugdienst benötigt.
+    /// Prüft den Seitentitel des <see cref="TankbookViewModel"/> (Fahrzeugverwaltung), das den Fahrzeugdienst benötigt.
     /// </summary>
     [Fact]
     public void TankbookViewModel_Constructor_SetsTitle()
     {
         using var vehicles = new VehicleFixture();
 
-        var viewModel = new TankbookViewModel(vehicles.Service, new FakeTankbookNavigator(), NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer(), new RestoreNotifier());
+        var viewModel = new TankbookViewModel(vehicles.Service, NullLogger<TankbookViewModel>.Instance, new FakeScreenReaderAnnouncer(), new RestoreNotifier());
 
-        Assert.Equal("Tankbuch", viewModel.Title);
+        Assert.Equal("Fahrzeuge", viewModel.Title);
     }
 
     /// <summary>
-    /// Prüft den Seitentitel des <see cref="TankbookEntriesViewModel"/> (Vorgänge eines Fahrzeugs).
+    /// Prüft den Seitentitel des <see cref="TankbookEntriesViewModel"/> (Wurzel des Tabs „Tankbuch“ mit den Vorgängen des gewählten Fahrzeugs).
     /// </summary>
     [Fact]
     public void TankbookEntriesViewModel_Constructor_SetsTitle()
@@ -42,9 +42,10 @@ public class ViewModelTests_PageTitles : BaseTest
             fixture.Restore,
             new FakeTankbookNavigator(),
             new FakeScreenReaderAnnouncer(),
+            new MAUI.Services.Tankbook.PreferencesVehicleSelectionStore(new FakePreferences()),
             NullLogger<TankbookEntriesViewModel>.Instance);
 
-        Assert.Equal("Tank- und Ladevorgänge", viewModel.Title);
+        Assert.Equal("Tankbuch", viewModel.Title);
         viewModel.OnAppearing();
     }
 

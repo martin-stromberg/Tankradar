@@ -37,7 +37,6 @@ public class BackupE2ETests_Photo : BackupE2ETestBase
             Tankbook.WaitForStatistics("Fuel", "6,00 L/100 km", "11,15 €", "130,13 €");
             var photo = Assert.Single(TankbookTestDatabase.ListReceiptFiles(TestDataDirectory));
             var photoBytes = File.ReadAllBytes(Path.Combine(TestDataDirectory, "receipts", photo));
-            Tankbook.LeaveEntries();
 
             OpenBackup();
             CreateBackup();
@@ -50,7 +49,6 @@ public class BackupE2ETests_Photo : BackupE2ETestBase
             Press("TankbookEntry.Item.DeleteConfirm");
             WaitForAutomationId("TankbookEntries.Empty");
             Assert.Empty(TankbookTestDatabase.ListReceiptFiles(TestDataDirectory));
-            Tankbook.LeaveEntries();
 
             OpenBackup();
             RestoreBackup(1);

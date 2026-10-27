@@ -12,11 +12,6 @@ public static class TankbookEntryTexts
     private static readonly CultureInfo German = CultureInfo.GetCultureInfo("de-DE");
 
     /// <summary>
-    /// Titel der Seite der Vorgänge eines Fahrzeugs.
-    /// </summary>
-    public const string PageTitle = "Tank- und Ladevorgänge";
-
-    /// <summary>
     /// Einleitung der Seite.
     /// </summary>
     public const string Intro = "Alle Angaben und Belegfotos bleiben auf diesem Gerät.";

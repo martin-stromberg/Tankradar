@@ -2,7 +2,7 @@
 
 ## Status
 
-Angenommen (2026-10-11)
+Angenommen (2026-10-11); die Entscheidung „Eigene Seite je Fahrzeug“ ist durch [ADR 0018](0018-tankbook-start-view.md) ersetzt.
 
 ## Kontext
 
@@ -15,7 +15,8 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
 
 ## Entscheidungen
 
-- **Eigene Seite je Fahrzeug.** Die Vorgänge stehen auf der Seite „Tank- und Ladevorgänge“ (Shell-Route `tankbookentries`,
+- **Eigene Seite je Fahrzeug** (ersetzt durch [ADR 0018](0018-tankbook-start-view.md): Der Tab „Tankbuch“ zeigt die Vorgänge
+  direkt, das Fahrzeug wird im Kopf gewählt). Die Vorgänge standen auf der Seite „Tank- und Ladevorgänge“ (Shell-Route `tankbookentries`,
   Parameter `vehicleId`). Geöffnet wird sie über die Schaltfläche „Tank- und Ladevorgänge“ auf der Fahrzeugkarte. Das
   Fahrzeug wird also per Namen gewählt, nie per Kennung. Formular und Löschrückfrage sind Bereiche in der Seite (wie ADR 0006
   und 0008).
@@ -89,8 +90,8 @@ Auslegungsfragen offen; sie sind hier entschieden. Grundlage ist [ADR 0008](0008
 
 ## Abweichungen vom Designentwurf
 
-- **Keine Karte „Aktives Fahrzeug“ mit Auswahlliste:** Das Fahrzeug wird über seine Karte im Tankbuch gewählt, die Vorgänge
-  stehen auf einer eigenen Seite.
+- **Keine Karte „Aktives Fahrzeug“ mit Auswahlliste:** Das Fahrzeug wurde über seine Karte im Tankbuch gewählt, die Vorgänge
+  standen auf einer eigenen Seite (seit [ADR 0018](0018-tankbook-start-view.md): Auswahl im Kopf des Tabs).
 - **Monatsanalyse, Verlauf und Statistik** folgen in Schritt 14, der **Export** in Schritt 16.
 - **Sync-Banner** entfällt; Cloud-Synchronisation ist nicht Teil von Version 1.0.
 - **„Alle 42 anzeigen“** entfällt, weil die Seite alle Vorgänge zeigt.

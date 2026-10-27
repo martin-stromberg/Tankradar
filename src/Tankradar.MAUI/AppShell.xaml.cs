@@ -33,7 +33,7 @@ public partial class AppShell : Shell
         InitializeComponent();
         Routing.RegisterRoute(ShellStationNavigator.DetailRoute, typeof(StationDetailPage));
         Routing.RegisterRoute(ShellFavoriteGroupNavigator.GroupRoute, typeof(FavoriteGroupPage));
-        Routing.RegisterRoute(ShellTankbookNavigator.EntriesRoute, typeof(TankbookEntriesPage));
+        Routing.RegisterRoute(ShellTankbookNavigator.VehiclesRoute, typeof(TankbookPage));
         Navigated += OnNavigated;
         _setupViewModel.Completed += OnSetupCompleted;
         Loaded += OnLoaded;

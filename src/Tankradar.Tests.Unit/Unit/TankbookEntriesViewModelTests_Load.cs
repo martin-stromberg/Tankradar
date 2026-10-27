@@ -4,7 +4,8 @@ using Tankradar.Tests.Unit.Unit.Support;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft das Laden der Seite <see cref="MAUI.ViewModels.TankbookEntriesViewModel"/>: Liste neueste zuerst mit Texten, Leerhinweis, fehlendes Fahrzeug und Speicherfehler.
+/// Prüft das Laden der Seite <see cref="MAUI.ViewModels.TankbookEntriesViewModel"/>: Liste neueste zuerst mit Texten, Leerhinweis und Speicherfehler
+/// (Auswahl des Fahrzeugs und Rückfall: <see cref="TankbookEntriesViewModelTests_Selection"/>).
 /// </summary>
 public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBase
 {
@@ -52,20 +53,6 @@ public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBa
         Assert.Empty(viewModel.Entries);
         Assert.True(viewModel.ShowEmptyHint);
         Assert.True(viewModel.Form.IsClosed);
-    }
-
-    /// <summary>
-    /// Prüft, dass ein nicht mehr vorhandenes Fahrzeug gemeldet, angesagt und die Seite geschlossen wird.
-    /// </summary>
-    [Fact]
-    public async Task Load_VehicleMissing_ShowsMessageAndCloses()
-    {
-        var viewModel = await OpenAsync(4711);
-
-        Assert.Equal("Das Fahrzeug gibt es nicht mehr.", viewModel.StatusMessage);
-        Assert.Equal([viewModel.StatusMessage!], Announcer.Announcements);
-        Assert.Equal(1, Navigator.Closed);
-        Assert.False(viewModel.ShowEmptyHint);
     }
 
     /// <summary>

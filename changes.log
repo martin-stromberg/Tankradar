@@ -1,3 +1,12 @@
+## 2026-10-27 — Tankbuch öffnet mit Tank- und Ladevorgängen (Issue #20)
+
+- Der Tab „Tankbuch“ zeigt direkt die Tank- und Ladevorgänge eines Fahrzeugs. Das Fahrzeug wird im Kopf über seinen Namen gewählt; angezeigt wird das zuletzt gewählte, sonst das erste Fahrzeug nach Namen.
+- Die Auswahl merkt sich das Gerät nur als interne Kennung (`tankbook.selectedVehicleId`, gerätelokal, nicht Teil der Sicherung); keine Schemaänderung und keine Migration.
+- Die Fahrzeugverwaltung (anlegen, bearbeiten, löschen) ist über „Fahrzeuge verwalten“ im Kopf erreichbar; die Schaltfläche „Tank- und Ladevorgänge“ auf der Fahrzeugkarte entfällt. Ohne Fahrzeug führt der Hinweis mit „Fahrzeug hinzufügen“ direkt zum Anlegen.
+- Auswertung und Export bleiben je Fahrzeug und laden beim Wechsel für das neue Fahrzeug neu. Die Sprachausgabe sagt das gewählte Fahrzeug an.
+- Die Entscheidung ist in `docs/adr/0018-tankbook-start-view.md` festgehalten und ersetzt die Entscheidung „Eigene Seite je Fahrzeug“ in ADR 0009.
+- Dokumentation: `docs/help/Tankbuch/` (Beschreibung, Ablauf für Anwender, Technischer Ablauf) und `docs/help/Navigation/`.
+
 ## 2026-10-26 — Einrichtungsdialog beim ersten Start (Issue #17)
 
 - Beim ersten Start nach einer Installation fragt eine Einrichtung einmalig nach den Spritsorten (Super E5, Super E10, Diesel; alle vorausgewählt). Mit „Speichern“ wird die Auswahl übernommen (mindestens eine Sorte), mit „Überspringen“ werden alle Sorten übernommen. Die Einrichtung erscheint danach nicht mehr.

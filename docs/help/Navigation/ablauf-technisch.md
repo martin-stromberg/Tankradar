@@ -47,13 +47,13 @@ Nach der MauiProgram-Initialisierung:
 Beteiligte Komponenten:
 - `AppShell.xaml` — TabBar-Definition mit vier Tabs sowie `Shell.TabBar*`-Farbattributen
 - `AppShell.xaml.cs` — Code-Behind (ggf. für zukünftige Anpassungen)
-- `FavoritesPage`, `MapPage`, `TankbookPage`, `SettingsPage` — ContentTemplate-Seiten
+- `FavoritesPage`, `MapPage`, `TankbookEntriesPage`, `SettingsPage` — ContentTemplate-Seiten; `TankbookPage` (Fahrzeugverwaltung) wird über die Route `tankbookvehicles` auf den Tab „Tankbuch“ gepusht
 - `Resources/DesignSystem.xaml` — Quelle der referenzierten Farb-Tokens
 - MAUI Shell-Navigation (built-in)
 
 Hinweis: In der aktuell verwendeten MAUI-Version (`Microsoft.Maui.Controls` 10.0.120) existieren keine `Shell.TabBar*Shadow*`- oder `Shell.TabBar*Bold*`-Attached-Properties. Der im Designentwurf gezeigte Schatten der TabBar und die Halbfett-Schrift des aktiven Tab-Titels sind daher mit Bordmitteln nicht nachbildbar und wurden als bekannte, akzeptierte Abweichung nicht umgesetzt.
 
-Seitentitel: Jede Seite trägt ihren Titel nur in der Navigationsleiste der Shell (`Title` der Seite, z. B. „Favoriten“, „Karte“, „Tankbuch“, „Optionen“, „Tank- und Ladevorgänge“); im Seiteninhalt steht keine zusätzliche Seitenüberschrift mehr. Auf iOS zeigt die Navigationsleiste den Titel, auf Windows zeigt die Shell ihn in der Kopfzeile (UIA-Text mit der AutomationId `title`, per Test an der laufenden App geprüft); die Sprachausgabe nennt die Seite über diesen Titel. Seiten mit Titel „Stationsdetails“ und „Favoritengruppe“ behalten die Überschrift im Inhalt (Stationsname bzw. Gruppenname), weil sie dynamische Information trägt, die der generische Titel nicht enthält. `NavigationE2ETests.AppStartsAndNavigatesThroughAllTabs()` (`Tankradar.Tests.E2E`) erkennt den Seitenwechsel am Seitentitel der Shell (`E2ETestBase.NavigateToTab`/`IsShellTitle`) und prüft, dass der Titel nicht noch einmal als Text im Seiteninhalt steht; `PageTitleRedundancyTests` (Unit) prüft dasselbe an allen `Views/*Page.xaml`.
+Seitentitel: Jede Seite trägt ihren Titel nur in der Navigationsleiste der Shell (`Title` der Seite, z. B. „Favoriten“, „Karte“, „Tankbuch“, „Optionen“, „Fahrzeuge“); im Seiteninhalt steht keine zusätzliche Seitenüberschrift mehr. Auf iOS zeigt die Navigationsleiste den Titel, auf Windows zeigt die Shell ihn in der Kopfzeile (UIA-Text mit der AutomationId `title`, per Test an der laufenden App geprüft); die Sprachausgabe nennt die Seite über diesen Titel. Seiten mit Titel „Stationsdetails“ und „Favoritengruppe“ behalten die Überschrift im Inhalt (Stationsname bzw. Gruppenname), weil sie dynamische Information trägt, die der generische Titel nicht enthält. `NavigationE2ETests.AppStartsAndNavigatesThroughAllTabs()` (`Tankradar.Tests.E2E`) erkennt den Seitenwechsel am Seitentitel der Shell (`E2ETestBase.NavigateToTab`/`IsShellTitle`) und prüft, dass der Titel nicht noch einmal als Text im Seiteninhalt steht; `PageTitleRedundancyTests` (Unit) prüft dasselbe an allen `Views/*Page.xaml`.
 
 ### 3. ViewModel-Bindung und Lifecycle
 

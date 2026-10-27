@@ -183,6 +183,14 @@ sich dort jederzeit ändern. Die Einrichtung erscheint danach nicht wieder. Die 
 App umgesetzt, nicht als Systemdialog ([ADR 0017](docs/adr/0017-einrichtungsdialog.md)). Details:
 [`docs/help/Einstellungen/`](docs/help/Einstellungen/index.md).
 
+## Tankbuch
+
+Der Tab „Tankbuch“ zeigt direkt die Tank- und Ladevorgänge eines Fahrzeugs. Das Fahrzeug wird im Kopf über seinen Namen
+gewählt; angezeigt wird das zuletzt gewählte, sonst das erste Fahrzeug nach Name. Die Fahrzeugverwaltung (anlegen, bearbeiten,
+löschen) ist über „Fahrzeuge verwalten“ im Kopf erreichbar. Ohne Fahrzeug führt ein Hinweis direkt zum Anlegen. Die Auswahl wird
+nur gerätelokal gemerkt und ist nicht Teil der Sicherung ([ADR 0018](docs/adr/0018-tankbook-start-view.md)). Details:
+[`docs/help/Tankbuch/`](docs/help/Tankbuch/index.md).
+
 ## Kraftstoffpreise und API-Schlüssel
 
 Die App ruft Preise über die Tankerkönig-API ab (Quellenangabe „Daten: Tankerkönig / MTS-K“, CC BY 4.0,

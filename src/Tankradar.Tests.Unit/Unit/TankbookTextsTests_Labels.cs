@@ -82,6 +82,20 @@ public class TankbookTextsTests_Labels : BaseTest
         Assert.Equal("Fahrzeug „Golf“ behalten", TankbookTexts.FormatCancelDeleteHint("Golf"));
         Assert.Equal("Fahrzeug „Golf“", TankbookTexts.FormatVehicleHint("Golf"));
         Assert.Equal("Formular schließen, ohne zu speichern", TankbookTexts.CancelFormHint);
-        Assert.Equal("Tank- und Ladevorgänge", TankbookTexts.Entries);
+    }
+
+    /// <summary>
+    /// Prüft die Texte der Fahrzeugauswahl im Kopf des Tankbuchs und der Verwaltung: Der Hinweis eines Chips nennt Fahrzeug und Aktion.
+    /// </summary>
+    [Fact]
+    public void Texts_NewLabelsAndHints_ContainVehicleName()
+    {
+        Assert.Equal("Fahrzeug „Golf“ auswählen", TankbookTexts.FormatSelectVehicleHint("Golf"));
+        Assert.Equal("Fahrzeuge", TankbookTexts.VehiclesPageTitle);
+        Assert.Equal("Fahrzeuge verwalten", TankbookTexts.ManageVehicles);
+        Assert.Equal("Fahrzeug hinzufügen", TankbookTexts.AddVehicle);
+        Assert.Equal("Fahrzeug", TankbookTexts.SelectVehicleLabel);
+        Assert.Contains("„Tankbuch“", TankbookTexts.ChooseVehicleIntro, StringComparison.Ordinal);
+        Assert.Contains("„Fahrzeug hinzufügen“", TankbookTexts.NoVehicles, StringComparison.Ordinal);
     }
 }

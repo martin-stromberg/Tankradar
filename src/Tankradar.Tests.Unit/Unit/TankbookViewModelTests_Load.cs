@@ -34,7 +34,7 @@ public class TankbookViewModelTests_Load : BaseTest
     {
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Zoe", VehicleFuelKind.Electric, 12000, null));
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Golf", VehicleFuelKind.Diesel, 84350, 5.4m));
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
 
         viewModel.OnAppearing();
         await viewModel.LastTask;
@@ -46,7 +46,23 @@ public class TankbookViewModelTests_Load : BaseTest
         Assert.Equal(["Golf", "Zoe"], viewModel.Vehicles.Select(item => item.Name));
         Assert.Equal("Diesel • Start 84.350 km • Startverbrauch 5,4 L/100 km", viewModel.Vehicles[0].Details);
         Assert.Equal("Elektro • Start 12.000 km", viewModel.Vehicles[1].Details);
-        Assert.Equal("Tankbuch", viewModel.Title);
+        Assert.Equal("Fahrzeuge", viewModel.Title);
+    }
+
+    /// <summary>
+    /// Prüft, dass die Fahrzeugkarte das Fahrzeug im Hinweistext nennt.
+    /// </summary>
+    [Fact]
+    public async Task Load_VehicleItem_NamesVehicleInHint()
+    {
+        await _fixture.Service.CreateVehicleAsync(new VehicleInput("Polo", VehicleFuelKind.Petrol, 2000, null));
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
+
+        viewModel.OnAppearing();
+        await viewModel.LastTask;
+
+        var item = Assert.Single(viewModel.Vehicles);
+        Assert.Equal("Fahrzeug „Polo“", item.VehicleHint);
     }
 
     /// <summary>
@@ -55,7 +71,7 @@ public class TankbookViewModelTests_Load : BaseTest
     [Fact]
     public async Task Load_NoVehicles_ShowsEmptyHint()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
         Assert.False(viewModel.ShowEmptyHint);
 
         await viewModel.LoadAsync();
@@ -72,7 +88,7 @@ public class TankbookViewModelTests_Load : BaseTest
     public async Task Load_StorageFailure_ShowsMessageWithoutLoggingNames()
     {
         await _fixture.Service.CreateVehicleAsync(new VehicleInput("Geheimauto", VehicleFuelKind.Petrol, 1, null));
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
         _fixture.Factory.FailingCreations = 1;
 
         await viewModel.LoadAsync();
@@ -90,7 +106,7 @@ public class TankbookViewModelTests_Load : BaseTest
     [Fact]
     public async Task Load_AfterFailure_AppearingAgain_HidesMessage()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
         _fixture.Factory.FailingCreations = 1;
         viewModel.OnAppearing();
         await viewModel.LastTask;

@@ -17,7 +17,7 @@ Der Startbildschirm ([Startseite](../Startseite/index.md)): Ihre Favoritengruppe
 Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Alternativ zur Liste gibt es eine Kartenansicht.
 
 ### Tankbuch
-Hier verwalten Sie Ihre Fahrzeuge (Name, Kraftstoffart, Start-Kilometerstand, optional Startverbrauch). Details siehe [Tankbuch](../Tankbuch/index.md). Das Erfassen von Tank- und Ladevorgängen folgt in einer späteren Version.
+Hier sehen Sie direkt die Tank- und Ladevorgänge Ihres Fahrzeugs und erfassen neue. Das Fahrzeug wechseln Sie im Kopf über seinen Namen; Fahrzeuge (Name, Kraftstoffart, Start-Kilometerstand, optional Startverbrauch) verwalten Sie über „Fahrzeuge verwalten“. Details siehe [Tankbuch](../Tankbuch/index.md).
 
 ### Optionen
 Einstellungen für Ihre App: Spritsorten auswählen und ordnen, Standortnutzung, Standardansicht und Standardsortierung. Details siehe [Einstellungen](../Einstellungen/index.md).
@@ -44,6 +44,5 @@ Die App folgt der Einstellung Ihres Geräts. Wenn Sie in Ihren Geräte-Einstellu
 
 ## Einschränkungen
 
-- Im Tankbuch lassen sich bisher nur Fahrzeuge verwalten; Favoriten (Startseite und Gruppenverwaltung), Optionen und Karte (Umkreissuche) sind vollständig funktional.
+- Favoriten (Startseite und Gruppenverwaltung), Optionen, Karte (Umkreissuche) und Tankbuch sind vollständig funktional.
 - Das Dunkelmodus-Design ist vollständig implementiert, folgt aber den Geräte-Einstellungen (Sie können es nicht direkt in Tankatlas umschalten).
-- Tank- und Ladevorgänge sowie Auswertungen im Tankbuch folgen in einer späteren Version.

@@ -3,7 +3,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Tank- und Ladevorgänge mit Verbrauch und Belegfoto überstehen einen Neustart der App (alles lokal gespeichert).
+/// E2E-Test: Tank- und Ladevorgänge mit Verbrauch und Belegfoto sowie das gewählte Fahrzeug überstehen einen Neustart der App (alles lokal gespeichert).
 /// </summary>
 public class TankbookEntriesE2ETests_Persistence : TankbookE2ETestBase
 {
@@ -47,6 +47,27 @@ public class TankbookEntriesE2ETests_Persistence : TankbookE2ETestBase
             WaitForAutomationId("TankbookEntry.Item.Receipt");
             Assert.False(Exists("TankbookEntry.Item.ReceiptMissing"));
             Assert.Single(TankbookTestDatabase.ListReceiptFiles(TestDataDirectory));
+        });
+    }
+
+    /// <summary>
+    /// Prüft, dass das im Kopf gewählte Fahrzeug nach einem Neustart wieder im Tab „Tankbuch“ gezeigt wird (gerätelokal gemerkt), obwohl „Golf“ nach Name
+    /// zuerst käme.
+    /// </summary>
+    [Fact]
+    public void SelectedVehicle_SurvivesApplicationRestart()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenTankbook();
+            CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+            CreateVehicle("Polo", "Petrol", "5000", string.Empty);
+            Tankbook.OpenEntries("Polo");
+
+            RestartApplication();
+            NavigateToTab("Tankbuch", "TankbookEntries.Add");
+
+            WaitForTexts("TankbookEntries.Vehicle", "Polo");
         });
     }
 

@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Tankbuch“: Fahrzeugliste, Formular zum Anlegen und Bearbeiten sowie Rückfrage zum Löschen als Bereiche in der Seite.
+/// Fahrzeugverwaltung des Tankbuchs (aus dem Tab „Tankbuch“ geöffnet): Fahrzeugliste, Formular zum Anlegen und Bearbeiten sowie Rückfrage zum Löschen als Bereiche in der Seite.
 /// </summary>
 public partial class TankbookPage : TankradarContentPage
 {

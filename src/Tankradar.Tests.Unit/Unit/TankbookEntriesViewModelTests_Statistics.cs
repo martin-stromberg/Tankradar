@@ -71,19 +71,20 @@ public class TankbookEntriesViewModelTests_Statistics : TankbookEntriesViewModel
     }
 
     /// <summary>
-    /// Prüft, dass der Wechsel des Fahrzeugs die Auswertung zurücksetzt.
+    /// Prüft, dass der Wechsel des Fahrzeugs die Auswertung des vorigen Fahrzeugs verwirft und die des gewählten (ohne Vorgänge) zeigt.
     /// </summary>
     [Fact]
-    public async Task Show_ResetsStatistics()
+    public async Task SelectVehicle_ResetsStatistics()
     {
         var vehicle = await CreateVehicleAsync();
+        var other = await Fixture.CreateVehicleAsync("Polo");
         await Fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(Fixture.Now.AddDays(-1), 10_500, 40m));
         var viewModel = await OpenAsync(vehicle.Id);
         Assert.True(viewModel.Statistics.HasKinds);
 
-        viewModel.Show(vehicle.Id + 1);
+        await viewModel.SelectVehicleAsync(other.Id);
 
         Assert.False(viewModel.Statistics.HasKinds);
-        Assert.Null(viewModel.Statistics.Notice);
+        Assert.Equal(MAUI.Resources.Texts.TankbookStatisticsTexts.NoEntriesNotice, viewModel.Statistics.Notice);
     }
 }

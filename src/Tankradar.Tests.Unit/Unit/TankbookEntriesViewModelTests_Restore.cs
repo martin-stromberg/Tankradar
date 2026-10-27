@@ -4,7 +4,8 @@ using Tankradar.Tests.Unit.Unit.Support;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft, dass die geöffnete Seite <see cref="MAUI.ViewModels.TankbookEntriesViewModel"/> nach einer Wiederherstellung (H5) ohne erneutes Öffnen neu lädt.
+/// Prüft, dass die geöffnete Seite <see cref="MAUI.ViewModels.TankbookEntriesViewModel"/> nach einer Wiederherstellung (H5) ohne erneutes Öffnen neu lädt
+/// und die gemerkte Fahrzeugauswahl verwirft.
 /// </summary>
 public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTestBase
 {
@@ -48,26 +49,7 @@ public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTes
     }
 
     /// <summary>
-    /// Prüft, dass ein nach der Wiederherstellung nicht mehr vorhandenes Fahrzeug gemeldet und die Seite geschlossen wird.
-    /// </summary>
-    [Fact]
-    public async Task Restored_VehicleGone_ClosesPage()
-    {
-        var vehicle = await CreateVehicleAsync();
-        var viewModel = await OpenAsync(vehicle.Id);
-        await Fixture.Vehicles.DeleteVehicleAsync(vehicle.Id, 0);
-
-        Fixture.Restore.NotifyRestored();
-        await viewModel.LastTask;
-
-        Assert.Equal(1, Navigator.Closed);
-        Assert.Equal([vehicle.Id], Navigator.ClosedVehicles);
-        Assert.Empty(viewModel.Entries);
-        Assert.Null(viewModel.Vehicle);
-    }
-
-    /// <summary>
-    /// Prüft, dass ohne Fahrzeug „Exportieren“ ausgeblendet ist und „Vorgang erfassen“ kein Formular öffnet.
+    /// Prüft, dass ohne Fahrzeug nach der Wiederherstellung „Exportieren“ ausgeblendet ist, „Vorgang erfassen“ kein Formular öffnet und der Leerzustand erscheint.
     /// </summary>
     [Fact]
     public async Task Restored_VehicleGone_HidesExportAndBlocksAdd()
@@ -86,52 +68,43 @@ public class TankbookEntriesViewModelTests_Restore : TankbookEntriesViewModelTes
         Assert.False(viewModel.Export.HasVehicle);
         Assert.True(viewModel.Form.IsClosed);
         Assert.Null(viewModel.Export.StatusMessage);
+        Assert.True(viewModel.ShowNoVehiclesHint);
+        Assert.Empty(viewModel.Entries);
     }
 
     /// <summary>
-    /// Prüft, dass ein fehlgeschlagenes Schließen die Seite nicht abstürzen lässt und beim nächsten Erscheinen erneut versucht wird.
+    /// Prüft, dass eine noch nie geladene Seite ohne Fahrzeuge bei der Benachrichtigung nur den Leerzustand zeigt und nichts merkt.
     /// </summary>
     [Fact]
-    public async Task Restored_VehicleGone_CloseFails_RetriesOnAppearing()
+    public async Task Restored_WithoutVehicle_ShowsNoVehiclesHint()
     {
-        var vehicle = await CreateVehicleAsync();
-        var viewModel = await OpenAsync(vehicle.Id);
-        await Fixture.Vehicles.DeleteVehicleAsync(vehicle.Id, 0);
-        Navigator.FailOnClose = true;
+        var viewModel = CreateViewModel();
 
         Fixture.Restore.NotifyRestored();
         await viewModel.LastTask;
-        Assert.Equal(1, Navigator.Closed);
 
-        Navigator.FailOnClose = false;
-        viewModel.OnAppearing();
-        await viewModel.LastTask;
-
-        Assert.Equal(2, Navigator.Closed);
-        Assert.Null(viewModel.Vehicle);
+        Assert.False(viewModel.HasVehicle);
+        Assert.True(viewModel.ShowNoVehiclesHint);
+        Assert.Null(SelectionStore.Get());
+        Assert.Empty(Navigator.VehicleManagementOpened);
     }
 
     /// <summary>
-    /// Prüft, dass eine Seite ohne Fahrzeug bei der Benachrichtigung nichts lädt.
+    /// Prüft, dass die Wiederherstellung die gemerkte Auswahl verwirft und das erste Fahrzeug nach Name wählt und merkt.
     /// </summary>
     [Fact]
-    public void Restored_WithoutVehicle_DoesNothing()
+    public async Task Restored_ClearsStoredSelection_AndSelectsFirstByName()
     {
-        var viewModel = new MAUI.ViewModels.TankbookEntriesViewModel(
-            Fixture.Vehicles,
-            Fixture.Service,
-            Fixture.Photos,
-            Fixture.CreateForm(Picker, Announcer, FormLogger),
-            Fixture.CreateStatistics(Announcer, StatisticsLogger),
-            Fixture.CreateExport(Sharer, Announcer, ExportLogger),
-            Fixture.Restore,
-            Navigator,
-            Announcer,
-            Logger);
+        var golf = await Fixture.CreateVehicleAsync("Golf");
+        var polo = await Fixture.CreateVehicleAsync("Polo");
+        var viewModel = await OpenAsync(polo.Id);
+        Assert.Equal("Polo", viewModel.VehicleName);
 
         Fixture.Restore.NotifyRestored();
+        await viewModel.LastTask;
 
-        Assert.False(viewModel.IsLoaded);
-        Assert.Equal(0, Navigator.Closed);
+        Assert.Equal("Golf", viewModel.VehicleName);
+        Assert.Equal(golf.Id, viewModel.VehicleId);
+        Assert.Equal(golf.Id, SelectionStore.Get());
     }
 }

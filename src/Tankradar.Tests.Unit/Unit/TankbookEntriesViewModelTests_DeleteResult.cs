@@ -1,6 +1,5 @@
 using Tankradar.MAUI.Models.Tankbook;
 using Tankradar.MAUI.Resources.Texts;
-using Tankradar.MAUI.Services.Navigation;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -20,20 +19,7 @@ public class TankbookEntriesViewModelTests_DeleteResult : TankbookEntriesViewMod
         var vehicle = await CreateVehicleAsync();
         await Fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(Fixture.Now.AddDays(-1), 10_500, 40m));
         var stub = new StubTankbookEntryService(Fixture.Service) { DeleteResult = TankbookEntryResult.InvalidQuantity };
-        var viewModel = new TankbookEntriesViewModel(
-            Fixture.Vehicles,
-            stub,
-            Fixture.Photos,
-            Fixture.CreateForm(Picker, Announcer, FormLogger),
-            Fixture.CreateStatistics(Announcer, StatisticsLogger),
-            Fixture.CreateExport(Sharer, Announcer, ExportLogger),
-            Fixture.Restore,
-            Navigator,
-            Announcer,
-            Logger);
-        viewModel.ApplyQueryAttributes(new Dictionary<string, object> { [ShellTankbookNavigator.VehicleIdParameter] = vehicle.Id });
-        viewModel.OnAppearing();
-        await viewModel.LastTask;
+        var viewModel = await OpenAsync(vehicle.Id, stub);
         var item = viewModel.Entries[0];
         await PressAsync(viewModel, item.DeleteCommand);
         var loadsBefore = stub.GetEntriesCalls;

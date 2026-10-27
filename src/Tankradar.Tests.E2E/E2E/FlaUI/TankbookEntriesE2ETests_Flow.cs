@@ -6,7 +6,7 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class TankbookEntriesE2ETests_Flow : TankbookE2ETestBase
 {
     /// <summary>
-    /// Prüft Erfassen über die Fahrzeugkarte, Rechenhinweise, Verbrauch 6,00 L/100 km auf 500 km, Reihenfolge und gespeicherte Werte.
+    /// Prüft Erfassen im Tab „Tankbuch“ (Fahrzeug über die Auswahl im Kopf), Rechenhinweise, Verbrauch 6,00 L/100 km auf 500 km, Reihenfolge und gespeicherte Werte.
     /// </summary>
     [Fact]
     public void CreateTwoEntries_ShowsConsumption()
@@ -15,10 +15,14 @@ public class TankbookEntriesE2ETests_Flow : TankbookE2ETestBase
         {
             OpenTankbook();
             CreateVehicle("Golf", "Diesel", "10000", string.Empty);
-            Assert.Equal("Tank- und Ladevorgänge", WaitForAutomationId("Tankbook.Vehicle.Entries").Name);
-            Assert.Equal("Fahrzeug „Golf“", Tankbook.ReadHint("Tankbook.Vehicle.Entries"));
+            Assert.False(Exists("Tankbook.Vehicle.Entries"));
             Tankbook.OpenEntries("Golf");
             WaitForAutomationId("TankbookEntries.Empty");
+            Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.SelectVehicle").Name);
+            Press("TankbookEntries.SelectVehicle");
+            Assert.Equal("Fahrzeug „Golf“ auswählen", Tankbook.ReadHint("TankbookEntries.Vehicle.Option.0"));
+            Press("TankbookEntries.SelectVehicle");
+            WaitUntil(() => !Exists("TankbookEntries.Vehicle.Option.0"), "Die Auswahl im Kopf wurde nicht zugeklappt.");
 
             Press("TankbookEntries.Add");
             Assert.Equal("Neuer Vorgang", WaitForAutomationId("TankbookEntries.Form.Title").Name);
