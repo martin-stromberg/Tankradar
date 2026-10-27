@@ -222,5 +222,47 @@ class ConventionalCommitsCheckTests_UnresolvableRefs(unittest.TestCase):
         self.assertIn('HINWEIS', res.stdout)
 
 
+class ConventionalCommitsCheckTests_StagingBase(unittest.TestCase):
+    """Branches von 'staging' prüfen nur ihre eigenen Commits, nicht die staging-Historie."""
+
+    def _git(self, cwd, *args):
+        subprocess.run(['git', *args], cwd=cwd, capture_output=True, text=True, check=True)
+
+    def _commit(self, tmp, name, subject):
+        (Path(tmp) / name).write_text(name)
+        self._git(tmp, 'add', name)
+        self._git(tmp, 'commit', '-q', '-m', subject)
+
+    def _make_repo(self, tmp, feature_subject):
+        self._git(tmp, 'init', '-q', '-b', 'main')
+        self._git(tmp, 'config', 'user.email', 'test@example.com')
+        self._git(tmp, 'config', 'user.name', 'Test')
+        self._commit(tmp, 'a.txt', 'chore: initialer Commit für Testrepo')
+        self._git(tmp, 'checkout', '-q', '-b', 'staging')
+        self._commit(tmp, 'b.txt', 'Merge pull request #1 from owner/feature')
+        self._git(tmp, 'checkout', '-q', '-b', 'feature/test')
+        self._commit(tmp, 'c.txt', feature_subject)
+
+    def _run_script(self, tmp, *args):
+        return subprocess.run(
+            [sys.executable, str(MODULE_PATH), *args], cwd=tmp, capture_output=True,
+            text=True, encoding='utf-8', errors='replace',
+        )
+
+    def test_branch_from_staging_ignores_staging_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make_repo(tmp, 'feat(core): gültige Nachricht im Testrepo')
+            res = self._run_script(tmp, '--end', 'HEAD')
+        self.assertEqual(res.returncode, 0, res.stdout)
+        self.assertIn('staging..HEAD', res.stdout)
+
+    def test_branch_from_staging_still_validates_own_commits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make_repo(tmp, 'ungültige Nachricht ohne Typ')
+            res = self._run_script(tmp, '--end', 'HEAD')
+        self.assertEqual(res.returncode, 1)
+        self.assertNotIn('Merge pull request', res.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()

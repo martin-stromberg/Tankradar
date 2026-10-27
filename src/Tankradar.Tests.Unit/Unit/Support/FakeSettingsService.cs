@@ -37,6 +37,16 @@ public class FakeSettingsService : ISettingsService
     public int LoadCount { get; private set; }
 
     /// <summary>
+    /// Wenn gesetzt, wartet <see cref="SaveAsync"/> auf diesen Task, bevor es speichert (z. B. um einen laufenden Speichervorgang festzuhalten).
+    /// </summary>
+    public Task? SaveGate { get; set; }
+
+    /// <summary>
+    /// Anzahl der Aufrufe von <see cref="SaveAsync"/>, auch der noch laufenden oder fehlgeschlagenen.
+    /// </summary>
+    public int SaveCount { get; private set; }
+
+    /// <summary>
     /// Alle über <see cref="SaveAsync"/> gespeicherten Einstellungen in Aufrufreihenfolge.
     /// </summary>
     public List<AppSettings> Saved { get; } = [];
@@ -51,13 +61,30 @@ public class FakeSettingsService : ISettingsService
     /// <inheritdoc />
     public Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
     {
+        SaveCount++;
         if (SaveException is not null)
         {
             return Task.FromException(SaveException);
         }
 
+        if (SaveGate is { } gate)
+        {
+            return SaveAfterGateAsync(settings, gate);
+        }
+
+        Store(settings);
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveAfterGateAsync(AppSettings settings, Task gate)
+    {
+        await gate.ConfigureAwait(false);
+        Store(settings);
+    }
+
+    private void Store(AppSettings settings)
+    {
         Saved.Add(settings);
         Stored = settings;
-        return Task.CompletedTask;
     }
 }

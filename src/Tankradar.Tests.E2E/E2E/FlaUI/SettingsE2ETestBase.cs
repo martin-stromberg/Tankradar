@@ -196,6 +196,53 @@ public abstract class SettingsE2ETestBase : E2ETestBase
             pause: TimeSpan.FromSeconds(1));
     }
 
+    /// <summary>
+    /// Wartet, bis die Einrichtung beim ersten Start angezeigt wird (Schaltfläche „Speichern“ der Einrichtung vorhanden).
+    /// </summary>
+    protected void WaitForSetup()
+    {
+        WaitForAutomationId(SetupSaveId);
+    }
+
+    /// <summary>
+    /// Wartet, bis die Einrichtung ausgeblendet ist.
+    /// </summary>
+    protected void WaitForSetupClosed()
+    {
+        WaitUntil(() => FindByAutomationId(SetupSaveId) is null, "Die Einrichtung wurde nicht ausgeblendet.");
+    }
+
+    /// <summary>
+    /// Liefert, ob der Schalter einer Spritsorte in der Einrichtung eingeschaltet ist.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname (z. B. SuperE5).</param>
+    /// <returns><see langword="true"/>, wenn die Sorte ausgewählt ist.</returns>
+    protected bool IsSetupFuelTypeSelected(string fuelType)
+    {
+        var element = WaitForAutomationId(SetupFuelTypeSwitchId(fuelType));
+        return element.Patterns.Toggle.Pattern.ToggleState.Value == ToggleState.On;
+    }
+
+    /// <summary>
+    /// Schaltet den Schalter einer Spritsorte in der Einrichtung um und wartet, bis der neue Zustand angezeigt wird.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname.</param>
+    protected void ToggleSetupFuelType(string fuelType)
+    {
+        var expected = !IsSetupFuelTypeSelected(fuelType);
+        WaitForAutomationId(SetupFuelTypeSwitchId(fuelType)).Patterns.Toggle.Pattern.Toggle();
+        WaitUntil(() => IsSetupFuelTypeSelected(fuelType) == expected, $"Der Schalter der Einrichtung für {fuelType} wurde nicht umgeschaltet.");
+    }
+
+    /// <summary>
+    /// Betätigt eine Schaltfläche der Einrichtung per InvokePattern (kein Mausklick).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId, z. B. <c>Setup.Save</c> oder <c>Setup.Skip</c>.</param>
+    protected void PressSetupButton(string automationId)
+    {
+        WaitForAutomationId(automationId).Patterns.Invoke.Pattern.Invoke();
+    }
+
     private AutomationElement WaitForElement(Func<ConditionFactory, ConditionBase> condition)
     {
         AutomationElement? found = null;

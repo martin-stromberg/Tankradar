@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
+using Microsoft.Data.Sqlite;
 using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.E2E;
@@ -59,6 +60,45 @@ public abstract class E2ETestBase : IDisposable
     /// Das Verzeichnis, in das Diagnosedaten fehlgeschlagener Tests geschrieben werden (Standard: Verzeichnis e2e-diagnostics im Repository-Root).
     /// </summary>
     protected virtual string DiagnosticsDirectory => DefaultDiagnosticsDirectory;
+
+    /// <summary>
+    /// Gibt an, ob die Testbasis die Einrichtung beim ersten Start selbst abschließt (Standard): Fehlt in der Testdatenbank vor dem Start die Zeile
+    /// <c>UserSettings</c>, wird die Einrichtung nach dem Start über „Überspringen“ beendet. Die App legt dabei die Zeile mit den Standardwerten an,
+    /// sodass die Oberfläche wie bei einer eingerichteten Installation bedienbar ist. Die Tests der Einrichtung selbst geben <see langword="false"/> zurück.
+    /// </summary>
+    protected virtual bool CompletesSetupOnStart => true;
+
+    /// <summary>
+    /// AutomationId der Schaltfläche „Speichern“ der Einrichtung beim ersten Start.
+    /// </summary>
+    protected const string SetupSaveId = "Setup.Save";
+
+    /// <summary>
+    /// AutomationId der Schaltfläche „Überspringen“ der Einrichtung beim ersten Start.
+    /// </summary>
+    protected const string SetupSkipId = "Setup.Skip";
+
+    /// <summary>
+    /// AutomationId der Überschrift der Einrichtung.
+    /// </summary>
+    protected const string SetupHeadingId = "Setup.Heading";
+
+    /// <summary>
+    /// AutomationId des Hinweises der Einrichtung.
+    /// </summary>
+    protected const string SetupHintId = "Setup.Hint";
+
+    /// <summary>
+    /// AutomationId der Status- bzw. Fehlermeldung der Einrichtung.
+    /// </summary>
+    protected const string SetupStatusMessageId = "Setup.StatusMessage";
+
+    /// <summary>
+    /// Liefert die AutomationId des Schalters einer Spritsorte in der Einrichtung.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname (z. B. SuperE5).</param>
+    /// <returns>Die AutomationId, z. B. <c>Setup.FuelType.SuperE5.Switch</c>.</returns>
+    protected static string SetupFuelTypeSwitchId(string fuelType) => $"Setup.FuelType.{fuelType}.Switch";
 
     /// <summary>
     /// Führt den Testkörper aus und erfasst bei einem Fehlschlag Screenshot, UI-Automation-Baum und Fehlerbeschreibung (pro Test benannt), bevor der Fehler weitergereicht wird.
@@ -207,6 +247,14 @@ public abstract class E2ETestBase : IDisposable
     protected string TestDataDirectory => _testDataDirectory;
 
     /// <summary>
+    /// Der Pfad der Datenbankdatei der laufenden App im <see cref="TestDataDirectory"/>.
+    /// </summary>
+    protected string DatabasePath
+    {
+        get { return Path.Combine(TestDataDirectory, DatabaseFileName); }
+    }
+
+    /// <summary>
     /// Die UI-Automation-Engine, mit der die gestartete App bedient wird.
     /// </summary>
     protected UIA3Automation Automation { get; private set; }
@@ -341,6 +389,7 @@ public abstract class E2ETestBase : IDisposable
         }
 
         var uiaTimeout = E2EStartupPolicy.ResolveUiaTimeout(Environment.GetEnvironmentVariable);
+        var setupPending = CompletesSetupOnStart && !HasSettingsRow(DatabasePath);
         try
         {
             // Auf langsamen Runnern (GitHub-Windows) dauert der UIA-Verbindungsaufbau zum frisch gestarteten Fenster länger als die
@@ -352,6 +401,10 @@ public abstract class E2ETestBase : IDisposable
                 DiscardFailedStart,
                 MaxStarts,
                 "Start der Tankatlas-App");
+            if (setupPending)
+            {
+                SkipSetup();
+            }
         }
         catch (Exception ex)
         {
@@ -363,6 +416,8 @@ public abstract class E2ETestBase : IDisposable
     }
 
     private const int MaxStarts = 2;
+
+    private const string DatabaseFileName = "tankatlas.db";
 
     private const int AccessViolationExitCode = unchecked((int)0xC0000005);
 
@@ -420,6 +475,69 @@ public abstract class E2ETestBase : IDisposable
 
         ((IDisposable)Automation).Dispose();
         Automation = CreateAutomation();
+    }
+
+    /// <summary>
+    /// Prüft ohne Schreibzugriff, ob die Datenbankdatei die Zeile <c>UserSettings</c> enthält (Einrichtung abgeschlossen).
+    /// Fehlt die Datei oder die Tabelle, gilt die Einrichtung als ausstehend.
+    /// </summary>
+    /// <param name="databasePath">Der Pfad der Datenbankdatei.</param>
+    /// <returns><see langword="true"/>, wenn die Zeile vorhanden ist.</returns>
+    private static bool HasSettingsRow(string databasePath)
+    {
+        if (!File.Exists(databasePath))
+        {
+            return false;
+        }
+
+        using var connection = new SqliteConnection($"Data Source={databasePath};Mode=ReadOnly;Pooling=False;Default Timeout=5");
+        connection.Open();
+        using var table = connection.CreateCommand();
+        table.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'UserSettings'";
+        if (Convert.ToInt64(table.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture) == 0)
+        {
+            return false;
+        }
+
+        using var row = connection.CreateCommand();
+        row.CommandText = "SELECT COUNT(*) FROM UserSettings";
+        return Convert.ToInt64(row.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture) > 0;
+    }
+
+    /// <summary>
+    /// Wartet auf die Einrichtung, beendet sie über „Überspringen“ (UI-Automation, kein Mausklick) und wartet, bis sie ausgeblendet ist.
+    /// </summary>
+    private void SkipSetup()
+    {
+        var timeout = TimeSpan.FromSeconds(30);
+        if (!TransientWait.Until(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId)) is not null, timeout, out _))
+        {
+            throw new Xunit.Sdk.XunitException("Die Einrichtung beim ersten Start wurde nicht angezeigt.");
+        }
+
+        // Ein Aufruf direkt nach dem Erscheinen kann verloren gehen, solange die Bindung des Befehls noch nicht steht; daher begrenzt wiederholen.
+        // Ein doppelter Aufruf ist unkritisch: Überspringen speichert jedes Mal dieselben Standardwerte.
+        const int maxAttempts = 5;
+        Exception? lastTransientError = null;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId))?.Patterns.Invoke.Pattern.Invoke();
+            }
+            catch (Exception ex) when (ex is global::FlaUI.Core.Exceptions.ElementNotAvailableException or System.Runtime.InteropServices.COMException)
+            {
+                // Element kurzzeitig nicht ansprechbar oder bereits entfernt: Prüfung unten entscheidet.
+                lastTransientError = ex;
+            }
+
+            if (TransientWait.Until(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId)) is null, TimeSpan.FromSeconds(6), out _))
+            {
+                return;
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException("Die Einrichtung wurde nach „Überspringen“ nicht ausgeblendet.", lastTransientError);
     }
 
     /// <summary>

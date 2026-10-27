@@ -6,6 +6,10 @@
 
 Im Bereich **Optionen** passen Sie Tankatlas an Ihre Gewohnheiten an. Alle Einstellungen werden lokal auf Ihrem Gerät gespeichert, sofort beim Ändern und ohne separate Schaltfläche „Speichern“.
 
+## Einrichtung beim ersten Start
+
+Beim ersten Start nach der Installation fragt Tankatlas einmalig, welche Spritsorten Sie interessieren (**Super E5**, **Super E10**, **Diesel**; alle vorausgewählt). **Speichern** übernimmt Ihre Auswahl (mindestens eine Sorte), **Überspringen** übernimmt alle drei Sorten. Die Auswahl landet in der Gruppe **Spritsorten** dieser Seite und lässt sich dort jederzeit ändern. Die Einrichtung erscheint danach nicht wieder. Strom oder Laden sind dort nicht wählbar. Details unter [Ablauf für Anwender](ablauf-anwender.md#einrichtung-beim-ersten-start).
+
 ## Funktionsweise
 
 Die Seite besteht aus fünf Gruppen:

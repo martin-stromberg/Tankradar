@@ -9,6 +9,7 @@ namespace Tankradar.MAUI;
 public partial class App : Application
 {
     private readonly AppConfiguration _appConfiguration;
+    private readonly Func<AppShell> _createShell;
     private readonly ILogger<App> _logger;
 
     /// <summary>
@@ -17,11 +18,13 @@ public partial class App : Application
     /// <param name="appConfiguration">Die per Dependency Injection bereitgestellte App-Konfiguration.</param>
     /// <param name="databaseInitializer">Initialisiert die lokale Datenbank im Hintergrund.</param>
     /// <param name="logger">Logger für Fehler der Hintergrundinitialisierung.</param>
-    public App(AppConfiguration appConfiguration, IDatabaseInitializer databaseInitializer, ILogger<App> logger)
+    /// <param name="createShell">Erzeugt die <see cref="AppShell"/> samt ihren Abhängigkeiten aus der Dependency Injection.</param>
+    public App(AppConfiguration appConfiguration, IDatabaseInitializer databaseInitializer, ILogger<App> logger, Func<AppShell> createShell)
     {
         InitializeComponent();
 
         _appConfiguration = appConfiguration;
+        _createShell = createShell;
         _logger = logger;
         _ = _appConfiguration.LoadFromSettingsFileAsync();
         _ = InitializeDatabaseAsync(databaseInitializer);
@@ -37,13 +40,13 @@ public partial class App : Application
     public AppTheme CurrentTheme { get; private set; }
 
     /// <summary>
-    /// Erstellt das Hauptfenster mit der AppShell als Inhalt.
+    /// Erstellt das Hauptfenster mit der AppShell als Inhalt; die Abhängigkeiten der Shell kommen aus der Dependency Injection.
     /// </summary>
     /// <param name="activationState">Der Aktivierungszustand der Plattform.</param>
     /// <returns>Das neu erstellte Anwendungsfenster.</returns>
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        return new Window(new AppShell()) { Title = AppConfiguration.AppDisplayName };
+        return new Window(_createShell()) { Title = AppConfiguration.AppDisplayName };
     }
 
     private async Task InitializeDatabaseAsync(IDatabaseInitializer databaseInitializer)

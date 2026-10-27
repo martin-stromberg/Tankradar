@@ -66,6 +66,7 @@ public static class MauiProgram
         });
         builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        builder.Services.AddSingleton<ISetupStatusService, SetupStatusService>();
         AddPriceServices(builder.Services);
         builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
         builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
@@ -118,12 +119,17 @@ public static class MauiProgram
         builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
         builder.Services.AddSingleton<ITankbookNavigator, ShellTankbookNavigator>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<SetupViewModel>();
 
         builder.Services.AddTransient<FavoritesPage>();
         builder.Services.AddTransient<MapPage>();
         builder.Services.AddTransient<TankbookPage>();
         builder.Services.AddTransient<TankbookEntriesPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<AppShell>();
+
+        // App erzeugt die Shell erst in CreateWindow, nachdem die App-Ressourcen geladen sind; daher Fabrik statt direkter Injektion.
+        builder.Services.AddSingleton<Func<AppShell>>(provider => provider.GetRequiredService<AppShell>);
         builder.Services.AddTransient<StationDetailPage>();
         builder.Services.AddTransient<FavoriteGroupPage>();
 

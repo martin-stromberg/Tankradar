@@ -5,12 +5,96 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Tankradar.MAUI.Views"
     xmlns:services="clr-namespace:Tankradar.MAUI.Services"
+    xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+    xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+    xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
     Title="{x:Static services:AppConfiguration.AppDisplayName}"
     FlyoutBehavior="Disabled"
     Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}"
     Shell.TabBarForegroundColor="{StaticResource ColorPrimaryTeal}"
     Shell.TabBarTitleColor="{StaticResource ColorPrimaryTeal}"
     Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}">
+
+    <Shell.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:TankbookStyles />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Einrichtung beim ersten Start (ADR 0017): Bereich der Ebene 3 (Modal), der die Shell samt TabBar überlagert. Keine Route, kein Dialog des Betriebssystems, keine Verschiebe-Schaltflächen. -->
+            <DataTemplate x:Key="SetupOverlayTemplate" x:DataType="vm:SetupViewModel">
+                <Grid AutomationId="Setup.Overlay"
+                      Padding="{StaticResource space-md}"
+                      BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+                    <ScrollView VerticalOptions="Center">
+                        <Border Style="{StaticResource TankbookCard}"
+                                Padding="{StaticResource space-lg}"
+                                MaximumWidthRequest="520"
+                                Shadow="{StaticResource ShadowLevel3}">
+                            <VerticalStackLayout Spacing="{StaticResource space-md}">
+                                <Label Text="{x:Static texts:SetupTexts.Heading}"
+                                       Style="{StaticResource headline-lg}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       SemanticProperties.HeadingLevel="Level1"
+                                       AutomationId="Setup.Heading" />
+                                <Label Text="{x:Static texts:SetupTexts.Hint}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                       SemanticProperties.Description="{x:Static texts:SetupTexts.Hint}"
+                                       AutomationId="Setup.Hint" />
+                                <Label Text="{x:Static texts:SetupTexts.FuelTypesHeading}"
+                                       Style="{StaticResource headline-md}"
+                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                       SemanticProperties.HeadingLevel="Level2" />
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding FuelTypes}" Spacing="{StaticResource space-xs}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:FuelTypeItemViewModel">
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                                                <Switch Grid.Column="0"
+                                                        IsToggled="{Binding IsSelected}"
+                                                        VerticalOptions="Center"
+                                                        AutomationId="{Binding AutomationKey, StringFormat='Setup.FuelType.{0}.Switch'}"
+                                                        SemanticProperties.Description="{Binding DisplayName}"
+                                                        SemanticProperties.Hint="{x:Static texts:SetupTexts.FuelTypeSwitchHint}" />
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding DisplayName}"
+                                                       Style="{StaticResource body-lg}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                                       VerticalOptions="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                                <Label Text="{Binding StatusMessage}"
+                                       IsVisible="{Binding HasStatusMessage}"
+                                       Style="{StaticResource body-md}"
+                                       TextColor="{StaticResource ColorErrorRed}"
+                                       AutomationId="Setup.StatusMessage" />
+                                <FlexLayout Wrap="Wrap" JustifyContent="End" AlignItems="Center">
+                                    <Button Text="{x:Static texts:SetupTexts.Skip}"
+                                            Style="{StaticResource TankbookOutlineButton}"
+                                            Margin="0,0,8,8"
+                                            Command="{Binding SkipCommand}"
+                                            IsEnabled="{Binding IsNotBusy}"
+                                            AutomationId="Setup.Skip"
+                                            SemanticProperties.Description="{x:Static texts:SetupTexts.Skip}"
+                                            SemanticProperties.Hint="{x:Static texts:SetupTexts.SkipHint}" />
+                                    <Button Text="{x:Static texts:SetupTexts.Save}"
+                                            Style="{StaticResource TankbookButton}"
+                                            Margin="0,0,0,8"
+                                            Command="{Binding SaveCommand}"
+                                            IsEnabled="{Binding IsNotBusy}"
+                                            AutomationId="Setup.Save"
+                                            SemanticProperties.Description="{x:Static texts:SetupTexts.Save}"
+                                            SemanticProperties.Hint="{x:Static texts:SetupTexts.SaveHint}" />
+                                </FlexLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </ScrollView>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Shell.Resources>
 
     <TabBar>
         <ShellContent

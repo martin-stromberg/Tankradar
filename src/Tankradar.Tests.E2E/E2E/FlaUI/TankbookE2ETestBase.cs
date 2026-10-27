@@ -32,14 +32,6 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
     protected TankbookE2EDriver Tankbook { get; }
 
     /// <summary>
-    /// Der Pfad der Datenbankdatei der laufenden App.
-    /// </summary>
-    protected string DatabasePath
-    {
-        get { return Path.Combine(TestDataDirectory, "tankatlas.db"); }
-    }
-
-    /// <summary>
     /// Wechselt in den Bereich „Tankbuch“ und wartet, bis „Fahrzeug hinzufügen“ angezeigt wird.
     /// </summary>
     protected void OpenTankbook()
