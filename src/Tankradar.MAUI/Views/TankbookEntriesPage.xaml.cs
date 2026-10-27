@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite der Tank- und Ladevorgänge eines Fahrzeugs (geöffnet über die Fahrzeugkarte im Tankbuch): Liste, Formular und Rückfrage zum Löschen als Bereiche in der Seite.
+/// Seite des Tabs „Tankbuch“: Tank- und Ladevorgänge des gewählten Fahrzeugs mit Fahrzeugwechsel im Kopf; Liste, Formular und Rückfrage zum Löschen als Bereiche in der Seite.
 /// </summary>
 public partial class TankbookEntriesPage : TankradarContentPage
 {

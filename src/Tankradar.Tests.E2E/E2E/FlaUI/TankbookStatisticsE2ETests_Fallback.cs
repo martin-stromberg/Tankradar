@@ -31,8 +31,6 @@ public class TankbookStatisticsE2ETests_Fallback : TankbookE2ETestBase
                 () => Tankbook.Find("TankbookEntries.Statistics.Notice")?.Name == "Noch keine Auswertung: Sie erscheint, sobald Tank- oder Ladevorgänge erfasst sind.",
                 "Der Hinweis ohne Vorgänge fehlt.");
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.Average"));
-            Tankbook.LeaveEntries();
-
             Tankbook.OpenEntries("Eins");
             Tankbook.WaitForStatistic("Fuel", "Average", "–");
             Tankbook.WaitForStatistic("Fuel", "CostPer100KmUnit", "noch nicht berechenbar");
@@ -42,8 +40,6 @@ public class TankbookStatisticsE2ETests_Fallback : TankbookE2ETestBase
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.ConsumptionChart"), "Ohne berechneten Verbrauch darf es kein (leeres) Verbrauchsdiagramm geben.");
             WaitForAutomationId("TankbookEntries.Statistics.Fuel.CostChart");
             WaitForAutomationId("TankbookEntries.Statistics.Fuel.ConsumptionChartSummary");
-            Tankbook.LeaveEntries();
-
             Tankbook.OpenEntries("Start");
             Tankbook.WaitForStatistic("Fuel", "Average", "5,40");
             Tankbook.WaitForStatistic("Fuel", "AverageUnit", "L/100 km");
@@ -51,8 +47,6 @@ public class TankbookStatisticsE2ETests_Fallback : TankbookE2ETestBase
             Tankbook.WaitForStatistic("Fuel", "CostPer100KmUnit", "noch nicht berechenbar");
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.Notice"));
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.ConsumptionChart"));
-            Tankbook.LeaveEntries();
-
             Tankbook.OpenEntries("AbStart");
             Tankbook.WaitForStatistic("Fuel", "Average", "8,00");
             Tankbook.WaitForStatistic("Fuel", "AverageUnit", "L/100 km");
@@ -60,8 +54,6 @@ public class TankbookStatisticsE2ETests_Fallback : TankbookE2ETestBase
             Tankbook.WaitForStatistic("Fuel", "CostPer100Km", "14,87");
             Assert.False(Exists("TankbookEntries.Statistics.Fuel.Notice"));
             WaitForAutomationId("TankbookEntries.Statistics.Fuel.ConsumptionChart");
-            Tankbook.LeaveEntries();
-
             Tankbook.OpenEntries("Plugin");
             var notice = WaitForAutomationId("TankbookEntries.Statistics.Electricity.Notice").Name;
             Assert.Equal("Für den Verbrauch werden mindestens zwei volle Vorgänge benötigt.", notice);

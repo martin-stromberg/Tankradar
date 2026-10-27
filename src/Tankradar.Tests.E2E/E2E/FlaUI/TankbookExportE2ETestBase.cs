@@ -6,7 +6,7 @@ using FlaUI.Core.Definitions;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// Basis der E2E-Tests des Exports: Bedienung des Bereichs „Export“ auf der Seite „Tank- und Ladevorgänge“ ausschließlich über UI-Automation-Muster
+/// Basis der E2E-Tests des Exports: Bedienung des Bereichs „Export“ im Tab „Tankbuch“ ausschließlich über UI-Automation-Muster
 /// (Auswahlchips, Schaltfläche, Tageswahl im Kalender über das SelectionItemPattern) und Zugriff auf die Dateien, die der Testmodus statt des Teilen-Dialogs
 /// in das Verzeichnis <c>test-shared</c> kopiert. Die App läuft im Testmodus ohne Preisdienst; es werden keine Produktivendpunkte aufgerufen.
 /// </summary>
@@ -175,12 +175,12 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
     }
 
     /// <summary>
-    /// Verlässt die Vorgangsseite und öffnet sie erneut (lädt die Vorgänge aus der Datenbank neu).
+    /// Öffnet die Fahrzeugverwaltung und kehrt zur Tab-Seite zurück (lädt die Vorgänge aus der Datenbank neu).
     /// </summary>
     /// <param name="name">Der Name des Fahrzeugs.</param>
     protected void ReopenEntries(string name)
     {
-        Tankbook.LeaveEntries();
+        Tankbook.ManageVehicles();
         Tankbook.OpenEntries(name);
         WaitForAutomationId($"{Prefix}Start");
     }

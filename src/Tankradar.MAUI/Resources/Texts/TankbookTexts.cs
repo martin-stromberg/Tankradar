@@ -28,12 +28,32 @@ public static class TankbookTexts
     /// <summary>
     /// Überschrift der Fahrzeugliste.
     /// </summary>
-    public const string VehiclesHeading = "Fahrzeuge";
+    public const string VehiclesHeading = "Deine Fahrzeuge";
 
     /// <summary>
     /// Hinweis, dass es noch keine Fahrzeuge gibt.
     /// </summary>
-    public const string NoVehicles = "Noch keine Fahrzeuge. Lege über „Fahrzeug hinzufügen“ dein erstes Fahrzeug an.";
+    public const string NoVehicles = "Noch kein Fahrzeug angelegt. Lege über „Fahrzeug hinzufügen“ dein erstes Fahrzeug an, um Tank- und Ladevorgänge zu erfassen.";
+
+    /// <summary>
+    /// Titel der Fahrzeugverwaltung.
+    /// </summary>
+    public const string VehiclesPageTitle = "Fahrzeuge";
+
+    /// <summary>
+    /// Beschriftung „Fahrzeuge verwalten“ im Kopf des Tankbuchs.
+    /// </summary>
+    public const string ManageVehicles = "Fahrzeuge verwalten";
+
+    /// <summary>
+    /// Beschriftung der Fahrzeugauswahl im Kopf des Tankbuchs.
+    /// </summary>
+    public const string SelectVehicleLabel = "Fahrzeug";
+
+    /// <summary>
+    /// Hinweis in der Fahrzeugverwaltung, dass die Vorgänge im Tab „Tankbuch“ erfasst werden.
+    /// </summary>
+    public const string ChooseVehicleIntro = "Hier legst du Fahrzeuge an, bearbeitest und löschst sie. Tank- und Ladevorgänge erfasst du im Tab „Tankbuch“; dort wählst du das Fahrzeug im Kopf aus.";
 
     /// <summary>
     /// Beschriftung „Fahrzeug hinzufügen“.
@@ -141,11 +161,6 @@ public static class TankbookTexts
     public const string DuplicateName = "Ein Fahrzeug mit diesem Namen gibt es bereits.";
 
     /// <summary>
-    /// Beschriftung der Schaltfläche, die die Tank- und Ladevorgänge eines Fahrzeugs öffnet.
-    /// </summary>
-    public const string Entries = "Tank- und Ladevorgänge";
-
-    /// <summary>
     /// Hinweis der Schaltfläche „Abbrechen“ des Formulars für die Sprachausgabe (der vorgelesene Name bleibt der sichtbare Text).
     /// </summary>
     public const string CancelFormHint = "Formular schließen, ohne zu speichern";
@@ -168,6 +183,16 @@ public static class TankbookTexts
     public static string FormatVehicleHint(string name)
     {
         return $"Fahrzeug „{name}“";
+    }
+
+    /// <summary>
+    /// Hinweis eines Fahrzeugs in der Auswahl im Kopf für die Sprachausgabe, z. B. „Fahrzeug „Golf“ auswählen“.
+    /// </summary>
+    /// <param name="name">Der Name des Fahrzeugs.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatSelectVehicleHint(string name)
+    {
+        return $"Fahrzeug „{name}“ auswählen";
     }
 
     /// <summary>

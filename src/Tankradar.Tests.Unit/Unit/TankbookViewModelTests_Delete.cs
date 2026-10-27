@@ -17,7 +17,7 @@ public class TankbookViewModelTests_Delete : BaseTest
 
     private async Task<TankbookViewModel> OpenAsync()
     {
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), _logger, _announcer, new RestoreNotifier());
+        var viewModel = new TankbookViewModel(_fixture.Service, _logger, _announcer, new RestoreNotifier());
         viewModel.OnAppearing();
         await viewModel.LastTask;
         return viewModel;

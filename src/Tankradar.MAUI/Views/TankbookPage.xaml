@@ -8,7 +8,7 @@
              xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
              x:DataType="vm:TankbookViewModel"
              x:Class="Tankradar.MAUI.Views.TankbookPage"
-             Title="{x:Static texts:TankbookTexts.PageTitle}"
+             Title="{x:Static texts:TankbookTexts.VehiclesPageTitle}"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
     <views:TankradarContentPage.Resources>
@@ -25,6 +25,10 @@
             <Label Text="{x:Static texts:TankbookTexts.Intro}"
                    Style="{StaticResource body-md}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+            <Label Text="{x:Static texts:TankbookTexts.ChooseVehicleIntro}"
+                   Style="{StaticResource body-sm}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                   AutomationId="Tankbook.ChooseVehicleIntro" />
 
             <Label Text="{Binding StatusMessage}"
                    IsVisible="{Binding HasStatusMessage}"
@@ -189,11 +193,6 @@
                                        Style="{StaticResource body-md}"
                                        TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                                        AutomationId="Tankbook.Vehicle.Details" />
-                                <Button Text="{x:Static texts:TankbookTexts.Entries}"
-                                        Command="{Binding OpenEntriesCommand}"
-                                        Style="{StaticResource TankbookButton}"
-                                        SemanticProperties.Hint="{Binding VehicleHint}"
-                                        AutomationId="Tankbook.Vehicle.Entries" />
                                 <Button Text="{x:Static texts:TankbookTexts.Edit}"
                                         Command="{Binding EditCommand}"
                                         Style="{StaticResource TankbookOutlineButton}"

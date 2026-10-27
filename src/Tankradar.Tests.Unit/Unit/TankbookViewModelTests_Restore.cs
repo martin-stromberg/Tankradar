@@ -31,7 +31,7 @@ public class TankbookViewModelTests_Restore : BaseTest
     public async Task Restored_ReloadsVehicles()
     {
         var notifier = new RestoreNotifier();
-        var viewModel = new TankbookViewModel(_fixture.Service, new FakeTankbookNavigator(), new RecordingLogger<TankbookViewModel>(), new FakeScreenReaderAnnouncer(), notifier);
+        var viewModel = new TankbookViewModel(_fixture.Service, new RecordingLogger<TankbookViewModel>(), new FakeScreenReaderAnnouncer(), notifier);
         viewModel.OnAppearing();
         await viewModel.LastTask;
         Assert.Empty(viewModel.Vehicles);

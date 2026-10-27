@@ -20,14 +20,12 @@ public sealed class VehicleItemViewModel : BaseViewModel
     /// </summary>
     /// <param name="vehicle">Das Fahrzeug.</param>
     /// <param name="edit">Öffnet das Formular zum Bearbeiten dieses Fahrzeugs.</param>
-    /// <param name="openEntries">Öffnet die Tank- und Ladevorgänge dieses Fahrzeugs.</param>
     /// <param name="delete">Startet das Löschen (liest die Zahl der Vorgänge und zeigt die Rückfrage).</param>
     /// <param name="confirmDelete">Löscht das Fahrzeug nach der Bestätigung.</param>
     /// <param name="canConfirmDelete">Gibt an, ob die Bestätigung gerade ausführbar ist (gesperrt, solange eine Änderung gespeichert wird).</param>
     public VehicleItemViewModel(
         Vehicle vehicle,
         Action<VehicleItemViewModel> edit,
-        Action<VehicleItemViewModel> openEntries,
         Action<VehicleItemViewModel> delete,
         Action<VehicleItemViewModel> confirmDelete,
         Func<bool> canConfirmDelete)
@@ -38,7 +36,6 @@ public sealed class VehicleItemViewModel : BaseViewModel
         CancelDeleteHint = TankbookTexts.FormatCancelDeleteHint(vehicle.Name);
         VehicleHint = TankbookTexts.FormatVehicleHint(vehicle.Name);
         EditCommand = new Command(() => edit(this));
-        OpenEntriesCommand = new Command(() => openEntries(this));
         DeleteCommand = new Command(() => delete(this));
         ConfirmDeleteCommand = new Command(() => confirmDelete(this), canConfirmDelete);
         CancelDeleteCommand = new Command(HideDeleteConfirmation);
@@ -86,7 +83,7 @@ public sealed class VehicleItemViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Hinweis der Schaltflächen „Tank- und Ladevorgänge“, „Bearbeiten“ und „Löschen“ der Karte für die Sprachausgabe, z. B. „Fahrzeug „Golf““;
+    /// Hinweis der Schaltflächen „Bearbeiten“ und „Löschen“ der Karte für die Sprachausgabe, z. B. „Fahrzeug „Golf““;
     /// der vorgelesene Name bleibt der sichtbare Text (WCAG 2.5.3).
     /// </summary>
     public string VehicleHint { get; }
@@ -131,11 +128,6 @@ public sealed class VehicleItemViewModel : BaseViewModel
     /// Befehl „Bearbeiten“.
     /// </summary>
     public ICommand EditCommand { get; }
-
-    /// <summary>
-    /// Befehl „Tank- und Ladevorgänge“: öffnet die Vorgänge des Fahrzeugs.
-    /// </summary>
-    public ICommand OpenEntriesCommand { get; }
 
     /// <summary>
     /// Befehl „Löschen“: zeigt die Rückfrage.

@@ -113,7 +113,7 @@
             Title="Tankbuch"
             Icon="icon_tankbook"
             Route="tankbook"
-            ContentTemplate="{DataTemplate views:TankbookPage}" />
+            ContentTemplate="{DataTemplate views:TankbookEntriesPage}" />
 
         <ShellContent
             Title="Optionen"

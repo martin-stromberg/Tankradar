@@ -1,6 +1,3 @@
-using Tankradar.MAUI.ViewModels;
-using Tankradar.MAUI.Views;
-
 namespace Tankradar.MAUI.Services.Navigation;
 
 /// <summary>
@@ -9,70 +6,19 @@ namespace Tankradar.MAUI.Services.Navigation;
 public sealed class ShellTankbookNavigator : ITankbookNavigator
 {
     /// <summary>
-    /// Die Route der Seite der Tank- und Ladevorgänge.
+    /// Die Route der Fahrzeugverwaltung.
     /// </summary>
-    public const string EntriesRoute = "tankbookentries";
+    public const string VehiclesRoute = "tankbookvehicles";
 
     /// <summary>
-    /// Der Name des Navigationsparameters, der die Kennung des Fahrzeugs trägt.
+    /// Der Name des Navigationsparameters, der angibt, ob die Verwaltung sofort das Formular „Neues Fahrzeug“ öffnet.
     /// </summary>
-    public const string VehicleIdParameter = "vehicleId";
+    public const string StartCreateParameter = "startCreate";
 
     /// <inheritdoc />
-    public Task OpenEntriesAsync(long vehicleId)
+    public Task OpenVehicleManagementAsync(bool startCreate)
     {
-        var parameters = new Dictionary<string, object> { [VehicleIdParameter] = vehicleId };
-        return Shell.Current.GoToAsync(EntriesRoute, parameters);
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// Geschlossen wird nur die Seite, die das Fahrzeug anzeigt: Ein noch nicht eingesammeltes ViewModel einer längst geschlossenen Seite darf nicht
-    /// die offene Seite eines anderen Fahrzeugs schließen. Die Seite wird im Navigationsstapel ihres eigenen Reiters geschlossen. <c>GoToAsync("..")</c>
-    /// wirkt nur auf den aktiven Reiter und schließt die Seite daher nicht, wenn z. B. während einer Wiederherstellung der Reiter „Optionen“ aktiv ist.
-    /// </remarks>
-    public async Task CloseAsync(long vehicleId)
-    {
-        var shell = Shell.Current;
-        var section = shell.Items
-            .SelectMany(item => item.Items)
-            .FirstOrDefault(candidate => candidate.Navigation.NavigationStack.OfType<TankbookEntriesPage>().Any(page => ShowsVehicle(page.BindingContext, vehicleId)));
-        if (section is null)
-        {
-            return;
-        }
-
-        var stack = section.Navigation.NavigationStack;
-        if (ReferenceEquals(shell.CurrentItem?.CurrentItem, section) && stack[^1] is TankbookEntriesPage top
-            && ShowsVehicle(top.BindingContext, vehicleId))
-        {
-            await shell.GoToAsync("..").ConfigureAwait(true);
-            return;
-        }
-
-        foreach (var page in SelectPages(stack.OfType<TankbookEntriesPage>(), page => page.BindingContext, vehicleId))
-        {
-            section.Navigation.RemovePage(page);
-        }
-    }
-
-    /// <summary>
-    /// Wählt aus den Seiten diejenigen aus, deren ViewModel die Vorgänge des Fahrzeugs anzeigt.
-    /// </summary>
-    /// <typeparam name="T">Der Typ der Seite.</typeparam>
-    /// <param name="pages">Die Seiten.</param>
-    /// <param name="bindingContextOf">Liefert das ViewModel einer Seite.</param>
-    /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
-    /// <returns>Die Seiten des Fahrzeugs in der Reihenfolge der Eingabe.</returns>
-    public static IReadOnlyList<T> SelectPages<T>(IEnumerable<T> pages, Func<T, object?> bindingContextOf, long vehicleId)
-    {
-        ArgumentNullException.ThrowIfNull(pages);
-        ArgumentNullException.ThrowIfNull(bindingContextOf);
-        return pages.Where(page => ShowsVehicle(bindingContextOf(page), vehicleId)).ToList();
-    }
-
-    private static bool ShowsVehicle(object? bindingContext, long vehicleId)
-    {
-        return bindingContext is TankbookEntriesViewModel { VehicleId: { } id } && id == vehicleId;
+        var parameters = new Dictionary<string, object> { [StartCreateParameter] = startCreate };
+        return Shell.Current.GoToAsync(VehiclesRoute, parameters);
     }
 }

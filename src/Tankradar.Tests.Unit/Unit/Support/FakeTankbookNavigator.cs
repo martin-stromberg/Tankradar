@@ -8,39 +8,21 @@ namespace Tankradar.Tests.Unit.Unit.Support;
 public sealed class FakeTankbookNavigator : ITankbookNavigator
 {
     /// <summary>
-    /// Die Kennungen der Fahrzeuge, deren Vorgänge geöffnet wurden.
+    /// Die Aufrufe von <see cref="OpenVehicleManagementAsync"/> mit dem jeweiligen Wert von <c>startCreate</c>.
     /// </summary>
-    public List<long> Opened { get; } = [];
+    public List<bool> VehicleManagementOpened { get; } = [];
 
     /// <summary>
-    /// Die Zahl der Aufrufe von <see cref="CloseAsync"/>.
+    /// Gibt an, ob <see cref="OpenVehicleManagementAsync"/> mit einer Ausnahme scheitert.
     /// </summary>
-    public int Closed
-    {
-        get { return ClosedVehicles.Count; }
-    }
-
-    /// <summary>
-    /// Die Kennungen der Fahrzeuge, deren Seite geschlossen werden sollte.
-    /// </summary>
-    public List<long> ClosedVehicles { get; } = [];
-
-    /// <summary>
-    /// Gibt an, ob <see cref="CloseAsync"/> eine Ausnahme auslöst (z. B. weil die Seite im aktiven Reiter nicht geschlossen werden kann).
-    /// </summary>
-    public bool FailOnClose { get; set; }
+    public bool FailOnOpen { get; set; }
 
     /// <inheritdoc />
-    public Task OpenEntriesAsync(long vehicleId)
+    public Task OpenVehicleManagementAsync(bool startCreate)
     {
-        Opened.Add(vehicleId);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task CloseAsync(long vehicleId)
-    {
-        ClosedVehicles.Add(vehicleId);
-        return FailOnClose ? Task.FromException(new InvalidOperationException("Die Seite lässt sich nicht schließen.")) : Task.CompletedTask;
+        VehicleManagementOpened.Add(startCreate);
+        return FailOnOpen
+            ? Task.FromException(new InvalidOperationException("Navigation fehlgeschlagen."))
+            : Task.CompletedTask;
     }
 }

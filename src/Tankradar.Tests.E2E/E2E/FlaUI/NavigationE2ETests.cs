@@ -14,7 +14,7 @@ public class NavigationE2ETests : E2ETestBase
     {
         ["Favoriten"] = "Favorites.Refresh",
         ["Karte"] = "Search.Submit",
-        ["Tankbuch"] = "Tankbook.AddVehicle",
+        ["Tankbuch"] = "TankbookEntries.ManageVehicles",
         ["Optionen"] = "Settings.Loaded",
     };
 

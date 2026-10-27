@@ -9,7 +9,7 @@ using Tankradar.MAUI.Services.Export;
 namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
-/// Zustand des Bereichs „Export“ der Seite „Tank- und Ladevorgänge“: Format und Zeitraum wählen, <b>Exportieren</b> erzeugt die Datei und übergibt sie an die
+/// Zustand des Bereichs „Export“ des Tabs „Tankbuch“: Format und Zeitraum wählen, <b>Exportieren</b> erzeugt die Datei und übergibt sie an die
 /// Systemfunktion Teilen/Speichern. Ein Export entsteht nur auf Veranlassung des Anwenders. Protokolliert werden nie Namen oder Werte, nur Ausnahmetypen.
 /// </summary>
 public sealed class TankbookExportViewModel : BaseViewModel

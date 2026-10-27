@@ -14,7 +14,7 @@ public sealed class TankbookE2EDriver
     private readonly Func<Window> _window;
     private readonly Action<string, string> _setFieldValue;
     private readonly Action<Func<bool>, string> _waitUntil;
-    private readonly Action<string, string?> _navigateToTab;
+    private readonly Action<string, string[]> _navigateToTab;
 
     /// <summary>
     /// Erstellt den Treiber.
@@ -22,8 +22,8 @@ public sealed class TankbookE2EDriver
     /// <param name="window">Liefert das Hauptfenster der aktuell laufenden App (auch nach einem Neustart).</param>
     /// <param name="setFieldValue">Trägt einen Text in ein Eingabefeld ein und wartet, bis die App ihn übernommen hat.</param>
     /// <param name="waitUntil">Wartet auf eine Bedingung und schlägt sonst mit der Meldung fehl.</param>
-    /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationId der Zielseite; <see langword="null"/> prüft den Seitentitel der Shell).</param>
-    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string?> navigateToTab)
+    /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationIds gleichwertiger Zielseiten; ohne Angabe wird der Seitentitel der Shell geprüft).</param>
+    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string[]> navigateToTab)
     {
         _window = window;
         _setFieldValue = setFieldValue;
@@ -32,12 +32,110 @@ public sealed class TankbookE2EDriver
     }
 
     /// <summary>
-    /// Wechselt in den Bereich „Tankbuch“ und wartet, bis „Fahrzeug hinzufügen“ angezeigt wird.
+    /// Wechselt in den Bereich „Tankbuch“ und öffnet dort die Fahrzeugverwaltung (über „Fahrzeuge verwalten“ im Kopf, falls sie nicht schon offen ist);
+    /// wartet, bis „Fahrzeug hinzufügen“ der Verwaltung angezeigt wird.
     /// </summary>
     public void OpenTankbook()
     {
-        _navigateToTab("Tankbuch", null);
+        OpenTab();
+        if (!Exists("Tankbook.AddVehicle"))
+        {
+            ManageVehicles();
+        }
+    }
+
+    /// <summary>
+    /// Wechselt in den Bereich „Tankbuch“ und wartet, bis die Tab-Seite (Vorgänge) oder die darauf geöffnete Fahrzeugverwaltung angezeigt wird.
+    /// </summary>
+    public void OpenTab()
+    {
+        // Der Reiter zeigt seine Wurzel (Vorgänge) oder die zuletzt darauf geöffnete Fahrzeugverwaltung (Titel „Fahrzeuge“).
+        _navigateToTab("Tankbuch", ["TankbookEntries.ManageVehicles", "Tankbook.AddVehicle"]);
+    }
+
+    /// <summary>
+    /// Öffnet auf der Tab-Seite über „Fahrzeuge verwalten“ die Fahrzeugverwaltung und wartet, bis „Fahrzeug hinzufügen“ angezeigt wird.
+    /// </summary>
+    public void ManageVehicles()
+    {
+        Press("TankbookEntries.ManageVehicles");
         WaitFor("Tankbook.AddVehicle");
+    }
+
+    /// <summary>
+    /// Kehrt mit dem Zurück-Pfeil der Kopfleiste aus der Fahrzeugverwaltung zur Tab-Seite zurück.
+    /// </summary>
+    public void LeaveVehicleManagement()
+    {
+        Press("NavigationViewBackButton");
+        _waitUntil(() => !Exists("Tankbook.AddVehicle"), "Die Fahrzeugverwaltung wurde nicht geschlossen.");
+        WaitFor("TankbookEntries.ManageVehicles");
+    }
+
+    /// <summary>
+    /// Wählt auf der Tab-Seite über die Auswahl im Kopf das Fahrzeug mit dem Namen und wartet, bis der Kopf es zeigt.
+    /// Ist es bereits gewählt, bleibt die Auswahl unverändert.
+    /// </summary>
+    /// <param name="vehicleName">Der Name des Fahrzeugs.</param>
+    public void SelectVehicle(string vehicleName)
+    {
+        WaitFor("TankbookEntries.SelectVehicle");
+        if (ReadTexts("TankbookEntries.Vehicle").SequenceEqual([vehicleName]))
+        {
+            return;
+        }
+
+        if (ReadVehicleOptions().Count == 0)
+        {
+            Press("TankbookEntries.SelectVehicle");
+        }
+
+        _waitUntil(
+            () =>
+            {
+                try
+                {
+                    if (FindVehicleOption(vehicleName) is not { } option)
+                    {
+                        return false;
+                    }
+
+                    option.Patterns.Invoke.Pattern.Invoke();
+                    return true;
+                }
+                catch (Exception ex) when (ex is ElementNotAvailableException or PropertyNotSupportedException or InvalidOperationException)
+                {
+                    return false;
+                }
+            },
+            $"Das Fahrzeug '{vehicleName}' ließ sich in der Auswahl im Kopf nicht wählen.");
+        WaitForTexts("TankbookEntries.Vehicle", vehicleName);
+    }
+
+    /// <summary>
+    /// Liefert die Namen der Fahrzeuge in der aufgeklappten Auswahl im Kopf (nach Namen geordnet).
+    /// </summary>
+    /// <returns>Die Namen.</returns>
+    public IReadOnlyList<string> ReadVehicleOptions()
+    {
+        try
+        {
+            return VehicleOptions().Select(element => element.Name).ToList();
+        }
+        catch (Exception ex) when (ex is PropertyNotSupportedException or ElementNotAvailableException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Betätigt im Leerzustand der Tab-Seite „Fahrzeug hinzufügen“ und wartet, bis das Formular „Neues Fahrzeug“ der Verwaltung angezeigt wird.
+    /// </summary>
+    public void AddVehicleFromEmptyState()
+    {
+        WaitFor("TankbookEntries.NoVehicles");
+        Press("TankbookEntries.AddVehicle");
+        WaitFor("Tankbook.Form.Name");
     }
 
     /// <summary>
@@ -229,7 +327,7 @@ public sealed class TankbookE2EDriver
     }
 
     /// <summary>
-    /// Legt ein Fahrzeug über „Fahrzeug hinzufügen“ an.
+    /// Legt ein Fahrzeug über „Fahrzeug hinzufügen“ der Fahrzeugverwaltung an (öffnet sie vorher über den Kopf der Tab-Seite, falls nötig).
     /// </summary>
     /// <param name="name">Der Name.</param>
     /// <param name="fuelKindKey">Der Schlüssel der Kraftstoffart.</param>
@@ -237,6 +335,11 @@ public sealed class TankbookE2EDriver
     /// <param name="consumption">Der Startverbrauch (leer für keinen).</param>
     public void CreateVehicle(string name, string fuelKindKey, string odometer, string consumption)
     {
+        if (!Exists("Tankbook.AddVehicle"))
+        {
+            OpenTankbook();
+        }
+
         Press("Tankbook.AddVehicle");
         WaitFor("Tankbook.Form.Name");
         FillVehicleForm(name, fuelKindKey, odometer, consumption);
@@ -245,23 +348,27 @@ public sealed class TankbookE2EDriver
     }
 
     /// <summary>
-    /// Öffnet über „Tank- und Ladevorgänge“ der Fahrzeugkarte die Vorgänge des Fahrzeugs und wartet auf die Seite.
+    /// Zeigt die Vorgänge des Fahrzeugs im Tab „Tankbuch“: verlässt eine offene Fahrzeugverwaltung, wechselt sonst in den Tab, wählt das Fahrzeug über die
+    /// Auswahl im Kopf und wartet auf „Vorgang erfassen“.
     /// </summary>
     /// <param name="vehicleName">Der Name des Fahrzeugs.</param>
     public void OpenEntries(string vehicleName)
     {
-        PressForVehicle("Tankbook.Vehicle.Entries", vehicleName);
-        WaitForTexts("TankbookEntries.Vehicle", vehicleName);
-        WaitFor("TankbookEntries.Add");
-    }
+        if (Exists("Tankbook.AddVehicle"))
+        {
+            LeaveVehicleManagement();
+        }
+        else if (!Exists("TankbookEntries.ManageVehicles"))
+        {
+            OpenTab();
+            if (Exists("Tankbook.AddVehicle"))
+            {
+                LeaveVehicleManagement();
+            }
+        }
 
-    /// <summary>
-    /// Kehrt mit dem Zurück-Pfeil der Kopfleiste zur Fahrzeugliste zurück.
-    /// </summary>
-    public void LeaveEntries()
-    {
-        Press("NavigationViewBackButton");
-        WaitFor("Tankbook.AddVehicle");
+        SelectVehicle(vehicleName);
+        WaitFor("TankbookEntries.Add");
     }
 
     /// <summary>
@@ -370,6 +477,18 @@ public sealed class TankbookE2EDriver
     {
         var separator = text.IndexOf(' ', StringComparison.Ordinal);
         return (text[..separator], text[(separator + 1)..]);
+    }
+
+    private IReadOnlyList<AutomationElement> VehicleOptions()
+    {
+        return _window().FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
+            .Where(element => element.Properties.AutomationId.ValueOrDefault?.StartsWith("TankbookEntries.Vehicle.Option.", StringComparison.Ordinal) == true)
+            .ToList();
+    }
+
+    private AutomationElement? FindVehicleOption(string vehicleName)
+    {
+        return VehicleOptions().FirstOrDefault(element => element.Name == vehicleName);
     }
 
     private void PressAtIndex(string automationId, Func<int> index, string description)

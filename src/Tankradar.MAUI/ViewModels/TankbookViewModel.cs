@@ -11,13 +11,13 @@ namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
 /// ViewModel für den Bereich „Tankbuch“: Fahrzeugverwaltung mit Liste, Formular zum Anlegen und Bearbeiten (in der Seite, mit feldbezogenen Fehlermeldungen)
-/// und Löschen nach einer Rückfrage im jeweiligen Eintrag, die vorhandene Tank- und Ladevorgänge ausdrücklich nennt (beim Bestätigen neu gezählt);
-/// je Fahrzeug öffnet „Tank- und Ladevorgänge“ dessen Vorgänge. Protokolliert werden nie Namen oder Werte.
+/// und Löschen nach einer Rückfrage im jeweiligen Eintrag, die vorhandene Tank- und Ladevorgänge ausdrücklich nennt (beim Bestätigen neu gezählt).
+/// Die Seite wird aus dem Tab „Tankbuch“ geöffnet (Route <see cref="ShellTankbookNavigator.VehiclesRoute"/>); die Vorgänge erfasst der Tab selbst.
+/// Protokolliert werden nie Namen oder Werte.
 /// </summary>
-public class TankbookViewModel : BaseViewModel
+public class TankbookViewModel : BaseViewModel, IQueryAttributable
 {
     private readonly IVehicleService _service;
-    private readonly ITankbookNavigator _navigator;
     private readonly ILogger<TankbookViewModel> _logger;
     private readonly IScreenReaderAnnouncer _announcer;
     private readonly Command _saveCommand;
@@ -34,23 +34,22 @@ public class TankbookViewModel : BaseViewModel
     private string _odometerError = string.Empty;
     private string _consumptionError = string.Empty;
     private string? _statusMessage;
+    private bool _startCreate;
 
     /// <summary>
-    /// Erstellt das ViewModel mit dem Seitentitel „Tankbuch“.
+    /// Erstellt das ViewModel mit dem Seitentitel „Fahrzeuge“.
     /// </summary>
     /// <param name="service">Der Fahrzeugdienst.</param>
-    /// <param name="navigator">Öffnet die Tank- und Ladevorgänge eines Fahrzeugs.</param>
     /// <param name="logger">Logger (protokolliert nie Namen oder Werte).</param>
     /// <param name="announcer">Sagt erscheinende Rückfragen und Fehlermeldungen über die Sprachausgabe an.</param>
     /// <param name="restoreNotifier">Meldet, dass die Daten aus einer Sicherung wiederhergestellt wurden; die Fahrzeuge werden dann neu geladen.</param>
-    public TankbookViewModel(IVehicleService service, ITankbookNavigator navigator, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer, IRestoreNotifier restoreNotifier)
+    public TankbookViewModel(IVehicleService service, ILogger<TankbookViewModel> logger, IScreenReaderAnnouncer announcer, IRestoreNotifier restoreNotifier)
     {
         _service = service;
-        _navigator = navigator;
         _logger = logger;
         _announcer = announcer;
         restoreNotifier.Restored += OnRestored;
-        Title = TankbookTexts.PageTitle;
+        Title = TankbookTexts.VehiclesPageTitle;
         FuelKindOptions = new[] { VehicleFuelKind.Petrol, VehicleFuelKind.Diesel, VehicleFuelKind.Electric, VehicleFuelKind.Hybrid }
             .Select(value => new ChoiceOptionViewModel<VehicleFuelKind>(value, TankbookTexts.GetFuelKindLabel(value), OnFuelKindSelected))
             .ToList();
@@ -339,7 +338,17 @@ public class TankbookViewModel : BaseViewModel
     public override void OnAppearing()
     {
         StatusMessage = null;
-        LastTask = LoadAsync();
+        LastTask = LoadAndStartCreateAsync();
+    }
+
+    /// <summary>
+    /// Übernimmt aus der Shell-Navigation, ob nach dem Laden sofort das Formular „Neues Fahrzeug“ geöffnet wird.
+    /// </summary>
+    /// <param name="query">Die Navigationsparameter.</param>
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        _startCreate = query.TryGetValue(ShellTankbookNavigator.StartCreateParameter, out var value) && value is true;
     }
 
     /// <summary>
@@ -356,7 +365,6 @@ public class TankbookViewModel : BaseViewModel
                 .Select(vehicle => new VehicleItemViewModel(
                     vehicle,
                     BeginEdit,
-                    OpenEntries,
                     item => LastTask = BeginDeleteAsync(item),
                     item => LastTask = DeleteAsync(item),
                     () => !IsSaving))
@@ -578,11 +586,13 @@ public class TankbookViewModel : BaseViewModel
         }
     }
 
-    private void OpenEntries(VehicleItemViewModel item)
+    private async Task LoadAndStartCreateAsync()
     {
-        IsFormOpen = false;
-        ClearFieldErrors();
-        CloseConfirmations(null);
-        LastTask = _navigator.OpenEntriesAsync(item.Id);
+        await LoadAsync().ConfigureAwait(true);
+        if (_startCreate)
+        {
+            _startCreate = false;
+            BeginCreate();
+        }
     }
 }

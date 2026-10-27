@@ -1,6 +1,6 @@
 using System.Windows.Input;
 using Tankradar.MAUI.Models.Tankbook;
-using Tankradar.MAUI.Services.Navigation;
+using Tankradar.MAUI.Services.Tankbook;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -8,10 +8,13 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Gemeinsamer Aufbau der Tests der Seite „Tank- und Ladevorgänge“: echte Dienste auf In-Memory-SQLite, Fotoablage- und Auswahl-Doubles, Ansage und Navigation.
+/// Gemeinsamer Aufbau der Tests des Tabs „Tankbuch“ (Tank- und Ladevorgänge): echte Dienste auf In-Memory-SQLite, Fotoablage- und Auswahl-Doubles, Ansage,
+/// Navigation und gemerkte Fahrzeugauswahl (über <see cref="FakePreferences"/>).
 /// </summary>
 public abstract class TankbookEntriesViewModelTestBase : BaseTest
 {
+    private IVehicleSelectionStore? _selectionStore;
+
     /// <summary>
     /// Die Testumgebung.
     /// </summary>
@@ -35,6 +38,21 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeTankbookNavigator Navigator { get; } = new();
+
+    /// <summary>
+    /// Die gerätelokalen Einstellungen hinter der gemerkten Fahrzeugauswahl.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakePreferences Preferences { get; } = new();
+
+    /// <summary>
+    /// Die gemerkte Fahrzeugauswahl.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected IVehicleSelectionStore SelectionStore
+    {
+        get { return _selectionStore ??= new PreferencesVehicleSelectionStore(Preferences); }
+    }
 
     /// <summary>
     /// Der Logger der Seite.
@@ -67,15 +85,46 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
     protected FakeBackupSharer Sharer { get; } = new();
 
     /// <summary>
-    /// Öffnet die Seite eines Fahrzeugs wie über die Shell-Navigation und wartet das Laden ab.
+    /// Merkt sich das Fahrzeug als gewählt, öffnet den Tab und wartet das Laden ab. Die Ansage des Fahrzeugs beim Öffnen wird verworfen, damit Tests nur
+    /// die Ansagen ihrer eigenen Schritte sehen (die Ansage beim Öffnen prüft <see cref="TankbookEntriesViewModelTests_Selection"/>).
     /// </summary>
     /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
     /// <returns>Das ViewModel.</returns>
     protected async Task<TankbookEntriesViewModel> OpenAsync(long vehicleId)
     {
-        var viewModel = new TankbookEntriesViewModel(
+        return await OpenAsync(vehicleId, Fixture.Service);
+    }
+
+    /// <summary>
+    /// Merkt sich das Fahrzeug als gewählt, öffnet den Tab mit dem angegebenen Dienst der Vorgänge und wartet das Laden ab; die Ansage beim Öffnen wird verworfen.
+    /// </summary>
+    /// <param name="vehicleId">Die Kennung des Fahrzeugs.</param>
+    /// <param name="entryService">Der Dienst der Vorgänge.</param>
+    /// <returns>Das ViewModel.</returns>
+    protected async Task<TankbookEntriesViewModel> OpenAsync(long vehicleId, ITankbookEntryService entryService)
+    {
+        SelectionStore.Set(vehicleId);
+        var viewModel = CreateViewModel(entryService);
+        viewModel.OnAppearing();
+        await viewModel.LastTask;
+        if (viewModel.HasVehicle)
+        {
+            Announcer.Announcements.Clear();
+        }
+
+        return viewModel;
+    }
+
+    /// <summary>
+    /// Erstellt das ViewModel des Tabs, ohne es zu laden.
+    /// </summary>
+    /// <param name="entryService">Der Dienst der Vorgänge; ohne Angabe der echte Dienst.</param>
+    /// <returns>Das ViewModel.</returns>
+    protected TankbookEntriesViewModel CreateViewModel(ITankbookEntryService? entryService = null)
+    {
+        return new TankbookEntriesViewModel(
             Fixture.Vehicles,
-            Fixture.Service,
+            entryService ?? Fixture.Service,
             Fixture.Photos,
             Fixture.CreateForm(Picker, Announcer, FormLogger),
             Fixture.CreateStatistics(Announcer, StatisticsLogger),
@@ -83,11 +132,8 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
             Fixture.Restore,
             Navigator,
             Announcer,
+            SelectionStore,
             Logger);
-        viewModel.ApplyQueryAttributes(new Dictionary<string, object> { [ShellTankbookNavigator.VehicleIdParameter] = vehicleId });
-        viewModel.OnAppearing();
-        await viewModel.LastTask;
-        return viewModel;
     }
 
     /// <summary>

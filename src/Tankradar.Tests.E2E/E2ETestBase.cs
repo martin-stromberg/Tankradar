@@ -125,8 +125,9 @@ public abstract class E2ETestBase : IDisposable
     /// (abwechselnd per SelectionItemPattern und InvokePattern; es werden keine Mausklicks verwendet).
     /// </summary>
     /// <param name="tabTitle">Titel des Reiters (z. B. Optionen).</param>
-    /// <param name="pageAutomationId">AutomationId eines Elements, das nur auf der Zielseite existiert; <see langword="null"/> prüft den Seitentitel der Shell.</param>
-    protected void NavigateToTab(string tabTitle, string? pageAutomationId = null)
+    /// <param name="pageAutomationIds">AutomationIds von Elementen, die nur auf der Zielseite existieren; mehrere Angaben stehen für gleichwertige Zielseiten
+    /// (z. B. die Wurzel eines Reiters oder eine darauf geöffnete Seite), eine genügt. Ohne Angabe wird der Seitentitel der Shell geprüft.</param>
+    protected void NavigateToTab(string tabTitle, params string[] pageAutomationIds)
     {
         const int maxAttempts = 5;
         var attemptTimeout = TimeSpan.FromSeconds(5);
@@ -163,9 +164,9 @@ public abstract class E2ETestBase : IDisposable
             var deadline = DateTime.UtcNow + attemptTimeout;
             while (DateTime.UtcNow < deadline)
             {
-                if (pageAutomationId is null
+                if (pageAutomationIds.Length == 0
                     ? IsShellTitle(tabTitle)
-                    : MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(pageAutomationId)) is not null)
+                    : pageAutomationIds.Any(id => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(id)) is not null))
                 {
                     return;
                 }
@@ -175,7 +176,7 @@ public abstract class E2ETestBase : IDisposable
         }
 
         throw new Xunit.Sdk.XunitException(
-            $"Nach {maxAttempts} Versuchen wurde der Seitenwechsel auf Reiter '{tabTitle}' nicht erkannt (erwartet: {(pageAutomationId is null ? $"Seitentitel '{tabTitle}'" : $"AutomationId '{pageAutomationId}'")}).");
+            $"Nach {maxAttempts} Versuchen wurde der Seitenwechsel auf Reiter '{tabTitle}' nicht erkannt (erwartet: {(pageAutomationIds.Length == 0 ? $"Seitentitel '{tabTitle}'" : $"AutomationId '{string.Join("' oder '", pageAutomationIds)}'")}).");
     }
 
     /// <summary>

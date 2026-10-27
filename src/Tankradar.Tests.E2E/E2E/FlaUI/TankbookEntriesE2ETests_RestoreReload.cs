@@ -1,8 +1,8 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test (H5): Eine geöffnete Seite „Tank- und Ladevorgänge“ zeigt nach einer Wiederherstellung in den Optionen den wiederhergestellten Stand,
-/// ohne dass sie neu geöffnet werden muss.
+/// E2E-Test (H5): Der Tab „Tankbuch“ zeigt nach einer Wiederherstellung in den Optionen den wiederhergestellten Stand, ohne dass er neu geöffnet werden muss;
+/// die gemerkte Fahrzeugauswahl wird dabei verworfen (erstes Fahrzeug nach Name).
 /// </summary>
 public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
 {
@@ -38,11 +38,11 @@ public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass die geöffnete Vorgangsseite schließt, wenn das Fahrzeug in der wiederhergestellten Sicherung fehlt (ADR 0013), obwohl beim Wiederherstellen
-    /// der Reiter „Optionen“ aktiv war; die Fahrzeugliste zeigt danach nur die gesicherten Fahrzeuge.
+    /// Prüft, dass der Tab nach der Wiederherstellung das gesicherte Fahrzeug zeigt, wenn das gewählte Fahrzeug in der Sicherung fehlt (ADR 0013), obwohl beim
+    /// Wiederherstellen der Reiter „Optionen“ aktiv war; die Fahrzeugverwaltung zeigt danach nur die gesicherten Fahrzeuge.
     /// </summary>
     [Fact]
-    public void Restore_WithoutOpenVehicle_ClosesEntriesPage()
+    public void Restore_WithoutSelectedVehicle_ShowsRestoredVehicle()
     {
         RunWithDiagnostics(() =>
         {
@@ -52,17 +52,44 @@ public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
             OpenBackup();
             CreateBackup();
 
-            NavigateToTab("Tankbuch", "Tankbook.AddVehicle");
+            OpenTankbook();
             CreateVehicle("Neu nach Sicherung", "Diesel", "20000", string.Empty);
             Tankbook.OpenEntries("Neu nach Sicherung");
-            WaitForAutomationId("TankbookEntries.Add");
 
             OpenBackup();
             RestoreBackup(1);
 
-            NavigateToTab("Tankbuch", "Tankbook.AddVehicle");
-            WaitUntil(() => !Exists("TankbookEntries.Add") && !Exists("TankbookEntries.Export.Start"), "Die Vorgangsseite des nicht mehr vorhandenen Fahrzeugs wurde nicht geschlossen.");
+            NavigateToTab("Tankbuch", "TankbookEntries.ManageVehicles");
+            WaitForTexts("TankbookEntries.Vehicle", "Golf");
+            Tankbook.ManageVehicles();
             WaitForTexts("Tankbook.Vehicle.Name", "Golf");
+        });
+    }
+
+    /// <summary>
+    /// Prüft, dass die Wiederherstellung die gemerkte Auswahl zurücksetzt: Obwohl das gewählte Fahrzeug „Polo“ in der Sicherung enthalten ist, zeigt der Tab
+    /// danach das erste Fahrzeug nach Name.
+    /// </summary>
+    [Fact]
+    public void Restore_ResetsSelection_ShowsFirstVehicleByName()
+    {
+        RunWithDiagnostics(() =>
+        {
+            OpenTankbook();
+            CreateVehicle("Golf", "Diesel", "10000", string.Empty);
+            CreateVehicle("Polo", "Petrol", "5000", string.Empty);
+
+            OpenBackup();
+            CreateBackup();
+
+            OpenTankbook();
+            Tankbook.OpenEntries("Polo");
+
+            OpenBackup();
+            RestoreBackup(1);
+
+            NavigateToTab("Tankbuch", "TankbookEntries.ManageVehicles");
+            WaitForTexts("TankbookEntries.Vehicle", "Golf");
         });
     }
 }

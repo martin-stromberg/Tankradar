@@ -4,14 +4,22 @@
 
 ## Zweck
 
-Im Tankbuch verwalten Sie Ihre Fahrzeuge und erfassen je Fahrzeug die Tank- und Ladevorgänge. Tankatlas berechnet daraus den Verbrauch und wertet Verbrauch und Kosten aus. Entscheidungen und Abweichungen vom Designentwurf: [ADR 0008](../../adr/0008-vehicle-management.md) (Fahrzeuge), [ADR 0009](../../adr/0009-tankbook-entries.md) (Vorgänge) und [ADR 0010](../../adr/0010-tankbook-statistics.md) (Auswertung).
+Im Tankbuch verwalten Sie Ihre Fahrzeuge und erfassen je Fahrzeug die Tank- und Ladevorgänge. Tankatlas berechnet daraus den Verbrauch und wertet Verbrauch und Kosten aus. Entscheidungen und Abweichungen vom Designentwurf: [ADR 0008](../../adr/0008-vehicle-management.md) (Fahrzeuge), [ADR 0009](../../adr/0009-tankbook-entries.md) (Vorgänge), [ADR 0010](../../adr/0010-tankbook-statistics.md) (Auswertung) und [ADR 0018](../../adr/0018-tankbook-start-view.md) (Einstieg und Fahrzeugwahl).
 
-## Fahrzeugliste
+## Einstieg und Fahrzeugwahl
 
+- Der Bereich **Tankbuch** zeigt direkt die Tank- und Ladevorgänge eines Fahrzeugs. Im Kopf stehen der Name des Fahrzeugs als Überschrift und seine Angaben, darunter **Fahrzeug** mit einer Schaltfläche, die den Namen trägt, und **Fahrzeuge verwalten**.
+- Angezeigt wird das zuletzt gewählte Fahrzeug. Tankatlas merkt sich dafür auf diesem Gerät nur die interne Kennung, keine Namen oder Werte; sie ist nicht Teil der Sicherung. Gibt es das Fahrzeug nicht mehr (z. B. gelöscht) oder wurde noch keines gewählt, erscheint das erste Fahrzeug nach Namen; eine Fehlermeldung gibt es dafür nicht. Nach dem Wiederherstellen einer Sicherung beginnt die Auswahl wieder beim ersten Fahrzeug nach Namen.
+- **Fahrzeug wechseln:** Tippen Sie auf die Schaltfläche mit dem Namen. Darunter erscheinen alle Fahrzeuge als Auswahl, nach Namen geordnet; das angezeigte ist hervorgehoben. Ein Tipp auf ein anderes Fahrzeug schließt die Auswahl und ein offenes Formular und zeigt dessen Vorgänge, Auswertung und Export. Die Auswahl ist auch bei nur einem Fahrzeug sichtbar.
+- **Ohne Fahrzeug** erscheint der Hinweis „Noch kein Fahrzeug angelegt. Lege über „Fahrzeug hinzufügen“ dein erstes Fahrzeug an, um Tank- und Ladevorgänge zu erfassen.“ mit der Schaltfläche **Fahrzeug hinzufügen**. Sie öffnet die Fahrzeugverwaltung mit dem Formular **Neues Fahrzeug**. Erfassen, Auswertung und Export sind ausgeblendet.
+
+## Fahrzeugverwaltung
+
+- **Fahrzeuge verwalten** im Kopf öffnet die Seite **Fahrzeuge**. Sie nennt den Hinweis, dass die Vorgänge im Tab „Tankbuch“ erfasst werden. Mit dem Zurück-Pfeil kehren Sie zum Tankbuch zurück; es zeigt dann den aktuellen Stand (z. B. ein neu angelegtes Fahrzeug).
 - Jedes Fahrzeug erscheint als Karte mit seinem Namen und darunter den Angaben, z. B. „Diesel • Start 84.350 km • Startverbrauch 5,4 L/100 km“. Ohne Startverbrauch endet die Zeile nach dem Kilometerstand.
 - Die Fahrzeuge sind nach Namen geordnet (ohne Beachtung der Groß- und Kleinschreibung).
-- Gibt es noch keine Fahrzeuge, erscheint der Hinweis „Noch keine Fahrzeuge. Lege über „Fahrzeug hinzufügen“ dein erstes Fahrzeug an.“
-- Jede Karte hat die Schaltflächen **Tank- und Ladevorgänge**, **Bearbeiten** und **Löschen**. Sie wählen das Fahrzeug also direkt in der Liste anhand seines Namens; interne Kennungen werden nie angezeigt.
+- Gibt es noch keine Fahrzeuge, erscheint derselbe Hinweis wie im Tankbuch.
+- Jede Karte hat die Schaltflächen **Bearbeiten** und **Löschen**. Interne Kennungen werden nie angezeigt.
 
 ## Angaben eines Fahrzeugs
 
@@ -26,7 +34,7 @@ Die Einheiten stehen fest rechts im Eingabefeld und wechseln mit der gewählten 
 
 ## Tank- und Ladevorgänge
 
-Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
+Der Bereich **Tankbuch** zeigt die Vorgänge des gewählten Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
 
 | Angabe | Pflicht | Regeln |
 |--------|---------|--------|
@@ -56,7 +64,7 @@ Die Seite **Tank- und Ladevorgänge** zeigt die Vorgänge eines Fahrzeugs, die n
 
 ## Auswertung
 
-Unter dem Formular zeigt die Seite **Tank- und Ladevorgänge** den Bereich **Auswertung** des Fahrzeugs. Hybridfahrzeuge haben je einen Block für **Kraftstoff** (L) und **Strom** (kWh); die Werte beider Arten werden nie vermischt. Fahrzeuge mit nur einer Art zeigen einen Block.
+Unter dem Formular zeigt das Tankbuch den Bereich **Auswertung** des gewählten Fahrzeugs. Hybridfahrzeuge haben je einen Block für **Kraftstoff** (L) und **Strom** (kWh); die Werte beider Arten werden nie vermischt. Fahrzeuge mit nur einer Art zeigen einen Block.
 
 Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und **Kosten / 100 km**), der Karte **Monatsanalyse** mit den **Gesamtkosten des laufenden Monats** und der in diesem Monat getankten bzw. geladenen Menge (z. B. „81,55 €“ und „41,00 L getankt“), dem **Verbrauchsverlauf**, dem **Kostenverlauf** und der Liste der **Monatskosten**. Auf einem schmalen Bildschirm steht die Einheit unter der Zahl, wenn sie daneben nicht mehr Platz hat. Die großen Zahlen bleiben dabei einzeilig; sehr lange Werte (z. B. „9.989,00“) werden in der Schrift etwas kleiner dargestellt, statt umzubrechen.
 
@@ -74,7 +82,7 @@ Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und
 
 ## Export
 
-Unter der Auswertung hat die Seite **Tank- und Ladevorgänge** den Bereich **Export**. Er gibt die Vorgänge des Fahrzeugs als Datei weiter, **nur wenn Sie auf Exportieren tippen**; das Öffnen der Seite oder die Wahl von Format und Zeitraum erzeugt nichts. Entscheidungen: [ADR 0013](../../adr/0013-tankbook-export.md).
+Unter der Auswertung hat das Tankbuch den Bereich **Export**. Er gibt die Vorgänge des gewählten Fahrzeugs als Datei weiter, **nur wenn Sie auf Exportieren tippen**; das Öffnen des Tankbuchs, der Wechsel des Fahrzeugs oder die Wahl von Format und Zeitraum erzeugt nichts. Entscheidungen: [ADR 0013](../../adr/0013-tankbook-export.md).
 
 - **Format:** **CSV** (Tabelle für Excel, LibreOffice u. a.) oder **PDF** (Bericht). Voreingestellt ist CSV.
 - **Zeitraum:** **Alle Vorgänge** (voreingestellt), **Dieses Jahr**, **Letztes Jahr**, **Letzte 12 Monate** oder **Eigener Zeitraum**. Nur beim eigenen Zeitraum erscheinen die Datumsfelder **Von** und **Bis**; beide Tage zählen mit, **Bis** liegt höchstens heute, und **Von** darf nicht nach **Bis** liegen („Das Startdatum liegt nach dem Enddatum.“, „Das Enddatum liegt in der Zukunft.“; es entsteht dann keine Datei).
@@ -113,7 +121,7 @@ Vor dem Löschen fragt Tankatlas immer nach, direkt im Eintrag:
 
 ## Barrierefreiheit
 
-Die Sprachausgabe liest bei Schaltflächen den sichtbaren Text vor, z. B. „Ja, löschen“. Den Zusammenhang nennt sie als Hinweis, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“ oder „Fahrzeug „Golf““ bei **Bearbeiten** und **Löschen** der Fahrzeugkarte. Fehlermeldungen, etwa wenn das Laden oder Löschen fehlschlägt, werden ebenfalls angesagt. So funktioniert auch die Sprachsteuerung mit dem sichtbaren Text.
+Die Sprachausgabe liest bei Schaltflächen den sichtbaren Text vor, z. B. „Ja, löschen“. Den Zusammenhang nennt sie als Hinweis, z. B. „Fahrzeug „Golf“ und 2 Tank- und Ladevorgänge endgültig löschen“ oder „Fahrzeug „Golf““ bei **Bearbeiten** und **Löschen** der Fahrzeugkarte. In der Auswahl im Kopf lautet der Hinweis eines Fahrzeugs z. B. „Fahrzeug „Golf“ auswählen“. Beim Öffnen des Tankbuchs und nach jedem Wechsel sagt die Sprachausgabe das gewählte Fahrzeug an („Fahrzeug „Golf““). Fehlermeldungen, etwa wenn das Laden oder Löschen fehlschlägt, werden ebenfalls angesagt. So funktioniert auch die Sprachsteuerung mit dem sichtbaren Text.
 
 ## Datenschutz
 
