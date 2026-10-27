@@ -158,8 +158,26 @@ public class FavoritesE2ETests_DisplayName : HomeE2ETestBase
             Tankbook.CreateVehicle("Golf", "Diesel", "10000", string.Empty);
             Tankbook.OpenEntries("Golf");
             Tankbook.Press("TankbookEntries.Add");
-            var chips = new[] { Tankbook.WaitFor("TankbookEntries.Form.KnownStation.0").Name, Tankbook.WaitFor("TankbookEntries.Form.KnownStation.1").Name };
+            // Die Chips werden nach dem Fahrzeugwechsel im Kopf neu aufgebaut; der Name wird daher innerhalb von WaitUntil mit Standardwert gelesen.
+            string[] chips = [];
+            Tankbook.WaitUntil(
+                () =>
+                {
+                    chips = [ReadChipName(0), ReadChipName(1)];
+                    return chips.All(name => name.Length > 0);
+                },
+                "Die Tankbuch-Auswahl zeigt nicht beide Tankstellen-Chips.");
             Assert.Equal(["JET · JET BERLIN HAUPTSTR. 1", "JET · JET BERLIN NEBENWEG 22"], chips.Order(StringComparer.Ordinal));
         });
+    }
+
+    /// <summary>
+    /// Liest den Namen des Tankstellen-Chips im Erfassungsformular; solange der Chip neu aufgebaut wird, ergibt sich eine leere Zeichenfolge.
+    /// </summary>
+    /// <param name="index">Die Position des Chips.</param>
+    /// <returns>Der Name oder eine leere Zeichenfolge.</returns>
+    private string ReadChipName(int index)
+    {
+        return Tankbook.Find($"TankbookEntries.Form.KnownStation.{index}")?.Properties.Name.ValueOrDefault ?? string.Empty;
     }
 }
