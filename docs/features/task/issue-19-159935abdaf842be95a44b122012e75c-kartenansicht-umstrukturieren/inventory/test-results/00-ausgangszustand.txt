@@ -1,0 +1,11 @@
+Zeit: 2026-10-29 18:52:46 +0100
+Branch: task/issue-19-159935abdaf842be95a44b122012e75c-kartenansicht-umstrukturieren
+Commit: bfca445d0ebeb1fa20b5757536d93c5e0160e368
+Uncommittet (git status --short):
+?? docs/features/
+Ergebnis git diff --stat:
+dotnet: 10.0.403
+10.0.403 [C:\Program Files\dotnet\sdk]
+v24.15.0
+Python 3.13.14
+OS: MINGW64_NT-10.0-26300 DESKTOP-CM8OBSG 3.6.6-1cdd4371.x86_64 2026-01-15 22:20 UTC x86_64 Msys
