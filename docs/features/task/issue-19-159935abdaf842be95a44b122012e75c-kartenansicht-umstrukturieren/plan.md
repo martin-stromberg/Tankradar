@@ -118,7 +118,8 @@ Beteiligte Klassen/Komponenten: `MapViewport`, `MapBounds`, `MapAreaQuery`
 - **Neue Ereignisse:** `ViewportChanged` (`EventHandler<ViewportChangedEventArgs>`) – ausgelöst nach Nutzeraktionen (Ziehen, Wischen, Kneifen, Mausrad, Zoom- und Verschiebeschaltflächen, Zurücksetzen).
 - **Neue Eigenschaft:** `MapFitMode` (`MapFitMode`, bindbar) – steuert, ob `RequestFit` nach Markierungsänderungen läuft.
 - **Geänderte Methoden:** `RefreshMarkers()` – führt `RequestFit` nur bei `FitToResult` aus. `Zoom(int)`, `Pan(double, double)`, `OnPanUpdated`, `OnPinchUpdated`, `OnPointerWheelChanged`, `OnRecenterClicked` u. a. – rufen am Ende `RaiseViewportChanged()` auf (privat). Programmatisches Einpassen über `FitToContent` ruft das Ereignis nicht auf.
-- **Neue Methoden:** `RaiseViewportChanged()` (privat) – meldet den aktuellen Ausschnitt; `Viewport` (öffentliche Leseeigenschaft) – aktueller `MapViewport` für das ViewModel.
+- **Neue Methoden:** `RaiseViewportChanged()` (privat) – meldet den aktuellen Ausschnitt.
+- **Entfallen:** ~~`Viewport` (öffentliche Leseeigenschaft) – aktueller `MapViewport` für das ViewModel.~~ Begründung: Die Eigenschaft wurde nirgends gelesen und auf Befund aus `review-code.1.md` als ungenutzter Code entfernt; der Ausschnitt erreicht das ViewModel ausschließlich über `ViewportChangedEventArgs` (Ereignis `ViewportChanged`) bzw. `ViewportFitted` (vom Anwender bestätigt).
 - **Vollflächenbetrieb:** Keine feste Höhe; Kartenfläche bleibt ohne Innenabstand, damit Overlays über der Karte liegen. Die Quellenangabe bleibt über dem Panel (Ausrichtung im Grid, nicht im Steuerelement).
 
 ### `MapViewport` (`Services/Map/MapViewport.cs`)
@@ -128,7 +129,7 @@ Beteiligte Klassen/Komponenten: `MapViewport`, `MapBounds`, `MapAreaQuery`
 
 ### `MapViewModel` (`ViewModels/MapViewModel.cs`)
 
-- **Neue Eigenschaften:** `IsBottomSheetExpanded` (bool), `IsSearchOverlayOpen` (bool), `ShowAreaReloadButton` (bool), `AreaReloadHint` (string?), `IsAreaReloading` (bool), `MapFitMode` (`MapFitMode`), `AreaReloadRemainingSeconds` (int, für die Sperre).
+- **Neue Eigenschaften:** `IsBottomSheetExpanded` (bool), `IsSearchOverlayOpen` (bool), `ShowAreaReloadButton` (bool), `AreaReloadHint` (string?), `IsAreaReloading` (bool), `MapFitMode` (`MapFitMode`). Die Restzeit der Sperre wird nur im Hinweistext `AreaReloadHint` angezeigt; die ursprünglich geplante Eigenschaft `AreaReloadRemainingSeconds` entfällt (nirgends gebunden, Befund aus `review-code.2.md`).
 - **Neue Befehle:** `ToggleBottomSheetCommand`, `OpenSearchOverlayCommand`, `CloseSearchOverlayCommand`, `ReloadVisibleAreaCommand`.
 - **Neue Methoden:**
   - `OnViewportChanged(MapViewport viewport)` (öffentlich) – prüft Modus und Abweichung zu `_searchedViewport`, setzt `ShowAreaReloadButton`, `AreaReloadHint`.

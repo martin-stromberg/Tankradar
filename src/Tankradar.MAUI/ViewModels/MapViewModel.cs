@@ -444,12 +444,13 @@ public partial class MapViewModel : BaseViewModel
         }
 
         UpdateOfflineState();
+        ResumeAreaReloadTimer();
         LastSettingsTask = LoadSettingsAsync();
         LastRouteAccessTask = RefreshRouteAvailabilityAsync();
     }
 
     /// <summary>
-    /// Meldet sich vom Verbindungsmonitor ab und bricht eine laufende Suche ab.
+    /// Meldet sich vom Verbindungsmonitor ab, bricht eine laufende Suche ab und hält den Zeitgeber der Nachladesperre an.
     /// </summary>
     public override void OnDisappearing()
     {
@@ -462,6 +463,7 @@ public partial class MapViewModel : BaseViewModel
 
         // Der abgebrochene Lauf räumt nicht mehr selbst auf (er ist nicht mehr „aktuell“): Fortschritt leeren und „Suchen“ freigeben.
         CancelSearch();
+        StopAreaReloadTimer();
         RouteProgressText = null;
         IsBusy = false;
     }

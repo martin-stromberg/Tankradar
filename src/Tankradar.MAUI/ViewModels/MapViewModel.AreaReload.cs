@@ -23,7 +23,6 @@ public partial class MapViewModel
     private string? _areaReloadHint;
     private bool _isAreaReloading;
     private bool _isAreaTooLarge;
-    private int _areaReloadRemainingSeconds;
     private MapFitMode _mapFitMode = MapFitMode.FitToResult;
     private MapViewport? _currentViewport;
     private MapViewport? _searchedViewport;
@@ -68,15 +67,6 @@ public partial class MapViewModel
     {
         get => _isAreaReloading;
         private set => SetProperty(ref _isAreaReloading, value);
-    }
-
-    /// <summary>
-    /// Die verbleibende Wartezeit in Sekunden, bis der sichtbare Ausschnitt erneut geladen werden kann (0, wenn keine Sperre besteht).
-    /// </summary>
-    public int AreaReloadRemainingSeconds
-    {
-        get => _areaReloadRemainingSeconds;
-        private set => SetProperty(ref _areaReloadRemainingSeconds, value);
     }
 
     /// <summary>
@@ -153,7 +143,6 @@ public partial class MapViewModel
         _searchedViewport = null;
         ShowAreaReloadButton = false;
         AreaReloadHint = null;
-        AreaReloadRemainingSeconds = 0;
         _isAreaTooLarge = false;
         _reloadVisibleAreaCommand.ChangeCanExecute();
     }
@@ -187,14 +176,14 @@ public partial class MapViewModel
     private void UpdateAreaReloadHint()
     {
         var remaining = ShowAreaReloadButton && !_isAreaTooLarge ? GetAreaReloadRemaining() : TimeSpan.Zero;
-        AreaReloadRemainingSeconds = (int)Math.Ceiling(remaining.TotalSeconds);
+        var remainingSeconds = (int)Math.Ceiling(remaining.TotalSeconds);
         if (_isAreaTooLarge)
         {
             AreaReloadHint = MapTexts.ReloadAreaTooLarge;
         }
         else
         {
-            AreaReloadHint = AreaReloadRemainingSeconds > 0 ? MapTexts.ReloadAreaWait(AreaReloadRemainingSeconds) : null;
+            AreaReloadHint = remainingSeconds > 0 ? MapTexts.ReloadAreaWait(remainingSeconds) : null;
         }
 
         _reloadVisibleAreaCommand.ChangeCanExecute();
@@ -207,6 +196,24 @@ public partial class MapViewModel
         _areaReloadContext = SynchronizationContext.Current;
         var tick = TimeSpan.FromSeconds(1);
         _areaReloadTimer = _timeProvider.CreateTimer(_ => OnAreaReloadTimerTick(), null, tick, tick);
+    }
+
+    private void StopAreaReloadTimer()
+    {
+        // Nach Ablauf der Sperre oder auf der unsichtbaren Seite wird der Hinweis nicht aktualisiert; die Sperre selbst hängt nur am Zeitpunkt der letzten Abfrage.
+        _areaReloadTimer?.Dispose();
+        _areaReloadTimer = null;
+    }
+
+    private void ResumeAreaReloadTimer()
+    {
+        // Beim erneuten Erscheinen gibt der Hinweis die aktuelle Restzeit wieder; läuft die Sperre noch, tickt der Zeitgeber weiter bis zu ihrem Ablauf.
+        if (IsAreaReloadBlocked && _areaReloadTimer is null)
+        {
+            StartAreaReloadTimer();
+        }
+
+        UpdateAreaReloadHint();
     }
 
     private void OnAreaReloadTimerTick()
@@ -225,8 +232,7 @@ public partial class MapViewModel
     {
         if (!IsAreaReloadBlocked)
         {
-            _areaReloadTimer?.Dispose();
-            _areaReloadTimer = null;
+            StopAreaReloadTimer();
         }
 
         UpdateAreaReloadHint();

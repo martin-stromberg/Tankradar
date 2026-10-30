@@ -35,7 +35,6 @@ public class MapViewModelTests_AreaReloadBlock : MapViewModelTestBase
 
         Assert.True(ViewModel.ShowAreaReloadButton);
         Assert.False(ViewModel.ReloadVisibleAreaCommand.CanExecute(null));
-        Assert.Equal(60, ViewModel.AreaReloadRemainingSeconds);
         Assert.Equal(MapTexts.ReloadAreaWait(60), ViewModel.AreaReloadHint);
 
         Reload();
@@ -52,7 +51,6 @@ public class MapViewModelTests_AreaReloadBlock : MapViewModelTestBase
 
         Clock.Advance(TimeSpan.FromSeconds(30));
 
-        Assert.Equal(30, ViewModel.AreaReloadRemainingSeconds);
         Assert.Equal("Der Bereich kann in 30 s erneut geladen werden.", ViewModel.AreaReloadHint);
         Assert.False(ViewModel.ReloadVisibleAreaCommand.CanExecute(null));
     }
@@ -72,7 +70,6 @@ public class MapViewModelTests_AreaReloadBlock : MapViewModelTestBase
         Assert.True(changed > 0);
         Assert.True(ViewModel.ReloadVisibleAreaCommand.CanExecute(null));
         Assert.Null(ViewModel.AreaReloadHint);
-        Assert.Equal(0, ViewModel.AreaReloadRemainingSeconds);
 
         Reload();
         await ViewModel.LastSearchTask;
