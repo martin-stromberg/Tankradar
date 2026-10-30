@@ -44,7 +44,7 @@ public class MapViewModelTests_Settings : MapViewModelTestBase
     }
 
     /// <summary>
-    /// Prüft, dass bei Standardansicht „Karte“ die Tankstellen der Liste weiterhin aufbereitet werden (Wechsel auf die Liste ohne neue Suche).
+    /// Prüft, dass bei Standardansicht „Karte“ die Trefferliste eingeklappt startet und ihre Tankstellen weiterhin aufbereitet werden (Ausklappen ohne neue Suche).
     /// </summary>
     [Fact]
     public async Task ResultViewMap_StillPreparesListStations()
@@ -55,7 +55,11 @@ public class MapViewModelTests_Settings : MapViewModelTestBase
 
         await SearchAsync();
 
+        Assert.False(ViewModel.IsBottomSheetExpanded);
         Assert.Equal(2, ViewModel.Stations.Count);
+        ViewModel.ToggleBottomSheetCommand.Execute(null);
+        Assert.Equal(2, ViewModel.Stations.Count);
+        Assert.Single(Prices.Queries);
     }
 
     /// <summary>

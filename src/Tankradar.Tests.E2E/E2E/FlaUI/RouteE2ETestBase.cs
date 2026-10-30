@@ -74,20 +74,4 @@ public abstract class RouteE2ETestBase : SearchE2ETestBase
         var stations = stationCount == 1 ? "1 Tankstelle" : $"{stationCount} Tankstellen";
         return $"Von {StartName} nach {DestinationName}, 40 km, {stations} im Abstand von {distanceKm} km zur Route";
     }
-
-    /// <summary>
-    /// Wechselt auf die Kartenansicht und wartet, bis der Auswahl-Chip „Karte“ ausgewählt ist.
-    /// </summary>
-    protected void ShowMapView()
-    {
-        SelectChip("Search.View.Map");
-    }
-
-    /// <summary>
-    /// Wechselt auf die Listenansicht und wartet, bis der Auswahl-Chip „Liste“ ausgewählt ist.
-    /// </summary>
-    protected void ShowListView()
-    {
-        SelectChip("Search.View.List");
-    }
 }

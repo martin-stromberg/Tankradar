@@ -3,7 +3,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Die Ergebnisse der Routensuche bieten die gewohnten Filter und Sortierungen (ohne erneute Dienstaufrufe) und die Kartenansicht mit eingezeichneter Route.
+/// E2E-Test: Die Ergebnisse der Routensuche bieten in der Trefferliste die gewohnten Filter und Sortierungen (ohne erneute Dienstaufrufe), die Karte zeigt die eingezeichnete Route.
 /// </summary>
 public class RouteE2ETests_FilterSort : RouteE2ETestBase
 {
@@ -39,7 +39,7 @@ public class RouteE2ETests_FilterSort : RouteE2ETestBase
     }
 
     /// <summary>
-    /// Prüft die Kartenansicht: Beschreibung der eingezeichneten Route, Marker der Tankstellen und Wechsel zurück zur Liste.
+    /// Prüft die Karte mit eingezeichneter Route: Beschreibung der Route, Marker der Tankstellen, Quellenangabe des Routingdienstes und erneutes Ausklappen der Liste ohne neue Anfrage.
     /// </summary>
     [Fact]
     public void MapView_DescribesDrawnRouteAndShowsMarkers()
@@ -51,16 +51,18 @@ public class RouteE2ETests_FilterSort : RouteE2ETestBase
             Submit();
             WaitForStationNames(TwoKilometerStations);
 
-            ShowMapView();
+            CollapsePanel();
 
             var hint = $"Route von {StartName} nach {DestinationName} eingezeichnet, 5 Tankstellen";
             WaitUntil(() => FindByAutomationId("Search.Map.Hint")?.Properties.Name.ValueOrDefault == hint, $"Der Hinweis der Karte lautet nicht '{hint}'.");
             WaitForAutomationId("Map.Destination");
             WaitForAutomationId("Map.Marker." + MockTankerkoenigServer.StationAlpha);
+            Assert.Equal("Routen: OpenRouteService, Geodaten © OpenStreetMap-Mitwirkende", WaitForAutomationId("Map.Attribution.Routing").Name);
 
-            ShowListView();
+            ExpandPanel();
 
             WaitForStationNames(TwoKilometerStations);
+            Assert.Equal(1, Routing.Requests);
         });
     }
 }

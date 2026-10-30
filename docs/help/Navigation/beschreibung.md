@@ -14,7 +14,7 @@ Die App zeigt immer einen der vier Hauptbereiche:
 Der Startbildschirm ([Startseite](../Startseite/index.md)): Ihre Favoritengruppen mit den Tankstellen, ihren aktuellen Preisen und auf Wunsch dem Bereich „In der Nähe“; hier verwalten Sie auch die Gruppen (siehe [Favoritengruppen](../Favoriten/index.md)).
 
 ### Karte
-Hier suchen Sie Tankstellen im Umkreis Ihres Standorts (Radius 1 bis 25 km) und sehen die Treffer als Liste mit Preisen. Details siehe [Umkreissuche](../Suche/index.md). Alternativ zur Liste gibt es eine Kartenansicht.
+Die Karte füllt den Bereich aus. Über die Schaltfläche **Suche** oben links suchen Sie Tankstellen im Umkreis Ihres Standorts oder einer Adresse (Radius 1 bis 25 km) oder entlang einer Route. Die Treffer erscheinen als Preismarkierungen auf der Karte und als Liste in einem Panel am unteren Rand, das Sie auf- und zuklappen. Details siehe [Umkreissuche](../Suche/index.md).
 
 ### Tankbuch
 Hier sehen Sie direkt die Tank- und Ladevorgänge Ihres Fahrzeugs und erfassen neue. Das Fahrzeug wechseln Sie im Kopf über seinen Namen; Fahrzeuge (Name, Kraftstoffart, Start-Kilometerstand, optional Startverbrauch) verwalten Sie über „Fahrzeuge verwalten“. Details siehe [Tankbuch](../Tankbuch/index.md).

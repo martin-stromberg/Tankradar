@@ -44,7 +44,7 @@ Mit dem Schalter bei **In der Nähe** zeigt die Startseite zusätzlich Tankstell
 
 ### 5. Ansicht und Sortierung wählen
 
-Wählen Sie unter **Standardansicht der Suchergebnisse** zwischen **Liste** und **Karte** und unter **Standardsortierung** zwischen **Preis**, **Entfernung** und **Name**.
+Wählen Sie unter **Standardansicht der Suchergebnisse** zwischen **Liste** und **Karte** und unter **Standardsortierung** zwischen **Preis**, **Entfernung** und **Name**. Bei **Liste** ist die Trefferliste auf der Karte beim Öffnen ausgeklappt, bei **Karte** eingeklappt.
 
 ### 6. Einstellungen behalten
 

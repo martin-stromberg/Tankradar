@@ -189,4 +189,25 @@ public class MapViewportTests_Math : BaseTest
         Assert.False(viewport.Contains(Latitude, Longitude + 0.2));
         Assert.True(viewport.Contains(Latitude, Longitude + 0.2, x));
     }
+
+    /// <summary>
+    /// Prüft, dass die Umkehrprojektion das Gegenstück zu <see cref="MapViewport.ToScreen"/> ist: Bildmitte, Ecken und Punkte außerhalb des Ausschnitts ergeben wieder dieselbe Lage.
+    /// </summary>
+    [Fact]
+    public void ToLatLon_RoundTripsToScreen()
+    {
+        var viewport = MapViewport.Create(Latitude, Longitude, 12, 800, 600);
+
+        var center = viewport.ToLatLon(400, 300);
+        Assert.Equal(Latitude, center.Latitude, 6);
+        Assert.Equal(Longitude, center.Longitude, 6);
+
+        foreach (var (x, y) in new[] { (0.0, 0.0), (800.0, 600.0), (123.4, 567.8), (-200.0, 900.0) })
+        {
+            var position = viewport.ToLatLon(x, y);
+            var (screenX, screenY) = viewport.ToScreen(position.Latitude, position.Longitude);
+            Assert.Equal(x, screenX, 3);
+            Assert.Equal(y, screenY, 3);
+        }
+    }
 }

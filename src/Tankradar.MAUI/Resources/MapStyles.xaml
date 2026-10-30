@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+                    x:Class="Tankradar.MAUI.Resources.MapStyles"
+                    x:ClassModifier="Internal">
+
+    <!-- Gemeinsame Stile und Abstände der Kartenansicht (Karte, Trefferliste und Suchdialog). -->
+
+    <!-- Abstände der schwebenden Elemente über der Karte. Die zusammengesetzten Werte ergeben sich aus dem Grundabstand (8) und der Mindestgröße
+         der Bedienelemente (MinimumTouchTarget, 44): Ändert sich eine der beiden Größen, sind sie hier gemeinsam anzupassen. -->
+    <Thickness x:Key="MapOverlayMargin">8</Thickness>
+    <!-- Unter der Suchschaltfläche oben links: Abstand 8 + Schaltfläche 44 + Abstand 8 = 60 -->
+    <Thickness x:Key="MapOverlayBelowSearchButtonMargin">8,60,8,8</Thickness>
+    <!-- Links neben den Zoom-Schaltflächen oben rechts: Abstand 8 + Schaltfläche 44 + Abstand 8 = 60 -->
+    <Thickness x:Key="MapOverlayBesideMapControlsMargin">8,8,60,8</Thickness>
+    <!-- Über der Quellenangabe unten links: Abstand 8 + Quellenangabe 28 + Abstand 8 = 44 -->
+    <Thickness x:Key="MapOverlayAboveAttributionMargin">8,8,8,44</Thickness>
+
+    <!-- Schaltflächen im Chip-Stil (Pill, mindestens 44 px hoch) -->
+    <Style x:Key="SearchChipButton" TargetType="Button">
+        <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontFamily" Value="InterSemibold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="0,0,8,8" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorSurfaceDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#334155, Dark={StaticResource ColorTextPrimaryDark}}" />
+    </Style>
+
+    <!-- Auswahl-Chips (Filter, Sortierung, Suchart, Radius, Abstand, Startart): Bindungskontext ist eine Auswahloption; ausgewählt = Teal mit weißem Text -->
+    <Style x:Key="SearchChoiceChip" TargetType="Button" BasedOn="{StaticResource SearchChipButton}">
+        <Style.Triggers>
+            <DataTrigger x:DataType="vm:IChoiceOption" TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+                <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
+                <Setter Property="TextColor" Value="White" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Schwebende Bedienelemente und Hinweisfelder über der Karte (Zoom, Zentrieren und Verschieben, Suchschaltfläche, Zähler, Legende, Quellenangabe); Schaltflächen mindestens 44 px groß -->
+    <Style x:Key="MapControlButton" TargetType="Button">
+        <Setter Property="WidthRequest" Value="{StaticResource MinimumTouchTarget}" />
+        <Setter Property="HeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="FontFamily" Value="InterSemibold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+    </Style>
+    <Style x:Key="MapBadge" TargetType="Border">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F2FFFFFF, Dark=#F2283044}" />
+    </Style>
+
+</ResourceDictionary>

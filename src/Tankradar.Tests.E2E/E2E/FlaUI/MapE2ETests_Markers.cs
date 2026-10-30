@@ -73,7 +73,7 @@ public class MapE2ETests_Markers : MapE2ETestBase
             Submit();
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
 
-            ShowMapView();
+            CollapsePanel();
 
             WaitForMapCount("2 von 2 Stationen sichtbar");
             Assert.Equal("Gesuchte Position", WaitForAutomationId("Map.Origin").Name);
@@ -98,6 +98,8 @@ public class MapE2ETests_Markers : MapE2ETestBase
             WaitForPageTitle("Karte");
             WaitForMapCount("2 von 2 Stationen sichtbar");
             Assert.True(Exists(AlphaMarker));
+            Assert.True(Exists("Search.Panel.Toggle"));
+            Assert.Equal("2 Tankstellen", ReadPanelCount());
             Assert.Equal(1, Server.ListRequests);
         });
     }

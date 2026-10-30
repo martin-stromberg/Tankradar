@@ -9,7 +9,8 @@ namespace Tankradar.MAUI.Views.Controls;
 /// <summary>
 /// Plattformübergreifende Karte auf Basis von OpenStreetMap-Kacheln: gleiche Darstellung unter iOS und Windows (Kacheln als Bilder, Markierungen als Schaltflächen),
 /// dadurch auch über UI Automation prüfbar. Die Karte lässt sich per Zoom-Schaltflächen und Kneifgeste zoomen sowie per Wischgeste und Schaltflächen verschieben.
-/// Sie zeigt die Tankstellenmarkierungen mit Preis (Farbe nach Preisniveau), die markierte Suchposition und die Quellenangabe.
+/// Sie zeigt die Tankstellenmarkierungen mit Preis (Farbe nach Preisniveau) und die markierte Suchposition; die Quellenangabe legt die Seite über die Karte.
+/// Bewegt der Anwender den Ausschnitt, meldet die Karte das über <see cref="ViewportChanged"/>.
 /// </summary>
 public partial class StationMapView : ContentView
 {
@@ -43,6 +44,12 @@ public partial class StationMapView : ContentView
     /// <returns>Der Wert.</returns>
     public static readonly BindableProperty MarkerCommandProperty;
 
+    /// <summary>
+    /// Bindbare Eigenschaft <see cref="MapFitMode"/>.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public static readonly BindableProperty MapFitModeProperty;
+
     static StationMapView()
     {
         MarkersProperty = BindableProperty.Create(
@@ -69,6 +76,11 @@ public partial class StationMapView : ContentView
         nameof(MarkerCommand),
         typeof(ICommand),
         typeof(StationMapView));
+        MapFitModeProperty = BindableProperty.Create(
+        nameof(MapFitMode),
+        typeof(MapFitMode),
+        typeof(StationMapView),
+        MapFitMode.FitToResult);
     }
 
     private const double MarkerHeight = 44;
@@ -139,7 +151,7 @@ public partial class StationMapView : ContentView
     }
 
     /// <summary>
-    /// Zähler der Ergebnisse; ändert er sich, wird der Ausschnitt neu auf alle Markierungen eingepasst.
+    /// Zähler der Ergebnisse; ändert er sich, wird der Ausschnitt bei <see cref="MapFitMode.FitToResult"/> neu auf alle Markierungen eingepasst.
     /// </summary>
     public int ResultVersion
     {
@@ -157,6 +169,28 @@ public partial class StationMapView : ContentView
     }
 
     /// <summary>
+    /// Legt fest, ob ein neues Ergebnis (<see cref="ResultVersion"/>) den Ausschnitt einpasst (<see cref="MapFitMode.FitToResult"/>) oder den Ausschnitt des Anwenders beibehält
+    /// (<see cref="MapFitMode.KeepViewport"/>, Nachladen des sichtbaren Bereichs).
+    /// </summary>
+    public MapFitMode MapFitMode
+    {
+        get => (MapFitMode)GetValue(MapFitModeProperty);
+        set => SetValue(MapFitModeProperty, value);
+    }
+
+    /// <summary>
+    /// Wird ausgelöst, wenn der Anwender den Ausschnitt verändert (Ziehen, Wischen, Kneifen, Mausrad, Zoom- und Verschiebeschaltflächen, Zurücksetzen);
+    /// das Einpassen nach einem neuen Ergebnis löst es nicht aus.
+    /// </summary>
+    public event EventHandler<ViewportChangedEventArgs>? ViewportChanged;
+
+    /// <summary>
+    /// Wird ausgelöst, nachdem die Karte den Ausschnitt auf ein neues Ergebnis eingepasst hat (<see cref="MapFitMode.FitToResult"/>);
+    /// der gemeldete Ausschnitt ist der Ausschnitt der Suche, gegenüber dem spätere Bewegungen des Anwenders verglichen werden.
+    /// </summary>
+    public event EventHandler<ViewportChangedEventArgs>? ViewportFitted;
+
+    /// <summary>
     /// Die Quelle der Kartenkacheln; ohne Quelle bleibt der Hintergrund leer, die Markierungen bleiben benutzbar.
     /// </summary>
     public ITileSource? TileSource { get; set; }
@@ -168,7 +202,7 @@ public partial class StationMapView : ContentView
 
     private static void OnResultVersionChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        ((StationMapView)bindable).RequestFit();
+        ((StationMapView)bindable).OnResultChanged();
     }
 
     private void OnSurfaceSizeChanged()
@@ -180,7 +214,7 @@ public partial class StationMapView : ContentView
 
         if (_viewport is null || _fitPending)
         {
-            FitToContent();
+            FitToResult();
             return;
         }
 
@@ -196,9 +230,18 @@ public partial class StationMapView : ContentView
         {
             if (_fitPending && Surface.Width > 0 && Surface.Height > 0)
             {
-                FitToContent();
+                FitToResult();
             }
         });
+    }
+
+    private void FitToResult()
+    {
+        FitToContent();
+        if (_viewport is { } viewport)
+        {
+            ViewportFitted?.Invoke(this, new ViewportChangedEventArgs(viewport));
+        }
     }
 
     private void FitToContent()
@@ -232,6 +275,26 @@ public partial class StationMapView : ContentView
         if (_viewport is not null)
         {
             Render();
+        }
+    }
+
+    private void OnResultChanged()
+    {
+        // Nur neue Suchen passen den Ausschnitt an; beim Nachladen des sichtbaren Bereichs bleibt er erhalten.
+        if (MapFitMode == MapFitMode.FitToResult)
+        {
+            RequestFit();
+            return;
+        }
+
+        RefreshMarkers();
+    }
+
+    private void RaiseViewportChanged()
+    {
+        if (_viewport is { } viewport)
+        {
+            ViewportChanged?.Invoke(this, new ViewportChangedEventArgs(viewport));
         }
     }
 
@@ -550,6 +613,7 @@ public partial class StationMapView : ContentView
         {
             _viewport = viewport.ZoomBy(delta);
             Render();
+            RaiseViewportChanged();
         }
     }
 
@@ -560,6 +624,7 @@ public partial class StationMapView : ContentView
             // Der Ausschnitt wandert in die Richtung, die Karte also entgegengesetzt.
             _viewport = viewport.PanByPixels(-fractionX * viewport.Width, -fractionY * viewport.Height);
             Render();
+            RaiseViewportChanged();
         }
     }
 
@@ -569,18 +634,7 @@ public partial class StationMapView : ContentView
         {
             _viewport = viewport.PanByPixels(deltaX, deltaY);
             Render();
-        }
-    }
-
-    private async void OnAttributionClicked(object? sender, EventArgs e)
-    {
-        try
-        {
-            await Launcher.Default.OpenAsync(new Uri(MapTexts.AttributionUrl));
-        }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
-        {
-            // Ohne Browser bleibt die Quellenangabe als Text sichtbar; mehr ist nicht zu tun.
+            RaiseViewportChanged();
         }
     }
 
@@ -597,6 +651,7 @@ public partial class StationMapView : ContentView
     private void OnRecenterClicked(object? sender, EventArgs e)
     {
         FitToContent();
+        RaiseViewportChanged();
     }
 
     private void OnPanNorthClicked(object? sender, EventArgs e)
@@ -632,6 +687,7 @@ public partial class StationMapView : ContentView
                 _lastPanX = e.TotalX;
                 _lastPanY = e.TotalY;
                 Render();
+                RaiseViewportChanged();
                 break;
             default:
                 break;

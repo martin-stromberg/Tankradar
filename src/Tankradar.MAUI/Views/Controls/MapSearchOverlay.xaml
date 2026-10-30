@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             x:DataType="vm:MapViewModel"
+             x:Class="Tankradar.MAUI.Views.Controls.MapSearchOverlay">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:MapStyles />
+            </ResourceDictionary.MergedDictionaries>
+            <DataTemplate x:Key="ModeChipTemplate" x:DataType="vm:IChoiceOption">
+                <Button Text="{Binding Label}"
+                        Command="{Binding SelectCommand}"
+                        Style="{StaticResource SearchChoiceChip}"
+                        SemanticProperties.Hint="{Binding SelectionHint}"
+                        AutomationId="{Binding AutomationKey, StringFormat='Search.Mode.{0}'}" />
+            </DataTemplate>
+            <DataTemplate x:Key="RadiusChipTemplate" x:DataType="vm:IChoiceOption">
+                <Button Text="{Binding Label}"
+                        Command="{Binding SelectCommand}"
+                        Style="{StaticResource SearchChoiceChip}"
+                        SemanticProperties.Hint="{Binding SelectionHint}"
+                        AutomationId="{Binding AutomationKey, StringFormat='Search.Radius.{0}'}" />
+            </DataTemplate>
+            <DataTemplate x:Key="RouteDistanceChipTemplate" x:DataType="vm:IChoiceOption">
+                <Button Text="{Binding Label}"
+                        Command="{Binding SelectCommand}"
+                        Style="{StaticResource SearchChoiceChip}"
+                        SemanticProperties.Hint="{Binding SelectionHint}"
+                        IsEnabled="{Binding IsEnabled}"
+                        AutomationId="{Binding AutomationKey, StringFormat='Search.RouteDistance.{0}'}" />
+            </DataTemplate>
+            <DataTemplate x:Key="RouteStartChipTemplate" x:DataType="vm:IChoiceOption">
+                <Button Text="{Binding Label}"
+                        Command="{Binding SelectCommand}"
+                        Style="{StaticResource SearchChoiceChip}"
+                        SemanticProperties.Hint="{Binding SelectionHint}"
+                        IsEnabled="{Binding IsEnabled}"
+                        AutomationId="{Binding AutomationKey, StringFormat='Search.Route.StartKind.{0}'}" />
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <!-- Abdunklung über Karte und Trefferliste: fängt Eingaben ab, solange der Dialog offen ist -->
+    <Grid>
+        <BoxView Color="#80000000" />
+        <Border VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                MaximumWidthRequest="560"
+                Margin="{StaticResource space-md}"
+                Padding="0"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 16"
+                Stroke="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}"
+                Shadow="{StaticResource ShadowLevel3}"
+                AutomationId="Search.Overlay">
+            <ScrollView>
+                <VerticalStackLayout Padding="{StaticResource space-md}"
+                                     Spacing="{StaticResource space-sm}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                        <Label Grid.Column="0"
+                               Text="{x:Static texts:MapTexts.OverlayTitle}"
+                               Style="{StaticResource headline-lg}"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="Search.Overlay.Title" />
+                        <Button Grid.Column="1"
+                                Text="{x:Static texts:MapTexts.OverlayClose}"
+                                Command="{Binding CloseSearchOverlayCommand}"
+                                Style="{StaticResource SearchChipButton}"
+                                Margin="0"
+                                AutomationId="Search.Overlay.Close" />
+                    </Grid>
+
+                    <Label Text="{x:Static texts:SearchTexts.ModeHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                BindableLayout.ItemsSource="{Binding ModeOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource ModeChipTemplate}" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}"
+                          IsVisible="{Binding IsAddressMode}">
+                        <Entry Grid.Column="0"
+                               Text="{Binding AddressText}"
+                               Placeholder="{x:Static texts:SearchTexts.AddressPlaceholder}"
+                               MaxLength="200"
+                               ReturnType="Search"
+                               ReturnCommand="{Binding SearchCommand}"
+                               IsTextPredictionEnabled="False"
+                               IsSpellCheckEnabled="False"
+                               MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                               SemanticProperties.Description="{x:Static texts:SearchTexts.AddressPlaceholder}"
+                               AutomationId="Search.Address.Input" />
+                        <Button Grid.Column="1"
+                                Text="{x:Static texts:SearchTexts.AddressClear}"
+                                Command="{Binding ClearAddressCommand}"
+                                IsVisible="{Binding HasAddressText}"
+                                Style="{StaticResource SearchChipButton}"
+                                Margin="0"
+                                AutomationId="Search.Address.Clear" />
+                    </Grid>
+                    <Label Text="{Binding AttributionText}"
+                           IsVisible="{Binding IsAddressMode}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Search.Attribution" />
+
+                    <!-- Routensuche: nur bei aktivierter Routensuche (ADR 0014) -->
+                    <VerticalStackLayout Spacing="{StaticResource space-sm}" IsVisible="{Binding IsRouteModeSearchable}">
+                        <Label Text="{x:Static texts:SearchTexts.RouteStartHeading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                    BindableLayout.ItemsSource="{Binding RouteStartOptions}"
+                                    BindableLayout.ItemTemplate="{StaticResource RouteStartChipTemplate}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}"
+                              IsVisible="{Binding IsRouteStartAddress}">
+                            <Entry Grid.Column="0"
+                                   Text="{Binding StartInput}"
+                                   Placeholder="{x:Static texts:SearchTexts.RouteStartPlaceholder}"
+                                   MaxLength="200"
+                                   IsEnabled="{Binding RouteInputsEnabled}"
+                                   ReturnType="Next"
+                                   IsTextPredictionEnabled="False"
+                                   IsSpellCheckEnabled="False"
+                                   MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                   SemanticProperties.Description="{x:Static texts:SearchTexts.RouteStartPlaceholder}"
+                                   AutomationId="Search.Route.Start.Input" />
+                            <Button Grid.Column="1"
+                                    Text="{x:Static texts:SearchTexts.RouteStartClear}"
+                                    Command="{Binding ClearStartCommand}"
+                                    IsVisible="{Binding HasStartInput}"
+                                    IsEnabled="{Binding RouteInputsEnabled}"
+                                    Style="{StaticResource SearchChipButton}"
+                                    Margin="0"
+                                    AutomationId="Search.Route.Start.Clear" />
+                        </Grid>
+                        <Label Text="{x:Static texts:SearchTexts.RouteDestinationHeading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                            <Entry Grid.Column="0"
+                                   Text="{Binding DestinationInput}"
+                                   Placeholder="{x:Static texts:SearchTexts.RouteDestinationPlaceholder}"
+                                   MaxLength="200"
+                                   IsEnabled="{Binding RouteInputsEnabled}"
+                                   ReturnType="Search"
+                                   ReturnCommand="{Binding SearchCommand}"
+                                   IsTextPredictionEnabled="False"
+                                   IsSpellCheckEnabled="False"
+                                   MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                                   SemanticProperties.Description="{x:Static texts:SearchTexts.RouteDestinationPlaceholder}"
+                                   AutomationId="Search.Route.Destination.Input" />
+                            <Button Grid.Column="1"
+                                    Text="{x:Static texts:SearchTexts.RouteDestinationClear}"
+                                    Command="{Binding ClearDestinationCommand}"
+                                    IsVisible="{Binding HasDestinationInput}"
+                                    IsEnabled="{Binding RouteInputsEnabled}"
+                                    Style="{StaticResource SearchChipButton}"
+                                    Margin="0"
+                                    AutomationId="Search.Route.Destination.Clear" />
+                        </Grid>
+                        <Label Text="{x:Static texts:SearchTexts.RouteDistanceHeading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                    BindableLayout.ItemsSource="{Binding RouteDistanceOptions}"
+                                    BindableLayout.ItemTemplate="{StaticResource RouteDistanceChipTemplate}" />
+                        <Label Text="{Binding RoutingAttributionText}"
+                               Style="{StaticResource body-sm}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="Search.Attribution.Routing" />
+                    </VerticalStackLayout>
+
+                    <Label Text="{x:Static texts:SearchTexts.RadiusHeading}"
+                           IsVisible="{Binding IsRadiusVisible}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
+                                IsVisible="{Binding IsRadiusVisible}"
+                                BindableLayout.ItemsSource="{Binding RadiusOptions}"
+                                BindableLayout.ItemTemplate="{StaticResource RadiusChipTemplate}" />
+
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{StaticResource ColorErrorRed}"
+                           AutomationId="Search.Overlay.StatusMessage" />
+                    <Button Text="{x:Static texts:SearchTexts.SearchButton}"
+                            Command="{Binding SearchCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                            CornerRadius="8"
+                            BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                            TextColor="White"
+                            AutomationId="Search.Submit" />
+                </VerticalStackLayout>
+            </ScrollView>
+        </Border>
+    </Grid>
+</ContentView>

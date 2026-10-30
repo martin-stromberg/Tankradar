@@ -13,7 +13,7 @@ public class NavigationE2ETests : E2ETestBase
     private static readonly Dictionary<string, string> ContentIds = new()
     {
         ["Favoriten"] = "Favorites.Refresh",
-        ["Karte"] = "Search.Submit",
+        ["Karte"] = "Search.Overlay.Open",
         ["Tankbuch"] = "TankbookEntries.ManageVehicles",
         ["Optionen"] = "Settings.Loaded",
     };

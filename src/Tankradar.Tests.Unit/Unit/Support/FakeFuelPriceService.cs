@@ -22,6 +22,11 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     public Exception? SearchException { get; set; }
 
     /// <summary>
+    /// Wenn gesetzt, wartet <see cref="SearchNearbyAsync"/> auf dieses Signal (abbrechbar), bevor es das Ergebnis liefert.
+    /// </summary>
+    public Task? SearchGate { get; set; }
+
+    /// <summary>
     /// Das gelieferte Ergebnis der Detailabfrage (Standard: unbekannte Tankstelle, live).
     /// </summary>
     public StationDetailResult DetailResult { get; set; } = UnknownStation;
@@ -122,10 +127,15 @@ public sealed class FakeFuelPriceService : IFuelPriceService
     }
 
     /// <inheritdoc />
-    public Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
+    public async Task<StationSearchResult> SearchNearbyAsync(StationSearchQuery query, CancellationToken cancellationToken = default)
     {
         Queries.Add(query);
-        return SearchException is null ? Task.FromResult(Result) : Task.FromException<StationSearchResult>(SearchException);
+        if (SearchGate is { } gate)
+        {
+            await gate.WaitAsync(cancellationToken);
+        }
+
+        return SearchException is null ? Result : throw SearchException;
     }
 
     /// <inheritdoc />
