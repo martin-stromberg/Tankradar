@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Tankradar.TestSupport;
 using Tankradar.Tests.Integration.Integration.Support;
 
@@ -95,17 +96,22 @@ public class RouteSearchMockServerTests_Flow : RouteSearchMockServerTestBase
 
     /// <summary>
     /// Prüft, dass die zwei Ortsauflösungen mit dem Mindestabstand der Nutzungsrichtlinie von Nominatim erfolgen.
+    /// Gemessen wird clientseitig beim Absenden, nicht beim Empfang am Mock-Server: Der Verbindungsaufbau der ersten Anfrage verzögert deren
+    /// Empfang und verkürzt sonst den gemessenen Abstand. 10 ms Toleranz decken die Timer-Auflösung ab.
     /// </summary>
     [Fact]
     public async Task Search_GeocodingStartAndDestination_AreSpacedByNominatimInterval()
     {
-        var viewModel = await CreateRouteViewModelAsync();
+        var timing = new RequestTimingHandler(new HttpClientHandler { AllowAutoRedirect = false });
+        var viewModel = await CreateRouteViewModelAsync(geocoding: CreateGeocoding(handler: timing));
 
         await viewModel.SearchAsync();
 
-        var times = Nominatim.RequestTimes;
+        var times = timing.SendTimes;
         Assert.Equal(2, times.Count);
-        Assert.True((times[1] - times[0]).TotalMilliseconds >= 1000, "Die Anfragen an Nominatim liegen weniger als eine Sekunde auseinander.");
+        Assert.Equal(2, Nominatim.RequestTimes.Count);
+        var gap = Stopwatch.GetElapsedTime(times[0], times[1]);
+        Assert.True(gap >= TimeSpan.FromMilliseconds(990), $"Die Anfragen an Nominatim liegen nur {gap.TotalMilliseconds} ms auseinander.");
         Assert.False(string.IsNullOrWhiteSpace(Nominatim.LastUserAgent));
     }
 
