@@ -7,92 +7,10 @@ using Tankradar.Tests.Unit.Unit.Support;
 namespace Tankradar.Tests.Unit.Unit;
 
 /// <summary>
-/// Prüft die Kartenansicht des <see cref="MAUI.ViewModels.MapViewModel"/>: Wechsel zwischen Liste und Karte, Standardansicht aus den Einstellungen, Markierungen, Suchposition und deren Verwerfen.
+/// Prüft die Kartenansicht des <see cref="MAUI.ViewModels.MapViewModel"/>: Markierungen, Suchposition und deren Verwerfen (die Karte ist immer sichtbar; Trefferliste siehe <see cref="MapViewModelTests_Panel"/>).
 /// </summary>
 public class MapViewModelTests_MapView : MapViewModelTestBase
 {
-    private void SelectView(ResultView view)
-    {
-        ViewModel.ViewOptions.Single(option => option.Value == view).SelectCommand.Execute(null);
-    }
-
-    /// <summary>
-    /// Prüft, dass ohne Einstellung die Liste vorgewählt ist und beide Ansichten angeboten werden.
-    /// </summary>
-    [Fact]
-    public async Task Default_IsListView()
-    {
-        await AppearAsync();
-
-        Assert.Equal([ResultView.List, ResultView.Map], ViewModel.ViewOptions.Select(option => option.Value));
-        Assert.True(ViewModel.IsListView);
-        Assert.False(ViewModel.IsMapView);
-        Assert.False(ViewModel.ShowMap);
-        Assert.False(ViewModel.ShowMapHint);
-    }
-
-    /// <summary>
-    /// Prüft, dass die Standardansicht „Karte“ aus den Einstellungen vorgewählt wird, zunächst mit Hinweis ohne Ergebnis.
-    /// </summary>
-    [Fact]
-    public async Task DefaultViewMap_FromSettings_IsPreselected()
-    {
-        Settings.Stored = Settings.Stored with { ResultView = ResultView.Map };
-
-        await AppearAsync();
-
-        Assert.True(ViewModel.IsMapView);
-        Assert.True(ViewModel.ViewOptions.Single(option => option.Value == ResultView.Map).IsSelected);
-        Assert.True(ViewModel.ShowMapHint);
-        Assert.False(ViewModel.ShowMap);
-        Assert.False(ViewModel.ShowMoreVisible);
-    }
-
-    /// <summary>
-    /// Prüft, dass eine in der Sitzung gewählte Ansicht beim erneuten Erscheinen erhalten bleibt, bis sich die Standardansicht ändert.
-    /// </summary>
-    [Fact]
-    public async Task SessionView_SurvivesReappearingUntilDefaultChanges()
-    {
-        await AppearAsync();
-        SelectView(ResultView.Map);
-
-        await AppearAsync();
-        Assert.True(ViewModel.IsMapView);
-
-        Settings.Stored = Settings.Stored with { ResultView = ResultView.Map };
-        await AppearAsync();
-        SelectView(ResultView.List);
-        Settings.Stored = Settings.Stored with { ResultView = ResultView.List };
-        await AppearAsync();
-        Assert.True(ViewModel.IsListView);
-    }
-
-    /// <summary>
-    /// Prüft, dass der Wechsel zwischen den Ansichten keine neue Anfrage und keine neue Standortabfrage auslöst und je Ansicht nur deren Elemente angezeigt werden.
-    /// </summary>
-    [Fact]
-    public async Task SwitchView_DoesNotSearchAgain()
-    {
-        Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, TwoStations());
-        await AppearAsync();
-        await SearchAsync();
-
-        SelectView(ResultView.Map);
-
-        Assert.True(ViewModel.ShowMap);
-        Assert.False(ViewModel.ShowMapHint);
-        Assert.False(ViewModel.ShowMoreVisible);
-        Assert.Single(Prices.Queries);
-        Assert.Single(Location.Calls);
-
-        SelectView(ResultView.List);
-
-        Assert.False(ViewModel.ShowMap);
-        Assert.Equal(2, ViewModel.Stations.Count);
-        Assert.Single(Prices.Queries);
-    }
-
     /// <summary>
     /// Prüft, dass die Standortsuche den eigenen Standort markiert, die Markierungen alle Tankstellen der Ergebnismenge enthalten und die Karte den Ausschnitt neu einpasst (Zähler steigt).
     /// </summary>
@@ -186,20 +104,21 @@ public class MapViewModelTests_MapView : MapViewModelTestBase
     }
 
     /// <summary>
-    /// Prüft, dass eine leere Ergebnismenge in der Kartenansicht keinen Kartenhinweis, sondern den Leerzustand der Suche zeigt, aber die Suchposition markiert bleibt.
+    /// Prüft, dass eine leere Ergebnismenge bei eingeklappter Trefferliste den Leerzustand der Suche liefert, die Karte aber die Suchposition markiert behält.
     /// </summary>
     [Fact]
     public async Task EmptyResult_ShowsMapWithOriginOnly()
     {
         Prices.Result = Result(PriceDataSource.Live, PriceFailure.None);
+        Settings.Stored = Settings.Stored with { ResultView = ResultView.Map };
         await AppearAsync();
-        SelectView(ResultView.Map);
 
         await SearchAsync();
 
         Assert.True(ViewModel.ShowEmptyState);
-        Assert.False(ViewModel.ShowMapHint);
-        Assert.True(ViewModel.ShowMap);
+        Assert.False(ViewModel.IsBottomSheetExpanded);
+        Assert.True(ViewModel.HasMapContent);
+        Assert.False(ViewModel.HasMapRoute);
         Assert.Empty(ViewModel.MapMarkers);
         Assert.NotNull(ViewModel.Origin);
     }

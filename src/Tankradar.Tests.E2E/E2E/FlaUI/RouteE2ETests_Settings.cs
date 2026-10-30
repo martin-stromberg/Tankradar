@@ -76,6 +76,7 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
             Assert.False(Exists("Settings.Route.Remove"));
 
             OpenSearch();
+            OpenSearchOverlay();
             Assert.True(Exists("Search.Mode.Address"));
             Assert.False(Exists("Search.Mode.Route"));
             Assert.Equal(0, Routing.Requests);
@@ -113,6 +114,7 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
             Assert.False(IsSwitchOn());
 
             OpenSearch();
+            OpenSearchOverlay();
             Assert.False(Exists("Search.Mode.Route"));
             OpenSettings();
             ToggleSwitch();
@@ -137,6 +139,7 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
         {
             SaveKeyAndEnable();
             OpenSearch();
+            OpenSearchOverlay();
             Assert.True(Exists("Search.Mode.Route"));
 
             OpenSettings();
@@ -146,6 +149,7 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
             WaitUntil(() => !IsSwitchEnabled() && !IsSwitchOn(), "Der Schalter ist nach dem Entfernen nicht gesperrt und aus.");
             WaitUntil(() => !Exists("Settings.Route.Remove"), "Die Schaltfläche zum Entfernen blieb sichtbar.");
             OpenSearch();
+            OpenSearchOverlay();
             Assert.False(Exists("Search.Mode.Route"));
             Assert.Equal(0, Routing.Requests);
         });
@@ -161,12 +165,14 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
         {
             SaveKeyAndEnable();
             OpenSearch();
+            OpenSearchOverlay();
             SelectRouteMode();
 
             OpenSettings();
             ToggleSwitch();
             WaitUntil(() => !IsSwitchOn(), "Der Schalter wurde nicht ausgeschaltet.");
             OpenSearch();
+            OpenSearchOverlay();
             Assert.False(Exists("Search.Mode.Route"));
             Assert.True(Exists("Search.Radius.5"));
 
@@ -174,6 +180,7 @@ public class RouteE2ETests_Settings : RouteE2ETestBase
             ToggleSwitch();
             WaitUntil(IsSwitchOn, "Der Schalter wurde nicht wieder eingeschaltet.");
             OpenSearch();
+            OpenSearchOverlay();
             Assert.True(Exists("Search.Mode.Route"));
             Assert.Equal(0, Routing.Requests);
         });

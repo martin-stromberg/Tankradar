@@ -1,3 +1,11 @@
+## 2026-10-30 — Kartenansicht mit Vollfläche, Suchdialog und Trefferpanel (Issue #19)
+
+- Die Ansicht „Karte“ füllt den Bereich aus. Die Suche (Suchart, Adresse, Route, Radius) öffnet sich über eine Schaltfläche in einem Dialog über der Karte; die Eingabeseite entfällt.
+- Die Trefferliste liegt als Panel am unteren Rand: eingeklappt mit der Anzahl der Tankstellen, ausgeklappt mit Spritsorten-Filter, Sortierung und Liste. Auf- und Zuklappen über eine Schaltfläche, Antippen oder Ziehen.
+- Neu: Die Schaltfläche „Tankstellen in diesem Bereich laden“ lädt die Tankstellen des sichtbaren Kartenausschnitts (nur Standort und Adresse, höchstens 25 km Radius, danach 60 Sekunden Wartezeit). Es erfolgt keine automatische Abfrage.
+- Die Quellenangabe „© OpenStreetMap-Mitwirkende“ bleibt dauerhaft sichtbar. Die Standardansicht „Liste“/„Karte“ steuert nur noch, ob das Panel beim Öffnen ausgeklappt oder eingeklappt ist; die Einstellung selbst bleibt unverändert.
+- Die Entscheidung ist in `docs/adr/0005-map-view-decisions.md` (Abschnitt „Bedienstruktur der Kartenansicht“) festgehalten; die Hilfe in `docs/help/Suche/` und `docs/help/Navigation/` sowie die Einstellungshilfe sind angepasst.
+
 ## 2026-10-27 — Tankbuch öffnet mit Tank- und Ladevorgängen (Issue #20)
 
 - Der Tab „Tankbuch“ zeigt direkt die Tank- und Ladevorgänge eines Fahrzeugs. Das Fahrzeug wird im Kopf über seinen Namen gewählt; angezeigt wird das zuletzt gewählte, sonst das erste Fahrzeug nach Namen.

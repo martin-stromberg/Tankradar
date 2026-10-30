@@ -1,4 +1,5 @@
 using Tankradar.MAUI.Models.Map;
+using Tankradar.MAUI.Models.Search;
 
 namespace Tankradar.MAUI.Services.Map;
 
@@ -220,6 +221,34 @@ public sealed class MapViewport
         }
 
         return tiles;
+    }
+
+    /// <summary>
+    /// Berechnet die Position zu einer Lage im Ausschnitt (Gegenstück zu <see cref="ToScreen"/>); der Breitengrad bleibt innerhalb der Grenzen der Projektion.
+    /// </summary>
+    /// <param name="x">Der Abstand vom linken Rand in Pixeln (auch außerhalb des Ausschnitts).</param>
+    /// <param name="y">Der Abstand vom oberen Rand in Pixeln (auch außerhalb des Ausschnitts).</param>
+    /// <returns>Die Position.</returns>
+    public GeoPosition ToLatLon(double x, double y)
+    {
+        var worldY = Math.Clamp(_centerY + (y - (Height / 2)), 0, WorldSize(Zoom));
+        var worldX = _centerX + (x - (Width / 2));
+        var latitude = Math.Clamp(LatitudeOf(worldY, Zoom), -MaxLatitude, MaxLatitude);
+        return new GeoPosition(latitude, LongitudeOf(worldX, Zoom));
+    }
+
+    /// <summary>
+    /// Liefert die Begrenzung des sichtbaren Ausschnitts aus seinen vier Eckpunkten.
+    /// </summary>
+    /// <returns>Die Begrenzung.</returns>
+    public MapBounds GetBounds()
+    {
+        var corners = new[] { ToLatLon(0, 0), ToLatLon(Width, 0), ToLatLon(0, Height), ToLatLon(Width, Height) };
+        return new MapBounds(
+            corners.Min(corner => corner.Latitude),
+            corners.Min(corner => corner.Longitude),
+            corners.Max(corner => corner.Latitude),
+            corners.Max(corner => corner.Longitude));
     }
 
     private static bool Fits(IReadOnlyList<(double Latitude, double Longitude)> points, int zoom, double availableWidth, double availableHeight)

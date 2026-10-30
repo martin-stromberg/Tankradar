@@ -74,6 +74,7 @@ public class MapViewModelTests_Sort : MapViewModelRouteTestBase
         await SearchAsync();
         ViewModel.ShowMoreCommand.Execute(null);
         Assert.Equal(50, ViewModel.Stations.Count);
+        Assert.True(ViewModel.ShowMoreVisible);
 
         Sort(ResultSortOrder.Distance);
 
@@ -81,6 +82,7 @@ public class MapViewModelTests_Sort : MapViewModelRouteTestBase
         Assert.Equal("Station 060", ViewModel.Stations[0].Name);
         Assert.Equal("Station 036", ViewModel.Stations[^1].Name);
         Assert.Equal("Weitere anzeigen (35 übrig)", ViewModel.ShowMoreText);
+        Assert.True(ViewModel.ShowMoreVisible);
 
         ViewModel.ShowMoreCommand.Execute(null);
         Sort(ResultSortOrder.Name);

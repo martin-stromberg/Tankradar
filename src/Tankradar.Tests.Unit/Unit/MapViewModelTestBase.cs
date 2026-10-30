@@ -2,6 +2,7 @@ using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
+using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 using Tankradar.TestSupport;
@@ -100,6 +101,33 @@ public abstract class MapViewModelTestBase : BaseTest
         ViewModel.OnAppearing();
         await ViewModel.LastSettingsTask;
         await ViewModel.LastRouteAccessTask;
+    }
+
+    /// <summary>
+    /// Lässt die Seite erscheinen, wählt die Suchart (bei „Adresse“ mit der Eingabe „Berlin“), führt auf Wunsch eine Suche aus und meldet danach einen Kartenausschnitt
+    /// um den Teststandort (400 × 700 Pixel) als Bewegung des Anwenders.
+    /// </summary>
+    /// <param name="mode">Die Suchart.</param>
+    /// <param name="zoom">Die Zoomstufe des gemeldeten Ausschnitts (13 ergibt rund 5 km Radius, 8 einen zu großen Ausschnitt).</param>
+    /// <param name="search">Gibt an, ob vor der Bewegung gesucht wird.</param>
+    /// <returns>Der gemeldete Ausschnitt.</returns>
+    protected async Task<MapViewport> AppearAndViewportAsync(SearchMode mode = SearchMode.CurrentLocation, int zoom = 13, bool search = true)
+    {
+        await AppearAsync();
+        ViewModel.ModeOptions.Single(option => option.Value == mode).SelectCommand.Execute(null);
+        if (mode == SearchMode.Address)
+        {
+            ViewModel.AddressText = "Berlin";
+        }
+
+        if (search)
+        {
+            await SearchAsync();
+        }
+
+        var viewport = MapViewport.Create(StationFactory.CenterLatitude, StationFactory.CenterLongitude, zoom, 400, 700);
+        ViewModel.OnViewportChanged(viewport);
+        return viewport;
     }
 
     /// <summary>

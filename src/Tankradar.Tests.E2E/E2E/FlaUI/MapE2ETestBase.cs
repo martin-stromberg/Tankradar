@@ -4,7 +4,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// Basis für E2E-Tests der Kartenansicht der Suchergebnisse: Umschalten zwischen Liste und Karte, Lesen der Kartenanzeigen und Bedienen der Karte ausschließlich über UI-Automation-Muster (nie per Mausklick).
+/// Basis für E2E-Tests der Kartenansicht der Suchergebnisse (Vollflächenkarte mit Trefferliste am unteren Rand): Lesen der Kartenanzeigen und Bedienen der Karte ausschließlich über UI-Automation-Muster (nie per Mausklick).
 /// Die Kacheln liefert der Mock-Kachelserver der Basisklasse; produktive Kachelserver werden nie berührt.
 /// </summary>
 public abstract class MapE2ETestBase : SearchE2ETestBase
@@ -18,22 +18,6 @@ public abstract class MapE2ETestBase : SearchE2ETestBase
     /// Die AutomationId der Markierung der Teststation Beta.
     /// </summary>
     protected const string BetaMarker = "Map.Marker." + MockTankerkoenigServer.StationBeta;
-
-    /// <summary>
-    /// Wechselt auf die Kartenansicht und wartet, bis der Auswahl-Chip „Karte“ ausgewählt ist.
-    /// </summary>
-    protected void ShowMapView()
-    {
-        SelectChip("Search.View.Map");
-    }
-
-    /// <summary>
-    /// Wechselt auf die Listenansicht und wartet, bis der Auswahl-Chip „Liste“ ausgewählt ist.
-    /// </summary>
-    protected void ShowListView()
-    {
-        SelectChip("Search.View.List");
-    }
 
     /// <summary>
     /// Wartet, bis der Zähler der Karte den Text zeigt („2 von 2 Stationen sichtbar“).
@@ -98,15 +82,41 @@ public abstract class MapE2ETestBase : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Sucht am Teststandort mit dem Standardradius, schaltet auf die Karte um und wartet auf beide Teststationen.
+    /// Sucht am Teststandort mit dem Standardradius, wartet auf beide Teststationen, klappt die Trefferliste ein und wartet auf den Kartenzähler.
     /// </summary>
     protected void SearchAndShowMap()
     {
         OpenSearch();
         Submit();
         WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
-        ShowMapView();
+        CollapsePanel();
         WaitForMapCount("2 von 2 Stationen sichtbar");
+    }
+
+    /// <summary>
+    /// Liefert, ob die Schaltfläche „Tankstellen in diesem Bereich laden“ angezeigt wird.
+    /// </summary>
+    /// <returns><see langword="true"/>, wenn die Schaltfläche existiert.</returns>
+    protected bool IsAreaReloadShown()
+    {
+        return Exists("Map.ReloadArea");
+    }
+
+    /// <summary>
+    /// Liefert, ob die Schaltfläche „Tankstellen in diesem Bereich laden“ bedienbar ist.
+    /// </summary>
+    /// <returns><see langword="true"/>, wenn die Schaltfläche existiert und aktiviert ist.</returns>
+    protected bool IsAreaReloadEnabled()
+    {
+        return FindByAutomationId("Map.ReloadArea")?.Properties.IsEnabled.ValueOrDefault == true;
+    }
+
+    /// <summary>
+    /// Betätigt die Schaltfläche „Tankstellen in diesem Bereich laden“.
+    /// </summary>
+    protected void PressAreaReload()
+    {
+        WaitForAutomationId("Map.ReloadArea").Patterns.Invoke.Pattern.Invoke();
     }
 
     /// <summary>

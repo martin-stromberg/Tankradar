@@ -7,7 +7,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// Basis für E2E-Tests der Umkreissuche und der Routensuche: startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Mock-Routingdienst
+/// Basis für E2E-Tests der Umkreissuche und der Routensuche (Eingaben im Suchdialog über der Karte, Ergebnisse in der Trefferliste am unteren Rand): startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Mock-Routingdienst
 /// (OpenRouteService), Mock-Kachelserver, Test-Schlüsseln und festem Teststandort (Berlin-Mitte); produktive Endpunkte und der echte Standortdienst werden nie berührt.
 /// </summary>
 public abstract class SearchE2ETestBase : SettingsE2ETestBase
@@ -128,31 +128,120 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
-    /// Wechselt auf die Suche („Karte“) und wartet, bis Einstellungen geladen und Filter- und Sortieroptionen sichtbar sind.
+    /// Wechselt auf die Suche („Karte“) und wartet, bis Suchschaltfläche und Trefferliste da sind; bei ausgeklappter Trefferliste zusätzlich auf Filter- und Sortieroptionen.
     /// </summary>
     protected void OpenSearch()
     {
         NavigateToTab("Karte");
-        WaitForAutomationId("Search.Radius.5");
-        WaitForAutomationId("Search.Filter.All");
-        WaitForAutomationId("Search.Sort.Price");
+        WaitForAutomationId("Search.Overlay.Open");
+        WaitForAutomationId("Search.Panel.Toggle");
+        if (IsPanelExpanded())
+        {
+            WaitForAutomationId("Search.Filter.All");
+            WaitForAutomationId("Search.Sort.Price");
+        }
     }
 
     /// <summary>
-    /// Wählt die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („1“, „2“, „5“, „10“, „15“, „25“).
+    /// Öffnet den Suchdialog über der Karte (Suchart, Eingaben, Radius, Suchen), sofern er nicht bereits offen ist.
+    /// </summary>
+    protected void OpenSearchOverlay()
+    {
+        if (Exists("Search.Overlay.Close"))
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Overlay.Open").Patterns.Invoke.Pattern.Invoke();
+        WaitForAutomationId("Search.Overlay.Close");
+    }
+
+    /// <summary>
+    /// Schließt den Suchdialog ohne Suche, sofern er offen ist.
+    /// </summary>
+    protected void CloseSearchOverlay()
+    {
+        if (FindByAutomationId("Search.Overlay.Close") is not { } close)
+        {
+            return;
+        }
+
+        close.Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => !Exists("Search.Overlay.Close"), "Der Suchdialog wurde nicht geschlossen.");
+    }
+
+    /// <summary>
+    /// Liefert, ob die Trefferliste ausgeklappt ist (Beschriftung der Schaltfläche „Liste ausblenden“).
+    /// </summary>
+    /// <returns><see langword="true"/>, wenn die Trefferliste ausgeklappt ist.</returns>
+    protected bool IsPanelExpanded()
+    {
+        try
+        {
+            return FindByAutomationId("Search.Panel.Toggle")?.Name == "Liste ausblenden";
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or global::FlaUI.Core.Exceptions.ElementNotAvailableException or global::FlaUI.Core.Exceptions.PropertyNotSupportedException)
+        {
+            // Die Schaltfläche wird gerade neu beschriftet; der nächste Abruf liefert den Zustand.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Klappt die Trefferliste über ihre Schaltfläche aus (Bedienung ohne Geste), sofern sie eingeklappt ist.
+    /// </summary>
+    protected void ExpandPanel()
+    {
+        if (IsPanelExpanded())
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(IsPanelExpanded, "Die Trefferliste wurde nicht ausgeklappt.");
+        WaitForAutomationId("Search.Filter.All");
+    }
+
+    /// <summary>
+    /// Klappt die Trefferliste über ihre Schaltfläche ein (Bedienung ohne Geste), sofern sie ausgeklappt ist.
+    /// </summary>
+    protected void CollapsePanel()
+    {
+        if (!IsPanelExpanded())
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => !IsPanelExpanded() && !Exists("Search.Filter.All"), "Die Trefferliste wurde nicht eingeklappt.");
+    }
+
+    /// <summary>
+    /// Liefert die Kopfzeile der Trefferliste mit der Trefferanzahl („2 Tankstellen“ bzw. „Keine Ergebnisse“).
+    /// </summary>
+    /// <returns>Der Text.</returns>
+    protected string ReadPanelCount()
+    {
+        return FindByAutomationId("Search.Panel.Count")?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Wählt im Suchdialog die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („1“, „2“, „5“, „10“, „15“, „25“).
     /// </summary>
     /// <param name="text">Der Radius in Kilometern.</param>
     protected void SetRadius(string text)
     {
+        OpenSearchOverlay();
         SelectChip("Search.Radius." + text);
     }
 
     /// <summary>
-    /// Liefert den Radius der ausgewählten Radiusstufe in Kilometern.
+    /// Liefert den Radius der ausgewählten Radiusstufe in Kilometern (öffnet dazu den Suchdialog).
     /// </summary>
     /// <returns>Der Radius als Text; leer, wenn keine Stufe ausgewählt ist.</returns>
     protected string ReadRadius()
     {
+        OpenSearchOverlay();
         return RadiusSteps.FirstOrDefault(step => IsChipSelected("Search.Radius." + step)) ?? string.Empty;
     }
 
@@ -203,19 +292,21 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
-    /// Löst die Suche aus.
+    /// Löst die Suche im Suchdialog aus (öffnet ihn dazu bei Bedarf); bei gültiger Eingabe schließt sich der Dialog.
     /// </summary>
     protected void Submit()
     {
+        OpenSearchOverlay();
         WaitForAutomationId("Search.Submit").Patterns.Invoke.Pattern.Invoke();
     }
 
     /// <summary>
-    /// Wartet, bis die Ergebnisliste genau die angegebenen Tankstellen in dieser Reihenfolge zeigt.
+    /// Wartet, bis die Ergebnisliste genau die angegebenen Tankstellen in dieser Reihenfolge zeigt (klappt die Trefferliste dazu bei Bedarf aus).
     /// </summary>
     /// <param name="expected">Die erwarteten Namen von oben nach unten.</param>
     protected void WaitForStationNames(params string[] expected)
     {
+        ExpandPanel();
         var last = string.Empty;
         WaitUntil(
             () =>
@@ -307,6 +398,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="key">Der Schlüssel der Sortierung.</param>
     protected void SelectSort(string key)
     {
+        ExpandPanel();
         SelectChip("Search.Sort." + key);
     }
 
@@ -316,6 +408,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="key">Der Schlüssel des Filters.</param>
     protected void SelectFilter(string key)
     {
+        ExpandPanel();
         SelectChip("Search.Filter." + key);
     }
 
@@ -335,6 +428,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// </summary>
     protected void SelectAddressMode()
     {
+        OpenSearchOverlay();
         SelectChip("Search.Mode.Address");
         WaitForAutomationId("Search.Address.Input");
     }
@@ -344,6 +438,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// </summary>
     protected void SelectLocationMode()
     {
+        OpenSearchOverlay();
         SelectChip("Search.Mode.CurrentLocation");
         WaitUntil(() => !Exists("Search.Address.Input"), "Das Adressfeld wurde nicht ausgeblendet.");
     }
@@ -353,6 +448,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// </summary>
     protected void SelectRouteMode()
     {
+        OpenSearchOverlay();
         SelectChip("Search.Mode.Route");
         WaitForAutomationId("Search.Route.Destination.Input");
     }
@@ -363,6 +459,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="text">Der Starttext.</param>
     protected void SetRouteStart(string text)
     {
+        OpenSearchOverlay();
         SelectChip("Search.Route.StartKind.Address");
         WaitForAutomationId("Search.Route.Start.Input");
         SetFieldValue("Search.Route.Start.Input", text);
@@ -374,6 +471,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="text">Der Zieltext.</param>
     protected void SetRouteDestination(string text)
     {
+        OpenSearchOverlay();
         SetFieldValue("Search.Route.Destination.Input", text);
     }
 
@@ -383,6 +481,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="key">Der Abstand in Kilometern.</param>
     protected void SelectRouteDistance(string key)
     {
+        OpenSearchOverlay();
         SelectChip("Search.RouteDistance." + key);
     }
 
@@ -408,6 +507,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <param name="text">Der Text.</param>
     protected void SetAddress(string text)
     {
+        OpenSearchOverlay();
         SetFieldValue("Search.Address.Input", text);
     }
 
@@ -417,6 +517,7 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     /// <returns>Der Text; leer, wenn das Feld nicht vorhanden ist.</returns>
     protected string ReadAddress()
     {
+        OpenSearchOverlay();
         var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.Address.Input"));
         return element?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault ?? string.Empty;
     }

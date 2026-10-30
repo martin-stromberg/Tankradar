@@ -43,6 +43,14 @@ public partial class MapViewModel
     }
 
     /// <summary>
+    /// Gibt an, ob die Eingaben der Routensuche im Suchdialog erscheinen (Suchart „Route“ gewählt und Routensuche aktiviert).
+    /// </summary>
+    public bool IsRouteModeSearchable
+    {
+        get { return IsRouteMode && _routeSearchEnabled; }
+    }
+
+    /// <summary>
     /// Gibt an, ob gerade eine Routensuche läuft (Fortschritt und Schaltfläche „Suche abbrechen“ sichtbar).
     /// </summary>
     public bool IsRouteSearching
@@ -225,7 +233,6 @@ public partial class MapViewModel
             if (SetProperty(ref _mapRoute, value))
             {
                 OnPropertyChanged(nameof(HasMapRoute));
-                OnPropertyChanged(nameof(ShowMapHint));
                 OnPropertyChanged(nameof(MapHintText));
             }
         }
@@ -413,12 +420,9 @@ public partial class MapViewModel
     private async Task ExecuteRouteSearchAsync(CancellationTokenSource cancellation)
     {
         var token = cancellation.Token;
-        var settings = _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
-        token.ThrowIfCancellationRequested();
+        var settings = await GetSettingsOrReportAsync(clearResult: true, token).ConfigureAwait(true);
         if (settings is null)
         {
-            ClearResult();
-            StatusMessage = SettingsTexts.LoadFailed;
             return;
         }
 
@@ -439,8 +443,7 @@ public partial class MapViewModel
             }
         }
 
-        var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
-        var request = new RouteSearchRequest(startPosition, startPosition is null ? snapshot.StartInput : null, snapshot.DestinationInput, snapshot.DistanceKm, fuelTypes);
+        var request = new RouteSearchRequest(startPosition, startPosition is null ? snapshot.StartInput : null, snapshot.DestinationInput, snapshot.DistanceKm, SelectedFuelTypes(settings));
         var progress = new ContextProgress(this, cancellation);
         var result = await _routeSearchService.SearchAsync(request, progress, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
@@ -592,6 +595,7 @@ public partial class MapViewModel
 
         _visibleModeOptions = enabled ? _modeOptions : _modeOptions.Where(option => option.Value != SearchMode.Route).ToList();
         OnPropertyChanged(nameof(ModeOptions));
+        OnPropertyChanged(nameof(IsRouteModeSearchable));
     }
 
     /// <summary>

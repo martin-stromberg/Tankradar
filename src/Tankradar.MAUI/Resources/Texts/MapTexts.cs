@@ -26,11 +26,6 @@ public static class MapTexts
     public const string AttributionHint = "Öffnet die Urheber- und Lizenzhinweise von OpenStreetMap im Browser";
 
     /// <summary>
-    /// Überschrift der Umschaltung zwischen Liste und Karte.
-    /// </summary>
-    public const string ViewHeading = "Ansicht";
-
-    /// <summary>
     /// Beschriftung „Vergrößern“.
     /// </summary>
     public const string ZoomIn = "Vergrößern";
@@ -109,6 +104,56 @@ public static class MapTexts
     /// Beschreibung der Zielmarkierung einer Route.
     /// </summary>
     public const string RouteDestination = "Ziel der Route";
+
+    /// <summary>
+    /// Beschreibung der Symbolschaltfläche, die die Suche (Suchart, Adresse, Route, Radius) über der Karte öffnet.
+    /// </summary>
+    public const string SearchButton = "Suche";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche, die die Tankstellen des sichtbaren Kartenausschnitts lädt.
+    /// </summary>
+    public const string ReloadArea = "Tankstellen in diesem Bereich laden";
+
+    /// <summary>
+    /// Hinweis, wenn der sichtbare Kartenausschnitt für eine Abfrage zu groß ist (die Preisquelle sucht höchstens 25 km um die Mitte).
+    /// </summary>
+    public const string ReloadAreaTooLarge = "Bitte näher heranzoomen";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Ausklappen der Trefferliste.
+    /// </summary>
+    public const string PanelExpand = "Liste einblenden";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche zum Einklappen der Trefferliste.
+    /// </summary>
+    public const string PanelCollapse = "Liste ausblenden";
+
+    /// <summary>
+    /// Überschrift des Suchdialogs über der Karte.
+    /// </summary>
+    public const string OverlayTitle = "Suche";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche, die den Suchdialog ohne Suche schließt (die Eingaben bleiben erhalten).
+    /// </summary>
+    public const string OverlayClose = "Schließen";
+
+    /// <summary>
+    /// Beschreibung der Farblegende für Bedienhilfen (die Legende liegt oben rechts über der Karte).
+    /// </summary>
+    public const string LegendPlacement = "Farblegende der Preisniveaus der Markierungen";
+
+    /// <summary>
+    /// Formatiert den Hinweis während der Wartezeit zwischen zwei Abfragen des sichtbaren Bereichs („Der Bereich kann in 42 s erneut geladen werden.“).
+    /// </summary>
+    /// <param name="remainingSeconds">Die verbleibende Wartezeit in Sekunden.</param>
+    /// <returns>Der Text.</returns>
+    public static string ReloadAreaWait(int remainingSeconds)
+    {
+        return $"Der Bereich kann in {remainingSeconds.ToString(German)} s erneut geladen werden.";
+    }
 
     /// <summary>
     /// Liefert die Beschreibung der markierten Suchposition.

@@ -10,7 +10,7 @@ Im Bereich **Karte** finden Sie Tankstellen in Ihrer Nähe und sehen auf einen B
 
 ### Suche starten
 
-Unter **Suchradius** wählen Sie per Chip eine Stufe: **1**, **2**, **5**, **10**, **15** oder **25 km** (voreingestellt 5 km) und tippen auf **Suchen**. Während der Suche erscheint ein Ladeanzeiger und die Schaltfläche ist gesperrt. Eine neue Suche ersetzt eine noch laufende. Die Oberfläche bietet nur gültige Radien (1 bis 25 km) an; intern wird jeder Radius vor dem Abruf geprüft, ein ungültiger Wert löst keine Abfrage aus (Meldung „Bitte einen Radius von 1 bis 25 km eingeben.“).
+Die Suche öffnen Sie über die Schaltfläche **Suche** (Lupe) oben links auf der Karte. Im Suchdialog wählen Sie unter **Suchradius** per Chip eine Stufe: **1**, **2**, **5**, **10**, **15** oder **25 km** (voreingestellt 5 km) und tippen auf **Suchen**. Mit **Schließen** verlassen Sie den Dialog, ohne zu suchen; Ihre Eingaben bleiben erhalten. Während der Suche erscheint ein Ladeanzeiger und die Schaltfläche ist gesperrt. Eine neue Suche ersetzt eine noch laufende. Die Oberfläche bietet nur gültige Radien (1 bis 25 km) an; intern wird jeder Radius vor dem Abruf geprüft, ein ungültiger Wert löst keine Abfrage aus (Meldung „Bitte einen Radius von 1 bis 25 km eingeben.“).
 
 Die Suche läuft nur, wenn Sie sie auslösen; beim Öffnen des Bereichs wird weder der Standort abgefragt noch gesucht.
 
@@ -24,7 +24,7 @@ In der Suchart **Adresse, Ort oder PLZ** erscheint ein Eingabefeld („Adresse, 
 
 Tankatlas wandelt die Eingabe über den Dienst **OpenStreetMap-Nominatim** in eine Position um (Suche auf Deutschland beschränkt, nur der beste Treffer) und sucht dann Tankstellen im gewählten Umkreis dieser Position. Die Ergebnisliste ist dieselbe wie bei der Standortsuche (Preise der gewählten Sorten mit Alter, **Entfernung zur gesuchten Adresse**, Hinweise, Filter und Sortierung). Über der Liste steht „Suche rund um: <gefundener Ort>“. Die Adresssuche braucht keinen Standort und funktioniert auch bei **Standort und GPS** = **Nie**.
 
-Quellenangabe: Im Adressmodus steht im Suchbereich „Geodaten © OpenStreetMap-Mitwirkende“.
+Quellenangabe: Im Adressmodus steht im Suchdialog „Geodaten © OpenStreetMap-Mitwirkende“.
 
 **Eingabeprüfung (vor jeder Anfrage):** Leerraum am Rand wird entfernt, mehrfacher Leerraum zusammengefasst. Zulässig sind 3 bis 120 Zeichen aus Buchstaben, Ziffern, Leerzeichen und den Satzzeichen `. , - ' / ( ) & + # :`. Typografische Zeichen, die die iOS-Tastatur setzt (Apostrophe ’ ‘ und Striche – —, z. B. „Up’n Kamp“), werden vor der Prüfung zu ' bzw. - vereinheitlicht und nicht abgelehnt. Zwischen zwei Anfragen an den Ortssuchdienst liegen mindestens 1,1 Sekunden (Nutzungsrichtlinie: höchstens eine je Sekunde, mit Sicherheitsabstand).
 
@@ -56,6 +56,16 @@ Tankatlas ermittelt Ihren Standort erst beim Tippen auf **Suchen** und nur, wenn
 | Zugriff auf den Standort verweigert | „Ohne Zugriff auf den Standort ist keine Umkreissuche möglich. Bitte erlaube den Standortzugriff in den Systemeinstellungen.“ |
 | Standort nicht ermittelbar | „Der Standort konnte nicht ermittelt werden. Bitte versuche es später erneut.“ |
 
+### Trefferliste am unteren Rand
+
+Die Trefferliste liegt als Panel am unteren Rand der Karte:
+
+- **Eingeklappt** zeigt es nur die Kopfzeile mit der Anzahl der Tankstellen (z. B. „12 Tankstellen“) oder „Keine Ergebnisse“. So bleibt die Karte weitgehend sichtbar.
+- **Ausgeklappt** erscheinen oben die Filter (**Spritsorte**) und die **Sortierung**, darunter die Liste. Zum Ausklappen tippen Sie auf die Kopfzeile, ziehen sie nach oben oder tippen auf **Liste einblenden**; **Liste ausblenden** klappt das Panel wieder ein. Ausgeklappt nimmt es höchstens etwa 60 % der Bildschirmhöhe ein.
+- Meldungen wie „Offline“ oder der Fortschritt einer Routensuche stehen unter der Kopfzeile und bleiben auch eingeklappt sichtbar.
+
+Ob das Panel beim Öffnen der Karte ausgeklappt oder eingeklappt ist, legt die **Standardansicht** in den **Optionen** fest: „Liste“ klappt es aus, „Karte“ klappt es ein. Ein Neustart der App setzt den Zustand auf die Standardansicht zurück.
+
 ### Ergebnisliste
 
 Je Tankstelle zeigt die Liste:
@@ -75,11 +85,11 @@ Bei sehr vielen Treffern (in Großstädten bei 25 km mehrere hundert) zeigt die 
 - **Spritsorte** (Chips): **Alle** oder eine Ihrer gewählten Sorten. Beim Filter bleiben nur Tankstellen mit einem Preis für diese Sorte.
 - **Sortierung** (Chips): **Preis**, **Entfernung** oder **Name**; vorbelegt mit der **Standardsortierung** aus den **Optionen**. Bei **Preis** gilt die gefilterte Sorte, bei **Alle** die erste gewählte Sorte; Tankstellen ohne Preis dafür stehen am Ende.
 
-Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche.
+Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche. Sie stehen oben im ausgeklappten Panel.
 
 ### Offline und Fehler
 
-- Ohne Verbindung (oder wenn der Preisdienst nicht erreichbar ist) zeigt die Kopfzeile „Offline: keine Verbindung zum Preisdienst.“; vorhandene gespeicherte Preise erscheinen mit ihrem Alter und dem Hinweis „Es werden die zuletzt bekannten Preise angezeigt.“ Gibt es keine gespeicherten Preise für den Umkreis, lautet die Meldung „Keine Netzverbindung und keine gespeicherten Preise für diesen Umkreis.“
+- Ohne Verbindung (oder wenn der Preisdienst nicht erreichbar ist) erscheint unter der Kopfzeile des Panels „Offline: keine Verbindung zum Preisdienst.“; vorhandene gespeicherte Preise erscheinen mit ihrem Alter und dem Hinweis „Es werden die zuletzt bekannten Preise angezeigt.“ Gibt es keine gespeicherten Preise für den Umkreis, lautet die Meldung „Keine Netzverbindung und keine gespeicherten Preise für diesen Umkreis.“
 - Weitere Meldungen: „Der Preisdienst ist nicht erreichbar.“, „Es ist kein API-Schlüssel hinterlegt.“, „Der Preisdienst hat die Anfrage abgelehnt. Bitte den API-Schlüssel prüfen.“, „Der Preisdienst hat eine unerwartete Antwort geliefert.“ und allgemein „Die Suche konnte nicht durchgeführt werden.“
 
 ## Beispiele
@@ -91,24 +101,38 @@ Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche.
 ## Einschränkungen
 
 - Die Adresssuche liefert nur Orte in Deutschland, weil auch die Preisquelle nur deutsche Tankstellen kennt; sie bietet keine Vorschläge beim Tippen. Der Radius bleibt auf 25 km begrenzt (siehe [ADR 0003](../../adr/0003-address-search-decisions.md)).
-- Die Ergebnisse erscheinen als Liste; eine Kartenansicht gibt es noch nicht.
+- Die Tankstellen im Kartenausschnitt werden nur auf Ihre Aufforderung nachgeladen (Schaltfläche „Tankstellen in diesem Bereich laden“); die Abfrage umfasst höchstens 25 km um die Mitte des Ausschnitts, und zwischen zwei Abfragen liegen 60 Sekunden.
 - Der Radius ist auf 25 km begrenzt (Vorgabe der Preisquelle) und wird in den Stufen 1, 2, 5, 10, 15 und 25 km gewählt.
 - Abweichungen vom Designentwurf der Suche sind in [ADR 0002](../../adr/0002-search-page-design-deviations.md) dokumentiert.
 - Die Liste zeigt nur Preise der in den **Optionen** gewählten Spritsorten.
 
 ### Kartenansicht
 
-Unter **Ansicht** wechseln Sie zwischen **Liste** und **Karte**. Voreingestellt ist die **Standardansicht** aus den Optionen; Ihre Wahl in der Suche gilt, solange die App läuft und Sie die Standardansicht nicht ändern. Der Wechsel löst keine neue Suche aus und fragt keinen Standort ab. Solange noch nicht gesucht wurde, zeigt die Kartenansicht den Hinweis „Noch keine Ergebnisse“.
+Der Bereich **Karte** zeigt die Karte über die gesamte Fläche. Darüber liegen:
 
-Die Karte besteht aus Kacheln von OpenStreetMap und sieht unter iOS und Windows gleich aus. Unten rechts steht immer die Quellenangabe **© OpenStreetMap-Mitwirkende**. Nach einer Suche passt die Karte den Ausschnitt so an, dass alle Tankstellen und die Suchposition sichtbar sind.
+- **Suche** (Lupe, oben links): öffnet den Suchdialog mit Suchart, Adresse bzw. Route, Radius und **Suchen**.
+- **Preisniveau-Legende** (oben rechts): erklärt die Farben der Markierungen.
+- **Trefferliste** (unten, siehe oben): eingeklappt die Anzahl, ausgeklappt Filter, Sortierung und Liste.
+- **Quellenangabe © OpenStreetMap-Mitwirkende** (unten links, über der Trefferliste): Sie bleibt immer sichtbar; Tippen öffnet die Urheber- und Lizenzhinweise im Browser.
+
+Die Karte besteht aus Kacheln von OpenStreetMap und sieht unter iOS und Windows gleich aus. Nach einer Suche passt die Karte den Ausschnitt so an, dass alle Tankstellen und die Suchposition sichtbar sind. Solange noch nicht gesucht wurde, zeigt die Karte den Hinweis „Noch keine Ergebnisse. Starte eine Suche, um die Tankstellen auf der Karte zu sehen.“
 
 - **Zoomen:** Schaltflächen **Vergrößern** (+) und **Verkleinern** (−) oder Kneifgeste; Zoomstufen 4 bis 18, die aktuelle Stufe steht oben links („Zoom 14“).
-- **Verschieben:** Wischgeste oder die Pfeil-Schaltflächen links unten (**Ausschnitt nach Norden/Süden/Osten/Westen verschieben**), damit die Karte auch ohne Wischgeste (Tastatur, Sprachausgabe) bedienbar ist. **Ausschnitt zurücksetzen** (◎) passt den Ausschnitt wieder auf alle Ergebnisse ein.
-- **Zähler:** „3 von 12 Stationen sichtbar“ zeigt, wie viele Markierungen im aktuellen Ausschnitt liegen.
+- **Verschieben:** Wischgeste oder die Pfeil-Schaltflächen auf der Karte (**Ausschnitt nach Norden/Süden/Osten/Westen verschieben**), damit die Karte auch ohne Wischgeste (Tastatur, Sprachausgabe) bedienbar ist. **Ausschnitt zurücksetzen** (◎) passt den Ausschnitt wieder auf alle Ergebnisse und die Suchposition ein.
+- **Zähler:** „3 von 12 Stationen sichtbar“ zeigt, wie viele Tankstellen im aktuellen Ausschnitt liegen. Sind es sehr viele, werden höchstens 100 Markierungen gezeichnet; der Zähler weist dann darauf hin („… dargestellt – für alle hineinzoomen“).
 - **Suchposition:** Bei der Standortsuche ist **Mein Standort** markiert, bei der Adresssuche die **Gesuchte Position**. Der Standort wird nur gemäß der Einstellung zur Standortnutzung abgefragt, nur im Arbeitsspeicher gehalten und bei der nächsten Suche verworfen.
-- **Markierungen:** Jede Tankstelle erscheint mit ihrem Preis (Preis der gefilterten Spritsorte, ohne Filter der zuerst gewählten Sorte). Die Farbe zeigt das Preisniveau innerhalb der aktuellen Ergebnismenge: **Grün** günstigster Preis, **Rot** oberes Drittel der Spanne zwischen niedrigstem und höchstem Preis, **Teal** alle übrigen, **Grau** geschlossen. Bei gleichen Preisen oder nur einer Tankstelle gibt es kein Rot; geschlossene Tankstellen zählen nicht zur Preisspanne. Eine Legende unter der Karte erklärt die Farben; Bedienhilfen nennen das Preisniveau zusätzlich als Text. Tankstellen, die die gefilterte Sorte nicht führen, erscheinen bei „Alle“ ohne Preis (mit dem Anfangsbuchstaben).
+- **Markierungen:** Jede Tankstelle erscheint mit ihrem Preis (Preis der gefilterten Spritsorte, ohne Filter der zuerst gewählten Sorte). Die Farbe zeigt das Preisniveau innerhalb der aktuellen Ergebnismenge: **Grün** günstigster Preis, **Rot** oberes Drittel der Spanne zwischen niedrigstem und höchstem Preis, **Teal** alle übrigen, **Grau** geschlossen. Bei gleichen Preisen oder nur einer Tankstelle gibt es kein Rot; geschlossene Tankstellen zählen nicht zur Preisspanne. Die Legende oben rechts erklärt die Farben; Bedienhilfen nennen das Preisniveau zusätzlich als Text. Tankstellen, die die gefilterte Sorte nicht führen, erscheinen bei „Alle“ ohne Preis (mit dem Anfangsbuchstaben).
 - **Details:** Tippen auf eine Markierung öffnet die [Tankstellen-Detailansicht](../Tankstellendetails/index.md); der Zurück-Pfeil führt zur Karte zurück.
-- **Filter und Sortierung** gelten für Liste und Karte gemeinsam; die Karte zeigt immer die gesamte gefilterte Ergebnismenge (nicht nur die ersten Listeneinträge).
+- **Filter und Sortierung** gelten für Trefferliste und Karte gemeinsam; die Karte zeigt immer die gesamte gefilterte Ergebnismenge (nicht nur die ersten Listeneinträge).
+
+### Tankstellen in diesem Bereich laden
+
+Verschieben oder zoomen Sie die Karte, erscheint über der Quellenangabe die Schaltfläche **Tankstellen in diesem Bereich laden**. Sie erscheint nur in den Sucharten **Aktueller Standort** und **Adresse, Ort oder PLZ**, nicht bei der Suche entlang einer Route. Erst ein Tippen lädt die Tankstellen des sichtbaren Ausschnitts; es wird nichts automatisch abgefragt.
+
+- Die Abfrage umfasst einen Kreis um die Mitte des sichtbaren Ausschnitts, der den Ausschnitt ganz abdeckt (Radius aufgerundet auf ganze Kilometer, höchstens 25 km). Ist der Ausschnitt größer, ist die Schaltfläche deaktiviert und der Hinweis **Bitte näher heranzoomen** erscheint.
+- Das neue Ergebnis ersetzt Trefferliste, Markierungen und Zähler. Die Karte behält Ihren Ausschnitt; die Suchposition bleibt die der letzten Suche.
+- Nach jeder Abfrage ist die Schaltfläche 60 Sekunden gesperrt; der Hinweis zeigt die Restzeit.
+- Eine neue Suche über die Lupe passt den Ausschnitt wieder an alle Ergebnisse an.
 
 Datenschutz: Beim Laden der Kacheln erfährt der Kachelserver von OpenStreetMap Ihre IP-Adresse und den betrachteten Kartenausschnitt, nicht aber die genaue Suchposition. Wie lange eine Kachel ohne erneute Prüfung gilt, bestimmt der Kachelserver; nennt er nichts, sind es sieben Tage (höchstens 100 MB Zwischenspeicher). Hat der Server eine Kachel schon eine Weile vorgehalten, gilt sie entsprechend kürzer; bestätigt er eine Kachel ohne neue Angaben, behält sie ihre bisherige Gültigkeitsdauer; ohne Verbindung zeigt die Karte bereits geladene Kacheln, sonst einen leeren Hintergrund, die Markierungen bleiben benutzbar. Begründung und Abweichungen vom Designentwurf: [ADR 0005](../../adr/0005-map-view-decisions.md).
 

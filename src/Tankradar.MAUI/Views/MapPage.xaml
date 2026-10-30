@@ -1,547 +1,153 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
              xmlns:views="clr-namespace:Tankradar.MAUI.Views"
              xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
              xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
-             xmlns:search="clr-namespace:Tankradar.MAUI.Models.Search"
              xmlns:controls="clr-namespace:Tankradar.MAUI.Views.Controls"
-             xmlns:palette="clr-namespace:Tankradar.MAUI.Resources"
              x:DataType="vm:MapViewModel"
              x:Class="Tankradar.MAUI.Views.MapPage"
              Title="Karte"
              BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
 
     <views:TankradarContentPage.Resources>
-        <!-- Karten: Design-Tokens rounded-lg (16 px) und Schattenebene 1 -->
-        <Style x:Key="SearchCard" TargetType="Border">
-            <Setter Property="Padding" Value="{StaticResource space-md}" />
-            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
-            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
-            <Setter Property="StrokeThickness" Value="1" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 16" />
-            <Setter Property="Shadow">
-                <Setter.Value>
-                    <Shadow Brush="Black" Offset="0,1" Radius="3" Opacity="0.04" />
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="SearchChip" TargetType="Border">
-            <Setter Property="Padding" Value="8,2" />
-            <Setter Property="StrokeThickness" Value="0" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 9999" />
-        </Style>
-        <!-- Auswahl-Chips (Pill, mindestens 44 px hoch); ausgewählt = Teal mit weißem Text -->
-        <Style x:Key="SearchChipButton" TargetType="Button">
-            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
-            <Setter Property="Padding" Value="16,0" />
-            <Setter Property="CornerRadius" Value="22" />
-            <Setter Property="BorderWidth" Value="1" />
-            <Setter Property="FontFamily" Value="InterSemibold" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
-            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F1F5F9, Dark={StaticResource ColorSurfaceDark}}" />
-            <Setter Property="TextColor" Value="{AppThemeBinding Light=#334155, Dark={StaticResource ColorTextPrimaryDark}}" />
-        </Style>
-        <DataTemplate x:Key="RadiusChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.Radius.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <DataTemplate x:Key="RouteDistanceChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    IsEnabled="{Binding IsEnabled}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.RouteDistance.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <DataTemplate x:Key="RouteStartChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    IsEnabled="{Binding IsEnabled}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.Route.StartKind.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <DataTemplate x:Key="ModeChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.Mode.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <DataTemplate x:Key="ViewChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.View.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <Style x:Key="LegendDot" TargetType="Border">
-            <Setter Property="WidthRequest" Value="14" />
-            <Setter Property="HeightRequest" Value="14" />
-            <Setter Property="StrokeThickness" Value="0" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 7" />
-            <Setter Property="VerticalOptions" Value="Center" />
-        </Style>
-        <DataTemplate x:Key="FilterChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.Filter.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
-        <DataTemplate x:Key="SortChipTemplate" x:DataType="vm:IChoiceOption">
-            <Button Text="{Binding Label}"
-                    Command="{Binding SelectCommand}"
-                    Style="{StaticResource SearchChipButton}"
-                    SemanticProperties.Hint="{Binding SelectionHint}"
-                    AutomationId="{Binding AutomationKey, StringFormat='Search.Sort.{0}'}">
-                <Button.Triggers>
-                    <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="BorderColor" Value="{StaticResource ColorPrimaryTeal}" />
-                        <Setter Property="TextColor" Value="White" />
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
-        </DataTemplate>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:MapStyles />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="LegendDot" TargetType="Border">
+                <Setter Property="WidthRequest" Value="12" />
+                <Setter Property="HeightRequest" Value="12" />
+                <Setter Property="StrokeThickness" Value="0" />
+                <Setter Property="StrokeShape" Value="RoundRectangle 6" />
+                <Setter Property="VerticalOptions" Value="Center" />
+            </Style>
+        </ResourceDictionary>
     </views:TankradarContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,*">
+    <!-- Vollflächenkarte; darüber Suche (oben links), Legende (oben rechts), Nachladen und Quellenangabe (unten im Kartenbereich), Trefferliste (unten) und Suchdialog -->
+    <Grid RowDefinitions="*,Auto">
 
-        <!-- Offline-Hinweis fest oben (scrollt nicht mit), einheitlich mit der Detailansicht -->
+        <controls:StationMapView x:Name="ResultMap"
+                                 Grid.Row="0"
+                                 Grid.RowSpan="2"
+                                 Markers="{Binding MapMarkers}"
+                                 Origin="{Binding Origin}"
+                                 Route="{Binding MapRoute}"
+                                 MapFitMode="{Binding MapFitMode}"
+                                 ResultVersion="{Binding MapResultVersion}"
+                                 MarkerCommand="{Binding OpenStationCommand}"
+                                 ViewportChanged="OnMapViewportChanged"
+                                 ViewportFitted="OnMapViewportFitted"
+                                 AutomationId="Search.Map" />
+
+        <Button Grid.Row="0"
+                Text="🔍"
+                Style="{StaticResource MapControlButton}"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                Margin="{StaticResource MapOverlayMargin}"
+                Command="{Binding OpenSearchOverlayCommand}"
+                SemanticProperties.Description="{x:Static texts:MapTexts.SearchButton}"
+                AutomationId="Search.Overlay.Open" />
+
+        <!-- Legende oben rechts, links neben den Zoom-Schaltflächen der Karte -->
         <Border Grid.Row="0"
-                Margin="{StaticResource space-md}"
-                Style="{StaticResource SearchChip}"
-                Padding="{StaticResource space-md}"
-                StrokeShape="RoundRectangle 12"
-                BackgroundColor="{StaticResource ColorTertiaryAmber}"
-                IsVisible="{Binding IsOffline}">
-            <Label Text="{Binding OfflineMessage}"
-                   Style="{StaticResource body-md}"
-                   TextColor="{StaticResource ColorTextPrimaryLight}"
-                   AutomationId="Search.OfflineBanner" />
-        </Border>
-
-    <ScrollView Grid.Row="1">
-        <VerticalStackLayout Padding="{StaticResource space-md}"
-                             Spacing="{StaticResource space-md}">
-
-            <Border Style="{StaticResource SearchCard}">
-                <VerticalStackLayout Spacing="{StaticResource space-sm}">
-                    <Label Text="{x:Static texts:MapTexts.ViewHeading}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                BindableLayout.ItemsSource="{Binding ViewOptions}"
-                                BindableLayout.ItemTemplate="{StaticResource ViewChipTemplate}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Border Style="{StaticResource SearchCard}">
-                <VerticalStackLayout Spacing="{StaticResource space-sm}">
-                    <Label Text="{x:Static texts:SearchTexts.ModeHeading}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                BindableLayout.ItemsSource="{Binding ModeOptions}"
-                                BindableLayout.ItemTemplate="{StaticResource ModeChipTemplate}" />
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}"
-                          IsVisible="{Binding IsAddressMode}">
-                        <Entry Grid.Column="0"
-                               Text="{Binding AddressText}"
-                               Placeholder="{x:Static texts:SearchTexts.AddressPlaceholder}"
-                               MaxLength="200"
-                               ReturnType="Search"
-                               ReturnCommand="{Binding SearchCommand}"
-                               IsTextPredictionEnabled="False"
-                               IsSpellCheckEnabled="False"
-                               MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                               SemanticProperties.Description="{x:Static texts:SearchTexts.AddressPlaceholder}"
-                               AutomationId="Search.Address.Input" />
-                        <Button Grid.Column="1"
-                                Text="{x:Static texts:SearchTexts.AddressClear}"
-                                Command="{Binding ClearAddressCommand}"
-                                IsVisible="{Binding HasAddressText}"
-                                Style="{StaticResource SearchChipButton}"
-                                Margin="0"
-                                AutomationId="Search.Address.Clear" />
-                    </Grid>
-                    <Label Text="{Binding AttributionText}"
-                           IsVisible="{Binding IsAddressMode}"
-                           Style="{StaticResource body-sm}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                           AutomationId="Search.Attribution" />
-                    <VerticalStackLayout Spacing="{StaticResource space-sm}" IsVisible="{Binding IsRouteMode}">
-                        <Label Text="{x:Static texts:SearchTexts.RouteStartHeading}"
-                               Style="{StaticResource headline-md}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                    BindableLayout.ItemsSource="{Binding RouteStartOptions}"
-                                    BindableLayout.ItemTemplate="{StaticResource RouteStartChipTemplate}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}"
-                              IsVisible="{Binding IsRouteStartAddress}">
-                            <Entry Grid.Column="0"
-                                   Text="{Binding StartInput}"
-                                   Placeholder="{x:Static texts:SearchTexts.RouteStartPlaceholder}"
-                                   MaxLength="200"
-                                   IsEnabled="{Binding RouteInputsEnabled}"
-                                   ReturnType="Next"
-                                   IsTextPredictionEnabled="False"
-                                   IsSpellCheckEnabled="False"
-                                   MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                                   SemanticProperties.Description="{x:Static texts:SearchTexts.RouteStartPlaceholder}"
-                                   AutomationId="Search.Route.Start.Input" />
-                            <Button Grid.Column="1"
-                                    Text="{x:Static texts:SearchTexts.RouteStartClear}"
-                                    Command="{Binding ClearStartCommand}"
-                                    IsVisible="{Binding HasStartInput}"
-                                    IsEnabled="{Binding RouteInputsEnabled}"
-                                    Style="{StaticResource SearchChipButton}"
-                                    Margin="0"
-                                    AutomationId="Search.Route.Start.Clear" />
-                        </Grid>
-                        <Label Text="{x:Static texts:SearchTexts.RouteDestinationHeading}"
-                               Style="{StaticResource headline-md}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                            <Entry Grid.Column="0"
-                                   Text="{Binding DestinationInput}"
-                                   Placeholder="{x:Static texts:SearchTexts.RouteDestinationPlaceholder}"
-                                   MaxLength="200"
-                                   IsEnabled="{Binding RouteInputsEnabled}"
-                                   ReturnType="Search"
-                                   ReturnCommand="{Binding SearchCommand}"
-                                   IsTextPredictionEnabled="False"
-                                   IsSpellCheckEnabled="False"
-                                   MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                                   SemanticProperties.Description="{x:Static texts:SearchTexts.RouteDestinationPlaceholder}"
-                                   AutomationId="Search.Route.Destination.Input" />
-                            <Button Grid.Column="1"
-                                    Text="{x:Static texts:SearchTexts.RouteDestinationClear}"
-                                    Command="{Binding ClearDestinationCommand}"
-                                    IsVisible="{Binding HasDestinationInput}"
-                                    IsEnabled="{Binding RouteInputsEnabled}"
-                                    Style="{StaticResource SearchChipButton}"
-                                    Margin="0"
-                                    AutomationId="Search.Route.Destination.Clear" />
-                        </Grid>
-                        <Label Text="{x:Static texts:SearchTexts.RouteDistanceHeading}"
-                               Style="{StaticResource headline-md}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                    BindableLayout.ItemsSource="{Binding RouteDistanceOptions}"
-                                    BindableLayout.ItemTemplate="{StaticResource RouteDistanceChipTemplate}" />
-                        <Label Text="{Binding RoutingAttributionText}"
-                               Style="{StaticResource body-sm}"
-                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                               AutomationId="Search.Attribution.Routing" />
-                    </VerticalStackLayout>
-                    <Label Text="{x:Static texts:SearchTexts.RadiusHeading}"
-                           IsVisible="{Binding IsRadiusVisible}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                IsVisible="{Binding IsRadiusVisible}"
-                                BindableLayout.ItemsSource="{Binding RadiusOptions}"
-                                BindableLayout.ItemTemplate="{StaticResource RadiusChipTemplate}" />
-                    <Button Text="{x:Static texts:SearchTexts.SearchButton}"
-                            Command="{Binding SearchCommand}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                            CornerRadius="8"
-                            BackgroundColor="{StaticResource ColorPrimaryTeal}"
-                            TextColor="White"
-                            AutomationId="Search.Submit" />
-                    <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                       IsVisible="{Binding IsBusy}"
-                                       Color="{StaticResource ColorPrimaryTeal}" />
-                    <Label Text="{Binding RouteProgressText}"
-                           IsVisible="{Binding HasRouteProgress}"
-                           Style="{StaticResource body-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                           AutomationId="Search.Route.Progress" />
-                    <Button Text="{x:Static texts:SearchTexts.RouteCancelButton}"
-                            Command="{Binding CancelRouteSearchCommand}"
-                            IsVisible="{Binding IsRouteSearching}"
-                            Style="{StaticResource SearchChipButton}"
-                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                            AutomationId="Search.Route.Cancel" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Label Text="{Binding StatusMessage}"
-                   IsVisible="{Binding HasStatusMessage}"
-                   Style="{StaticResource body-md}"
-                   TextColor="{StaticResource ColorErrorRed}"
-                   AutomationId="Search.StatusMessage" />
-
-            <Border Style="{StaticResource SearchCard}">
-                <VerticalStackLayout Spacing="{StaticResource space-sm}">
-                    <Label Text="{x:Static texts:SearchTexts.FilterHeading}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                BindableLayout.ItemsSource="{Binding FuelFilterOptions}"
-                                BindableLayout.ItemTemplate="{StaticResource FilterChipTemplate}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Border Style="{StaticResource SearchCard}">
-                <VerticalStackLayout Spacing="{StaticResource space-sm}">
-                    <Label Text="{x:Static texts:SearchTexts.SortHeading}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                    <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
-                                BindableLayout.ItemsSource="{Binding SortOptions}"
-                                BindableLayout.ItemTemplate="{StaticResource SortChipTemplate}" />
-                </VerticalStackLayout>
-            </Border>
-
-            <Label Text="{Binding ResolvedPlace}"
-                   IsVisible="{Binding HasResolvedPlace}"
-                   Style="{StaticResource body-md}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                   AutomationId="Search.ResolvedPlace" />
-
-            <Label Text="{Binding RouteSummary}"
-                   IsVisible="{Binding HasRouteSummary}"
-                   Style="{StaticResource body-md}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                   AutomationId="Search.Route.Summary" />
-
-            <Label Text="{Binding SourceNote}"
-                   IsVisible="{Binding HasSourceNote}"
-                   Style="{StaticResource body-md}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                   AutomationId="Search.SourceNote" />
-
-            <Label Text="{Binding EmptyStateText}"
-                   IsVisible="{Binding ShowEmptyState}"
-                   Style="{StaticResource body-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                   AutomationId="Search.EmptyState" />
-
-            <!-- Kartenansicht (alternativ zur Liste) -->
-            <Label Text="{Binding MapHintText}"
-                   IsVisible="{Binding ShowMapHint}"
-                   Style="{StaticResource body-lg}"
-                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                   AutomationId="Search.Map.Hint" />
-
-            <controls:StationMapView x:Name="ResultMap"
-                                     IsVisible="{Binding ShowMap}"
-                                     HeightRequest="440"
-                                     Markers="{Binding MapMarkers}"
-                                     Origin="{Binding Origin}"
-                                     Route="{Binding MapRoute}"
-                                     ResultVersion="{Binding MapResultVersion}"
-                                     MarkerCommand="{Binding OpenStationCommand}"
-                                     AutomationId="Search.Map" />
-
-            <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center" Margin="{StaticResource space-xs}"
-                        IsVisible="{Binding ShowMap}">
+                Style="{StaticResource MapBadge}"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="{StaticResource MapOverlayBesideMapControlsMargin}"
+                InputTransparent="True"
+                SemanticProperties.Description="{x:Static texts:MapTexts.LegendPlacement}">
+            <VerticalStackLayout Spacing="2">
                 <Label Text="{x:Static texts:MapTexts.LegendHeading}"
                        Style="{StaticResource body-sm}"
-                       Margin="0,0,12,0"
-                       VerticalOptions="Center"
+                       FontFamily="InterSemibold"
                        AutomationId="Map.Legend"
                        TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
-                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Cheapest}" />
+                <HorizontalStackLayout Spacing="6">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Cheapest}" />
                     <Label Text="{x:Static texts:MapTexts.LevelCheapest}" Style="{StaticResource body-sm}" VerticalOptions="Center"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                 </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Normal}" />
+                <HorizontalStackLayout Spacing="6">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Normal}" />
                     <Label Text="{x:Static texts:MapTexts.LevelNormal}" Style="{StaticResource body-sm}" VerticalOptions="Center"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                 </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Expensive}" />
+                <HorizontalStackLayout Spacing="6">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Expensive}" />
                     <Label Text="{x:Static texts:MapTexts.LevelExpensive}" Style="{StaticResource body-sm}" VerticalOptions="Center"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                 </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6" Margin="0,0,12,0">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static palette:MapPalette.Closed}" />
+                <HorizontalStackLayout Spacing="6">
+                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Closed}" />
                     <Label Text="{x:Static texts:MapTexts.LevelClosed}" Style="{StaticResource body-sm}" VerticalOptions="Center"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
                 </HorizontalStackLayout>
-            </FlexLayout>
-
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Stations}"
-                                 IsVisible="{Binding IsListView}"
-                                 Spacing="{StaticResource space-sm}">
-                <BindableLayout.ItemTemplate>
-                    <DataTemplate x:DataType="search:StationListItem">
-                        <Border Style="{StaticResource SearchCard}">
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnStationTapped" />
-                            </Border.GestureRecognizers>
-                            <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                                    <Label Grid.Column="0"
-                                           Text="{Binding Name}"
-                                           MaxLines="2"
-                                           LineBreakMode="TailTruncation"
-                                           Style="{StaticResource headline-md}"
-                                           FontSize="16"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="Search.Station.Name" />
-                                    <Label Grid.Column="1"
-                                           Text="{Binding DistanceText}"
-                                           IsVisible="{Binding HasDistance}"
-                                           Style="{StaticResource body-md}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                           VerticalOptions="Center"
-                                           AutomationId="Search.Station.Distance" />
-                                </Grid>
-                                <Label Text="{Binding RouteOffsetText}"
-                                       IsVisible="{Binding HasRouteOffset}"
-                                       Style="{StaticResource body-sm}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                       AutomationId="Search.Station.RouteOffset" />
-                                <Label Text="{Binding SubName}" MaxLines="2" LineBreakMode="TailTruncation"
-                                       IsVisible="{Binding HasSubName}"
-                                       Style="{StaticResource body-sm}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                       AutomationId="Search.Station.SubName" />
-                                <Label Text="{Binding AddressText}" MaxLines="2" LineBreakMode="TailTruncation"
-                                       IsVisible="{Binding HasAddress}"
-                                       Style="{StaticResource body-md}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                       AutomationId="Search.Station.Address" />
-                                <Label Text="{Binding OpeningStatusText}"
-                                       IsVisible="{Binding HasOpeningStatus}"
-                                       Style="{StaticResource body-sm}"
-                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                       AutomationId="Search.Station.Opening" />
-                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding PriceLines}" Spacing="{StaticResource space-xs}">
-                                    <BindableLayout.ItemTemplate>
-                                        <DataTemplate x:DataType="search:StationPriceLine">
-                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}">
-                                                <Label Grid.Column="0"
-                                                       Text="{Binding FuelLabel}"
-                                                       Style="{StaticResource body-lg}"
-                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                                       VerticalOptions="Center"
-                                                       AutomationId="{Binding FuelType, StringFormat='Search.Fuel.{0}'}" />
-                                                <Label Grid.Column="1"
-                                                       Text="{Binding PriceText}"
-                                                       Style="{StaticResource price-hero}"
-                                                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
-                                                       VerticalOptions="Center"
-                                                       AutomationId="{Binding FuelType, StringFormat='Search.Price.{0}'}" />
-                                                <Label Grid.Column="2"
-                                                       Text="{Binding AgeText}"
-                                                       Style="{StaticResource body-sm}"
-                                                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                                                       VerticalOptions="Center"
-                                                       AutomationId="{Binding FuelType, StringFormat='Search.Age.{0}'}">
-                                                    <Label.Triggers>
-                                                        <DataTrigger TargetType="Label" Binding="{Binding IsStale}" Value="True">
-                                                            <Setter Property="TextColor" Value="{StaticResource ColorTertiaryAmber}" />
-                                                        </DataTrigger>
-                                                    </Label.Triggers>
-                                                </Label>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </BindableLayout.ItemTemplate>
-                                </VerticalStackLayout>
-                                <HorizontalStackLayout Spacing="{StaticResource space-sm}" IsVisible="{Binding HasHints}">
-                                    <Border Style="{StaticResource SearchChip}"
-                                            BackgroundColor="{StaticResource ColorTertiaryAmber}"
-                                            IsVisible="{Binding HasUnconfirmedPrice}">
-                                        <Label Text="{x:Static texts:PriceTexts.PriceUnconfirmed}"
-                                               Style="{StaticResource body-sm}"
-                                               TextColor="{StaticResource ColorTextPrimaryLight}"
-                                               AutomationId="Search.Hint.Unconfirmed" />
-                                    </Border>
-                                    <Border Style="{StaticResource SearchChip}"
-                                            BackgroundColor="{StaticResource ColorPrimaryTeal}"
-                                            IsVisible="{Binding IsAutomatedStation}">
-                                        <Label Text="{x:Static texts:PriceTexts.AutomatedStation}"
-                                               Style="{StaticResource body-sm}"
-                                               TextColor="White"
-                                               AutomationId="Search.Hint.Automated" />
-                                    </Border>
-                                </HorizontalStackLayout>
-                                <Button Text="{x:Static texts:DetailTexts.OpenDetails}"
-                                        Clicked="OnStationTapped"
-                                        HorizontalOptions="End"
-                                        Style="{StaticResource SearchChipButton}"
-                                        Margin="0"
-                                        SemanticProperties.Hint="{x:Static texts:DetailTexts.OpenDetails}"
-                                        AutomationId="Search.Station.Open" />
-                            </VerticalStackLayout>
-                        </Border>
-                    </DataTemplate>
-                </BindableLayout.ItemTemplate>
             </VerticalStackLayout>
+        </Border>
 
-            <Button Text="{Binding ShowMoreText}"
-                    Command="{Binding ShowMoreCommand}"
-                    IsVisible="{Binding ShowMoreVisible}"
+        <!-- Nachladen des sichtbaren Ausschnitts: Textschaltfläche ohne Hintergrund, erst nach einer Bewegung der Karte -->
+        <VerticalStackLayout Grid.Row="0"
+                             HorizontalOptions="Center"
+                             VerticalOptions="End"
+                             Margin="{StaticResource MapOverlayAboveAttributionMargin}"
+                             IsVisible="{Binding ShowAreaReloadButton}">
+            <Button Text="{x:Static texts:MapTexts.ReloadArea}"
+                    Command="{Binding ReloadVisibleAreaCommand}"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
                     MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
-                    CornerRadius="22"
-                    BackgroundColor="{StaticResource ColorPrimaryTeal}"
-                    TextColor="White"
-                    AutomationId="Search.ShowMore" />
+                    FontFamily="InterSemibold"
+                    FontSize="15"
+                    TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                    AutomationId="Map.ReloadArea" />
+            <Label Text="{Binding AreaReloadHint}"
+                   IsVisible="{Binding HasAreaReloadHint}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Style="{StaticResource body-sm}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   AutomationId="Map.ReloadArea.Hint" />
         </VerticalStackLayout>
-    </ScrollView>
+
+        <!-- Quellenangabe (Nutzungsbedingung von OpenStreetMap: dauerhaft sichtbar) unten links über der Trefferliste, als Link auf die Urheber- und Lizenzhinweise -->
+        <Border Grid.Row="0"
+                Style="{StaticResource MapBadge}"
+                Padding="4,0"
+                HorizontalOptions="Start"
+                VerticalOptions="End"
+                Margin="{StaticResource MapOverlayMargin}">
+            <VerticalStackLayout>
+                <Button Text="{x:Static texts:MapTexts.Attribution}"
+                        Clicked="OnAttributionClicked"
+                        BackgroundColor="Transparent"
+                        BorderWidth="0"
+                        Padding="4,0"
+                        MinimumHeightRequest="28"
+                        HeightRequest="28"
+                        FontFamily="InterRegular"
+                        FontSize="11"
+                        TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                        SemanticProperties.Hint="{x:Static texts:MapTexts.AttributionHint}"
+                        AutomationId="Map.Attribution" />
+                <Label Text="{Binding RoutingAttributionText}"
+                       IsVisible="{Binding HasMapRoute}"
+                       Padding="4,0,4,4"
+                       FontFamily="InterRegular"
+                       FontSize="11"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="Map.Attribution.Routing" />
+            </VerticalStackLayout>
+        </Border>
+
+        <controls:StationBottomSheet Grid.Row="1" />
+
+        <controls:MapSearchOverlay Grid.Row="0"
+                                   Grid.RowSpan="2"
+                                   IsVisible="{Binding IsSearchOverlayOpen}" />
     </Grid>
 
 </views:TankradarContentPage>

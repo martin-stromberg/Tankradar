@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Zoomen und Verschieben der Karte sowie Zurücksetzen des Ausschnitts (Bedienung über die Schaltflächen der Karte per UI Automation).
+/// E2E-Test: Zoomen und Verschieben der Karte, Zurücksetzen des Ausschnitts und Auf- und Zuklappen der Trefferliste (Bedienung ohne Geste über Schaltflächen per UI Automation).
 /// </summary>
 public class MapE2ETests_Navigation : MapE2ETestBase
 {
@@ -60,6 +60,31 @@ public class MapE2ETests_Navigation : MapE2ETestBase
 
             WaitForMapCount("2 von 2 Stationen sichtbar");
             Assert.Equal(start, ReadZoom());
+        });
+    }
+
+    /// <summary>
+    /// Prüft, dass die Schaltfläche am Kopf der Trefferliste diese ohne Geste ein- und ausklappt und ihre Beschriftung wechselt.
+    /// </summary>
+    [Fact]
+    public void PanelToggleButton_CollapsesAndExpandsWithoutGesture()
+    {
+        RunWithDiagnostics(() =>
+        {
+            SearchAndShowMap();
+            Assert.Equal("Liste einblenden", WaitForAutomationId("Search.Panel.Toggle").Name);
+            Assert.False(Exists("Search.Station.Name"));
+
+            WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+
+            WaitUntil(IsPanelExpanded, "Die Trefferliste wurde über die Schaltfläche nicht ausgeklappt.");
+            WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
+
+            WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+
+            WaitUntil(() => !Exists("Search.Station.Name"), "Die Trefferliste wurde über die Schaltfläche nicht eingeklappt.");
+            Assert.Equal("Liste einblenden", WaitForAutomationId("Search.Panel.Toggle").Name);
+            Assert.Equal(1, Server.ListRequests);
         });
     }
 

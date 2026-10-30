@@ -101,7 +101,8 @@ public class FavoritesE2ETests_DisplayName : HomeE2ETestBase
             Tankbook.CreateVehicle("Golf", "Diesel", "10000", string.Empty);
             Tankbook.OpenEntries("Golf");
             Tankbook.Press("TankbookEntries.Add");
-            Assert.Equal(CustomName, Tankbook.WaitFor("TankbookEntries.Form.KnownStation.0").Name);
+            // Das Formular baut die Chips nach dem Öffnen neu auf; der Name wird daher innerhalb von WaitUntil mit Standardwert gelesen.
+            Tankbook.WaitUntil(() => ReadChipName(0) == CustomName, "Die Tankbuch-Auswahl zeigt den eigenen Namen nicht.");
 
             RestartApplication(CreateEnvironment(Server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey));
             OpenHome("Heimat");

@@ -40,6 +40,8 @@ public class RouteE2ETests_Basic : RouteE2ETestBase
 
     /// <summary>
     /// Prüft die Aufrufe der Dienste: Start und Ziel über Nominatim, eine Route, eine Umkreisabfrage innerhalb der Grenze von 25 km, Schlüssel nur im Kopf.
+    /// Der Nominatim-Abstand wird am Mock-Server beim Empfang gemessen; der Verbindungsaufbau der ersten Anfrage verzögert deren Empfang und verkürzt
+    /// den gemessenen Abstand. Daher gilt eine Untergrenze von 900 ms (die App hält 1100 ms ein); den exakten Abstand beim Absenden prüfen die Integrationstests.
     /// </summary>
     [Fact]
     public void RouteSearch_CallsServicesAsPlanned()
@@ -58,7 +60,8 @@ public class RouteE2ETests_Basic : RouteE2ETestBase
             Assert.InRange(Server.LastListRadius!.Value, 1, 25);
             Assert.Equal(MockOpenRouteServiceServer.AcceptedKey, Routing.LastAuthorization);
             Assert.DoesNotContain(MockOpenRouteServiceServer.AcceptedKey, Routing.LastRawRequest, StringComparison.Ordinal);
-            Assert.True((Geocoding.RequestTimes[1] - Geocoding.RequestTimes[0]).TotalMilliseconds >= 1000);
+            var gap = Geocoding.RequestTimes[1] - Geocoding.RequestTimes[0];
+            Assert.True(gap >= TimeSpan.FromMilliseconds(900), $"Abstand nur {gap.TotalMilliseconds} ms.");
             Assert.Contains("Tankatlas", Routing.LastUserAgent, StringComparison.Ordinal);
         });
     }

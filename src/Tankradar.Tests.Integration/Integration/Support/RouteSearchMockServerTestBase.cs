@@ -1,5 +1,6 @@
 using Tankradar.MAUI.Models.Routing;
 using Tankradar.MAUI.Models.Search;
+using Tankradar.MAUI.Services.Geocoding;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.Services.Routing;
 using Tankradar.MAUI.ViewModels;
@@ -28,10 +29,11 @@ public abstract class RouteSearchMockServerTestBase : SearchMockServerTestBase
     /// <param name="routeSearch">Der Routensuchdienst oder <see langword="null"/> für den Dienst gegen die Mock-Server.</param>
     /// <param name="distanceKm">Der Abstand zur Route.</param>
     /// <param name="startAddress"><see langword="true"/> für den Adressstart, <see langword="false"/> für den (Test-)Standort.</param>
+    /// <param name="geocoding">Der Geokodierungsdienst oder <see langword="null"/> für den Dienst gegen den Nominatim-Mock.</param>
     /// <returns>Das ViewModel, bereit für die Suche.</returns>
-    protected async Task<MapViewModel> CreateRouteViewModelAsync(FuelPriceService? service = null, IRouteSearchService? routeSearch = null, int distanceKm = 2, bool startAddress = true)
+    protected async Task<MapViewModel> CreateRouteViewModelAsync(FuelPriceService? service = null, IRouteSearchService? routeSearch = null, int distanceKm = 2, bool startAddress = true, IGeocodingService? geocoding = null)
     {
-        var viewModel = CreateViewModel(service ?? CreateService(), routeSearch: routeSearch);
+        var viewModel = CreateViewModel(service ?? CreateService(), geocoding, routeSearch);
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
         viewModel.SortOptions.Single(option => option.Value == MAUI.Models.ResultSortOrder.Distance).SelectCommand.Execute(null);

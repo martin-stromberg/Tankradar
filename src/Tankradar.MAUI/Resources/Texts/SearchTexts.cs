@@ -184,6 +184,21 @@ public static class SearchTexts
     public const string ShowMore = "Weitere anzeigen";
 
     /// <summary>
+    /// Kopfzeile der Trefferliste, solange kein Ergebnis mit Tankstellen vorliegt.
+    /// </summary>
+    public const string NoResults = "Keine Ergebnisse";
+
+    /// <summary>
+    /// Formatiert die Trefferanzahl in der Kopfzeile der Trefferliste („12 Tankstellen“, „1 Tankstelle“).
+    /// </summary>
+    /// <param name="count">Die Anzahl der Tankstellen.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatStationCount(int count)
+    {
+        return count == 1 ? "1 Tankstelle" : $"{count.ToString(German)} Tankstellen";
+    }
+
+    /// <summary>
     /// Formatiert die Beschriftung zum Nachladen („Weitere anzeigen (12 übrig)“); das Wort „weitere“ kommt nur einmal vor, damit die Sprachausgabe nichts doppelt liest.
     /// </summary>
     /// <param name="remaining">Die Anzahl noch nicht angezeigter Tankstellen.</param>

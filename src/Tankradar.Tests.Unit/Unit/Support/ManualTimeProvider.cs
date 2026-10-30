@@ -5,6 +5,8 @@ namespace Tankradar.Tests.Unit.Unit.Support;
 /// </summary>
 public sealed class ManualTimeProvider : TimeProvider
 {
+    private readonly List<ManualTimer> _timers = [];
+
     /// <summary>
     /// Erstellt die Zeitquelle mit dem Startzeitpunkt 2026-10-05 12:00 UTC.
     /// </summary>
@@ -24,12 +26,25 @@ public sealed class ManualTimeProvider : TimeProvider
     public DateTime UtcNow => Now.UtcDateTime;
 
     /// <summary>
-    /// Stellt die Uhr vor.
+    /// Stellt die Uhr vor und löst die dabei fälligen Zeitgeber synchron aus.
     /// </summary>
     /// <param name="by">Die Dauer.</param>
     public void Advance(TimeSpan by)
     {
         Now += by;
+        foreach (var timer in _timers.ToList())
+        {
+            timer.FireDue(Now);
+        }
+    }
+
+    /// <inheritdoc />
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+    {
+        var timer = new ManualTimer(this, callback, state);
+        timer.Change(dueTime, period);
+        _timers.Add(timer);
+        return timer;
     }
 
     /// <inheritdoc />
@@ -45,5 +60,39 @@ public sealed class ManualTimeProvider : TimeProvider
     public override DateTimeOffset GetUtcNow()
     {
         return Now;
+    }
+
+    private sealed class ManualTimer(ManualTimeProvider owner, TimerCallback callback, object? state) : ITimer
+    {
+        private DateTimeOffset? _due;
+        private TimeSpan _period = Timeout.InfiniteTimeSpan;
+
+        public bool Change(TimeSpan dueTime, TimeSpan period)
+        {
+            _due = dueTime == Timeout.InfiniteTimeSpan ? null : owner.Now + dueTime;
+            _period = period;
+            return true;
+        }
+
+        public void FireDue(DateTimeOffset now)
+        {
+            while (_due is { } due && due <= now)
+            {
+                _due = _period > TimeSpan.Zero && _period != Timeout.InfiniteTimeSpan ? due + _period : null;
+                callback(state);
+            }
+        }
+
+        public void Dispose()
+        {
+            _due = null;
+            owner._timers.Remove(this);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
     }
 }

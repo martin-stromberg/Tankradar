@@ -93,6 +93,8 @@ public class SearchE2ETests_Address : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            OpenSearchOverlay();
+            Assert.True(Exists("Search.Mode.Address"));
             Assert.False(Exists("Search.Address.Input"));
             Assert.False(Exists("Search.Attribution"));
 

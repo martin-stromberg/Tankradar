@@ -1,11 +1,13 @@
-using Tankradar.MAUI.Models.Search;
+using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services.Map;
 using Tankradar.MAUI.ViewModels;
+using Tankradar.MAUI.Views.Controls;
 
 namespace Tankradar.MAUI.Views;
 
 /// <summary>
-/// Seite für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine Adresse mit Ergebnisliste und alternativer Kartenansicht. Meldet das Ausblenden der Seite an das <see cref="MapViewModel"/>.
+/// Seite für den Bereich „Karte" (Suche): Vollflächenkarte mit Suchdialog (Standort, Adresse, Route), Trefferliste am unteren Rand und Nachladen des sichtbaren Ausschnitts.
+/// Reicht Bewegungen und das Einpassen der Karte an das <see cref="MapViewModel"/> weiter und meldet das Ausblenden der Seite.
 /// </summary>
 public partial class MapPage : TankradarContentPage
 {
@@ -21,12 +23,44 @@ public partial class MapPage : TankradarContentPage
         BindingContext = viewModel;
     }
 
-    private void OnStationTapped(object? sender, EventArgs e)
+    /// <inheritdoc />
+    protected override bool OnBackButtonPressed()
     {
-        // Karte und Schaltfläche der Ergebniszeile tragen die Tankstelle als Bindungskontext.
-        if (sender is BindableObject { BindingContext: StationListItem station } && BindingContext is MapViewModel viewModel)
+        // Die Rückwärtstaste schließt zuerst den Suchdialog; die Eingaben bleiben erhalten.
+        if (BindingContext is MapViewModel { IsSearchOverlayOpen: true } viewModel)
         {
-            viewModel.OpenStationCommand.Execute(station);
+            viewModel.CloseSearchOverlayCommand.Execute(null);
+            return true;
+        }
+
+        return base.OnBackButtonPressed();
+    }
+
+    private void OnMapViewportChanged(object? sender, ViewportChangedEventArgs e)
+    {
+        if (BindingContext is MapViewModel viewModel)
+        {
+            viewModel.OnViewportChanged(e.Viewport);
+        }
+    }
+
+    private void OnMapViewportFitted(object? sender, ViewportChangedEventArgs e)
+    {
+        if (BindingContext is MapViewModel viewModel)
+        {
+            viewModel.OnViewportFitted(e.Viewport);
+        }
+    }
+
+    private async void OnAttributionClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            await Launcher.Default.OpenAsync(new Uri(MapTexts.AttributionUrl));
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // Ohne Browser bleibt die Quellenangabe als Text sichtbar; mehr ist nicht zu tun.
         }
     }
 }

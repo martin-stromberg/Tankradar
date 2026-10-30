@@ -4,7 +4,9 @@
 
 Angenommen (2026-10-06); Zwischenspeicher, Speicherort, Kennung, Quellenlink und Mausbedienung präzisiert in
 Schritt 10 (siehe Abschnitte „Zwischenspeicher nach HTTP-Caching-Angaben“, „Speicherort des Kachelspeichers“,
-„Kennung und Quellenangabe“ und „Mausbedienung unter Windows“)
+„Kennung und Quellenangabe“ und „Mausbedienung unter Windows“). Bedienstruktur der Vollflächenkarte mit
+Suchdialog, Trefferliste im Panel und Nachladen des Kartenausschnitts (Issue #19) siehe Abschnitt „Bedienstruktur der Kartenansicht (Issue #19)“;
+dort ist die Festhöhe und die Umschaltung Liste/Karte aus Schritt 9 überholt.
 
 ## Kontext
 
@@ -92,6 +94,20 @@ ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_k
   erreicht mit weißem Text keinen ausreichenden Kontrast (unter 4,5:1). Farbe ist nicht das einzige
   Merkmal: Beschreibung und Hinweis der Markierung nennen das Preisniveau, eine Legende erklärt die Farben.
 
+## Bedienstruktur der Kartenansicht (Issue #19)
+
+Die Ansicht „Karte“ ist eine Vollflächenkarte: `StationMapView` füllt den Bereich aus; alle Bedienelemente liegen darüber (`MapPage`, Grid-Überlagerung).
+
+- **Suchdialog statt Eingabeseite.** Die Symbolschaltfläche „Suche“ oben links öffnet `MapSearchOverlay` über der Karte (Abdunklung, Eingaben werden abgefangen). Er enthält Suchart, Adresse, Route (nur bei aktivierter Routensuche, ADR 0014), Start, Ziel, Abstand, Radius und „Suchen“. Eine Suche schließt den Dialog; „Schließen“ verwirft die Eingaben nicht. Die Logik der Suche bleibt unverändert (`SearchAsync`, `MapViewModel.Route`). Begründung: Die Karte bleibt im Baum und behält Markierungen; kein neues NuGet-Paket.
+- **Trefferliste als Panel (`StationBottomSheet`).** Am unteren Rand angedockt, zwei Zustände. Eingeklappt: Kopfzeile mit der Trefferanzahl („N Tankstellen“ bzw. „Keine Ergebnisse“). Ausgeklappt: Filter (Spritsorte) und Sortierung am Anfang des Panels, darunter die Liste mit seitenweiser Anzeige (25 je Seite, `ShowMoreCommand`). Auf- und Zuklappen über die Schaltfläche im Kopf (Pflicht, Bedienung ohne Geste, ADR-Abweichung „Verschieben auch über Schaltflächen“); Antippen des Kopfes und Ziehen sind zusätzliche Wege. Ausgeklappt höchstens 60 % der Seitenhöhe, damit die Karte und die Quellenangabe sichtbar bleiben. Statusmeldungen (Offline, Fortschritt, Fehler) stehen unter dem Kopf und bleiben auch eingeklappt sichtbar. Antippen eines Eintrags öffnet die Detailansicht (`OpenStationCommand`).
+- **Standardansicht steuert nur den Startzustand des Panels.** Die Einstellung `ResultView` (Liste/Karte) und ihr Speicherformat bleiben unverändert (keine Migration). „Liste“ öffnet das Panel ausgeklappt, „Karte“ eingeklappt. Der Zustand ist sitzungsbezogen und wird nicht gespeichert; er bleibt erhalten, bis sich die Standardansicht ändert. Die Umschaltung Liste/Karte in der Seite (`ViewOptions`, Chips) entfällt.
+- **Quellenangabe und Legende.** Die Quellenangabe „© OpenStreetMap-Mitwirkende“ bleibt dauerhaft sichtbar, unten links über dem Panel (ADR-Vorgabe oben). Die Preisniveau-Legende steht oben rechts über der Karte, neben den Zoom-Schaltflächen.
+- **Nachladen des sichtbaren Kartenausschnitts.** Die Textschaltfläche „Tankstellen in diesem Bereich laden“ erscheint nur in den Sucharten Standort und Adresse, und nur wenn Mitte oder Zoom vom Ausschnitt der letzten Suche abweichen (`OnViewportChanged`; das Ereignis `ViewportChanged` wird nur bei Nutzeraktionen gemeldet, nicht beim programmatischen Einpassen). Es wird nichts automatisch abgefragt (ADR 0014). Die Abfrage ist genau eine Umkreissuche (`MapAreaQuery.From`): Mittelpunkt ist die Mitte des Ausschnitts, der Radius die halbe Diagonale in ganzen Kilometern (aufgerundet, mindestens 1 km). Ergibt sich ein Radius über 25 km (Grenze der Preisquelle), ist die Schaltfläche deaktiviert und zeigt „Bitte näher heranzoomen“. Keine Mehrfachabfragen, keine Teilabdeckung ohne Hinweis.
+- **Takt.** Nach jeder Nachladeabfrage ist die Schaltfläche 60 Sekunden gesperrt (`AreaReloadMinInterval`, über `TimeProvider`; die Restzeit steht im Hinweis). Begründung: Die Nutzungsbedingungen der Preisquelle nennen eine Abfrage je Minute. Der `RouteQueryPacer` wurde bewusst nicht wiederverwendet, da er an die Routensuche gebunden ist.
+- **Ergebnis des Nachladens.** Liste, Markierungen und Zähler werden durch das neue Ergebnis ersetzt. Die Karte behält den Ausschnitt (`MapFitMode.KeepViewport`); nur neue Suchen (Standort, Adresse, Route) passen den Ausschnitt an (`MapFitMode.FitToResult`). Die Markierung der Suchposition bleibt die der letzten Suche. Im Routenmodus erscheint die Schaltfläche nicht, weil Routenergebnisse streckenbezogen sind.
+- **Höhe und Layout.** Die frühere feste Höhe der Karte (440 px innerhalb der scrollenden Seite) entfällt; die Karte füllt den Bereich aus. Die Eingabeoberfläche wandert in den Suchdialog.
+- **Datenschutz und Speicherung.** Panelzustand, Dialogzustand und Nachladeberechnung sind sitzungsbezogen; es entstehen keine Speicherung, keine Migration und keine neue Konfiguration. Die Suchposition bleibt wie in diesem ADR beschrieben nur im Arbeitsspeicher.
+
 ## Abweichungen vom Designentwurf
 
 - **Tippen öffnet direkt die Detailansicht.** Die Anforderung verlangt das Öffnen der Detailansicht beim
@@ -102,7 +118,7 @@ ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_k
   Auszeichnungssymbol. „Auch Strom“, „Entlang Route“, Verkehrslage und die Kopfleiste mit Logo/Avatar
   entfallen (ADR 0001, ADR 0004; Routing ist Schritt 17).
 - **Umschalter Liste/Karte** als Auswahl-Chips wie die übrigen Gruppen der Suchseite statt eines
-  Segmentschalters; er steht in der ersten Karte der Suchseite.
+  Segmentschalters; er steht in der ersten Karte der Suchseite. *(Überholt durch Issue #19: Die Umschaltung entfällt, siehe „Bedienstruktur der Kartenansicht“.)*
 - **Verschieben auch über Schaltflächen** (Pfeile) zusätzlich zur Wischgeste (unter Windows zusätzlich Ziehen
   mit der Maus und Zoom mit dem Mausrad), und Zoom über Schaltflächen und Kneifgeste mit ganzzahligen Stufen. Grund: Bedienung ohne Wischgeste (Tastatur, Sprachausgabe) und
   Prüfbarkeit per UI Automation, die keine Mausgesten braucht. „Ausschnitt zurücksetzen“ passt den
@@ -111,7 +127,7 @@ ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_k
   Ausschnitt ändert und so Zoomen und Verschieben prüfbar macht; zusätzlich die Zoomstufe.
 - **Kartenhöhe fest (440 px) innerhalb der scrollenden Suchseite.** Auf Touchgeräten kann die
   Wischgeste der Karte mit dem Scrollen der Seite konkurrieren; die Bedienung über die Schaltflächen
-  bleibt immer möglich.
+  bleibt immer möglich. *(Überholt durch Issue #19: Die Karte füllt den Bereich aus; die Seite scrollt nicht mehr.)*
 
 ## Markierungen nur sichtbar, nur im Ausschnitt, begrenzt
 

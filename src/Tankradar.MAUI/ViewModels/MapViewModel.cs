@@ -19,7 +19,7 @@ namespace Tankradar.MAUI.ViewModels;
 
 /// <summary>
 /// ViewModel für den Bereich „Karte" (Suche): Umkreissuche am aktuellen Standort oder rund um eine eingegebene Adresse sowie Suche entlang einer Route mit filterbarer und sortierbarer Ergebnisliste
-/// und alternativer Kartenansicht der Ergebnisse. Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert
+/// auf einer Vollflächenkarte mit Suchdialog, Trefferliste am unteren Rand und Nachladen des sichtbaren Kartenausschnitts. Der Standort bzw. die aufgelöste Adresse wird nur auf Anforderung der Suche ermittelt und nie gespeichert oder protokolliert
 /// (die Karte hält die Suchposition ausschließlich im Arbeitsspeicher bis zur nächsten Suche); die Adresseingabe wird nicht gespeichert.
 /// </summary>
 public partial class MapViewModel : BaseViewModel
@@ -45,8 +45,6 @@ public partial class MapViewModel : BaseViewModel
     private Task<AppSettings?>? _settingsLoad;
     private ResultSortOrder? _loadedDefaultSort;
     private ResultView? _loadedDefaultView;
-    private ResultView _resultView = ResultView.List;
-    private readonly List<ChoiceOptionViewModel<ResultView>> _viewOptions;
     private IReadOnlyList<MapMarker> _mapMarkers = NoMarkers;
     private MapOrigin? _origin;
     private int _mapResultVersion;
@@ -125,14 +123,6 @@ public partial class MapViewModel : BaseViewModel
         SyncModeSelection();
         ClearAddressCommand = new Command(ClearAddress);
         SelectSort(AppSettings.CreateDefault().ResultSortOrder);
-        _viewOptions = [];
-        foreach (var value in Enum.GetValues<ResultView>())
-        {
-            _viewOptions.Add(new ChoiceOptionViewModel<ResultView>(value, SettingsTexts.GetLabel(value), OnViewSelected));
-        }
-
-        ViewOptions = _viewOptions;
-        SyncViewSelection();
         _radiusOptions = SearchRadius.Steps.Select(step => new RadiusOptionViewModel(step, OnRadiusSelected)).ToList();
         RadiusOptions = _radiusOptions;
         SyncRadiusSelection();
@@ -144,6 +134,8 @@ public partial class MapViewModel : BaseViewModel
         FuelFilterOptions = CreateFilterOptions([]);
         SearchCommand = new Command(() => LastSearchTask = SearchAsync());
         CancelRouteSearchCommand = new Command(CancelRouteSearch);
+        InitializePanels();
+        InitializeAreaReload();
         LastSearchTask = Task.CompletedTask;
         LastSettingsTask = Task.CompletedTask;
         LastRouteAccessTask = Task.CompletedTask;
@@ -280,7 +272,6 @@ public partial class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasResults));
                 OnPropertyChanged(nameof(ShowEmptyState));
-                OnPropertyChanged(nameof(ShowMapHint));
             }
         }
     }
@@ -292,39 +283,6 @@ public partial class MapViewModel : BaseViewModel
     {
         get => _fuelFilterOptions;
         private set => SetProperty(ref _fuelFilterOptions, value);
-    }
-
-    /// <summary>
-    /// Die wählbaren Ansichten der Ergebnisse („Liste“, „Karte“); vorgewählt ist die Standardansicht aus den Einstellungen.
-    /// </summary>
-    public IReadOnlyList<ChoiceOptionViewModel<ResultView>> ViewOptions { get; }
-
-    /// <summary>
-    /// Gibt an, ob die Ergebnisse als Liste dargestellt werden.
-    /// </summary>
-    public bool IsListView => _resultView == ResultView.List;
-
-    /// <summary>
-    /// Gibt an, ob die Ergebnisse auf der Karte dargestellt werden.
-    /// </summary>
-    public bool IsMapView => _resultView == ResultView.Map;
-
-    /// <summary>
-    /// Gibt an, ob die Schaltfläche „Weitere anzeigen“ erscheint (nur in der Listenansicht, wenn weitere Tankstellen vorhanden sind).
-    /// </summary>
-    public bool ShowMoreVisible => IsListView && HasMore;
-
-    /// <summary>
-    /// Gibt an, ob die Karte mit Inhalt gezeigt wird (Kartenansicht gewählt und Ergebnis oder Suchposition vorhanden).
-    /// </summary>
-    public bool ShowMap => IsMapView && HasMapContent;
-
-    /// <summary>
-    /// Gibt an, ob in der Kartenansicht der Hinweis „Noch keine Ergebnisse“ erscheint.
-    /// </summary>
-    public bool ShowMapHint
-    {
-        get { return IsMapView && (HasMapRoute || (!HasMapContent && !ShowEmptyState && !HasStatusMessage)); }
     }
 
     /// <summary>
@@ -413,7 +371,6 @@ public partial class MapViewModel : BaseViewModel
             {
                 OnPropertyChanged(nameof(HasStatusMessage));
                 OnPropertyChanged(nameof(ShowEmptyState));
-                OnPropertyChanged(nameof(ShowMapHint));
             }
         }
     }
@@ -487,12 +444,13 @@ public partial class MapViewModel : BaseViewModel
         }
 
         UpdateOfflineState();
+        ResumeAreaReloadTimer();
         LastSettingsTask = LoadSettingsAsync();
         LastRouteAccessTask = RefreshRouteAvailabilityAsync();
     }
 
     /// <summary>
-    /// Meldet sich vom Verbindungsmonitor ab und bricht eine laufende Suche ab.
+    /// Meldet sich vom Verbindungsmonitor ab, bricht eine laufende Suche ab und hält den Zeitgeber der Nachladesperre an.
     /// </summary>
     public override void OnDisappearing()
     {
@@ -505,6 +463,7 @@ public partial class MapViewModel : BaseViewModel
 
         // Der abgebrochene Lauf räumt nicht mehr selbst auf (er ist nicht mehr „aktuell“): Fortschritt leeren und „Suchen“ freigeben.
         CancelSearch();
+        StopAreaReloadTimer();
         RouteProgressText = null;
         IsBusy = false;
     }
@@ -516,6 +475,7 @@ public partial class MapViewModel : BaseViewModel
     public async Task SearchAsync()
     {
         CancelSearch();
+        MapFitMode = MapFitMode.FitToResult;
         if (_searchMode == SearchMode.Route)
         {
             await SearchRouteAsync().ConfigureAwait(true);
@@ -551,6 +511,9 @@ public partial class MapViewModel : BaseViewModel
     {
         var cancellation = new CancellationTokenSource();
         _searchCancellation = cancellation;
+
+        // Die Eingaben sind gültig und die Suche startet: Der Suchdialog gibt die Karte frei (Fehler zeigt dann die Statuszeile der Trefferliste).
+        IsSearchOverlayOpen = false;
         IsBusy = true;
         try
         {
@@ -661,6 +624,7 @@ public partial class MapViewModel : BaseViewModel
 
         // Unabhängig davon, ob sich die dargestellte Liste geändert hat: Gesamtzahl und Rest hängen auch von der gefilterten Gesamtliste ab.
         OnPropertyChanged(nameof(TotalStationCount));
+        OnPropertyChanged(nameof(StationCountText));
         OnPropertyChanged(nameof(HasMore));
         OnPropertyChanged(nameof(ShowMoreVisible));
         OnPropertyChanged(nameof(ShowMoreText));
@@ -681,12 +645,9 @@ public partial class MapViewModel : BaseViewModel
 
     private async Task RunSearchAsync(int radiusKm, CancellationToken token)
     {
-        var settings = _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
-        token.ThrowIfCancellationRequested();
+        var settings = await GetSettingsOrReportAsync(clearResult: true, token).ConfigureAwait(true);
         if (settings is null)
         {
-            ClearResult();
-            StatusMessage = SettingsTexts.LoadFailed;
             return;
         }
 
@@ -699,12 +660,11 @@ public partial class MapViewModel : BaseViewModel
             return;
         }
 
-        var fuelTypes = settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
-        var query = new StationSearchQuery(position.Latitude, position.Longitude, radiusKm, fuelTypes);
+        var query = new StationSearchQuery(position.Latitude, position.Longitude, radiusKm, SelectedFuelTypes(settings));
         var origin = new MapOrigin(_searchMode == SearchMode.Address ? MapOriginKind.SearchedPlace : MapOriginKind.CurrentLocation, position.Latitude, position.Longitude);
         var result = await _priceService.SearchNearbyAsync(query, token).ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
-        ApplyResult(result, origin);
+        ApplyResult(result, origin, MapFitMode.FitToResult);
     }
 
     private async Task<GeoPosition?> ResolveCurrentLocationAsync(AppSettings settings, CancellationToken token)
@@ -761,9 +721,11 @@ public partial class MapViewModel : BaseViewModel
         CancelSearch();
         IsBusy = false;
         _searchMode = mode;
+        ResetAreaReload();
         SyncModeSelection();
         OnPropertyChanged(nameof(IsAddressMode));
         OnPropertyChanged(nameof(IsRouteMode));
+        OnPropertyChanged(nameof(IsRouteModeSearchable));
         OnPropertyChanged(nameof(IsRadiusVisible));
         OnPropertyChanged(nameof(EmptyStateText));
         OnPropertyChanged(nameof(IsRouteSearching));
@@ -780,35 +742,9 @@ public partial class MapViewModel : BaseViewModel
         }
     }
 
-    private void OnViewSelected(ChoiceOptionViewModel<ResultView> selected)
-    {
-        SelectView(selected.Value);
-    }
-
-    private void SelectView(ResultView view)
-    {
-        _resultView = view;
-        SyncViewSelection();
-        OnPropertyChanged(nameof(IsListView));
-        OnPropertyChanged(nameof(IsMapView));
-        OnPropertyChanged(nameof(ShowMoreVisible));
-        OnPropertyChanged(nameof(ShowMap));
-        OnPropertyChanged(nameof(ShowMapHint));
-    }
-
-    private void SyncViewSelection()
-    {
-        foreach (var option in _viewOptions)
-        {
-            option.SetSelectedSilently(option.Value == _resultView);
-        }
-    }
-
     private void OnMapContentChanged()
     {
         OnPropertyChanged(nameof(HasMapContent));
-        OnPropertyChanged(nameof(ShowMap));
-        OnPropertyChanged(nameof(ShowMapHint));
     }
 
     private void ClearAddress()
@@ -817,8 +753,15 @@ public partial class MapViewModel : BaseViewModel
         StatusMessage = null;
     }
 
-    private void ApplyResult(StationSearchResult result, MapOrigin origin)
+    private void ApplyResult(StationSearchResult result, MapOrigin? origin, MapFitMode fitMode)
     {
+        MapFitMode = fitMode;
+        if (fitMode == MapFitMode.FitToResult)
+        {
+            // Neue Suche: Die Karte passt den Ausschnitt ein und meldet ihn als Ausschnitt der Suche (OnViewportFitted).
+            ResetAreaReload();
+        }
+
         _lastResult = result;
         Origin = origin;
         MapResultVersion++;
@@ -843,8 +786,9 @@ public partial class MapViewModel : BaseViewModel
             return;
         }
 
-        // Der abgebrochene Lauf ist nicht mehr „aktuell“ und räumt seinen Fortschrittstext nicht mehr weg.
+        // Der abgebrochene Lauf ist nicht mehr „aktuell“ und räumt seinen Fortschrittstext und den Ladezustand des Nachladens nicht mehr weg.
         RouteProgressText = null;
+        IsAreaReloading = false;
         running.Cancel();
         running.Dispose();
     }
@@ -884,9 +828,7 @@ public partial class MapViewModel : BaseViewModel
             }
 
             var previousFilter = FuelFilterOptions.FirstOrDefault(option => option.IsSelected)?.FuelType;
-            FuelFilterOptions = CreateFilterOptions(
-                settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList(),
-                previousFilter);
+            FuelFilterOptions = CreateFilterOptions(SelectedFuelTypes(settings), previousFilter);
             if (_lastResult is not null)
             {
                 ApplyFilterAndSort(resetPaging: false);
@@ -901,6 +843,29 @@ public partial class MapViewModel : BaseViewModel
             StatusMessage = SettingsTexts.LoadFailed;
             return null;
         }
+    }
+
+    private async Task<AppSettings?> GetSettingsOrReportAsync(bool clearResult, CancellationToken token)
+    {
+        // Lädt die Einstellungen bei Bedarf nach; schlägt das fehl, erscheint die Meldung (bei neuen Suchen ohne das bisherige Ergebnis).
+        var settings = _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
+        token.ThrowIfCancellationRequested();
+        if (settings is null)
+        {
+            if (clearResult)
+            {
+                ClearResult();
+            }
+
+            StatusMessage = SettingsTexts.LoadFailed;
+        }
+
+        return settings;
+    }
+
+    private static List<FuelType> SelectedFuelTypes(AppSettings settings)
+    {
+        return settings.FuelTypes.Where(selection => selection.IsSelected).Select(selection => selection.FuelType).ToList();
     }
 
     private List<FuelFilterOptionViewModel> CreateFilterOptions(IReadOnlyList<FuelType> selectedFuelTypes, FuelType? selectedFilter = null)

@@ -239,8 +239,18 @@ wird die Auflösung verweigert.
 Ohne Testmodus meldet die Suche unter Windows ohne Standortdienst, dass der Standort nicht ermittelt werden
 kann; es gibt keinen stillen Ersatzstandort.
 
-Die Suchergebnisse lassen sich alternativ auf einer Karte darstellen (Auswahl „Liste“/„Karte“, Vorbelegung aus der
-Standardansicht der Optionen): eigene Kartenkomponente auf Basis von OpenStreetMap-Kacheln (Quellenangabe
+Die Ansicht „Karte“ zeigt die Tankstellen auf einer Vollflächenkarte: Die Karte füllt den gesamten Bereich, Suche,
+Legende und Zoom-Schaltflächen liegen darüber. Die Suche öffnet sich über die Schaltfläche oben links in einem Overlay
+(Suchart Standort, Adresse, Route nur bei aktivierter Routensuche; Radius bzw. Abstand; Schließen ohne Suche behält die
+Eingaben). Die Trefferliste liegt in einem unten angedockten Panel: eingeklappt zeigt es die Trefferanzahl, ausgeklappt die
+Tankstellen mit Seitenumschaltung. Auf- und Zuklappen geht über eine Schaltfläche am Panelkopf oder per Ziehgeste; der Startzustand
+folgt der Standardansicht der Optionen („Liste“ ausgeklappt, „Karte“ eingeklappt) und wird nicht gespeichert.
+Verschiebt oder zoomt der Anwender den Ausschnitt, erscheint in den Sucharten Standort und Adresse die Schaltfläche
+„Tankstellen in diesem Bereich laden“. Sie löst genau eine Umkreisabfrage um die Kartenmitte aus (Radius aus der halben
+Diagonale des Ausschnitts, ganze Kilometer); das Ergebnis ersetzt Liste und Marker, der Ausschnitt bleibt erhalten. Ist der
+Ausschnitt größer als 25 km, ist die Schaltfläche deaktiviert und es erscheint der Hinweis „Bitte näher heranzoomen“. Zwischen
+zwei Abfragen gilt eine Sperre von 60 Sekunden. Im Routenmodus ist das Nachladen nicht verfügbar. Die Kartenkomponente
+basiert auf OpenStreetMap-Kacheln (Quellenangabe
 „© OpenStreetMap-Mitwirkende“, Zoomen, Verschieben, Preismarkierungen in Grün/Teal/Rot/Grau, markierte
 Suchposition, Tippen öffnet die Details). Kacheln werden mit identifizierender Kennung (App-Version, Projekt-URL) abgerufen und nach den HTTP-Caching-Angaben des Servers im Cache-Verzeichnis zwischengespeichert (Rückfall 7 Tage);
 im Testmodus gibt `TANKRADAR_TILE_URL` die Adresse eines Mock-Kachelservers (`MockTileServer`) vor, ohne Adresse
