@@ -12,17 +12,13 @@
             <Setter Property="StrokeThickness" Value="0" />
             <Setter Property="StrokeShape" Value="RoundRectangle 9999" />
         </Style>
-        <Style x:Key="TileOpenButton" TargetType="Button">
-            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
-            <Setter Property="Padding" Value="16,0" />
-            <Setter Property="CornerRadius" Value="22" />
-            <Setter Property="BorderWidth" Value="1" />
-            <Setter Property="FontFamily" Value="InterSemibold" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="HorizontalOptions" Value="End" />
-            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
-            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
-            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        <Style x:Key="TileOpenOverlay" TargetType="Button">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderWidth" Value="0" />
+            <Setter Property="BackgroundColor" Value="Transparent" />
+            <Setter Property="Opacity" Value="0.01" />
+            <Setter Property="MinimumHeightRequest" Value="0" />
+            <Setter Property="MinimumWidthRequest" Value="0" />
         </Style>
     </ContentView.Resources>
 
@@ -33,12 +29,10 @@
             StrokeShape="RoundRectangle 12"
             BackgroundColor="{AppThemeBinding Light=#F2F3FF, Dark=#131B2E}"
             SemanticProperties.Description="{Binding SpokenDescription}">
-        <Border.GestureRecognizers>
-            <TapGestureRecognizer Command="{Binding OpenCommand}" />
-        </Border.GestureRecognizers>
-        <VerticalStackLayout Spacing="{StaticResource space-sm}">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
-                <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource space-xs}">
+        <Grid>
+            <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
                     <Label x:Name="NameLabel"
                            Text="{Binding Name}"
                            MaxLines="2"
@@ -153,13 +147,14 @@
                    IsVisible="{Binding HasNote}"
                    Style="{StaticResource body-md}"
                    TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+            </VerticalStackLayout>
 
+            <!-- Die Kachel selbst ist die Schaltfläche: die transparente Ebene macht das Antippen auch über Bedienhilfen auslösbar. -->
             <Button x:Name="OpenButton"
-                    Text="{x:Static texts:FavoritesTexts.OpenDetails}"
                     Command="{Binding OpenCommand}"
-                    Style="{StaticResource TileOpenButton}"
+                    Style="{StaticResource TileOpenOverlay}"
                     SemanticProperties.Description="{Binding Name}"
                     SemanticProperties.Hint="{x:Static texts:FavoritesTexts.OpenDetails}" />
-        </VerticalStackLayout>
+        </Grid>
     </Border>
 </ContentView>

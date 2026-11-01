@@ -52,40 +52,51 @@
                 SemanticProperties.Description="{x:Static texts:MapTexts.SearchButton}"
                 AutomationId="Search.Overlay.Open" />
 
-        <!-- Legende oben rechts, links neben den Zoom-Schaltflächen der Karte -->
+        <!-- Legende oben rechts, links neben den Zoom-Schaltflächen der Karte; sie klappt über die Symbolschaltfläche auf und zu (Start: eingeklappt) -->
         <Border Grid.Row="0"
                 Style="{StaticResource MapBadge}"
                 HorizontalOptions="End"
                 VerticalOptions="Start"
                 Margin="{StaticResource MapOverlayBesideMapControlsMargin}"
-                InputTransparent="True"
                 SemanticProperties.Description="{x:Static texts:MapTexts.LegendPlacement}">
             <VerticalStackLayout Spacing="2">
-                <Label Text="{x:Static texts:MapTexts.LegendHeading}"
-                       Style="{StaticResource body-sm}"
-                       FontFamily="InterSemibold"
-                       AutomationId="Map.Legend"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
-                <HorizontalStackLayout Spacing="6">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Cheapest}" />
-                    <Label Text="{x:Static texts:MapTexts.LevelCheapest}" Style="{StaticResource body-sm}" VerticalOptions="Center"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Normal}" />
-                    <Label Text="{x:Static texts:MapTexts.LevelNormal}" Style="{StaticResource body-sm}" VerticalOptions="Center"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Expensive}" />
-                    <Label Text="{x:Static texts:MapTexts.LevelExpensive}" Style="{StaticResource body-sm}" VerticalOptions="Center"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                </HorizontalStackLayout>
-                <HorizontalStackLayout Spacing="6">
-                    <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Closed}" />
-                    <Label Text="{x:Static texts:MapTexts.LevelClosed}" Style="{StaticResource body-sm}" VerticalOptions="Center"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
-                </HorizontalStackLayout>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-xs}">
+                    <Label Text="{x:Static texts:MapTexts.LegendHeading}"
+                           Style="{StaticResource body-sm}"
+                           FontFamily="InterSemibold"
+                           VerticalOptions="Center"
+                           AutomationId="Map.Legend"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <Button Grid.Column="1"
+                            Text="{Binding LegendToggleGlyph}"
+                            Command="{Binding ToggleLegendCommand}"
+                            Style="{StaticResource MapControlButton}"
+                            FontSize="14"
+                            SemanticProperties.Description="{Binding LegendToggleDescription}"
+                            AutomationId="Map.Legend.Toggle" />
+                </Grid>
+                <VerticalStackLayout Spacing="2" IsVisible="{Binding IsLegendExpanded}">
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Cheapest}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelCheapest}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Normal}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelNormal}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Expensive}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelExpensive}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Closed}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelClosed}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
             </VerticalStackLayout>
         </Border>
 

@@ -59,7 +59,7 @@ public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
             OpenBackup();
             RestoreBackup(1);
 
-            NavigateToTab("Tankbuch", "TankbookEntries.ManageVehicles");
+            NavigateToTab("Tankbuch", "TankbookEntries.Vehicle");
             WaitForTexts("TankbookEntries.Vehicle", "Golf");
             Tankbook.ManageVehicles();
             WaitForTexts("Tankbook.Vehicle.Name", "Golf");
@@ -88,7 +88,7 @@ public class TankbookEntriesE2ETests_RestoreReload : BackupE2ETestBase
             OpenBackup();
             RestoreBackup(1);
 
-            NavigateToTab("Tankbuch", "TankbookEntries.ManageVehicles");
+            NavigateToTab("Tankbuch", "TankbookEntries.Vehicle");
             WaitForTexts("TankbookEntries.Vehicle", "Golf");
         });
     }

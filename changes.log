@@ -1,3 +1,11 @@
+## 2026-11-01 — Entfernen unnötiger UI-Elemente (Issue #27)
+
+- Tankstellenpanels enthalten keine Schaltfläche „Details öffnen“ mehr; die Kachel bzw. das Panel selbst öffnet die Detailansicht (in der Favoritengruppe weiterhin über den Tankstellennamen). Der Abstand zwischen Stationsname und Adresse ist reduziert.
+- Die Trefferliste der Kartenansicht nutzt dasselbe Paneldesign wie die Favoritenkacheln (Hintergrund, Eckenradius, Preistafel, Hinweis-Chips). „Liste einblenden“/„Liste ausblenden“ ist eine Symbolschaltfläche mit unveränderter Bedienhilfe.
+- Die Preisniveau-Legende der Karte ist auf- und zuklappbar und startet eingeklappt; die Pfeilschaltflächen zum Verschieben der Karte sind entfernt (Verschieben per Wischgeste bzw. Ziehen).
+- Im Tankbuch öffnet das Fahrzeugpanel (Antippen oder Symbolschaltfläche rechts neben dem Fahrzeugnamen) die Fahrzeugliste; die Schaltflächen mit dem Fahrzeugnamen und „Fahrzeuge verwalten“ im Kopf entfallen. Die Verwaltung bleibt in der geöffneten Fahrzeugliste bzw. im Leerzustand erreichbar.
+- Keine Schemaänderung.
+
 ## 2026-10-30 — Kartenansicht mit Vollfläche, Suchdialog und Trefferpanel (Issue #19)
 
 - Die Ansicht „Karte“ füllt den Bereich aus. Die Suche (Suchart, Adresse, Route, Radius) öffnet sich über eine Schaltfläche in einem Dialog über der Karte; die Eingabeseite entfällt.

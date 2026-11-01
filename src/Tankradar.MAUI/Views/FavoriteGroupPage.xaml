@@ -158,11 +158,7 @@
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="FavoriteGroup.Entry.Note" />
-                                    <Button Text="{x:Static texts:FavoritesTexts.OpenDetails}"
-                                            Command="{Binding OpenCommand}"
-                                            Style="{StaticResource GroupOutlineButton}"
-                                            SemanticProperties.Description="{Binding StationName}"
-                                            AutomationId="FavoriteGroup.Entry.Open" />
+
                                     <Button Text="{x:Static texts:FavoritesTexts.EditEntry}"
                                             Command="{Binding EditCommand}"
                                             Style="{StaticResource GroupOutlineButton}"

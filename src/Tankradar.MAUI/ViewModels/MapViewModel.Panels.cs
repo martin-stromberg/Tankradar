@@ -11,6 +11,7 @@ public partial class MapViewModel
 {
     private bool _isBottomSheetExpanded = true;
     private bool _isSearchOverlayOpen;
+    private bool _isLegendExpanded;
 
     /// <summary>
     /// Gibt an, ob die Trefferliste am unteren Rand ausgeklappt ist (Liste mit Filter und Sortierung) oder nur die Kopfzeile mit der Trefferanzahl zeigt.
@@ -24,9 +25,21 @@ public partial class MapViewModel
             if (SetProperty(ref _isBottomSheetExpanded, value))
             {
                 OnPropertyChanged(nameof(ShowMoreVisible));
+                OnPropertyChanged(nameof(BottomSheetToggleGlyph));
+                OnPropertyChanged(nameof(BottomSheetToggleDescription));
             }
         }
     }
+
+    /// <summary>
+    /// Das Zeichen der Symbolschaltfläche der Trefferliste (zeigt nach unten zum Ausklappen, nach oben zum Einklappen).
+    /// </summary>
+    public string BottomSheetToggleGlyph => IsBottomSheetExpanded ? MapTexts.PanelCollapseGlyph : MapTexts.PanelExpandGlyph;
+
+    /// <summary>
+    /// Die Beschreibung der Symbolschaltfläche der Trefferliste für Bedienhilfen („Liste einblenden“ bzw. „Liste ausblenden“).
+    /// </summary>
+    public string BottomSheetToggleDescription => IsBottomSheetExpanded ? MapTexts.PanelCollapse : MapTexts.PanelExpand;
 
     /// <summary>
     /// Die Kopfzeile der Trefferliste: die Anzahl der Tankstellen des aktuellen Ergebnisses („1 Tankstelle“, „12 Tankstellen“) oder „Keine Ergebnisse“.
@@ -51,6 +64,32 @@ public partial class MapViewModel
     }
 
     /// <summary>
+    /// Gibt an, ob die Farblegende der Karte aufgeklappt ist; sie startet eingeklappt und der Zustand wird nicht gespeichert.
+    /// </summary>
+    public bool IsLegendExpanded
+    {
+        get => _isLegendExpanded;
+        private set
+        {
+            if (SetProperty(ref _isLegendExpanded, value))
+            {
+                OnPropertyChanged(nameof(LegendToggleGlyph));
+                OnPropertyChanged(nameof(LegendToggleDescription));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Das Zeichen der Symbolschaltfläche der Farblegende.
+    /// </summary>
+    public string LegendToggleGlyph => IsLegendExpanded ? MapTexts.LegendCollapseGlyph : MapTexts.LegendExpandGlyph;
+
+    /// <summary>
+    /// Die Beschreibung der Symbolschaltfläche der Farblegende für Bedienhilfen („Legende einblenden“ bzw. „Legende ausblenden“).
+    /// </summary>
+    public string LegendToggleDescription => IsLegendExpanded ? MapTexts.LegendCollapse : MapTexts.LegendExpand;
+
+    /// <summary>
     /// Befehl zum Öffnen des Suchdialogs.
     /// </summary>
     public ICommand OpenSearchOverlayCommand { get; private set; } = null!;
@@ -59,6 +98,11 @@ public partial class MapViewModel
     /// Befehl zum Schließen des Suchdialogs ohne Suche; die Eingaben bleiben erhalten.
     /// </summary>
     public ICommand CloseSearchOverlayCommand { get; private set; } = null!;
+
+    /// <summary>
+    /// Befehl zum Auf- und Zuklappen der Farblegende der Karte.
+    /// </summary>
+    public ICommand ToggleLegendCommand { get; private set; } = null!;
 
     /// <summary>
     /// Gibt an, ob die Schaltfläche „Weitere anzeigen“ erscheint (nur bei ausgeklappter Trefferliste, wenn weitere Tankstellen vorhanden sind).
@@ -70,6 +114,7 @@ public partial class MapViewModel
         ToggleBottomSheetCommand = new Command(ToggleBottomSheet);
         OpenSearchOverlayCommand = new Command(OpenSearchOverlay);
         CloseSearchOverlayCommand = new Command(CloseSearchOverlay);
+        ToggleLegendCommand = new Command(() => IsLegendExpanded = !IsLegendExpanded);
     }
 
     private void SelectView(ResultView view)

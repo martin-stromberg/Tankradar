@@ -27,7 +27,7 @@ public class TankbookEntriesE2ETests_VehicleSwitch : TankbookE2ETestBase
             WaitForAutomationId("TankbookEntries.Empty");
             Assert.Empty(ReadTexts("TankbookEntry.Item.Station"));
             WaitUntil(() => !Exists("TankbookEntries.Vehicle.Option.0"), "Die Auswahl im Kopf wurde nach dem Wechsel nicht zugeklappt.");
-            Assert.Equal("Polo", WaitForAutomationId("TankbookEntries.SelectVehicle").Name);
+            Assert.Equal("Polo", WaitForAutomationId("TankbookEntries.Vehicle").Name);
 
             Tankbook.SelectVehicle("Golf");
             WaitForTexts("TankbookEntry.Item.Station", "Alpha Tankstelle");

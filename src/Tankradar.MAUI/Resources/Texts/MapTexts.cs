@@ -121,14 +121,44 @@ public static class MapTexts
     public const string ReloadAreaTooLarge = "Bitte näher heranzoomen";
 
     /// <summary>
-    /// Beschriftung der Schaltfläche zum Ausklappen der Trefferliste.
+    /// Beschreibung der Symbolschaltfläche zum Ausklappen der Trefferliste für Bedienhilfen.
     /// </summary>
     public const string PanelExpand = "Liste einblenden";
 
     /// <summary>
-    /// Beschriftung der Schaltfläche zum Einklappen der Trefferliste.
+    /// Beschreibung der Symbolschaltfläche zum Einklappen der Trefferliste für Bedienhilfen.
     /// </summary>
     public const string PanelCollapse = "Liste ausblenden";
+
+    /// <summary>
+    /// Zeichen des Umschalters bei eingeklappter Trefferliste.
+    /// </summary>
+    public const string PanelExpandGlyph = "▾";
+
+    /// <summary>
+    /// Zeichen des Umschalters bei ausgeklappter Trefferliste.
+    /// </summary>
+    public const string PanelCollapseGlyph = "▴";
+
+    /// <summary>
+    /// Beschreibung der Symbolschaltfläche zum Ausklappen der Farblegende für Bedienhilfen.
+    /// </summary>
+    public const string LegendExpand = "Legende einblenden";
+
+    /// <summary>
+    /// Beschreibung der Symbolschaltfläche zum Einklappen der Farblegende für Bedienhilfen.
+    /// </summary>
+    public const string LegendCollapse = "Legende ausblenden";
+
+    /// <summary>
+    /// Zeichen des Umschalters bei eingeklappter Farblegende.
+    /// </summary>
+    public const string LegendExpandGlyph = "▾";
+
+    /// <summary>
+    /// Zeichen des Umschalters bei ausgeklappter Farblegende.
+    /// </summary>
+    public const string LegendCollapseGlyph = "▴";
 
     /// <summary>
     /// Überschrift des Suchdialogs über der Karte.

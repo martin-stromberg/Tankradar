@@ -3,7 +3,7 @@ using Tankradar.MAUI.ViewModels;
 namespace Tankradar.MAUI.Views.Controls;
 
 /// <summary>
-/// Wiederverwendbare Tankstellenkachel der Startseite (Favoritengruppen und „In der Nähe“): Name, Entfernung, Preiszeilen mit Alter, Hinweise und Schaltfläche „Details öffnen“.
+/// Wiederverwendbare Tankstellenkachel der Startseite (Favoritengruppen und „In der Nähe“): Name, Entfernung, Preiszeilen mit Alter und Hinweise; Antippen der Kachel öffnet die Detailansicht.
 /// Die AutomationIds der Elemente leiten sich vom Präfix des <see cref="HomeStationViewModel"/> ab („Favorites.Station“ bzw. „Nearby.Station“).
 /// </summary>
 public partial class StationTile : ContentView

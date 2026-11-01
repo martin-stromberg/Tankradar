@@ -26,16 +26,16 @@ public class MapE2ETests_AreaReload : MapE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass Verschieben und Zoomen die Schaltfläche zeigen, ohne selbst abzufragen.
+    /// Prüft, dass Zoomen die Schaltfläche zeigt, ohne selbst abzufragen.
     /// </summary>
     [Fact]
-    public void PanOrZoom_ShowsReloadButtonWithoutQuery()
+    public void Zoom_ShowsReloadButtonWithoutQuery()
     {
         RunWithDiagnostics(() =>
         {
             SearchAndShowMap();
 
-            PressMapButton("Map.Pan.East");
+            PressMapButton("Map.ZoomOut");
 
             WaitUntil(IsAreaReloadShown, "Nach dem Verschieben erscheint keine Schaltfläche zum Nachladen.");
             Assert.Equal("Tankstellen in diesem Bereich laden", WaitForAutomationId("Map.ReloadArea").Name);
@@ -49,7 +49,7 @@ public class MapE2ETests_AreaReload : MapE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass das Nachladen genau eine Anfrage um die neue Mitte sendet, Anzahl und Markierungen aktualisiert, den Ausschnitt (Zoomstufe) nicht neu einpasst
+    /// Prüft, dass das Nachladen genau eine Anfrage für den veränderten Ausschnitt sendet, Anzahl und Markierungen aktualisiert, den Ausschnitt (Zoomstufe) nicht neu einpasst
     /// und die Schaltfläche ausblendet; eine weitere Bewegung zeigt innerhalb der Sperre den Hinweis mit der Wartezeit bei inaktiver Schaltfläche.
     /// </summary>
     [Fact]
@@ -58,10 +58,9 @@ public class MapE2ETests_AreaReload : MapE2ETestBase
         RunWithDiagnostics(() =>
         {
             SearchAndShowMap();
-            var searchedLongitude = Server.LastListLongitude!.Value;
+            var searchedRadius = Server.LastListRadius!.Value;
             PressMapButton("Map.ZoomOut");
-            PressMapButton("Map.Pan.East");
-            PressMapButton("Map.Pan.East");
+            PressMapButton("Map.ZoomOut");
             var zoom = ReadZoom();
             WaitUntil(() => IsAreaReloadShown() && IsAreaReloadEnabled(), "Die Schaltfläche zum Nachladen ist nicht bedienbar.");
 
@@ -69,7 +68,7 @@ public class MapE2ETests_AreaReload : MapE2ETestBase
 
             WaitUntil(() => Server.ListRequests == 2, "Das Nachladen hat keine Anfrage gesendet.");
             WaitUntil(() => !IsAreaReloadShown(), "Die Schaltfläche blieb nach dem Nachladen sichtbar.");
-            Assert.True(Server.LastListLongitude!.Value > searchedLongitude, "Die Anfrage verwendet nicht die nach Osten verschobene Mitte.");
+            Assert.True(Server.LastListRadius!.Value > searchedRadius, "Die Anfrage verwendet nicht den vergrößerten sichtbaren Ausschnitt.");
             Assert.InRange(Server.LastListRadius!.Value, 1, 25);
             Assert.Equal(zoom, ReadZoom());
             var count = ReadMapCount();
@@ -82,7 +81,7 @@ public class MapE2ETests_AreaReload : MapE2ETestBase
             var panelTotal = Regex.Match(ReadPanelCount(), @"^\d+").Value;
             Assert.Equal(total, panelTotal.Length == 0 ? 0 : int.Parse(panelTotal, System.Globalization.CultureInfo.InvariantCulture));
 
-            PressMapButton("Map.Pan.West");
+            PressMapButton("Map.ZoomIn");
 
             WaitUntil(IsAreaReloadShown, "Nach erneutem Verschieben erscheint keine Schaltfläche.");
             WaitUntil(
