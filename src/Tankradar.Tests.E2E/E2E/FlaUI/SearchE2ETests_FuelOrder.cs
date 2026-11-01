@@ -31,8 +31,11 @@ public class SearchE2ETests_FuelOrder : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSettings();
+            // Das Verschieben baut die Zeilen neu auf; ihre Lage meldet die Bedienhilfe erst nach dem nächsten Layoutdurchgang. Daher wird nach jedem Schritt gewartet.
             MoveFuelType("Diesel", "MoveUp");
+            WaitUntil(() => ReadFuelTypeOrder().SequenceEqual(["SuperE5", "Diesel", "SuperE10"]), "Diesel wurde nicht nach oben verschoben.");
             MoveFuelType("Diesel", "MoveUp");
+            WaitUntil(() => ReadFuelTypeOrder().SequenceEqual(["Diesel", "SuperE5", "SuperE10"]), "Diesel wurde nicht an die erste Stelle verschoben.");
             ToggleFuelType("SuperE10");
             WaitUntil(() => !IsFuelTypeSelected("SuperE10"), "Super E10 wurde nicht abgewählt.");
             Assert.Equal(["Diesel", "SuperE5", "SuperE10"], ReadFuelTypeOrder());

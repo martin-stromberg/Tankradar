@@ -15,11 +15,22 @@ public class TankbookStatisticsE2ETests_Hybrid : TankbookE2ETestBase
         {
             OpenTankbook();
             CreateVehicle("Auris", "Hybrid", "10000", string.Empty);
-            var start = DateTime.Now.AddDays(-5);
+            // Die Monatskosten zählen nur Vorgänge des laufenden Monats: Alle Vorgänge liegen daher in der Vergangenheit, aber nicht vor dem Monatsbeginn
+            // (sonst scheitert der Test in den ersten Tagen eines Monats).
+            var now = DateTime.Now;
+            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Local);
+            var step = TimeSpan.FromDays(1);
+            var start = now.AddDays(-5);
+            if (start < monthStart)
+            {
+                step = (now - monthStart) / 5;
+                start = monthStart + step;
+            }
+
             TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start, 10_500, 40m, 74.36m);
-            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start.AddDays(1), 10_600, 15m, 8.85m, kind: "Electricity");
-            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start.AddDays(2), 10_700, 20m, 11.80m, kind: "Electricity");
-            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start.AddDays(3), 11_000, 30m, 55.77m);
+            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start + step, 10_600, 15m, 8.85m, kind: "Electricity");
+            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start + (2 * step), 10_700, 20m, 11.80m, kind: "Electricity");
+            TankbookTestDatabase.AddEntry(DatabasePath, "Auris", start + (3 * step), 11_000, 30m, 55.77m);
 
             Tankbook.OpenEntries("Auris");
 

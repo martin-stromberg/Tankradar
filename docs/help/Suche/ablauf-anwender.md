@@ -52,7 +52,7 @@ Eine Liste der Tankstellen im gewählten Umkreis, im Panel am unteren Rand der K
 
 1. Suche wie gewohnt starten (Standort oder Adresse).
 2. Die Karte zeigt die Tankstellen als farbige Preismarkierungen; die Suchposition ist markiert. Unten links steht „© OpenStreetMap-Mitwirkende“.
-3. Mit **+**/**−** zoomen, mit Wischgeste oder den Pfeilen verschieben, mit **◎** den Ausschnitt auf alle Ergebnisse zurücksetzen.
+3. Mit **+**/**−** oder der Kneifgeste zoomen (fließend um die Mitte zwischen den Fingern, beim Loslassen auf eine ganze Stufe eingerastet), mit Doppeltipp bzw. Doppelklick auf eine Stelle zentrieren und eine Stufe vergrößern, mit Wischgeste oder den Pfeilen verschieben, mit **◎** den Ausschnitt auf alle Ergebnisse zurücksetzen.
 4. Verschieben oder zoomen Sie die Karte, erscheint **Tankstellen in diesem Bereich laden**. Tippen Sie darauf, um die Tankstellen des sichtbaren Ausschnitts zu laden. Die Schaltfläche ist danach 60 Sekunden gesperrt. Ist der Ausschnitt zu groß, erscheint „Bitte näher heranzoomen“.
 5. Auf eine Markierung tippen, um die Details der Tankstelle zu öffnen; mit dem Zurück-Pfeil kommen Sie zur Karte zurück.
 6. Ziehen Sie das Panel am unteren Rand nach oben, um die Liste zu sehen, oder tippen Sie auf **Liste ausblenden**, um mehr Karte zu sehen. Möchten Sie immer mit ausgeklappter Liste starten, wählen Sie in den **Optionen** die Standardansicht **Liste**; mit **Karte** startet das Panel eingeklappt.

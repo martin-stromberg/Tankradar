@@ -8,7 +8,7 @@ namespace Tankradar.MAUI.Views.Controls;
 
 /// <summary>
 /// Plattformübergreifende Karte auf Basis von OpenStreetMap-Kacheln: gleiche Darstellung unter iOS und Windows (Kacheln als Bilder, Markierungen als Schaltflächen),
-/// dadurch auch über UI Automation prüfbar. Die Karte lässt sich per Zoom-Schaltflächen und Kneifgeste zoomen sowie per Wischgeste und Schaltflächen verschieben.
+/// dadurch auch über UI Automation prüfbar. Die Karte lässt sich per Zoom-Schaltflächen und Kneifgeste (fließend um den Gestenmittelpunkt) zoomen, per Doppeltipp auf eine Stelle zentrieren und vergrößern sowie per Wischgeste und Schaltflächen verschieben.
 /// Sie zeigt die Tankstellenmarkierungen mit Preis (Farbe nach Preisniveau) und die markierte Suchposition; die Quellenangabe legt die Seite über die Karte.
 /// Bewegt der Anwender den Ausschnitt, meldet die Karte das über <see cref="ViewportChanged"/>.
 /// </summary>
@@ -99,7 +99,7 @@ public partial class StationMapView : ContentView
     private bool _fitPending;
     private double _lastPanX;
     private double _lastPanY;
-    private double _pinchScale = 1;
+    private readonly MapPinchTracker _pinch = new();
 
     /// <summary>
     /// Erstellt die Karte.
@@ -122,6 +122,12 @@ public partial class StationMapView : ContentView
     /// Löst unter Windows die Zeigerereignisse beim Entladen der Karte. Auf anderen Plattformen ohne Wirkung.
     /// </summary>
     partial void DetachPointerInput();
+
+    /// <summary>
+    /// Unterdrückt unter Windows den Doppeltipp der Gestenerkennung, wenn er von der Maus stammt (den Doppelklick erkennt dort der Zeigerteil). Auf anderen Plattformen ohne Wirkung.
+    /// </summary>
+    /// <param name="suppress">Wird auf <see langword="true"/> gesetzt, wenn der Doppeltipp nicht ausgewertet werden soll.</param>
+    partial void SuppressDoubleTap(ref bool suppress);
 
     /// <summary>
     /// Die Markierungen der Tankstellen.
@@ -179,7 +185,7 @@ public partial class StationMapView : ContentView
     }
 
     /// <summary>
-    /// Wird ausgelöst, wenn der Anwender den Ausschnitt verändert (Ziehen, Wischen, Kneifen, Mausrad, Zoom- und Verschiebeschaltflächen, Zurücksetzen);
+    /// Wird ausgelöst, wenn der Anwender den Ausschnitt verändert (Ziehen, Wischen, Kneifen mit Stufenwechsel, Doppeltipp, Mausrad, Zoom- und Verschiebeschaltflächen, Zurücksetzen);
     /// das Einpassen nach einem neuen Ergebnis löst es nicht aus.
     /// </summary>
     public event EventHandler<ViewportChangedEventArgs>? ViewportChanged;
@@ -218,6 +224,8 @@ public partial class StationMapView : ContentView
             return;
         }
 
+        // Eine laufende Kneifgeste bezieht sich auf die alte Größe; sie endet ohne Wirkung.
+        _pinch.End();
         _viewport = _viewport.Resize(Surface.Width, Surface.Height);
         Render();
     }
@@ -246,6 +254,8 @@ public partial class StationMapView : ContentView
 
     private void FitToContent()
     {
+        // Eine laufende Kneifgeste bezieht sich auf den alten Ausschnitt; ihr Abschluss bleibt ohne Wirkung.
+        _pinch.End();
         _fitPending = false;
         var points = new List<(double, double)>();
         foreach (var marker in Markers ?? [])
@@ -356,6 +366,10 @@ public partial class StationMapView : ContentView
 
     private void Render()
     {
+        // Eine Vorschau der Kneifgeste endet mit jedem Neuzeichnen (auch beim Einpassen oder bei Größenänderung während der Geste).
+        TileLayer.Scale = 1;
+        TileLayer.AnchorX = 0.5;
+        TileLayer.AnchorY = 0.5;
         if (!IsVisible || _viewport is not { } viewport)
         {
             return;
@@ -676,6 +690,14 @@ public partial class StationMapView : ContentView
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
     {
+        if (_pinch.IsActive)
+        {
+            // Während des Kneifens verschiebt das Wischen nicht; der Fixpunkt der Geste bliebe sonst nicht stehen. Die Lage wird mitgeführt, damit danach nichts springt.
+            _lastPanX = e.TotalX;
+            _lastPanY = e.TotalY;
+            return;
+        }
+
         switch (e.StatusType)
         {
             case GestureStatus.Started:
@@ -696,29 +718,95 @@ public partial class StationMapView : ContentView
 
     private void OnPinchUpdated(object? sender, PinchGestureUpdatedEventArgs e)
     {
+        if (_viewport is not { } viewport)
+        {
+            return;
+        }
+
+        // Der Gestenmittelpunkt kommt relativ zur Größe der Karte (0 bis 1) und wird hier in Pixel umgerechnet.
+        var originX = e.ScaleOrigin.X * Surface.Width;
+        var originY = e.ScaleOrigin.Y * Surface.Height;
         switch (e.Status)
         {
             case GestureStatus.Started:
-                _pinchScale = 1;
+                _pinch.Start(originX, originY);
                 break;
             case GestureStatus.Running:
-                _pinchScale = e.Scale;
+                _pinch.Update(e.Scale, originX, originY);
+                ShowPinchPreview(_pinch.Factor, _pinch.OriginX, _pinch.OriginY);
                 break;
             case GestureStatus.Completed:
-                // Ganzzahlige Zoomstufen: eine deutliche Kneifgeste ändert die Stufe um eins.
-                if (_pinchScale > 1.3)
-                {
-                    Zoom(1);
-                }
-                else if (_pinchScale < 0.77)
-                {
-                    Zoom(-1);
-                }
-
-                _pinchScale = 1;
+                CompletePinch(viewport);
+                break;
+            case GestureStatus.Canceled:
+                _pinch.End();
+                Render();
                 break;
             default:
                 break;
         }
+    }
+
+    private void CompletePinch(MapViewport viewport)
+    {
+        if (!_pinch.IsActive)
+        {
+            return;
+        }
+
+        var factor = _pinch.Factor;
+        var originX = _pinch.OriginX;
+        var originY = _pinch.OriginY;
+        _pinch.End();
+        _viewport = viewport.ScaleAtPoint(factor, originX, originY);
+        Render();
+        if (_viewport.Zoom != viewport.Zoom)
+        {
+            RaiseViewportChanged();
+        }
+    }
+
+    private void OnDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        var suppress = false;
+        SuppressDoubleTap(ref suppress);
+        if (suppress || e.GetPosition(Surface) is not { } position || IsOnControl(position))
+        {
+            return;
+        }
+
+        ZoomAndCenterAt(position.X, position.Y);
+    }
+
+    private bool IsOnControl(Point position)
+    {
+        // Ein schnelles zweifaches Antippen der Bedienschaltflächen oder einer Markierung ist kein Doppeltipp auf die Karte.
+        return ControlsPanel.Frame.Contains(position)
+            || _markerButtons.Values.Any(button => button.Frame.Contains(position));
+    }
+
+    private void ZoomAndCenterAt(double x, double y)
+    {
+        if (_viewport is { } viewport)
+        {
+            _viewport = viewport.ZoomAndCenterAt(1, x, y);
+            Render();
+            RaiseViewportChanged();
+        }
+    }
+
+    private void ShowPinchPreview(double factor, double x, double y)
+    {
+        if (_viewport is not { } viewport || Surface.Width <= 0 || Surface.Height <= 0)
+        {
+            return;
+        }
+
+        // Die Vorschau zeigt nur, was beim Einrasten erreichbar ist (Grenzen der Zoomstufen); Markierungen und Route folgen erst beim Neuzeichnen.
+        var min = Math.ScaleB(1.0, MapViewport.MinZoom - viewport.Zoom);
+        var max = Math.ScaleB(1.0, MapViewport.MaxZoom - viewport.Zoom);
+        TileLayer.AnchorX = Math.Clamp(x / Surface.Width, 0, 1);
+        TileLayer.AnchorY = Math.Clamp(y / Surface.Height, 0, 1);
+        TileLayer.Scale = Math.Clamp(factor, min, max);
     }
 }

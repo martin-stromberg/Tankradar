@@ -249,7 +249,9 @@ Verschiebt oder zoomt der Anwender den Ausschnitt, erscheint in den Sucharten St
 „Tankstellen in diesem Bereich laden“. Sie löst genau eine Umkreisabfrage um die Kartenmitte aus (Radius aus der halben
 Diagonale des Ausschnitts, ganze Kilometer); das Ergebnis ersetzt Liste und Marker, der Ausschnitt bleibt erhalten. Ist der
 Ausschnitt größer als 25 km, ist die Schaltfläche deaktiviert und es erscheint der Hinweis „Bitte näher heranzoomen“. Zwischen
-zwei Abfragen gilt eine Sperre von 60 Sekunden. Im Routenmodus ist das Nachladen nicht verfügbar. Die Kartenkomponente
+zwei Abfragen gilt eine Sperre von 60 Sekunden. Im Routenmodus ist das Nachladen nicht verfügbar. Ein Doppeltipp (unter
+Windows Doppelklick) zentriert die Karte auf die angetippte Stelle und zoomt eine Stufe hinein; die Zwei-Finger-Geste zoomt
+fließend um den Gestenmittelpunkt und rastet am Ende auf die nächste ganze Zoomstufe ein. Die Kartenkomponente
 basiert auf OpenStreetMap-Kacheln (Quellenangabe
 „© OpenStreetMap-Mitwirkende“, Zoomen, Verschieben, Preismarkierungen in Grün/Teal/Rot/Grau, markierte
 Suchposition, Tippen öffnet die Details). Kacheln werden mit identifizierender Kennung (App-Version, Projekt-URL) abgerufen und nach den HTTP-Caching-Angaben des Servers im Cache-Verzeichnis zwischengespeichert (Rückfall 7 Tage);
