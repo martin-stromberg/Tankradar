@@ -138,10 +138,7 @@ public sealed class MapViewport
     /// <returns>Der verschobene Ausschnitt.</returns>
     public MapViewport PanByPixels(double deltaX, double deltaY)
     {
-        var world = WorldSize(Zoom);
-        var x = _centerX - deltaX;
-        x = ((x % world) + world) % world;
-        return new MapViewport(x, _centerY - deltaY, Zoom, Width, Height);
+        return new MapViewport(WrapX(_centerX - deltaX, Zoom), _centerY - deltaY, Zoom, Width, Height);
     }
 
     /// <summary>
@@ -231,9 +228,8 @@ public sealed class MapViewport
     /// <returns>Die Position.</returns>
     public GeoPosition ToLatLon(double x, double y)
     {
-        var worldY = Math.Clamp(_centerY + (y - (Height / 2)), 0, WorldSize(Zoom));
-        var worldX = _centerX + (x - (Width / 2));
-        var latitude = Math.Clamp(LatitudeOf(worldY, Zoom), -MaxLatitude, MaxLatitude);
+        var (worldX, worldY) = ToWorld(x, y);
+        var latitude = Math.Clamp(LatitudeOf(Math.Clamp(worldY, 0, WorldSize(Zoom)), Zoom), -MaxLatitude, MaxLatitude);
         return new GeoPosition(latitude, LongitudeOf(worldX, Zoom));
     }
 
@@ -251,6 +247,63 @@ public sealed class MapViewport
             corners.Max(corner => corner.Longitude));
     }
 
+    /// <summary>
+    /// Rechnet den Gesamtfaktor einer Kneifgeste in ganze Zoomstufen um (gerundeter Zweierlogarithmus).
+    /// </summary>
+    /// <param name="factor">Der Gesamtfaktor (größer als 1 vergrößert).</param>
+    /// <returns>Die Änderung der Zoomstufe; 0 bei ungültigem Faktor (nicht endlich, 0 oder negativ).</returns>
+    public static int ZoomStepsFor(double factor)
+    {
+        if (!double.IsFinite(factor) || factor <= 0)
+        {
+            return 0;
+        }
+
+        return (int)Math.Round(Math.Log2(factor), MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// Zoomt um den auf ganze Stufen gerundeten Faktor so, dass der Punkt unter der Bildschirmposition stehen bleibt (Fixpunkt der Kneifgeste).
+    /// </summary>
+    /// <param name="factor">Der Gesamtfaktor der Geste.</param>
+    /// <param name="x">Der Abstand des Fixpunkts vom linken Rand in Pixeln.</param>
+    /// <param name="y">Der Abstand des Fixpunkts vom oberen Rand in Pixeln.</param>
+    /// <returns>Der Ausschnitt; derselbe, wenn sich die Zoomstufe nicht ändert.</returns>
+    public MapViewport ScaleAtPoint(double factor, double x, double y)
+    {
+        var target = Math.Clamp(Zoom + ZoomStepsFor(factor), MinZoom, MaxZoom);
+        if (target == Zoom)
+        {
+            return this;
+        }
+
+        var scale = Math.ScaleB(1.0, target - Zoom);
+        var (worldX, worldY) = ToWorld(x, y);
+        var centerX = WrapX((worldX * scale) - (x - (Width / 2)), target);
+        var centerY = (worldY * scale) - (y - (Height / 2));
+        return new MapViewport(centerX, centerY, target, Width, Height);
+    }
+
+    /// <summary>
+    /// Zentriert den Ausschnitt auf die Bildschirmposition und ändert die Zoomstufe (Doppeltipp); an der Grenze wird nur zentriert.
+    /// </summary>
+    /// <param name="delta">Die Änderung der Zoomstufe (positiv vergrößert).</param>
+    /// <param name="x">Der Abstand der neuen Mitte vom linken Rand in Pixeln.</param>
+    /// <param name="y">Der Abstand der neuen Mitte vom oberen Rand in Pixeln.</param>
+    /// <returns>Der neue Ausschnitt.</returns>
+    public MapViewport ZoomAndCenterAt(int delta, double x, double y)
+    {
+        var target = Math.Clamp(Zoom + delta, MinZoom, MaxZoom);
+        var scale = Math.ScaleB(1.0, target - Zoom);
+        var (worldX, worldY) = ToWorld(x, y);
+        return new MapViewport(WrapX(worldX * scale, target), Math.Clamp(worldY, 0, WorldSize(Zoom)) * scale, target, Width, Height);
+    }
+
+    private (double X, double Y) ToWorld(double x, double y)
+    {
+        return (_centerX + (x - (Width / 2)), _centerY + (y - (Height / 2)));
+    }
+
     private static bool Fits(IReadOnlyList<(double Latitude, double Longitude)> points, int zoom, double availableWidth, double availableHeight)
     {
         var xs = points.Select(point => XOf(point.Longitude, zoom)).ToList();
@@ -261,6 +314,12 @@ public sealed class MapViewport
     private static double WorldSize(int zoom)
     {
         return (double)TileSize * (1 << zoom);
+    }
+
+    private static double WrapX(double x, int zoom)
+    {
+        var world = WorldSize(zoom);
+        return ((x % world) + world) % world;
     }
 
     private static double XOf(double longitude, int zoom)

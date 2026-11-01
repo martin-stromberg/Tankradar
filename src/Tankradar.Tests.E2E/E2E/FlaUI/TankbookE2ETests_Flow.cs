@@ -48,10 +48,12 @@ public class TankbookE2ETests_Flow : TankbookE2ETestBase
             WaitForTexts("Tankbook.Vehicle.Details", "Elektro • Start 84.350 km • Startverbrauch 16,5 kWh/100 km");
 
             PressForVehicle("Tankbook.Vehicle.Delete", "Golf Variant");
-            Assert.Equal("Fahrzeug „Golf Variant“ löschen?", WaitForAutomationId("Tankbook.Vehicle.DeleteQuestion").Name);
-            Assert.Equal("Ja, löschen", WaitForAutomationId("Tankbook.Vehicle.DeleteConfirm").Name);
+            // Der Bestätigungsdialog wird gerade aufgebaut; direkt nach dem Einblenden meldet UI Automation den Namen mitunter als nicht unterstützt.
+            // Die Texte werden daher wartend gelesen.
+            WaitForTexts("Tankbook.Vehicle.DeleteQuestion", "Fahrzeug „Golf Variant“ löschen?");
+            WaitForTexts("Tankbook.Vehicle.DeleteConfirm", "Ja, löschen");
             Assert.Equal("Fahrzeug „Golf Variant“ endgültig löschen", Tankbook.ReadHint("Tankbook.Vehicle.DeleteConfirm"));
-            Assert.Equal("Abbrechen", WaitForAutomationId("Tankbook.Vehicle.DeleteCancel").Name);
+            WaitForTexts("Tankbook.Vehicle.DeleteCancel", "Abbrechen");
             Assert.Equal("Fahrzeug „Golf Variant“ behalten", Tankbook.ReadHint("Tankbook.Vehicle.DeleteCancel"));
             Press("Tankbook.Vehicle.DeleteCancel");
             WaitUntil(() => !Exists("Tankbook.Vehicle.DeleteQuestion"), "Die Rückfrage blieb stehen.");

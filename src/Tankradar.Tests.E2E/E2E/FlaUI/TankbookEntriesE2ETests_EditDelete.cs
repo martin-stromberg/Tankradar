@@ -35,12 +35,15 @@ public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
             WaitForTexts("TankbookEntry.Item.Distance", "Strecke 1.000 km", "Strecke 500 km");
 
             Tankbook.PressForEntry("TankbookEntry.Item.Delete", 0);
-            var question = WaitForAutomationId("TankbookEntry.Item.DeleteQuestion").Name;
+            // Der Bestätigungsdialog wird gerade aufgebaut; direkt nach dem Einblenden meldet UI Automation den Namen mitunter als nicht unterstützt.
+            // Die Texte werden daher wartend gelesen.
+            var question = string.Empty;
+            WaitUntil(() => (question = ReadTexts("TankbookEntry.Item.DeleteQuestion").FirstOrDefault() ?? string.Empty).Length > 0, "Die Löschfrage wird nicht angezeigt.");
             Assert.StartsWith("Vorgang vom ", question, StringComparison.Ordinal);
             Assert.EndsWith("(Alpha Tankstelle) löschen? Das lässt sich nicht rückgängig machen.", question, StringComparison.Ordinal);
-            Assert.Equal("Ja, löschen", WaitForAutomationId("TankbookEntry.Item.DeleteConfirm").Name);
+            WaitForTexts("TankbookEntry.Item.DeleteConfirm", "Ja, löschen");
             Assert.EndsWith("Alpha Tankstelle endgültig löschen", Tankbook.ReadHint("TankbookEntry.Item.DeleteConfirm"), StringComparison.Ordinal);
-            Assert.Equal("Abbrechen", WaitForAutomationId("TankbookEntry.Item.DeleteCancel").Name);
+            WaitForTexts("TankbookEntry.Item.DeleteCancel", "Abbrechen");
             Assert.Equal("Vorgang behalten", Tankbook.ReadHint("TankbookEntry.Item.DeleteCancel"));
 
             Press("TankbookEntry.Item.DeleteCancel");

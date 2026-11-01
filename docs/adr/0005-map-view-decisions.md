@@ -123,6 +123,23 @@ Die Ansicht „Karte“ ist eine Vollflächenkarte: `StationMapView` füllt den 
   mit der Maus und Zoom mit dem Mausrad), und Zoom über Schaltflächen und Kneifgeste mit ganzzahligen Stufen. Grund: Bedienung ohne Wischgeste (Tastatur, Sprachausgabe) und
   Prüfbarkeit per UI Automation, die keine Mausgesten braucht. „Ausschnitt zurücksetzen“ passt den
   Ausschnitt wieder auf alle Ergebnisse und die Suchposition ein (statt „Auf mich zentrieren“).
+  *(Ergänzt nach Issue #19:)* Die Kneifgeste verläuft fließend wie in üblichen Kartenansichten: Die
+  Einzelfaktoren der Geste (`PinchGestureUpdatedEventArgs.Scale`, Faktor seit dem letzten Update) werden in
+  `MapPinchTracker` multipliziert; während der Geste wird nur die Kachelebene um den Gestenmittelpunkt
+  (`ScaleOrigin`, relativ zur Kartengröße) skaliert angezeigt, ohne Kachelabruf; Markierungen und Route folgen erst
+  beim Einrasten. Bei Gestenende rastet der Zoom auf die nächste ganze Stufe ein (gerundeter Zweierlogarithmus,
+  `MapViewport.ZoomStepsFor`), der Punkt unter dem Gestenmittelpunkt bleibt stehen (`MapViewport.ScaleAtPoint`).
+  Wischen wird während des Kneifens ignoriert. `ViewportChanged` gibt es nur bei geänderter Stufe.
+  Zoom-Schaltflächen und Mausrad behalten die Mitte bei.
+- **Doppeltipp zentriert und vergrößert** *(Issue #19).* Ein Doppeltipp (`TapGestureRecognizer`,
+  `NumberOfTapsRequired="2"`) bzw. unter Windows ein Doppelklick zentriert die Karte auf die angetippte Stelle und
+  zoomt eine Stufe hinein (`MapViewport.ZoomAndCenterAt`); bei Stufe 18 wird nur zentriert. Das zählt als
+  Nutzeraktion (`ViewportChanged`). Ein Doppeltipp auf eine Markierung öffnet wie der einfache Tipp sofort die
+  Detailansicht. Den Maus-Doppelklick erkennt unter Windows der Zeigerteil selbst (`MapDoubleTapDetector`:
+  höchstens 500 ms und 4 Pixel zwischen den Klicks), weil die Karte die Mausereignisse für das Ziehen behandelt;
+  der Doppeltipp der Gestenerkennung wird dann für die Maus unterdrückt, damit nicht doppelt gezoomt wird. Die
+  Gesten sind über UI Automation nicht auslösbar (E2E-Regel ohne Maus- und Klickaufrufe); abgesichert sind die
+  Rechenlogik und die Erkennung per Unit-Test, die Gesten selbst werden bei der Abnahme von Hand geprüft.
 - **Zähler** „X von Y Stationen sichtbar“ (Entwurf: „18 Stationen (10 km)“), da er sich mit dem
   Ausschnitt ändert und so Zoomen und Verschieben prüfbar macht; zusätzlich die Zoomstufe.
 - **Kartenhöhe fest (440 px) innerhalb der scrollenden Suchseite.** Auf Touchgeräten kann die

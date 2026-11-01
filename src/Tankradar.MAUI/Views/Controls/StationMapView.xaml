@@ -20,6 +20,7 @@
         <Grid.GestureRecognizers>
             <PanGestureRecognizer PanUpdated="OnPanUpdated" />
             <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
+            <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnDoubleTapped" />
         </Grid.GestureRecognizers>
 
         <AbsoluteLayout x:Name="TileLayer" InputTransparent="True" />
@@ -47,7 +48,7 @@
         </Border>
 
         <!-- Zoom, Ausschnitt zurücksetzen und Verschieben oben rechts (Verschieben per Schaltfläche für Bedienung ohne Wischgeste, z. B. Tastatur und Sprachausgabe) -->
-        <VerticalStackLayout HorizontalOptions="End" VerticalOptions="Start" Margin="{StaticResource MapOverlayMargin}" Spacing="8">
+        <VerticalStackLayout x:Name="ControlsPanel" HorizontalOptions="End" VerticalOptions="Start" Margin="{StaticResource MapOverlayMargin}" Spacing="8">
             <VerticalStackLayout HorizontalOptions="End" Spacing="8">
                 <Button Text="+"
                         Style="{StaticResource MapControlButton}"
