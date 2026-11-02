@@ -50,15 +50,30 @@ public sealed class TankbookE2EDriver
     public void OpenTab()
     {
         // Der Reiter zeigt seine Wurzel (Vorgänge) oder die zuletzt darauf geöffnete Fahrzeugverwaltung (Titel „Fahrzeuge“).
-        _navigateToTab("Tankbuch", ["TankbookEntries.ManageVehicles", "Tankbook.AddVehicle"]);
+        _navigateToTab("Tankbuch", ["TankbookEntries.Vehicle", "TankbookEntries.NoVehicles", "Tankbook.AddVehicle"]);
     }
 
     /// <summary>
-    /// Öffnet auf der Tab-Seite über „Fahrzeuge verwalten“ die Fahrzeugverwaltung und wartet, bis „Fahrzeug hinzufügen“ angezeigt wird.
+    /// Öffnet auf der Tab-Seite die Fahrzeugverwaltung: ohne Fahrzeug über „Fahrzeug hinzufügen“, sonst über die Fahrzeugliste im Kopf;
+    /// wartet, bis „Fahrzeug hinzufügen“ der Verwaltung angezeigt wird.
     /// </summary>
     public void ManageVehicles()
     {
-        Press("TankbookEntries.ManageVehicles");
+        if (Exists("TankbookEntries.AddVehicle"))
+        {
+            // „Fahrzeug hinzufügen“ im Leerzustand öffnet die Verwaltung direkt mit dem Anlegeformular;
+            // „Abbrechen“ schließt es und zeigt die Liste mit „Fahrzeug hinzufügen“.
+            Press("TankbookEntries.AddVehicle");
+            WaitFor("Tankbook.Form.Name");
+            Press("Tankbook.Form.Cancel");
+        }
+        else
+        {
+            Press("TankbookEntries.SelectVehicle");
+            WaitFor("TankbookEntries.ManageVehicles");
+            Press("TankbookEntries.ManageVehicles");
+        }
+
         WaitFor("Tankbook.AddVehicle");
     }
 
@@ -69,7 +84,7 @@ public sealed class TankbookE2EDriver
     {
         Press("NavigationViewBackButton");
         _waitUntil(() => !Exists("Tankbook.AddVehicle"), "Die Fahrzeugverwaltung wurde nicht geschlossen.");
-        WaitFor("TankbookEntries.ManageVehicles");
+        _waitUntil(() => Exists("TankbookEntries.Vehicle") || Exists("TankbookEntries.NoVehicles"), "Die Vorgangsseite wurde nicht angezeigt.");
     }
 
     /// <summary>
@@ -358,7 +373,7 @@ public sealed class TankbookE2EDriver
         {
             LeaveVehicleManagement();
         }
-        else if (!Exists("TankbookEntries.ManageVehicles"))
+        else if (!Exists("TankbookEntries.Vehicle") && !Exists("TankbookEntries.NoVehicles"))
         {
             OpenTab();
             if (Exists("Tankbook.AddVehicle"))

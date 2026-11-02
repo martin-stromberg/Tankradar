@@ -131,14 +131,22 @@
                         <DataTemplate x:DataType="vm:FavoriteEntryItemViewModel">
                             <Border Style="{StaticResource GroupCard}">
                                 <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                                    <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
-                                           Style="{StaticResource headline-md}"
-                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                                           AutomationId="FavoriteGroup.Entry.Name">
-                                        <Label.GestureRecognizers>
-                                            <TapGestureRecognizer Command="{Binding OpenCommand}" />
-                                        </Label.GestureRecognizers>
-                                    </Label>
+                                    <Grid>
+                                        <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
+                                               Style="{StaticResource headline-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="FavoriteGroup.Entry.Name" />
+                                        <!-- Transparente Ebene über dem Namen: macht das Antippen auch über Bedienhilfen auslösbar. -->
+                                        <Button Command="{Binding OpenCommand}"
+                                                Padding="0"
+                                                BorderWidth="0"
+                                                BackgroundColor="Transparent"
+                                                Opacity="0.01"
+                                                MinimumHeightRequest="0"
+                                                MinimumWidthRequest="0"
+                                                SemanticProperties.Description="{Binding StationName}"
+                                                AutomationId="FavoriteGroup.Entry.Open" />
+                                    </Grid>
                                     <Label Text="{Binding SubName}" MaxLines="2" LineBreakMode="TailTruncation"
                                            IsVisible="{Binding HasSubName}"
                                            Style="{StaticResource body-sm}"
@@ -158,11 +166,7 @@
                                            Style="{StaticResource body-md}"
                                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                            AutomationId="FavoriteGroup.Entry.Note" />
-                                    <Button Text="{x:Static texts:FavoritesTexts.OpenDetails}"
-                                            Command="{Binding OpenCommand}"
-                                            Style="{StaticResource GroupOutlineButton}"
-                                            SemanticProperties.Description="{Binding StationName}"
-                                            AutomationId="FavoriteGroup.Entry.Open" />
+
                                     <Button Text="{x:Static texts:FavoritesTexts.EditEntry}"
                                             Command="{Binding EditCommand}"
                                             Style="{StaticResource GroupOutlineButton}"

@@ -16,6 +16,7 @@ public partial class MapViewModel
     /// <summary>
     /// Mindestabstand zwischen zwei Abfragen des sichtbaren Kartenausschnitts (Nutzungsbedingungen der Preisquelle: eine Abfrage je Minute).
     /// </summary>
+    /// <returns>Der Wert.</returns>
     public static readonly TimeSpan AreaReloadMinInterval = TimeSpan.FromSeconds(60);
 
     private Command _reloadVisibleAreaCommand = null!;

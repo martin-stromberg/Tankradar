@@ -23,39 +23,41 @@
     <ScrollView>
         <VerticalStackLayout Padding="{StaticResource space-md}" Spacing="{StaticResource space-md}">
 
-            <!-- Kopf: Fahrzeug -->
+            <!-- Kopf: Fahrzeugpanel; Antippen (oder die Symbolschaltfläche rechts auf Höhe des Namens) klappt die Fahrzeugliste auf und zu -->
             <VerticalStackLayout Spacing="{StaticResource space-xs}">
-                <Label Text="{Binding VehicleName}"
-                       MaxLines="2"
-                       LineBreakMode="TailTruncation"
-                       IsVisible="{Binding HasVehicle}"
-                       Style="{StaticResource headline-md}"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                       SemanticProperties.HeadingLevel="Level1"
-                       AutomationId="TankbookEntries.Vehicle" />
-                <Label Text="{Binding VehicleDetails}"
-                       IsVisible="{Binding HasVehicle}"
-                       Style="{StaticResource body-md}"
-                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                       AutomationId="TankbookEntries.VehicleDetails" />
+                <Border Style="{StaticResource TankbookCard}"
+                        Padding="{StaticResource space-sm}"
+                        IsVisible="{Binding HasVehicle}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <VerticalStackLayout.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleVehiclePickerCommand}" />
+                            </VerticalStackLayout.GestureRecognizers>
+                            <Label Text="{Binding VehicleName}"
+                                   MaxLines="2"
+                                   LineBreakMode="TailTruncation"
+                                   Style="{StaticResource headline-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                   SemanticProperties.HeadingLevel="Level1"
+                                   AutomationId="TankbookEntries.Vehicle" />
+                            <Label Text="{Binding VehicleDetails}"
+                                   Style="{StaticResource body-md}"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                   AutomationId="TankbookEntries.VehicleDetails" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="{x:Static texts:TankbookTexts.SelectVehicleGlyph}"
+                                Command="{Binding ToggleVehiclePickerCommand}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                Padding="0"
+                                WidthRequest="{StaticResource MinimumTouchTarget}"
+                                FontSize="18"
+                                VerticalOptions="Start"
+                                SemanticProperties.Description="{x:Static texts:TankbookTexts.SelectVehicleHint}"
+                                AutomationId="TankbookEntries.SelectVehicle" />
+                    </Grid>
+                </Border>
 
-                <!-- Fahrzeugwechsel: Schaltfläche mit dem Namen klappt die Chips der Fahrzeuge auf; daneben der Weg zur Verwaltung -->
-                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center">
-                    <Label Text="{x:Static texts:TankbookTexts.SelectVehicleLabel}"
-                           IsVisible="{Binding HasVehicles}"
-                           Style="{StaticResource UnitLabel}"
-                           Margin="0,0,8,0" />
-                    <Button Text="{Binding VehicleName}"
-                            LineBreakMode="TailTruncation"
-                            Command="{Binding ToggleVehiclePickerCommand}"
-                            IsVisible="{Binding HasVehicle}"
-                            Style="{StaticResource FuelKindChip}"
-                            AutomationId="TankbookEntries.SelectVehicle" />
-                    <Button Text="{x:Static texts:TankbookTexts.ManageVehicles}"
-                            Command="{Binding ManageVehiclesCommand}"
-                            Style="{StaticResource FuelKindChip}"
-                            AutomationId="TankbookEntries.ManageVehicles" />
-                </FlexLayout>
                 <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
                             IsVisible="{Binding IsVehiclePickerOpen}"
                             BindableLayout.ItemsSource="{Binding VehicleOptions}">
@@ -77,6 +79,12 @@
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>
                 </FlexLayout>
+                <Button Text="{x:Static texts:TankbookTexts.ManageVehicles}"
+                        Command="{Binding ManageVehiclesCommand}"
+                        IsVisible="{Binding IsVehiclePickerOpen}"
+                        Style="{StaticResource FuelKindChip}"
+                        HorizontalOptions="Start"
+                        AutomationId="TankbookEntries.ManageVehicles" />
 
                 <Label Text="{x:Static texts:TankbookEntryTexts.Intro}"
                        Style="{StaticResource body-sm}"

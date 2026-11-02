@@ -47,51 +47,23 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- Zoom, Ausschnitt zurücksetzen und Verschieben oben rechts (Verschieben per Schaltfläche für Bedienung ohne Wischgeste, z. B. Tastatur und Sprachausgabe) -->
+        <!-- Zoom und Ausschnitt zurücksetzen oben rechts; das Verschieben der Karte erfolgt per Wischgeste bzw. Ziehen -->
         <VerticalStackLayout x:Name="ControlsPanel" HorizontalOptions="End" VerticalOptions="Start" Margin="{StaticResource MapOverlayMargin}" Spacing="8">
-            <VerticalStackLayout HorizontalOptions="End" Spacing="8">
-                <Button Text="+"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnZoomInClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.ZoomIn}"
-                        AutomationId="Map.ZoomIn" />
-                <Button Text="−"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnZoomOutClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.ZoomOut}"
-                        AutomationId="Map.ZoomOut" />
-                <Button Text="◎"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnRecenterClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.Recenter}"
-                        AutomationId="Map.Recenter" />
-            </VerticalStackLayout>
-            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="4" HorizontalOptions="End">
-                <Button Grid.Row="0" Grid.Column="1"
-                        Text="▲"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnPanNorthClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.PanNorth}"
-                        AutomationId="Map.Pan.North" />
-                <Button Grid.Row="1" Grid.Column="0"
-                        Text="◀"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnPanWestClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.PanWest}"
-                        AutomationId="Map.Pan.West" />
-                <Button Grid.Row="1" Grid.Column="2"
-                        Text="▶"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnPanEastClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.PanEast}"
-                        AutomationId="Map.Pan.East" />
-                <Button Grid.Row="2" Grid.Column="1"
-                        Text="▼"
-                        Style="{StaticResource MapControlButton}"
-                        Clicked="OnPanSouthClicked"
-                        SemanticProperties.Description="{x:Static texts:MapTexts.PanSouth}"
-                        AutomationId="Map.Pan.South" />
-            </Grid>
+            <Button Text="+"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnZoomInClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.ZoomIn}"
+                    AutomationId="Map.ZoomIn" />
+            <Button Text="−"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnZoomOutClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.ZoomOut}"
+                    AutomationId="Map.ZoomOut" />
+            <Button Text="◎"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnRecenterClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.Recenter}"
+                    AutomationId="Map.Recenter" />
         </VerticalStackLayout>
     </Grid>
 </ContentView>

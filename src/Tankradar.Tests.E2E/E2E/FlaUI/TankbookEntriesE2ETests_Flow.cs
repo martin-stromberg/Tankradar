@@ -18,7 +18,7 @@ public class TankbookEntriesE2ETests_Flow : TankbookE2ETestBase
             Assert.False(Exists("Tankbook.Vehicle.Entries"));
             Tankbook.OpenEntries("Golf");
             WaitForAutomationId("TankbookEntries.Empty");
-            Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.SelectVehicle").Name);
+            Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.Vehicle").Name);
             Press("TankbookEntries.SelectVehicle");
             Assert.Equal("Fahrzeug „Golf“ auswählen", Tankbook.ReadHint("TankbookEntries.Vehicle.Option.0"));
             Press("TankbookEntries.SelectVehicle");

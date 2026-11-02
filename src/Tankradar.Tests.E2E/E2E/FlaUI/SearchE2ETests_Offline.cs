@@ -29,7 +29,7 @@ public class SearchE2ETests_Offline : SearchE2ETestBase
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
             Assert.Equal("Offline: keine Verbindung zum Preisdienst.", WaitForAutomationId("Search.OfflineBanner").Name);
             Assert.Equal("Es werden die zuletzt bekannten Preise angezeigt.", WaitForAutomationId("Search.SourceNote").Name);
-            Assert.Equal(["1,859 €", "1,879 €"], ReadTexts("Search.Price.SuperE5"));
+            Assert.Equal(["1,859 €/L", "1,879 €/L"], ReadTexts("Search.Price.SuperE5"));
             Assert.All(ReadTexts("Search.Age.SuperE5"), text => Assert.Matches(new Regex(@"^vor \d+ Min\.$"), text));
             Assert.Equal(requestsBeforeRestart, Server.TotalRequests);
         });

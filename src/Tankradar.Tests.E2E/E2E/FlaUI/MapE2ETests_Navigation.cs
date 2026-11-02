@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Zoomen und Verschieben der Karte, Zurücksetzen des Ausschnitts und Auf- und Zuklappen der Trefferliste (Bedienung ohne Geste über Schaltflächen per UI Automation).
+/// E2E-Test: Zoomen der Karte, Zurücksetzen des Ausschnitts und Auf- und Zuklappen der Trefferliste (Bedienung ohne Geste über Schaltflächen per UI Automation).
 /// </summary>
 public class MapE2ETests_Navigation : MapE2ETestBase
 {
@@ -88,39 +88,4 @@ public class MapE2ETests_Navigation : MapE2ETestBase
         });
     }
 
-    /// <summary>
-    /// Prüft, dass das Verschieben nach Osten die westlichen Markierungen aus dem Ausschnitt schiebt, die Gegenrichtung sie zurückholt und das Zurücksetzen alle zeigt.
-    /// </summary>
-    [Fact]
-    public void Pan_MovesMarkersOutOfAndBackIntoView()
-    {
-        RunWithDiagnostics(() =>
-        {
-            SearchAndShowMap();
-
-            for (var step = 0; step < 8; step++)
-            {
-                PressMapButton("Map.Pan.East");
-            }
-
-            WaitForMapCount("0 von 2 Stationen sichtbar");
-            Assert.Empty(FindMarkers());
-
-            for (var step = 0; step < 8; step++)
-            {
-                PressMapButton("Map.Pan.West");
-            }
-
-            WaitForMapCount("2 von 2 Stationen sichtbar");
-
-            for (var step = 0; step < 8; step++)
-            {
-                PressMapButton("Map.Pan.North");
-            }
-
-            WaitForMapCount("0 von 2 Stationen sichtbar");
-            PressMapButton("Map.Recenter");
-            WaitForMapCount("2 von 2 Stationen sichtbar");
-        });
-    }
 }

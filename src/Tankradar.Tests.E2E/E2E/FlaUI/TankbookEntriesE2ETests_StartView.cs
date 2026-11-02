@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test (Issue #20): Der Tab „Tankbuch“ zeigt direkt die Tank- und Ladevorgänge des Fahrzeugs; die Fahrzeugverwaltung ist über den Kopf erreichbar.
+/// E2E-Test (Issue #20): Der Tab „Tankbuch“ zeigt direkt die Tank- und Ladevorgänge des Fahrzeugs; die Fahrzeugverwaltung ist über den Leerzustand bzw. die Fahrzeugliste im Kopf erreichbar.
 /// </summary>
 public class TankbookEntriesE2ETests_StartView : TankbookE2ETestBase
 {
@@ -24,7 +24,7 @@ public class TankbookEntriesE2ETests_StartView : TankbookE2ETestBase
             WaitForPageTitle("Tankbuch");
             WaitForTexts("TankbookEntries.Vehicle", "Golf");
             WaitForTexts("TankbookEntry.Item.Station", "Alpha Tankstelle");
-            Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.SelectVehicle").Name);
+            Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.Vehicle").Name);
             WaitForAutomationId("TankbookEntries.Statistics.Heading");
             WaitForAutomationId("TankbookEntries.Export.Start");
             Assert.False(Exists("Tankbook.AddVehicle"));
@@ -32,7 +32,7 @@ public class TankbookEntriesE2ETests_StartView : TankbookE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass „Fahrzeuge verwalten“ die Verwaltung (Titel „Fahrzeuge“, Hinweis auf den Tab) öffnet und „Zurück“ wieder zur Tab-Seite führt.
+    /// Prüft, dass ohne Fahrzeug der Weg über „Fahrzeug hinzufügen“ die Verwaltung (Titel „Fahrzeuge“, Hinweis auf den Tab) öffnet und „Zurück“ wieder zur Tab-Seite führt.
     /// </summary>
     [Fact]
     public void ManageVehicles_OpensManagement_AndBackReturnsToTab()
@@ -40,7 +40,7 @@ public class TankbookEntriesE2ETests_StartView : TankbookE2ETestBase
         RunWithDiagnostics(() =>
         {
             Tankbook.OpenTab();
-            Assert.Equal("Fahrzeuge verwalten", WaitForAutomationId("TankbookEntries.ManageVehicles").Name);
+            Assert.Equal("Fahrzeug hinzufügen", WaitForAutomationId("TankbookEntries.AddVehicle").Name);
 
             Tankbook.ManageVehicles();
             WaitForPageTitle("Fahrzeuge");

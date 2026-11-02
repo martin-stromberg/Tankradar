@@ -51,6 +51,16 @@ public static class TankbookTexts
     public const string SelectVehicleLabel = "Fahrzeug";
 
     /// <summary>
+    /// Zeichen der Symbolschaltfläche, die die Fahrzeugliste im Kopf des Tankbuchs auf- und zuklappt.
+    /// </summary>
+    public const string SelectVehicleGlyph = "▾";
+
+    /// <summary>
+    /// Beschreibung der Symbolschaltfläche der Fahrzeugauswahl für Bedienhilfen.
+    /// </summary>
+    public const string SelectVehicleHint = "Fahrzeugliste ein- oder ausklappen";
+
+    /// <summary>
     /// Hinweis in der Fahrzeugverwaltung, dass die Vorgänge im Tab „Tankbuch“ erfasst werden.
     /// </summary>
     public const string ChooseVehicleIntro = "Hier legst du Fahrzeuge an, bearbeitest und löschst sie. Tank- und Ladevorgänge erfasst du im Tab „Tankbuch“; dort wählst du das Fahrzeug im Kopf aus.";

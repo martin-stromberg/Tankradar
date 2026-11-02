@@ -22,9 +22,9 @@ public class SearchE2ETests_Basic : SearchE2ETestBase
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
             Assert.False(Exists("Search.StatusMessage"));
             Assert.False(Exists("Search.EmptyState"));
-            Assert.Equal(["1,859 €", "1,879 €"], ReadTexts("Search.Price.SuperE5"));
-            Assert.Equal(["1,799 €", "1,819 €"], ReadTexts("Search.Price.SuperE10"));
-            Assert.Equal(["1,699 €"], ReadTexts("Search.Price.Diesel"));
+            Assert.Equal(["1,859 €/L", "1,879 €/L"], ReadTexts("Search.Price.SuperE5"));
+            Assert.Equal(["1,799 €/L", "1,819 €/L"], ReadTexts("Search.Price.SuperE10"));
+            Assert.Equal(["1,699 €/L"], ReadTexts("Search.Price.Diesel"));
             Assert.All(ReadTexts("Search.Age.SuperE5"), text => Assert.Equal("vor 0 Min.", text));
             var distances = ReadTexts("Search.Station.Distance");
             Assert.Equal(2, distances.Count);

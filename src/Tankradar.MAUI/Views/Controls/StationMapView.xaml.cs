@@ -8,7 +8,7 @@ namespace Tankradar.MAUI.Views.Controls;
 
 /// <summary>
 /// Plattformübergreifende Karte auf Basis von OpenStreetMap-Kacheln: gleiche Darstellung unter iOS und Windows (Kacheln als Bilder, Markierungen als Schaltflächen),
-/// dadurch auch über UI Automation prüfbar. Die Karte lässt sich per Zoom-Schaltflächen und Kneifgeste (fließend um den Gestenmittelpunkt) zoomen, per Doppeltipp auf eine Stelle zentrieren und vergrößern sowie per Wischgeste und Schaltflächen verschieben.
+/// dadurch auch über UI Automation prüfbar. Die Karte lässt sich per Zoom-Schaltflächen und Kneifgeste (fließend um den Gestenmittelpunkt) zoomen, per Doppeltipp auf eine Stelle zentrieren und vergrößern sowie per Wischgeste bzw. Ziehen verschieben.
 /// Sie zeigt die Tankstellenmarkierungen mit Preis (Farbe nach Preisniveau) und die markierte Suchposition; die Quellenangabe legt die Seite über die Karte.
 /// Bewegt der Anwender den Ausschnitt, meldet die Karte das über <see cref="ViewportChanged"/>.
 /// </summary>
@@ -85,7 +85,6 @@ public partial class StationMapView : ContentView
 
     private const double MarkerHeight = 44;
     private const double MarkerPriceWidth = 88;
-    private const double PanFraction = 0.4;
     private const double FitPadding = 64;
     private static readonly TimeSpan TileDelay = TimeSpan.FromMilliseconds(150);
 
@@ -185,7 +184,7 @@ public partial class StationMapView : ContentView
     }
 
     /// <summary>
-    /// Wird ausgelöst, wenn der Anwender den Ausschnitt verändert (Ziehen, Wischen, Kneifen mit Stufenwechsel, Doppeltipp, Mausrad, Zoom- und Verschiebeschaltflächen, Zurücksetzen);
+    /// Wird ausgelöst, wenn der Anwender den Ausschnitt verändert (Ziehen, Wischen, Kneifen mit Stufenwechsel, Doppeltipp, Mausrad, Zoomschaltflächen, Zurücksetzen);
     /// das Einpassen nach einem neuen Ergebnis löst es nicht aus.
     /// </summary>
     public event EventHandler<ViewportChangedEventArgs>? ViewportChanged;
@@ -631,17 +630,6 @@ public partial class StationMapView : ContentView
         }
     }
 
-    private void Pan(double fractionX, double fractionY)
-    {
-        if (_viewport is { } viewport)
-        {
-            // Der Ausschnitt wandert in die Richtung, die Karte also entgegengesetzt.
-            _viewport = viewport.PanByPixels(-fractionX * viewport.Width, -fractionY * viewport.Height);
-            Render();
-            RaiseViewportChanged();
-        }
-    }
-
     private void PanByPixels(double deltaX, double deltaY)
     {
         if (_viewport is { } viewport)
@@ -666,26 +654,6 @@ public partial class StationMapView : ContentView
     {
         FitToContent();
         RaiseViewportChanged();
-    }
-
-    private void OnPanNorthClicked(object? sender, EventArgs e)
-    {
-        Pan(0, -PanFraction);
-    }
-
-    private void OnPanSouthClicked(object? sender, EventArgs e)
-    {
-        Pan(0, PanFraction);
-    }
-
-    private void OnPanEastClicked(object? sender, EventArgs e)
-    {
-        Pan(PanFraction, 0);
-    }
-
-    private void OnPanWestClicked(object? sender, EventArgs e)
-    {
-        Pan(-PanFraction, 0);
     }
 
     private void OnPanUpdated(object? sender, PanUpdatedEventArgs e)
