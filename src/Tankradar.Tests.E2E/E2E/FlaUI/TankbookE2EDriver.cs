@@ -61,7 +61,11 @@ public sealed class TankbookE2EDriver
     {
         if (Exists("TankbookEntries.AddVehicle"))
         {
+            // „Fahrzeug hinzufügen“ im Leerzustand öffnet die Verwaltung direkt mit dem Anlegeformular;
+            // „Abbrechen“ schließt es und zeigt die Liste mit „Fahrzeug hinzufügen“.
             Press("TankbookEntries.AddVehicle");
+            WaitFor("Tankbook.Form.Name");
+            Press("Tankbook.Form.Cancel");
         }
         else
         {
