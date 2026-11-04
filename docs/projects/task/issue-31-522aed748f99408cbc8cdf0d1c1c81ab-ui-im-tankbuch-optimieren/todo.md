@@ -17,6 +17,6 @@ Hinweis: In dieser Sitzung sind keine Unteragenten zulässig. Die inhaltlichen P
 | [x] | Planprüfung | `project-plan-check.md`, Status: Projektplan vollständig |
 | [x] | Planungscommit | Projektartefakte committen. |
 | [x] | Entwicklungsschritte-Tracking | `steps.md`, `status.html` |
-| [ ] | Entwicklungsschleife | Schritt 1 und Schritt 2 jeweils auf eigenem Branch, prüfen, abnehmen, zurückmergen. |
+| [x] | Entwicklungsschleife | Schritt 1 und Schritt 2 jeweils auf eigenem Branch, prüfen, abnehmen, zurückmergen. |
 | [ ] | Aufräumen | Projektverzeichnis nach erfolgreichen Schritten entfernen. |
 | [ ] | Abschlusscommit | Umsetzung auf dem Task-Branch committen. |
