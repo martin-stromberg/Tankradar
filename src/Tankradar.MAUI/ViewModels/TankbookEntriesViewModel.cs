@@ -402,6 +402,7 @@ public sealed class TankbookEntriesViewModel : BaseViewModel
 
     private async Task LoadAndAnnounceAsync()
     {
+        await Task.Yield();
         await LoadAsync().ConfigureAwait(true);
         Announce(Vehicle);
     }
