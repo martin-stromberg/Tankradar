@@ -119,11 +119,12 @@ public abstract class TankbookEntriesViewModelTestBase : BaseTest
     /// Erstellt das ViewModel des Tabs, ohne es zu laden.
     /// </summary>
     /// <param name="entryService">Der Dienst der Vorgänge; ohne Angabe der echte Dienst.</param>
+    /// <param name="vehicleService">Der Fahrzeugdienst; ohne Angabe der echte Dienst.</param>
     /// <returns>Das ViewModel.</returns>
-    protected TankbookEntriesViewModel CreateViewModel(ITankbookEntryService? entryService = null)
+    protected TankbookEntriesViewModel CreateViewModel(ITankbookEntryService? entryService = null, IVehicleService? vehicleService = null)
     {
         return new TankbookEntriesViewModel(
-            Fixture.Vehicles,
+            vehicleService ?? Fixture.Vehicles,
             entryService ?? Fixture.Service,
             Fixture.Photos,
             Fixture.CreateForm(Picker, Announcer, FormLogger),
