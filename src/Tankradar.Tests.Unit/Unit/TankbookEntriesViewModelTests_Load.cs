@@ -18,13 +18,19 @@ public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBa
         var vehicle = await CreateVehicleAsync();
         SelectionStore.Set(vehicle.Id);
         var vehicles = new CountingVehicleService(Fixture.Vehicles);
+        var called = new ManualResetEventSlim();
+        var resume = new ManualResetEventSlim();
+        vehicles.GetVehiclesCalled = called;
+        vehicles.ContinueGetVehicles = resume;
         var viewModel = CreateViewModel(vehicleService: vehicles);
 
-        viewModel.OnAppearing();
+        var appearing = Task.Run(viewModel.OnAppearing);
 
-        Assert.Equal(0, vehicles.GetVehiclesCalls);
-        await viewModel.LastTask;
+        Assert.Same(appearing, await Task.WhenAny(appearing, Task.Delay(TimeSpan.FromSeconds(2))));
+        Assert.True(await Task.Run(() => called.Wait(TimeSpan.FromSeconds(5))), "Der Fahrzeugdienst wurde nicht gestartet.");
         Assert.Equal(1, vehicles.GetVehiclesCalls);
+        resume.Set();
+        await viewModel.LastTask;
         Assert.Equal("Golf", viewModel.VehicleName);
     }
 

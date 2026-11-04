@@ -24,10 +24,22 @@ public sealed class CountingVehicleService : IVehicleService
     /// </summary>
     public int GetVehiclesCalls { get; private set; }
 
+    /// <summary>
+    /// Wird gesetzt, wenn <see cref="GetVehiclesAsync"/> erreicht wurde.
+    /// </summary>
+    public ManualResetEventSlim? GetVehiclesCalled { get; set; }
+
+    /// <summary>
+    /// Blockiert <see cref="GetVehiclesAsync"/> synchron, wenn es gesetzt ist.
+    /// </summary>
+    public ManualResetEventSlim? ContinueGetVehicles { get; set; }
+
     /// <inheritdoc />
     public Task<IReadOnlyList<Vehicle>> GetVehiclesAsync(CancellationToken cancellationToken = default)
     {
         GetVehiclesCalls++;
+        GetVehiclesCalled?.Set();
+        ContinueGetVehicles?.Wait(cancellationToken);
         return _inner.GetVehiclesAsync(cancellationToken);
     }
 
