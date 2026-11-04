@@ -28,6 +28,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
     private string? _rangeError;
     private string? _statusMessage;
     private bool _statusIsError;
+    private bool _isExpanded;
 
     /// <summary>
     /// Erstellt das ViewModel.
@@ -58,6 +59,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
             .ToList();
         LastTask = Task.CompletedTask;
         ExportCommand = new Command(() => LastTask = ExportAsync());
+        ToggleCommand = new Command(() => IsExpanded = !IsExpanded);
         ResetSelection();
     }
 
@@ -232,6 +234,43 @@ public sealed class TankbookExportViewModel : BaseViewModel
     public ICommand ExportCommand { get; }
 
     /// <summary>
+    /// Befehl zum Auf- und Zuklappen des Bereichs.
+    /// </summary>
+    public ICommand ToggleCommand { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Exportoptionen ausgeklappt sind; standardmäßig sind sie zugeklappt.
+    /// </summary>
+    public bool IsExpanded
+    {
+        get { return _isExpanded; }
+        private set
+        {
+            if (SetProperty(ref _isExpanded, value))
+            {
+                OnPropertyChanged(nameof(ToggleGlyph));
+                OnPropertyChanged(nameof(ToggleDescription));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Das Zeichen der Symbolschaltfläche (zeigt nach unten zum Ausklappen, nach oben zum Einklappen).
+    /// </summary>
+    public string ToggleGlyph
+    {
+        get { return IsExpanded ? "▴" : "▾"; }
+    }
+
+    /// <summary>
+    /// Die Beschreibung der Symbolschaltfläche für Bedienhilfen.
+    /// </summary>
+    public string ToggleDescription
+    {
+        get { return IsExpanded ? "Export ausblenden" : "Export einblenden"; }
+    }
+
+    /// <summary>
     /// Übernimmt das Fahrzeug der Seite. Wechselt das Fahrzeug, werden die Auswahl zurückgesetzt; eine alte Rückmeldung wird immer entfernt.
     /// Es entsteht keine Datei.
     /// </summary>
@@ -242,6 +281,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
         _vehicle = vehicle;
         if (changed)
         {
+            IsExpanded = false;
             ResetSelection();
         }
 
@@ -262,6 +302,7 @@ public sealed class TankbookExportViewModel : BaseViewModel
     public void Reset()
     {
         _vehicle = null;
+        IsExpanded = false;
         ResetSelection();
         ClearMessages();
         OnPropertyChanged(nameof(StartHint));

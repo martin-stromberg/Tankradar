@@ -491,6 +491,26 @@ public static class TankbookEntryTexts
     }
 
     /// <summary>
+    /// Formatiert den Hinweis der Symbolschaltfläche „Bearbeiten“, z. B. „Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle bearbeiten“.
+    /// </summary>
+    /// <param name="entry">Der Vorgang.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatEditHint(TankbookEntry entry)
+    {
+        return $"{FormatEntryHint(entry)} bearbeiten";
+    }
+
+    /// <summary>
+    /// Formatiert den Hinweis der Symbolschaltfläche „Löschen“, z. B. „Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle löschen“.
+    /// </summary>
+    /// <param name="entry">Der Vorgang.</param>
+    /// <returns>Der Text.</returns>
+    public static string FormatDeleteHint(TankbookEntry entry)
+    {
+        return $"{FormatEntryHint(entry)} löschen";
+    }
+
+    /// <summary>
     /// Formatiert den Hinweis der Bestätigung der Löschrückfrage, z. B. „Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle endgültig löschen“.
     /// </summary>
     /// <param name="entry">Der Vorgang.</param>

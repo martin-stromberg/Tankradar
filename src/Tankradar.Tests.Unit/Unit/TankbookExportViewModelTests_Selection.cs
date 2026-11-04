@@ -20,6 +20,24 @@ public class TankbookExportViewModelTests_Selection : TankbookExportViewModelTes
         Assert.True(ViewModel.RangeOptions.Single(option => option.Value == TankbookExportRangeKind.All).IsSelected);
         Assert.Equal(Fixture.Now.Date, ViewModel.MaximumDate);
         Assert.Equal(Fixture.Now.Date, ViewModel.ToDate);
+        Assert.False(ViewModel.IsExpanded);
+        Assert.Equal("▾", ViewModel.ToggleGlyph);
+        Assert.Equal("Export einblenden", ViewModel.ToggleDescription);
+    }
+
+    /// <summary>
+    /// Prüft, dass der Bereich auf- und zugeklappt werden kann.
+    /// </summary>
+    [Fact]
+    public void Toggle_ExpandsAndCollapsesArea()
+    {
+        ViewModel.ToggleCommand.Execute(null);
+        Assert.True(ViewModel.IsExpanded);
+        Assert.Equal("▴", ViewModel.ToggleGlyph);
+        Assert.Equal("Export ausblenden", ViewModel.ToggleDescription);
+
+        ViewModel.ToggleCommand.Execute(null);
+        Assert.False(ViewModel.IsExpanded);
     }
 
     /// <summary>

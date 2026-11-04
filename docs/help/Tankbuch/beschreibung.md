@@ -34,7 +34,7 @@ Die Einheiten stehen fest rechts im Eingabefeld und wechseln mit der gewählten 
 
 ## Tank- und Ladevorgänge
 
-Der Bereich **Tankbuch** zeigt die Vorgänge des gewählten Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**.
+Der Bereich **Tankbuch** zeigt die Vorgänge des gewählten Fahrzeugs, die neuesten zuerst. Jeder Eintrag zeigt Tankstelle, Gesamtbetrag, Datum und Uhrzeit, den Preis pro Einheit, die Menge sowie bei vollen Vorgängen die Strecke und den Verbrauch, z. B. „Verbrauch 6,00 L/100 km“. Hinzu kommen gegebenenfalls die Kennzeichnung „Teilbetankung“, bei Hybridfahrzeugen die Art („Kraftstoff“ oder „Strom“), die Notiz in Anführungszeichen und **Beleg anzeigen**. Bearbeiten und Löschen stehen als Symbolschaltflächen rechts im Eintrag bereit; ihre Bedienhilfen nennen weiterhin Aktion und Vorgang.
 
 | Angabe | Pflicht | Regeln |
 |--------|---------|--------|
@@ -66,7 +66,7 @@ Der Bereich **Tankbuch** zeigt die Vorgänge des gewählten Fahrzeugs, die neues
 
 Unter dem Formular zeigt das Tankbuch den Bereich **Auswertung** des gewählten Fahrzeugs. Hybridfahrzeuge haben je einen Block für **Kraftstoff** (L) und **Strom** (kWh); die Werte beider Arten werden nie vermischt. Fahrzeuge mit nur einer Art zeigen einen Block.
 
-Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und **Kosten / 100 km**), der Karte **Monatsanalyse** mit den **Gesamtkosten des laufenden Monats** und der in diesem Monat getankten bzw. geladenen Menge (z. B. „81,55 €“ und „41,00 L getankt“), dem **Verbrauchsverlauf**, dem **Kostenverlauf** und der Liste der **Monatskosten**. Auf einem schmalen Bildschirm steht die Einheit unter der Zahl, wenn sie daneben nicht mehr Platz hat. Die großen Zahlen bleiben dabei einzeilig; sehr lange Werte (z. B. „9.989,00“) werden in der Schrift etwas kleiner dargestellt, statt umzubrechen.
+Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und **Kosten / 100 km**), der Karte **Monatsanalyse** mit den **Gesamtkosten des laufenden Monats** und der in diesem Monat getankten bzw. geladenen Menge (z. B. „81,55 €“ und „41,00 L getankt“), dem **Verbrauchsverlauf**, dem **Kostenverlauf** und der Liste der **Monatskosten**. Die Liste enthält nur Monate mit Vorgängen; Monatskarte und Kostenverlauf behalten die lückenlose Zeitachse. Auf einem schmalen Bildschirm steht die Einheit unter der Zahl, wenn sie daneben nicht mehr Platz hat. Die großen Zahlen bleiben dabei einzeilig; sehr lange Werte (z. B. „9.989,00“) werden in der Schrift etwas kleiner dargestellt, statt umzubrechen.
 
 - **Ø Verbrauch:** Summe der Mengen aller berechneten Intervalle geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen. Längere Strecken zählen dadurch stärker als kurze. Ein Intervall reicht von einem vollen Vorgang zum nächsten; die Mengen dazwischenliegender Teilbetankungen gehören dazu. Intervalle ohne Strecke gehen nicht ein.
 - **Kosten pro 100 km:** Summe der Kosten derselben Intervalle (voller Vorgang plus Teilbetankungen dazwischen) geteilt durch die Summe ihrer Strecken × 100, mit zwei Nachkommastellen.
@@ -82,7 +82,7 @@ Je Art besteht der Block aus zwei Kacheln mit großer Zahl (**Ø Verbrauch** und
 
 ## Export
 
-Unter der Auswertung hat das Tankbuch den Bereich **Export**. Er gibt die Vorgänge des gewählten Fahrzeugs als Datei weiter, **nur wenn Sie auf Exportieren tippen**; das Öffnen des Tankbuchs, der Wechsel des Fahrzeugs oder die Wahl von Format und Zeitraum erzeugt nichts. Entscheidungen: [ADR 0013](../../adr/0013-tankbook-export.md).
+Unter der Auswertung hat das Tankbuch den aufklappbaren Bereich **Export**. Er startet zugeklappt; über die Symbolschaltfläche neben der Überschrift zeigen Sie Format, Zeitraum und Exportieren an oder blenden sie wieder aus. Er gibt die Vorgänge des gewählten Fahrzeugs als Datei weiter, **nur wenn Sie auf Exportieren tippen**; das Öffnen des Tankbuchs, der Wechsel des Fahrzeugs oder die Wahl von Format und Zeitraum erzeugt nichts. Entscheidungen: [ADR 0013](../../adr/0013-tankbook-export.md).
 
 - **Format:** **CSV** (Tabelle für Excel, LibreOffice u. a.) oder **PDF** (Bericht). Voreingestellt ist CSV.
 - **Zeitraum:** **Alle Vorgänge** (voreingestellt), **Dieses Jahr**, **Letztes Jahr**, **Letzte 12 Monate** oder **Eigener Zeitraum**. Nur beim eigenen Zeitraum erscheinen die Datumsfelder **Von** und **Bis**; beide Tage zählen mit, **Bis** liegt höchstens heute, und **Von** darf nicht nach **Bis** liegen („Das Startdatum liegt nach dem Enddatum.“, „Das Enddatum liegt in der Zukunft.“; es entsteht dann keine Datei).

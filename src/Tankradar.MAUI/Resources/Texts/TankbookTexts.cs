@@ -126,9 +126,19 @@ public static class TankbookTexts
     public const string Edit = "Bearbeiten";
 
     /// <summary>
+    /// Zeichen der Symbolschaltfläche „Bearbeiten“ in der Vorgangsliste.
+    /// </summary>
+    public const string EditGlyph = "✎";
+
+    /// <summary>
     /// Beschriftung „Löschen“.
     /// </summary>
     public const string Delete = "Löschen";
+
+    /// <summary>
+    /// Zeichen der Symbolschaltfläche „Löschen“ in der Vorgangsliste.
+    /// </summary>
+    public const string DeleteGlyph = "🗑";
 
     /// <summary>
     /// Beschriftung der Bestätigung des Löschens eines Fahrzeugs ohne Vorgänge.

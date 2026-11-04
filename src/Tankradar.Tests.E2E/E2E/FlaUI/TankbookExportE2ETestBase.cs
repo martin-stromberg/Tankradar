@@ -74,8 +74,20 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
     /// <summary>
     /// Löst <b>Exportieren</b> aus.
     /// </summary>
+    protected void ExpandExport()
+    {
+        if (FindByAutomationId($"{Prefix}Start") is null)
+        {
+            Press($"{Prefix}Toggle");
+        }
+    }
+
+    /// <summary>
+    /// Löst <b>Exportieren</b> aus.
+    /// </summary>
     protected void StartExport()
     {
+        ExpandExport();
         Press($"{Prefix}Start");
     }
 
@@ -182,6 +194,7 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
     {
         Tankbook.ManageVehicles();
         Tankbook.OpenEntries(name);
+        ExpandExport();
         WaitForAutomationId($"{Prefix}Start");
     }
 
@@ -280,6 +293,7 @@ public abstract class TankbookExportE2ETestBase : BackupE2ETestBase
 
     private void Choose(string automationId)
     {
+        ExpandExport();
         Press(automationId);
         WaitUntil(() => IsChosen(automationId), $"Die Option '{automationId}' wurde nicht ausgewählt.");
     }

@@ -32,11 +32,12 @@ public sealed class TankbookKindStatisticsViewModel
         MonthCostLabel = currentMonth is null ? string.Empty : TankbookStatisticsTexts.FormatMonthCostLabel(currentMonth.Month);
         MonthCostText = TankbookEntryTexts.FormatAmount(currentMonth?.TotalCost ?? 0m);
         MonthQuantityText = TankbookStatisticsTexts.FormatMonthQuantity(currentMonth?.TotalQuantity ?? 0m, kind);
-        Months = statistics.Months
+        var monthsWithSales = statistics.Months.Where(month => month.EntryCount > 0).ToList();
+        Months = monthsWithSales
             .Take(TankbookStatisticsLimits.MonthListMaxRows)
             .Select(month => new MonthlyCostRowViewModel(month, AutomationKey))
             .ToList();
-        MonthsNotice = statistics.Months.Count > TankbookStatisticsLimits.MonthListMaxRows ? TankbookStatisticsTexts.MonthsLimitedNotice : null;
+        MonthsNotice = monthsWithSales.Count > TankbookStatisticsLimits.MonthListMaxRows ? TankbookStatisticsTexts.MonthsLimitedNotice : null;
 
         var trend = statistics.ConsumptionTrend
             .Skip(Math.Max(0, statistics.ConsumptionTrend.Count - TankbookStatisticsLimits.ConsumptionChartMaxPoints))
