@@ -10,6 +10,31 @@ namespace Tankradar.Tests.Unit.Unit;
 public class TankbookEntriesViewModelTests_Load : TankbookEntriesViewModelTestBase
 {
     /// <summary>
+    /// Prüft, dass das Erscheinen der Seite die Navigation nicht synchron mit dem Fahrzeugladen beschäftigt.
+    /// </summary>
+    [Fact]
+    public async Task Appearing_StartsVehicleLoadAfterUiYield()
+    {
+        var vehicle = await CreateVehicleAsync();
+        SelectionStore.Set(vehicle.Id);
+        var vehicles = new CountingVehicleService(Fixture.Vehicles);
+        var called = new ManualResetEventSlim();
+        var resume = new ManualResetEventSlim();
+        vehicles.GetVehiclesCalled = called;
+        vehicles.ContinueGetVehicles = resume;
+        var viewModel = CreateViewModel(vehicleService: vehicles);
+
+        var appearing = Task.Run(viewModel.OnAppearing);
+
+        Assert.Same(appearing, await Task.WhenAny(appearing, Task.Delay(TimeSpan.FromSeconds(2))));
+        Assert.True(await Task.Run(() => called.Wait(TimeSpan.FromSeconds(5))), "Der Fahrzeugdienst wurde nicht gestartet.");
+        Assert.Equal(1, vehicles.GetVehiclesCalls);
+        resume.Set();
+        await viewModel.LastTask;
+        Assert.Equal("Golf", viewModel.VehicleName);
+    }
+
+    /// <summary>
     /// Prüft die Einträge neueste zuerst mit Beträgen, Strecke und Verbrauchstexten.
     /// </summary>
     [Fact]

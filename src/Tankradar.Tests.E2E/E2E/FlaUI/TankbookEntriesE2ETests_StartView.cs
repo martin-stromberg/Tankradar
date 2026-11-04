@@ -26,7 +26,8 @@ public class TankbookEntriesE2ETests_StartView : TankbookE2ETestBase
             WaitForTexts("TankbookEntry.Item.Station", "Alpha Tankstelle");
             Assert.Equal("Golf", WaitForAutomationId("TankbookEntries.Vehicle").Name);
             WaitForAutomationId("TankbookEntries.Statistics.Heading");
-            WaitForAutomationId("TankbookEntries.Export.Start");
+            Assert.Equal("Export einblenden", WaitForAutomationId("TankbookEntries.Export.Toggle").Name);
+            Assert.False(Exists("TankbookEntries.Export.Start"));
             Assert.False(Exists("Tankbook.AddVehicle"));
         });
     }

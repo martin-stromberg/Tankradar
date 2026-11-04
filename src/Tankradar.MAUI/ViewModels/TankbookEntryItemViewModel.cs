@@ -52,6 +52,8 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
         NoteText = TankbookEntryTexts.FormatNote(entry.Note);
         KindText = showKind ? TankbookEntryTexts.GetKindLabel(entry.Kind) : string.Empty;
         EntryHint = TankbookEntryTexts.FormatEntryHint(entry);
+        EditHint = TankbookEntryTexts.FormatEditHint(entry);
+        DeleteHint = TankbookEntryTexts.FormatDeleteHint(entry);
         ConfirmDeleteHint = TankbookEntryTexts.FormatConfirmDeleteHint(entry);
         ReceiptHint = TankbookEntryTexts.FormatReceiptHint(entry);
         DeleteQuestion = TankbookEntryTexts.FormatDeleteQuestion(entry);
@@ -188,6 +190,16 @@ public sealed class TankbookEntryItemViewModel : BaseViewModel
     /// Hinweis von „Bearbeiten“ und „Löschen“ für die Sprachausgabe, z. B. „Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle“.
     /// </summary>
     public string EntryHint { get; }
+
+    /// <summary>
+    /// Hinweis der Symbolschaltfläche „Bearbeiten“ für die Sprachausgabe.
+    /// </summary>
+    public string EditHint { get; }
+
+    /// <summary>
+    /// Hinweis der Symbolschaltfläche „Löschen“ für die Sprachausgabe.
+    /// </summary>
+    public string DeleteHint { get; }
 
     /// <summary>
     /// Hinweis der Bestätigung der Löschrückfrage für die Sprachausgabe.

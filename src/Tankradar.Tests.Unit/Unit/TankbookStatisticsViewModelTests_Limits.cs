@@ -26,14 +26,16 @@ public class TankbookStatisticsViewModelTests_Limits : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass bei weit zurückliegenden Vorgängen nur die letzten 24 Monate angezeigt werden, der Durchschnitt aber alle Vorgänge enthält und die Monatskarte den laufenden Monat zeigt.
+    /// Prüft, dass bei mehr als 24 Monaten mit Umsatz nur die letzten 24 Umsatzmonate angezeigt werden, der Durchschnitt aber alle Vorgänge enthält und die Monatskarte den laufenden Monat zeigt.
     /// </summary>
     [Fact]
-    public async Task Months_VeryOldEntries_ListIsLimitedButTotalsAreComplete()
+    public async Task Months_MoreThanLimitSalesMonths_ListIsLimitedButTotalsAreComplete()
     {
         var vehicle = await _fixture.CreateVehicleAsync();
-        await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(new DateTime(1995, 3, 10, 8, 0, 0), 10_500, 40m));
-        await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddDays(-1), 11_000, 30m));
+        for (var monthOffset = 25; monthOffset >= 0; monthOffset--)
+        {
+            await _fixture.CreateEntryAsync(vehicle.Id, TankbookEntryFixture.Input(_fixture.Now.AddMonths(-monthOffset), 10_000 + (25 - monthOffset) * 500, 30m));
+        }
         var viewModel = _fixture.CreateStatistics(new FakeScreenReaderAnnouncer(), new RecordingLogger<TankbookStatisticsViewModel>());
 
         await viewModel.LoadAsync(vehicle.Id);

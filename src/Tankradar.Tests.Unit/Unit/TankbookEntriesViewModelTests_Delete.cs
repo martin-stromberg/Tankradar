@@ -56,16 +56,17 @@ public class TankbookEntriesViewModelTests_Delete : TankbookEntriesViewModelTest
     }
 
     /// <summary>
-    /// Prüft das WCAG-Muster: Die Schaltflächen setzen keine abweichende Beschreibung, der Kontext steht in den Hinweisen.
+    /// Prüft die Bedienhilfen der Symbolschaltflächen: Aktion und Kontext werden für die Sprachausgabe genannt.
     /// </summary>
     [Fact]
-    public async Task Buttons_NameIsVisibleTextAndHintGivesContext()
+    public async Task Buttons_NameActionAndEntryForScreenReader()
     {
         var vehicleId = await CreateVehicleWithEntryAsync();
         var viewModel = await OpenAsync(vehicleId);
         var item = viewModel.Entries[0];
 
-        Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle", item.EntryHint);
+        Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle bearbeiten", item.EditHint);
+        Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle löschen", item.DeleteHint);
         Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle endgültig löschen", item.ConfirmDeleteHint);
         Assert.Equal("Vorgang behalten", item.CancelDeleteHint);
         Assert.Equal("Fahrzeug „Golf“", viewModel.AddEntryHint);
