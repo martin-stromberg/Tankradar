@@ -1,0 +1,184 @@
+:root {
+  --teal: #0F766E;
+  --teal-deep: #04211f;
+  --emerald: #10B981;
+  --amber: #F59E0B;
+  --ink: #0F172A;
+  --muted: #64748B;
+  --surface: rgba(250, 248, 255, 0.92);
+  --border: rgba(226, 232, 240, 0.9);
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #f1f5f9;
+  background: var(--teal-deep);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Fester Tankstellen-Hintergrund: bleibt beim Scrollen starr stehen. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(4, 33, 31, 0.55) 0%, rgba(4, 33, 31, 0.15) 55%, rgba(4, 33, 31, 0.45) 100%),
+    url("assets/bg-scene.svg") center bottom / cover no-repeat,
+    var(--teal-deep);
+}
+
+.hero {
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.hero-icon {
+  width: 96px;
+  height: 96px;
+  padding: 14px;
+  border-radius: 26px;
+  background: var(--teal);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.hero h1 {
+  margin-top: 1.4rem;
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.tagline {
+  margin-top: 0.9rem;
+  font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+  color: #cbd5e1;
+}
+
+.badges {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.badges li {
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  background: rgba(15, 118, 110, 0.28);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #a7f3d0;
+}
+
+.scroll-hint {
+  margin-top: 3.4rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(203, 213, 225, 0.75);
+}
+
+.chevron { display: block; font-size: 1.6rem; margin-top: 0.2rem; }
+
+main {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 1.5rem 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4rem, 10vw, 8rem);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.8rem, 5vw, 4rem);
+  align-items: center;
+  padding: clamp(1.6rem, 4vw, 2.6rem);
+  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+}
+
+.panel:nth-of-type(even) .panel-text { order: 2; }
+.panel:nth-of-type(even) .device { order: 1; }
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.panel h2 {
+  margin: 0.9rem 0 0.7rem;
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.panel p { color: #334155; font-size: 1.02rem; }
+
+.device img {
+  display: block;
+  width: clamp(220px, 30vw, 300px);
+  height: auto;
+  border-radius: 34px;
+  border: 8px solid #0b1414;
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.45);
+  background: #faf8ff;
+}
+
+.panel {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.panel.visible { opacity: 1; transform: none; }
+
+.site-footer {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(203, 213, 225, 0.8);
+}
+
+.site-footer p + p { margin-top: 0.7rem; }
+.site-footer a { color: #5eead4; }
+
+@media (max-width: 720px) {
+  .panel { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .panel:nth-of-type(even) .panel-text { order: 1; }
+  .panel:nth-of-type(even) .device { order: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .panel { opacity: 1; transform: none; transition: none; }
+}

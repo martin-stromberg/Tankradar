@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="360" height="720" viewBox="0 0 360 720" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="720" fill="#faf8ff"/>
+  <rect width="360" height="64" fill="#0F766E"/>
+  <text x="20" y="40" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#ffffff">Optionen</text>
+
+  <g font-family="Inter, sans-serif">
+    <rect x="16" y="84" width="328" height="132" rx="16" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="32" y="114" font-size="14" font-weight="600" fill="#0F172A">Spritsorten</text>
+    <rect x="32" y="128" width="86" height="30" rx="15" fill="#0F766E"/>
+    <text x="75" y="148" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Super E10</text>
+    <rect x="128" y="128" width="70" height="30" rx="15" fill="#0F766E"/>
+    <text x="163" y="148" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">Diesel</text>
+    <rect x="208" y="128" width="76" height="30" rx="15" fill="#e2e8f0"/>
+    <text x="246" y="148" font-size="12" font-weight="600" fill="#64748B" text-anchor="middle">Super E5</text>
+    <text x="32" y="188" font-size="11" fill="#64748B">Nur die gewählten Sorten werden angezeigt.</text>
+
+    <rect x="16" y="232" width="328" height="150" rx="16" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="32" y="262" font-size="14" font-weight="600" fill="#0F172A">Sicherung</text>
+    <g transform="translate(32 278)">
+      <path d="M16 0 L32 8 V22 C32 36 24 46 16 50 C8 46 0 36 0 22 V8 Z" fill="#10B981" opacity="0.15"/>
+      <path d="M16 4 L28 10 V22 C28 33 22 41 16 45 C10 41 4 33 4 22 V10 Z" fill="#10B981"/>
+      <path d="M11 22 l4 4 8 -9" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="86" y="298" font-size="13" font-weight="600" fill="#0F172A">Lokale Sicherung</text>
+    <text x="86" y="316" font-size="11" fill="#64748B">ZIP-Archiv, nur auf diesem Gerät</text>
+    <rect x="32" y="336" width="296" height="34" rx="10" fill="#f1f5f9"/>
+    <text x="180" y="357" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle">Sicherung erstellen · wiederherstellen · teilen</text>
+
+    <rect x="16" y="398" width="328" height="120" rx="16" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="32" y="428" font-size="14" font-weight="600" fill="#0F172A">Datenquelle</text>
+    <text x="32" y="452" font-size="12" fill="#64748B">Preise: Tankerkönig / MTS-K</text>
+    <text x="32" y="474" font-size="12" fill="#64748B">Karten: OpenStreetMap</text>
+    <text x="32" y="500" font-size="11" fill="#10B981">Kein Konto · kein Tracking · offline nutzbar</text>
+  </g>
+
+  <rect x="0" y="664" width="360" height="56" fill="#ffffff" stroke="#E2E8F0"/>
+  <circle cx="60" cy="690" r="12" fill="#cbd5e1"/>
+  <circle cx="150" cy="690" r="12" fill="#cbd5e1"/>
+  <circle cx="240" cy="690" r="12" fill="#cbd5e1"/>
+  <circle cx="320" cy="690" r="12" fill="#0F766E"/>
+</svg>

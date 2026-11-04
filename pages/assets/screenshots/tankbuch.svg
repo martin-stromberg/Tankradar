@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="360" height="720" viewBox="0 0 360 720" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="720" fill="#faf8ff"/>
+  <rect width="360" height="64" fill="#0F766E"/>
+  <text x="20" y="40" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#ffffff">Tankbuch</text>
+  <text x="340" y="40" font-family="Inter, sans-serif" font-size="13" fill="#ffffff" text-anchor="end" opacity="0.85">Golf VII ▾</text>
+
+  <g font-family="Inter, sans-serif">
+    <rect x="16" y="80" width="328" height="120" rx="16" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="32" y="110" font-size="13" font-weight="600" fill="#64748B">Verbrauch (Ø)</text>
+    <text x="32" y="140" font-size="30" font-weight="800" fill="#0F172A">6,4 <tspan font-size="15" font-weight="600" fill="#64748B">l/100 km</tspan></text>
+    <text x="328" y="140" font-size="13" font-weight="600" fill="#64748B" text-anchor="end">148 € / Monat</text>
+    <polyline points="40,178 90,168 140,176 190,158 240,166 290,152 320,158" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+
+    <rect x="16" y="216" width="328" height="52" rx="12" fill="#0F766E"/>
+    <text x="180" y="248" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">+ Tankvorgang erfassen</text>
+
+    <text x="24" y="300" font-size="14" font-weight="600" fill="#0F172A">Letzte Vorgänge</text>
+    <g font-size="13">
+      <rect x="16" y="316" width="328" height="56" rx="12" fill="#ffffff" stroke="#E2E8F0"/>
+      <text x="32" y="340" font-weight="600" fill="#0F172A">12.10. · Station Nord</text>
+      <text x="32" y="358" font-size="11" fill="#64748B">42,3 l · 68,48 € · 61.240 km</text>
+      <text x="328" y="348" font-size="12" font-weight="700" fill="#0F766E" text-anchor="end">6,3 l</text>
+
+      <rect x="16" y="380" width="328" height="56" rx="12" fill="#ffffff" stroke="#E2E8F0"/>
+      <text x="32" y="404" font-weight="600" fill="#0F172A">28.09. · Autohof West</text>
+      <text x="32" y="422" font-size="11" fill="#64748B">38,9 l · 66,12 € · 60.650 km</text>
+      <text x="328" y="412" font-size="12" font-weight="700" fill="#0F766E" text-anchor="end">6,6 l</text>
+
+      <rect x="16" y="444" width="328" height="56" rx="12" fill="#ffffff" stroke="#E2E8F0"/>
+      <text x="32" y="468" font-weight="600" fill="#0F172A">10.09. · City-Tank</text>
+      <text x="32" y="486" font-size="11" fill="#64748B">45,1 l · 77,51 € · 60.060 km</text>
+      <text x="328" y="476" font-size="12" font-weight="700" fill="#0F766E" text-anchor="end">6,4 l</text>
+    </g>
+
+    <rect x="16" y="524" width="156" height="44" rx="12" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="94" y="551" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle">CSV-Export</text>
+    <rect x="188" y="524" width="156" height="44" rx="12" fill="#ffffff" stroke="#E2E8F0"/>
+    <text x="266" y="551" font-size="12" font-weight="600" fill="#0F172A" text-anchor="middle">PDF-Bericht</text>
+  </g>
+
+  <rect x="0" y="664" width="360" height="56" fill="#ffffff" stroke="#E2E8F0"/>
+  <circle cx="60" cy="690" r="12" fill="#cbd5e1"/>
+  <circle cx="150" cy="690" r="12" fill="#cbd5e1"/>
+  <circle cx="240" cy="690" r="12" fill="#0F766E"/>
+  <circle cx="320" cy="690" r="12" fill="#cbd5e1"/>
+</svg>

@@ -10,6 +10,10 @@ Der für Anwender sichtbare App-Name lautet „Tankatlas“ (ursprünglich „Ta
 Bezeichner bleiben unverändert: Bundle-ID `de.martinstromberg.tankradar`, Projekt-, Solution-,
 Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANKRADAR_*`.
 
+Eine Präsentationsseite der App wird per GitHub Pages unter
+<https://martin-stromberg.github.io/Tankradar/> veröffentlicht (Quelle: `pages/`, Deploy bei
+jedem Merge in `main` über `.github/workflows/pages.yml`).
+
 ## Funktionen
 
 - **Karte und Suche** – Tankstellen am aktuellen Standort, rund um eine Adresse, einen Ort
