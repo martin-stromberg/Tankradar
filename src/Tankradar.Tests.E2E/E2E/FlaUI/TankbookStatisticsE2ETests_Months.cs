@@ -8,8 +8,8 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
 {
     /// <summary>
-    /// Prüft die Monatsgrenze (letzte Minute des Vormonats und erste Minute des Monats) mit getrennten Summen, den leeren Monat dazwischen mit 0,00 € und die Monatskarte des (leeren) laufenden Monats.
-    /// Die Reihe läuft bis zum aktuellen Monat; geprüft wird das Ende der Liste (älteste Monate).
+    /// Prüft die Monatsgrenze mit getrennten Summen; ein leerer Monat dazwischen wird in der Liste nicht mehr ausgegeben,
+    /// die Monatskarte des (leeren) laufenden Monats bleibt aber erhalten.
     /// </summary>
     [Fact]
     public void MonthBoundary_SplitsSumsAndShowsEmptyMonth()
@@ -33,7 +33,6 @@ public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
             [
                 $"{afterBoundary.ToString("MMMM yyyy", german)}: 60,00 €",
                 $"{beforeBoundary.ToString("MMMM yyyy", german)}: 50,00 €",
-                $"{current.AddMonths(-4).ToString("MMMM yyyy", german)}: 0,00 €",
                 $"{oldest.ToString("MMMM yyyy", german)}: 74,36 €",
             ];
             Tankbook.WaitUntil(
@@ -45,8 +44,8 @@ public class TankbookStatisticsE2ETests_Months : TankbookE2ETestBase
                 $"Die Monatskosten zeigen nicht [{string.Join(" | ", oldestMonths)}] am Ende, gelesen: [{string.Join(" | ", ReadTexts("TankbookEntries.Statistics.Fuel.Month"))}].");
             Tankbook.WaitForStatistic("Fuel", "MonthCost", "0,00 €");
             Assert.All(
-                ReadTexts("TankbookEntries.Statistics.Fuel.Month").SkipLast(oldestMonths.Length),
-                text => Assert.EndsWith(": 0,00 €", text, StringComparison.Ordinal));
+                ReadTexts("TankbookEntries.Statistics.Fuel.Month"),
+                text => Assert.DoesNotContain(": 0,00 €", text, StringComparison.Ordinal));
         });
     }
 }

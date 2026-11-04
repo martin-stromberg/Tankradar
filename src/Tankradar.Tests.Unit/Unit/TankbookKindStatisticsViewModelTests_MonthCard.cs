@@ -67,6 +67,23 @@ public class TankbookKindStatisticsViewModelTests_MonthCard : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass die sichtbare Monatsliste Monate ohne Vorgang nicht enthält, die Monatskarte aber weiterhin den laufenden Monat zeigt.
+    /// </summary>
+    [Fact]
+    public void Months_SkipMonthsWithoutSales()
+    {
+        var block = Block(
+        [
+            CreateAt(1, new DateTime(2026, 6, 10, 8, 0, 0), 9_000, 30m, 50m),
+            CreateAt(2, new DateTime(2026, 10, 2, 8, 0, 0), 10_000, 40m, 70m),
+        ]);
+
+        Assert.Equal(["Oktober 2026: 70,00 €", "Juni 2026: 50,00 €"], block.Months.Select(month => month.Text));
+        Assert.DoesNotContain(block.Months, month => month.Text.EndsWith(": 0,00 €", StringComparison.Ordinal));
+        Assert.Equal("Monatsanalyse Oktober 2026", block.MonthAnalysisHeading);
+    }
+
+    /// <summary>
     /// Prüft, dass der Verbrauchsverlauf höchstens die letzten 6 Werte zeigt und ohne berechnete Werte keine Daten hat (das Diagramm wird dann ausgeblendet).
     /// </summary>
     [Fact]

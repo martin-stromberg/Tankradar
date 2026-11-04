@@ -626,15 +626,29 @@
                     IsVisible="{Binding HasVehicle}"
                     x:DataType="vm:TankbookExportViewModel">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}">
-                    <Label Text="{x:Static texts:TankbookExportTexts.Heading}"
-                           Style="{StaticResource headline-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                           SemanticProperties.HeadingLevel="Level2"
-                           AutomationId="TankbookEntries.Export.Heading" />
-                    <Label Text="{x:Static texts:TankbookExportTexts.PrivacyNotice}"
-                           Style="{StaticResource body-sm}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
-                           AutomationId="TankbookEntries.Export.Notice" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
+                        <Label Text="{x:Static texts:TankbookExportTexts.Heading}"
+                               Style="{StaticResource headline-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               SemanticProperties.HeadingLevel="Level2"
+                               VerticalOptions="Center"
+                               AutomationId="TankbookEntries.Export.Heading" />
+                        <Button Grid.Column="1"
+                                Text="{Binding ToggleGlyph}"
+                                Command="{Binding ToggleCommand}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                Padding="0"
+                                WidthRequest="{StaticResource MinimumTouchTarget}"
+                                FontSize="18"
+                                SemanticProperties.Description="{Binding ToggleDescription}"
+                                AutomationId="TankbookEntries.Export.Toggle" />
+                    </Grid>
+                    <VerticalStackLayout Spacing="{StaticResource space-sm}"
+                                         IsVisible="{Binding IsExpanded}">
+                        <Label Text="{x:Static texts:TankbookExportTexts.PrivacyNotice}"
+                               Style="{StaticResource body-sm}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                               AutomationId="TankbookEntries.Export.Notice" />
 
                     <Label Text="{x:Static texts:TankbookExportTexts.FormatLabel}" Style="{StaticResource FieldLabel}" />
                     <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Center"
@@ -709,17 +723,18 @@
                             Style="{StaticResource TankbookButton}"
                             SemanticProperties.Hint="{Binding StartHint}"
                             AutomationId="TankbookEntries.Export.Start" />
-                    <Label Text="{Binding StatusMessage}"
-                           IsVisible="{Binding HasStatusMessage}"
-                           Style="{StaticResource body-md}"
-                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
-                           AutomationId="TankbookEntries.Export.Status">
-                        <Label.Triggers>
-                            <DataTrigger TargetType="Label" Binding="{Binding StatusIsError}" Value="True">
-                                <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
-                            </DataTrigger>
-                        </Label.Triggers>
-                    </Label>
+                        <Label Text="{Binding StatusMessage}"
+                               IsVisible="{Binding HasStatusMessage}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="TankbookEntries.Export.Status">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label" Binding="{Binding StatusIsError}" Value="True">
+                                    <Setter Property="TextColor" Value="{StaticResource ColorErrorRed}" />
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
 
@@ -817,17 +832,25 @@
                                        Style="{StaticResource FieldError}"
                                        AutomationId="TankbookEntry.Item.ReceiptMissing" />
 
-                                <Button Text="{x:Static texts:TankbookTexts.Edit}"
-                                        Command="{Binding EditCommand}"
-                                        Style="{StaticResource TankbookOutlineButton}"
-                                        SemanticProperties.Hint="{Binding EntryHint}"
-                                        AutomationId="TankbookEntry.Item.Edit" />
-                                <Button Text="{x:Static texts:TankbookTexts.Delete}"
-                                        Command="{Binding DeleteCommand}"
-                                        Style="{StaticResource TankbookOutlineButton}"
-                                        TextColor="{StaticResource ColorErrorRed}"
-                                        SemanticProperties.Hint="{Binding EntryHint}"
-                                        AutomationId="TankbookEntry.Item.Delete" />
+                                <HorizontalStackLayout HorizontalOptions="End" Spacing="{StaticResource space-sm}">
+                                    <Button Text="{x:Static texts:TankbookTexts.EditGlyph}"
+                                            Command="{Binding EditCommand}"
+                                            Style="{StaticResource TankbookOutlineButton}"
+                                            Padding="0"
+                                            WidthRequest="{StaticResource MinimumTouchTarget}"
+                                            FontSize="18"
+                                            SemanticProperties.Description="{Binding EditHint}"
+                                            AutomationId="TankbookEntry.Item.Edit" />
+                                    <Button Text="{x:Static texts:TankbookTexts.DeleteGlyph}"
+                                            Command="{Binding DeleteCommand}"
+                                            Style="{StaticResource TankbookOutlineButton}"
+                                            Padding="0"
+                                            WidthRequest="{StaticResource MinimumTouchTarget}"
+                                            FontSize="18"
+                                            TextColor="{StaticResource ColorErrorRed}"
+                                            SemanticProperties.Description="{Binding DeleteHint}"
+                                            AutomationId="TankbookEntry.Item.Delete" />
+                                </HorizontalStackLayout>
 
                                 <!-- Rückfrage vor dem Löschen -->
                                 <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
