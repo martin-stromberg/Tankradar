@@ -1,6 +1,7 @@
 # Tankatlas
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Tankatlas-0F766E?logo=github)](https://martin-stromberg.github.io/Tankradar/)
 
 Tankatlas ist eine .NET-MAUI-App für Kraftstoffpreise, Favoriten und ein offline nutzbares
 Tankbuch. Primäre Zielplattform ist iOS (ab iOS 16); Windows dient der Entwicklung, dem
