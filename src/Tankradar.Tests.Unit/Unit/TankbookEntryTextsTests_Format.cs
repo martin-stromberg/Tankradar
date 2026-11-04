@@ -62,6 +62,8 @@ public class TankbookEntryTextsTests_Format : BaseTest
         Assert.Throws<ArgumentOutOfRangeException>(() => TankbookEntryTexts.GetKindLabel((TankbookEntryKind)99));
         Assert.Equal("Preis pro Liter", TankbookEntryTexts.GetUnitPriceLabel(TankbookEntryKind.Fuel));
         Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle", TankbookEntryTexts.FormatEntryHint(Entry));
+        Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle bearbeiten", TankbookEntryTexts.FormatEditHint(Entry));
+        Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle löschen", TankbookEntryTexts.FormatDeleteHint(Entry));
         Assert.Equal("Vorgang vom 18.05.2026, 14:30, Alpha Tankstelle endgültig löschen", TankbookEntryTexts.FormatConfirmDeleteHint(Entry));
         Assert.Equal("Beleg des Vorgangs vom 18.05.2026, 14:30", TankbookEntryTexts.FormatReceiptHint(Entry));
         Assert.Equal("Vorgang vom 18.05.2026, 14:30 (Alpha Tankstelle) löschen? Das lässt sich nicht rückgängig machen.", TankbookEntryTexts.FormatDeleteQuestion(Entry));

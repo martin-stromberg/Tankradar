@@ -1,7 +1,7 @@
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
-/// E2E-Test: Vorgang korrigieren (Verbrauch ändert sich) und nach Rückfrage löschen; Schaltflächen tragen ihren sichtbaren Text als Namen, der Kontext steht im Hinweis.
+/// E2E-Test: Vorgang korrigieren (Verbrauch ändert sich) und nach Rückfrage löschen; Symbolschaltflächen nennen Aktion und Vorgang für die Sprachausgabe.
 /// </summary>
 public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
 {
@@ -20,10 +20,12 @@ public class TankbookEntriesE2ETests_EditDelete : TankbookE2ETestBase
             Tankbook.CreateEntry("Alpha Tankstelle", "30", "1,859", string.Empty, "11000");
             WaitForTexts("TankbookEntry.Item.Consumption", "Verbrauch 6,00 L/100 km", "Verbrauch 8,00 L/100 km (ab Startstand)");
 
-            Assert.Equal("Bearbeiten", Tankbook.FindAllOrdered("TankbookEntry.Item.Edit")[0].Name);
-            var hint = Tankbook.FindAllOrdered("TankbookEntry.Item.Edit")[0].Properties.HelpText.ValueOrDefault ?? string.Empty;
-            Assert.StartsWith("Vorgang vom ", hint, StringComparison.Ordinal);
-            Assert.EndsWith(", Alpha Tankstelle", hint, StringComparison.Ordinal);
+            var editName = Tankbook.FindAllOrdered("TankbookEntry.Item.Edit")[0].Name;
+            var deleteName = Tankbook.FindAllOrdered("TankbookEntry.Item.Delete")[0].Name;
+            Assert.StartsWith("Vorgang vom ", editName, StringComparison.Ordinal);
+            Assert.EndsWith(", Alpha Tankstelle bearbeiten", editName, StringComparison.Ordinal);
+            Assert.StartsWith("Vorgang vom ", deleteName, StringComparison.Ordinal);
+            Assert.EndsWith(", Alpha Tankstelle löschen", deleteName, StringComparison.Ordinal);
 
             Tankbook.PressForEntry("TankbookEntry.Item.Edit", 0);
             Assert.Equal("Vorgang bearbeiten", WaitForAutomationId("TankbookEntries.Form.Title").Name);

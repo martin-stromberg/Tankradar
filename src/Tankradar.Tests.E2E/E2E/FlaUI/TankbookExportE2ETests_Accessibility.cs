@@ -17,10 +17,10 @@ public class TankbookExportE2ETests_Accessibility : TankbookExportE2ETestBase
             Tankbook.CreateEntry("Alpha Tankstelle", "40", "1,859", string.Empty, "10500");
 
             Assert.Equal("Export", WaitForAutomationId("TankbookEntries.Export.Heading").Name);
-            Assert.Equal("▾", WaitForAutomationId("TankbookEntries.Export.Toggle").Name);
+            Assert.Equal("Export einblenden", WaitForAutomationId("TankbookEntries.Export.Toggle").Name);
             Assert.False(Exists("TankbookEntries.Export.Start"));
             Tankbook.Press("TankbookEntries.Export.Toggle");
-            Assert.Equal("▴", WaitForAutomationId("TankbookEntries.Export.Toggle").Name);
+            Assert.Equal("Export ausblenden", WaitForAutomationId("TankbookEntries.Export.Toggle").Name);
 
             var expected = new Dictionary<string, string>
             {
