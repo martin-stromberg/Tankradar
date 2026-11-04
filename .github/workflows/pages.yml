@@ -1,13 +1,13 @@
 name: GitHub Pages
 
 # Veroeffentlicht die statische App-Präsentation unter pages/ auf GitHub Pages.
-# Läuft bei jedem Merge/Push auf main (Issue #34) sowie manuell per workflow_dispatch.
+# Vorab zum Begutachten auf staging; wird per Folge-PR auf main umgestellt (Issue #34).
 # Einmalige Einrichtung: Settings → Pages → Source "GitHub Actions" (siehe pages/README.md).
 
 on:
   push:
     branches:
-      - main
+      - staging
     paths:
       - 'pages/**'
       - '.github/workflows/pages.yml'
