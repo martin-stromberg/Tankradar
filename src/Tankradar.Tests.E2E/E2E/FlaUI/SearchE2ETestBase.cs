@@ -1,0 +1,550 @@
+using System.Net;
+using System.Net.Sockets;
+using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Conditions;
+using Tankradar.TestSupport;
+
+namespace Tankradar.Tests.E2E.E2E.FlaUI;
+
+/// <summary>
+/// Basis für E2E-Tests der Umkreissuche und der Routensuche (Eingaben im Suchdialog über der Karte, Ergebnisse in der Trefferliste am unteren Rand): startet die App im Testmodus mit Mock-Preisdienst, Mock-Ortssuchdienst (Nominatim), Mock-Routingdienst
+/// (OpenRouteService), Mock-Kachelserver, Test-Schlüsseln und festem Teststandort (Berlin-Mitte); produktive Endpunkte und der echte Standortdienst werden nie berührt.
+/// </summary>
+public abstract class SearchE2ETestBase : SettingsE2ETestBase
+{
+    /// <summary>
+    /// Der feste Teststandort (Berlin-Mitte) im Format der Umgebungsvariable.
+    /// </summary>
+    protected const string TestLocation = "52.5200,13.4050";
+
+    /// <summary>
+    /// Die angebotenen Radiusstufen in Kilometern.
+    /// </summary>
+    protected static readonly string[] RadiusSteps = ["1", "2", "5", "10", "15", "25"];
+
+    /// <summary>
+    /// Startet die App mit einem neuen Mock-Server und dem festen Teststandort.
+    /// </summary>
+    protected SearchE2ETestBase()
+        : this(MockOpenRouteServiceServer.AcceptedKey)
+    {
+    }
+
+    /// <summary>
+    /// Startet die App mit neuen Mock-Servern und dem angegebenen Schlüssel des Routingdienstes.
+    /// </summary>
+    /// <param name="routingKey">Der Test-Schlüssel des Routingdienstes oder <see langword="null"/>, wenn die App keinen Schlüssel erhalten soll.</param>
+    protected SearchE2ETestBase(string? routingKey)
+        : this(new MockTankerkoenigServer(), new MockNominatimServer(), new MockTileServer(), new MockOpenRouteServiceServer(), routingKey)
+    {
+    }
+
+    private SearchE2ETestBase(MockTankerkoenigServer server, MockNominatimServer geocoding, MockTileServer tiles, MockOpenRouteServiceServer routing, string? routingKey)
+        : base(CreateEnvironment(server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, geocoding.BaseUrl, tiles.BaseUrl, routing.BaseUrl, routingKey))
+    {
+        Server = server;
+        Geocoding = geocoding;
+        Tiles = tiles;
+        Routing = routing;
+    }
+
+    /// <summary>
+    /// Der Mock-Server des Preisdienstes.
+    /// </summary>
+    protected MockTankerkoenigServer Server { get; }
+
+    /// <summary>
+    /// Der Mock-Server des Ortssuchdienstes (Nominatim).
+    /// </summary>
+    protected MockNominatimServer Geocoding { get; }
+
+    /// <summary>
+    /// Der Mock-Server der Kartenkacheln (die App ruft im Test nie einen produktiven Kachelserver ab).
+    /// </summary>
+    protected MockTileServer Tiles { get; }
+
+    /// <summary>
+    /// Der Mock-Server des Routingdienstes (OpenRouteService).
+    /// </summary>
+    protected MockOpenRouteServiceServer Routing { get; }
+
+    /// <summary>
+    /// Erstellt die Umgebungsvariablen der App für den Testmodus (Preisdienst-Adresse, Schlüssel und optional der Teststandort).
+    /// </summary>
+    /// <param name="baseUrl">Die Adresse des Preisdienstes.</param>
+    /// <param name="location">Der Teststandort oder <see langword="null"/>, wenn keiner gesetzt werden soll.</param>
+    /// <param name="apiKey">Der Test-Schlüssel.</param>
+    /// <param name="geocodingUrl">Die Adresse des Ortssuchdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Adressauflösung).</param>
+    /// <param name="tileUrl">Die Basisadresse des Kachelservers oder <see langword="null"/>, wenn keine gesetzt werden soll (die App ruft dann keine Kacheln ab).</param>
+    /// <param name="routingUrl">Die Adresse des Routingdienstes oder <see langword="null"/>, wenn keine gesetzt werden soll (die App verweigert dann die Routenberechnung).</param>
+    /// <param name="routingCredential">Der Test-Schlüssel des Routingdienstes oder <see langword="null"/>, wenn keiner gesetzt werden soll.</param>
+    /// <returns>Die Umgebungsvariablen.</returns>
+    protected static Dictionary<string, string> CreateEnvironment(Uri baseUrl, string? location, string apiKey, Uri? geocodingUrl = null, Uri? tileUrl = null, Uri? routingUrl = null, string? routingCredential = null)
+    {
+        var environment = new Dictionary<string, string>
+        {
+            [TestDataPaths.PriceApiUrlEnvironmentVariable] = baseUrl.ToString(),
+            [TestDataPaths.PriceApiKeyEnvironmentVariable] = apiKey,
+        };
+        if (location is not null)
+        {
+            environment[TestDataPaths.TestLocationEnvironmentVariable] = location;
+        }
+
+        if (geocodingUrl is not null)
+        {
+            environment[TestDataPaths.GeocodingUrlEnvironmentVariable] = geocodingUrl.ToString();
+        }
+
+        if (tileUrl is not null)
+        {
+            environment[TestDataPaths.TileUrlEnvironmentVariable] = tileUrl.ToString();
+        }
+
+        if (routingUrl is not null)
+        {
+            environment[TestDataPaths.RoutingUrlEnvironmentVariable] = routingUrl.ToString();
+        }
+
+        if (routingCredential is not null)
+        {
+            environment[TestDataPaths.RoutingTestApiKeyEnvironmentVariable] = routingCredential;
+        }
+
+        return environment;
+    }
+
+    /// <summary>
+    /// Liefert die Adresse eines Ports, auf dem niemand lauscht (nicht erreichbarer Preisdienst).
+    /// </summary>
+    /// <returns>Die Adresse.</returns>
+    protected static Uri ClosedPortUrl()
+    {
+        var probe = new TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        return new Uri($"http://127.0.0.1:{port}/json/");
+    }
+
+    /// <summary>
+    /// Wechselt auf die Suche („Karte“) und wartet, bis Suchschaltfläche und Trefferliste da sind; bei ausgeklappter Trefferliste zusätzlich auf Filter- und Sortieroptionen.
+    /// </summary>
+    protected void OpenSearch()
+    {
+        NavigateToTab("Karte");
+        WaitForAutomationId("Search.Overlay.Open");
+        WaitForAutomationId("Search.Panel.Toggle");
+        if (IsPanelExpanded())
+        {
+            WaitForAutomationId("Search.Filter.All");
+            WaitForAutomationId("Search.Sort.Price");
+        }
+    }
+
+    /// <summary>
+    /// Öffnet den Suchdialog über der Karte (Suchart, Eingaben, Radius, Suchen), sofern er nicht bereits offen ist.
+    /// </summary>
+    protected void OpenSearchOverlay()
+    {
+        if (Exists("Search.Overlay.Close"))
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Overlay.Open").Patterns.Invoke.Pattern.Invoke();
+        WaitForAutomationId("Search.Overlay.Close");
+    }
+
+    /// <summary>
+    /// Schließt den Suchdialog ohne Suche, sofern er offen ist.
+    /// </summary>
+    protected void CloseSearchOverlay()
+    {
+        if (FindByAutomationId("Search.Overlay.Close") is not { } close)
+        {
+            return;
+        }
+
+        close.Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => !Exists("Search.Overlay.Close"), "Der Suchdialog wurde nicht geschlossen.");
+    }
+
+    /// <summary>
+    /// Liefert, ob die Trefferliste ausgeklappt ist (Beschriftung der Schaltfläche „Liste ausblenden“).
+    /// </summary>
+    /// <returns><see langword="true"/>, wenn die Trefferliste ausgeklappt ist.</returns>
+    protected bool IsPanelExpanded()
+    {
+        try
+        {
+            return FindByAutomationId("Search.Panel.Toggle")?.Name == "Liste ausblenden";
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or global::FlaUI.Core.Exceptions.ElementNotAvailableException or global::FlaUI.Core.Exceptions.PropertyNotSupportedException)
+        {
+            // Die Schaltfläche wird gerade neu beschriftet; der nächste Abruf liefert den Zustand.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Klappt die Trefferliste über ihre Schaltfläche aus (Bedienung ohne Geste), sofern sie eingeklappt ist.
+    /// </summary>
+    protected void ExpandPanel()
+    {
+        if (IsPanelExpanded())
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(IsPanelExpanded, "Die Trefferliste wurde nicht ausgeklappt.");
+        WaitForAutomationId("Search.Filter.All");
+    }
+
+    /// <summary>
+    /// Klappt die Trefferliste über ihre Schaltfläche ein (Bedienung ohne Geste), sofern sie ausgeklappt ist.
+    /// </summary>
+    protected void CollapsePanel()
+    {
+        if (!IsPanelExpanded())
+        {
+            return;
+        }
+
+        WaitForAutomationId("Search.Panel.Toggle").Patterns.Invoke.Pattern.Invoke();
+        WaitUntil(() => !IsPanelExpanded() && !Exists("Search.Filter.All"), "Die Trefferliste wurde nicht eingeklappt.");
+    }
+
+    /// <summary>
+    /// Liefert die Kopfzeile der Trefferliste mit der Trefferanzahl („2 Tankstellen“ bzw. „Keine Ergebnisse“).
+    /// </summary>
+    /// <returns>Der Text.</returns>
+    protected string ReadPanelCount()
+    {
+        return FindByAutomationId("Search.Panel.Count")?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Wählt im Suchdialog die Radiusstufe (Chip) mit dem angegebenen Radius in Kilometern („1“, „2“, „5“, „10“, „15“, „25“).
+    /// </summary>
+    /// <param name="text">Der Radius in Kilometern.</param>
+    protected void SetRadius(string text)
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.Radius." + text);
+    }
+
+    /// <summary>
+    /// Liefert den Radius der ausgewählten Radiusstufe in Kilometern (öffnet dazu den Suchdialog).
+    /// </summary>
+    /// <returns>Der Radius als Text; leer, wenn keine Stufe ausgewählt ist.</returns>
+    protected string ReadRadius()
+    {
+        OpenSearchOverlay();
+        return RadiusSteps.FirstOrDefault(step => IsChipSelected("Search.Radius." + step)) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Liefert, ob der Chip mit der AutomationId ausgewählt ist (Hinweistext „Ausgewählt“ der Schaltfläche).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    /// <returns><see langword="true"/>, wenn der Chip ausgewählt ist.</returns>
+    protected bool IsChipSelected(string automationId)
+    {
+        return IsSelectedChip(FindByAutomationId(automationId));
+    }
+
+    private static bool IsSelectedChip(AutomationElement? element)
+    {
+        try
+        {
+            return element is not null && element.Properties.HelpText.ValueOrDefault == "Ausgewählt";
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or global::FlaUI.Core.Exceptions.ElementNotAvailableException)
+        {
+            // Das Element wurde neu aufgebaut oder ist nicht mehr verfügbar (UIA-Timeouts gehen über die Suche mit Wiederholung).
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Wählt den Chip mit der AutomationId aus und wartet, bis er als ausgewählt gilt.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    protected void SelectChip(string automationId)
+    {
+        SelectChip(WaitForAutomationId(automationId), automationId);
+    }
+
+    /// <summary>
+    /// Wählt den bereits gefundenen Chip aus und wartet, bis er als ausgewählt gilt. Die Suche im UI-Baum entfällt; sinnvoll bei sehr großem Baum
+    /// (viele Treffer), in dem eine Suche über den ganzen Fensterbaum in einen UIA-Timeout laufen kann.
+    /// </summary>
+    /// <param name="chip">Das Element des Chips (vorab gefunden).</param>
+    /// <param name="automationId">Die AutomationId des Chips.</param>
+    protected void SelectChip(AutomationElement chip, string automationId)
+    {
+        chip.Patterns.Invoke.Pattern.Invoke();
+
+        // Zuerst am bereits gefundenen Element prüfen (kein Durchsuchen des ganzen UI-Baums); erst danach, falls das Element neu aufgebaut wurde, per Suche.
+        WaitUntil(() => IsSelectedChip(chip) || IsChipSelected(automationId), $"Der Chip '{automationId}' wurde nicht ausgewählt.");
+    }
+
+    /// <summary>
+    /// Löst die Suche im Suchdialog aus (öffnet ihn dazu bei Bedarf); bei gültiger Eingabe schließt sich der Dialog.
+    /// </summary>
+    protected void Submit()
+    {
+        OpenSearchOverlay();
+        WaitForAutomationId("Search.Submit").Patterns.Invoke.Pattern.Invoke();
+    }
+
+    /// <summary>
+    /// Wartet, bis die Ergebnisliste genau die angegebenen Tankstellen in dieser Reihenfolge zeigt (klappt die Trefferliste dazu bei Bedarf aus).
+    /// </summary>
+    /// <param name="expected">Die erwarteten Namen von oben nach unten.</param>
+    protected void WaitForStationNames(params string[] expected)
+    {
+        ExpandPanel();
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                var names = ReadTexts("Search.Station.Name");
+                last = string.Join(" | ", names);
+                return names.SequenceEqual(expected);
+            },
+            $"Die Ergebnisliste zeigt nicht die erwarteten Tankstellen. Erwartet: {string.Join(" | ", expected)}; zuletzt: {last}");
+    }
+
+    /// <summary>
+    /// Wartet, bis die Statusmeldung der Suche den Text zeigt.
+    /// </summary>
+    /// <param name="expected">Der erwartete Text.</param>
+    protected void WaitForStatusMessage(string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.StatusMessage"))?.Name ?? string.Empty;
+                return last == expected;
+            },
+            $"Die Statusmeldung der Suche lautet nicht '{expected}', zuletzt: '{last}'.");
+    }
+
+    /// <summary>
+    /// Liefert die Texte aller Elemente mit der AutomationId von oben nach unten.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Die Texte.</returns>
+    protected IReadOnlyList<string> ReadTexts(string automationId)
+    {
+        return FindAllOrdered(automationId).Select(element => element.Name).ToList();
+    }
+
+    /// <summary>
+    /// Liefert die Elemente mit der AutomationId in Dokumentreihenfolge (bei der senkrechten Liste von oben nach unten).
+    /// Elemente außerhalb des sichtbaren Bereichs melden keine Position, daher wird nicht nach Koordinaten sortiert.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Die Elemente.</returns>
+    protected IReadOnlyList<AutomationElement> FindAllOrdered(string automationId)
+    {
+        return MainWindow.FindAllDescendants(cf => cf.ByAutomationId(automationId));
+    }
+
+    /// <summary>
+    /// Liefert die Texte der Elemente mit den angegebenen AutomationIds je Tankstelle: Schlüssel ist der Name der Tankstelle,
+    /// Werte sind die Texte der zugeordneten Elemente in Dokumentreihenfolge. Die Zuordnung folgt der Reihenfolge in der Liste (Elemente gehören zur davor stehenden Tankstelle).
+    /// </summary>
+    /// <param name="automationIds">Die AutomationIds der zuzuordnenden Elemente.</param>
+    /// <returns>Je Tankstelle die Texte der zugehörigen Elemente.</returns>
+    protected IReadOnlyList<(string Station, string Text)> TextsByStation(params string[] automationIds)
+    {
+        var ids = new[] { "Search.Station.Name" }.Concat(automationIds).ToHashSet();
+        var elements = MainWindow.FindAllDescendants(cf => new OrCondition(ids.Select(id => (ConditionBase)cf.ByAutomationId(id)).ToArray()));
+        var result = new List<(string, string)>();
+        var current = string.Empty;
+        foreach (var element in elements)
+        {
+            if (element.AutomationId == "Search.Station.Name")
+            {
+                current = element.Name;
+            }
+            else
+            {
+                result.Add((current, element.Name));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Liefert die Namen der Tankstellen, denen die Elemente mit der AutomationId zugeordnet sind (je Element ein Eintrag).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId der zuzuordnenden Elemente.</param>
+    /// <returns>Je Element der Name der zugehörigen Tankstelle.</returns>
+    protected IReadOnlyList<string> StationNamesOf(string automationId)
+    {
+        return TextsByStation(automationId).Select(entry => entry.Station).ToList();
+    }
+
+    /// <summary>
+    /// Wählt die Sortierung („Price“, „Distance“, „Name“).
+    /// </summary>
+    /// <param name="key">Der Schlüssel der Sortierung.</param>
+    protected void SelectSort(string key)
+    {
+        ExpandPanel();
+        SelectChip("Search.Sort." + key);
+    }
+
+    /// <summary>
+    /// Wählt den Spritsortenfilter („All“ oder Name der Sorte).
+    /// </summary>
+    /// <param name="key">Der Schlüssel des Filters.</param>
+    protected void SelectFilter(string key)
+    {
+        ExpandPanel();
+        SelectChip("Search.Filter." + key);
+    }
+
+    /// <summary>
+    /// Stellt in den Optionen die Standortnutzung ein („Always“, „WhileInUse“, „Never“) und wechselt zurück auf die Suche.
+    /// </summary>
+    /// <param name="key">Der Schlüssel der Standortnutzung.</param>
+    protected void SetGpsUsage(string key)
+    {
+        OpenSettings();
+        SelectRadio("Settings.Gps." + key);
+        OpenSearch();
+    }
+
+    /// <summary>
+    /// Wählt die Suchart „Adresse, Ort oder PLZ“ und wartet, bis das Eingabefeld erscheint.
+    /// </summary>
+    protected void SelectAddressMode()
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.Mode.Address");
+        WaitForAutomationId("Search.Address.Input");
+    }
+
+    /// <summary>
+    /// Wählt die Suchart „Aktueller Standort“ und wartet, bis das Eingabefeld verschwindet.
+    /// </summary>
+    protected void SelectLocationMode()
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.Mode.CurrentLocation");
+        WaitUntil(() => !Exists("Search.Address.Input"), "Das Adressfeld wurde nicht ausgeblendet.");
+    }
+
+    /// <summary>
+    /// Wählt die Suchart „Route“ und wartet, bis das Zielfeld erscheint.
+    /// </summary>
+    protected void SelectRouteMode()
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.Mode.Route");
+        WaitForAutomationId("Search.Route.Destination.Input");
+    }
+
+    /// <summary>
+    /// Wählt die Startart „Adresse, Ort oder PLZ“ der Routensuche und trägt den Starttext ein.
+    /// </summary>
+    /// <param name="text">Der Starttext.</param>
+    protected void SetRouteStart(string text)
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.Route.StartKind.Address");
+        WaitForAutomationId("Search.Route.Start.Input");
+        SetFieldValue("Search.Route.Start.Input", text);
+    }
+
+    /// <summary>
+    /// Trägt den Text in das Zielfeld der Routensuche ein und wartet, bis er dort steht.
+    /// </summary>
+    /// <param name="text">Der Zieltext.</param>
+    protected void SetRouteDestination(string text)
+    {
+        OpenSearchOverlay();
+        SetFieldValue("Search.Route.Destination.Input", text);
+    }
+
+    /// <summary>
+    /// Wählt die Abstandsstufe zur Route (Chip) in Kilometern („1“, „2“, „5“, „10“).
+    /// </summary>
+    /// <param name="key">Der Abstand in Kilometern.</param>
+    protected void SelectRouteDistance(string key)
+    {
+        OpenSearchOverlay();
+        SelectChip("Search.RouteDistance." + key);
+    }
+
+    /// <summary>
+    /// Wartet, bis die Zusammenfassung der Routensuche den Text zeigt.
+    /// </summary>
+    /// <param name="expected">Der erwartete Text.</param>
+    protected void WaitForRouteSummary(string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = FindByAutomationId("Search.Route.Summary")?.Properties.Name.ValueOrDefault ?? string.Empty;
+                return last == expected;
+            },
+            $"Die Zusammenfassung der Route lautet nicht '{expected}', zuletzt: '{last}'.");
+    }
+
+    /// <summary>
+    /// Trägt den Text in das Adressfeld ein und wartet, bis er dort steht.
+    /// </summary>
+    /// <param name="text">Der Text.</param>
+    protected void SetAddress(string text)
+    {
+        OpenSearchOverlay();
+        SetFieldValue("Search.Address.Input", text);
+    }
+
+    /// <summary>
+    /// Liefert den Text des Adressfelds.
+    /// </summary>
+    /// <returns>Der Text; leer, wenn das Feld nicht vorhanden ist.</returns>
+    protected string ReadAddress()
+    {
+        OpenSearchOverlay();
+        var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.Address.Input"));
+        return element?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Wartet, bis der Hinweis auf den aufgelösten Ort den Text zeigt.
+    /// </summary>
+    /// <param name="expected">Der erwartete Text.</param>
+    protected void WaitForResolvedPlace(string expected)
+    {
+        var last = string.Empty;
+        WaitUntil(
+            () =>
+            {
+                last = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Search.ResolvedPlace"))?.Name ?? string.Empty;
+                return last == expected;
+            },
+            $"Der Ortshinweis lautet nicht '{expected}', zuletzt: '{last}'.");
+    }
+
+    /// <inheritdoc />
+    protected override void Cleanup()
+    {
+        // Bei einem fehlgeschlagenen Start sind Server/Geocoding evtl. noch nicht zugewiesen (Basiskonstruktor abgebrochen).
+        ((IDisposable?)Server)?.Dispose();
+        ((IDisposable?)Geocoding)?.Dispose();
+        ((IDisposable?)Tiles)?.Dispose();
+        ((IDisposable?)Routing)?.Dispose();
+    }
+}

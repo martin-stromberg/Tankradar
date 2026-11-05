@@ -1,0 +1,27 @@
+# Verbindliche Stilgrundlage fuer das Repository (wird von "dotnet format" und den Git-Hooks ausgewertet).
+root = true
+
+[*]
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx}]
+indent_size = 4
+
+[*.{csproj,props,targets,xaml,xml,resx,json,yml,yaml}]
+indent_size = 2
+
+[*.{py,sh}]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[{pre-commit,pre-push}]
+end_of_line = lf
+indent_size = 4
+
+# Generierter Migrationscode (dotnet ef) wird nicht von Hand dokumentiert.
+[src/Tankradar.MAUI/Data/Migrations/*.cs]
+dotnet_diagnostic.CS1591.severity = none

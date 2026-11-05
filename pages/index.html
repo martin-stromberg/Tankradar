@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tankatlas – Kraftstoffpreise, Favoriten und Tankbuch</title>
+  <meta name="description" content="Tankatlas ist eine Offline-first-App für Kraftstoffpreise: Tankstellen finden, Favoriten mit aktuellen Preisen, Tankbuch mit Verbrauchsauswertung – alles lokal auf dem Gerät.">
+  <link rel="icon" href="assets/appicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+
+  <header class="hero">
+    <img class="hero-icon" src="assets/appicon.svg" alt="Tankatlas-App-Icon: Zapfsäule" width="96" height="96">
+    <h1>Tankatlas</h1>
+    <p class="tagline">Kraftstoffpreise, Favoriten und Tankbuch –<br>alles offline-fähig auf deinem Gerät.</p>
+    <ul class="badges">
+      <li>iOS</li>
+      <li>Offline-first</li>
+      <li>Kein Konto, kein Tracking</li>
+      <li>Daten: Tankerkönig / MTS-K</li>
+    </ul>
+    <p class="scroll-hint" aria-hidden="true">Nach unten scrollen<span class="chevron">⌄</span></p>
+  </header>
+
+  <main>
+    <section class="panel" id="favoriten">
+      <div class="panel-text">
+        <span class="step">1</span>
+        <h2>Startseite &amp; Favoriten</h2>
+        <p>Beim Öffnen der App siehst du deine Favoritengruppen mit den aktuellen Preisen deiner Spritsorten – etwa „Arbeitsweg“ oder „Heimat“. Auf Wunsch zeigt der Bereich „In der Nähe“ Tankstellen um deinen Standort. Ohne Verbindung gelten die zuletzt bekannten Preise mit Altersangabe.</p>
+      </div>
+      <figure class="device"><img src="assets/screenshots/favoriten.png" alt="Startbildschirm: Favoritengruppen mit Preis-Chips" loading="lazy"></figure>
+    </section>
+
+    <section class="panel" id="karte">
+      <div class="panel-text">
+        <span class="step">2</span>
+        <h2>Karte &amp; Suche</h2>
+        <p>Auf der OpenStreetMap-Karte findest du Tankstellen am Standort, rund um Adresse, Ort oder PLZ sowie entlang einer Route. Farbige Preismarkierungen zeigen das Preisniveau auf einen Blick; die Trefferliste liefert Entfernung, Preise und deren Alter.</p>
+      </div>
+      <figure class="device"><img src="assets/screenshots/karte.png" alt="Kartenansicht mit farbigen Preismarkierungen und Trefferliste" loading="lazy"></figure>
+    </section>
+
+    <section class="panel" id="details">
+      <div class="panel-text">
+        <span class="step">3</span>
+        <h2>Tankstellen-Details</h2>
+        <p>Ein Tipp auf eine Tankstelle öffnet die Detailansicht: Adresse, Entfernung, die Preise deiner aktivierten Spritsorten samt Alter und die Öffnungszeiten. Von hier legst du die Station in einer selbst benannten Favoritengruppe ab.</p>
+      </div>
+      <figure class="device"><img src="assets/screenshots/details.png" alt="Detailansicht einer Tankstelle mit Preisen und Öffnungszeiten" loading="lazy"></figure>
+    </section>
+
+    <section class="panel" id="tankbuch">
+      <div class="panel-text">
+        <span class="step">4</span>
+        <h2>Tankbuch</h2>
+        <p>Erfasse Tank- und Ladevorgänge je Fahrzeug – Menge, Preis, Kilometerstand, Belegfoto. Tankatlas rechnet den Verbrauch pro 100 km und wertet Kosten aus: Durchschnitt, Monatskosten und Verlaufsdiagramme. Auf Wunsch exportierst du alles als CSV oder PDF.</p>
+      </div>
+      <figure class="device"><img src="assets/screenshots/tankbuch.png" alt="Tankbuch mit Verbrauchsauswertung und Vorgangsliste" loading="lazy"></figure>
+    </section>
+
+    <section class="panel" id="sicherung">
+      <div class="panel-text">
+        <span class="step">5</span>
+        <h2>Sicherung &amp; Datenschutz</h2>
+        <p>Fahrzeug- und Tankbuchdaten bleiben auf dem Gerät; eine Sicherung als ZIP-Archiv erstellst du nur auf Veranlassung – lokal, atomar, teilbar. Tankatlas hat keinen Server, kein Konto, keine Werbung und kein Tracking.</p>
+      </div>
+      <figure class="device"><img src="assets/screenshots/optionen.png" alt="Optionsbereich mit lokaler Sicherung und Datenquellen" loading="lazy"></figure>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Tankatlas wird nicht im App Store angeboten: Die Preisdaten nutzen einen privaten, limitierten API-Schlüssel von Tankerkönig (Daten der Markttransparenzstelle für Kraftstoffe).</p>
+    <p><a href="https://github.com/martin-stromberg/Tankradar">Quellcode auf GitHub</a> · Karten: OpenStreetMap · Daten: Tankerkönig / MTS-K</p>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

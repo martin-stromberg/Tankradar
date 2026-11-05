@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>CS1591</WarningsAsErrors>
+    <!-- Die ProjectReference auf Tankradar.MAUI bringt transitiv Microsoft.Maui.Resizetizer (buildTransitive) mit.
+         Bild-/Icon-Verarbeitung wird hier nicht benötigt und würde zu Konflikten mit den bereits im
+         Hauptprojekt erzeugten Ressourcen führen. -->
+    <EnableMauiImageProcessing>false</EnableMauiImageProcessing>
+    <EnableMauiFontProcessing>false</EnableMauiFontProcessing>
+    <EnableMauiSplashProcessing>false</EnableMauiSplashProcessing>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\TestSupport\TransientRetry.cs" Link="TestSupport\TransientRetry.cs" />
+    <Compile Include="..\TestSupport\TransientWait.cs" Link="TestSupport\TransientWait.cs" />
+    <Compile Include="..\TestSupport\E2EStartupPolicy.cs" Link="TestSupport\E2EStartupPolicy.cs" />
+    <Compile Include="..\TestSupport\BackupTestArchive.cs" Link="TestSupport\BackupTestArchive.cs" />
+    <Compile Include="..\TestSupport\RecordingLogger.cs" Link="TestSupport\RecordingLogger.cs" />
+    <Compile Include="..\TestSupport\LoopbackHttpListener.cs" Link="TestSupport\LoopbackHttpListener.cs" />
+    <Compile Include="..\TestSupport\MockOpenRouteServiceServer.cs" Link="TestSupport\MockOpenRouteServiceServer.cs" />
+    <Compile Include="..\TestSupport\PolylineEncoder.cs" Link="TestSupport\PolylineEncoder.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tankradar.MAUI\Tankradar.MAUI.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
+             x:DataType="vm:SettingsViewModel"
+             x:Class="Tankradar.MAUI.Views.SettingsPage"
+             Title="Optionen"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:TankbookStyles />
+            </ResourceDictionary.MergedDictionaries>
+        <Style x:Key="SettingsCard" TargetType="Border">
+            <Setter Property="Padding" Value="{StaticResource space-md}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource ColorSurfaceLight}, Dark={StaticResource ColorSurfaceDark}}" />
+            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource ColorBorderLight}, Dark={StaticResource ColorBorderDark}}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        </Style>
+        <Style x:Key="SettingsMoveButton" TargetType="Button">
+            <Setter Property="WidthRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="HeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BackgroundColor" Value="{StaticResource ColorPrimaryTeal}" />
+            <Setter Property="TextColor" Value="White" />
+        </Style>
+        <Style x:Key="SettingsRadio" TargetType="RadioButton">
+            <Setter Property="MinimumHeightRequest" Value="{StaticResource MinimumTouchTarget}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+        </Style>
+        </ResourceDictionary>
+    </views:TankradarContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="{StaticResource space-md}"
+                             Spacing="{StaticResource space-md}">
+            <Label Text="{Binding StatusMessage}"
+                   IsVisible="{Binding HasStatusMessage}"
+                   Style="{StaticResource body-md}"
+                   TextColor="{StaticResource ColorErrorRed}"
+                   AutomationId="Settings.StatusMessage" />
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding FuelTypesHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding FuelTypesHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding FuelTypes}" Spacing="{StaticResource space-xs}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FuelTypeItemViewModel">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                                    <Switch Grid.Column="0"
+                                            IsToggled="{Binding IsSelected}"
+                                            VerticalOptions="Center"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.Switch'}"
+                                            SemanticProperties.Description="{Binding DisplayName}" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding DisplayName}"
+                                           Style="{StaticResource body-lg}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           VerticalOptions="Center" />
+                                    <Button Grid.Column="2"
+                                            Text="▲"
+                                            Style="{StaticResource SettingsMoveButton}"
+                                            Command="{Binding MoveUpCommand}"
+                                            IsEnabled="{Binding CanMoveUp}"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.MoveUp'}"
+                                            SemanticProperties.Description="{x:Static texts:SettingsTexts.MoveUpDescription}" />
+                                    <Button Grid.Column="3"
+                                            Text="▼"
+                                            Style="{StaticResource SettingsMoveButton}"
+                                            Command="{Binding MoveDownCommand}"
+                                            IsEnabled="{Binding CanMoveDown}"
+                                            AutomationId="{Binding AutomationKey, StringFormat='Settings.FuelType.{0}.MoveDown'}"
+                                            SemanticProperties.Description="{x:Static texts:SettingsTexts.MoveDownDescription}" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding GpsHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding GpsHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding GpsOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="Gps"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.Gps.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding NearbyHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                        <Switch Grid.Column="0"
+                                IsToggled="{Binding ShowNearby}"
+                                VerticalOptions="Center"
+                                AutomationId="Settings.Nearby.Switch"
+                                SemanticProperties.Description="{x:Static texts:SettingsTexts.NearbyHint}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding NearbyHint}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               VerticalOptions="Center"
+                               AutomationId="Settings.Nearby.Hint" />
+                    </Grid>
+                    <Label Text="{Binding NearbyGpsHint}"
+                           IsVisible="{Binding ShowNearbyGpsHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Nearby.GpsHint" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding ViewHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding ViewOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="View"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.View.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}">
+                    <Label Text="{Binding SortHeading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding SortOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:IChoiceOption">
+                                <RadioButton GroupName="Sort"
+                                             Content="{Binding Label}"
+                                             IsChecked="{Binding IsSelected}"
+                                             Style="{StaticResource SettingsRadio}"
+                                             AutomationId="{Binding AutomationKey, StringFormat='Settings.Sort.{0}'}" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasRouteSearch}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding RouteSearch}" x:DataType="vm:RouteSearchSettingsViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Settings.Route.Heading" />
+                    <Label Text="{Binding Hint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.Hint" />
+                    <Label Text="{Binding SignupHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.SignupHint" />
+                    <Button Text="{Binding SignupButtonText}"
+                            Command="{Binding OpenSignupCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Settings.Route.Signup" />
+                    <Label Text="{Binding KeyStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Route.KeyStatus" />
+                    <Entry Text="{Binding KeyInput}"
+                           Placeholder="{Binding KeyPlaceholder}"
+                           IsPassword="{Binding IsKeyMasked}"
+                           MaxLength="512"
+                           IsTextPredictionEnabled="False"
+                           IsSpellCheckEnabled="False"
+                           MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                           SemanticProperties.Description="{Binding KeyPlaceholder}"
+                           AutomationId="Settings.Route.KeyInput" />
+                    <FlexLayout Wrap="Wrap">
+                        <Button Text="{Binding SaveButtonText}"
+                                Command="{Binding SaveKeyCommand}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookButton}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Save" />
+                        <Button Text="{Binding CheckButtonText}"
+                                Command="{Binding CheckKeyCommand}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Check" />
+                        <Button Text="{Binding RemoveButtonText}"
+                                Command="{Binding RemoveKeyCommand}"
+                                IsVisible="{Binding HasStoredKey}"
+                                IsEnabled="{Binding CanUseButtons}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                TextColor="{StaticResource ColorErrorRed}"
+                                Margin="0,0,8,8"
+                                AutomationId="Settings.Route.Remove" />
+                    </FlexLayout>
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Route.Status" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{StaticResource space-sm}" MinimumHeightRequest="{StaticResource MinimumTouchTarget}">
+                        <Switch Grid.Column="0"
+                                IsToggled="{Binding IsRouteSearchEnabled}"
+                                IsEnabled="{Binding HasStoredKey}"
+                                VerticalOptions="Center"
+                                AutomationId="Settings.Route.Switch"
+                                SemanticProperties.Description="{Binding EnableLabel}" />
+                        <Label Grid.Column="1"
+                               Text="{Binding EnableLabel}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               VerticalOptions="Center"
+                               AutomationId="Settings.Route.SwitchLabel" />
+                    </Grid>
+                    <Label Text="{Binding EnableHint}"
+                           IsVisible="{Binding HasEnableHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Route.EnableHint" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasBackup}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding Backup}" x:DataType="vm:BackupViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Settings.Backup.Heading" />
+                    <Label Text="{Binding Hint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Backup.Hint" />
+                    <Button Text="{Binding CreateText}"
+                            Command="{Binding CreateCommand}"
+                            Style="{StaticResource TankbookButton}"
+                            AutomationId="Settings.Backup.Create" />
+                    <Button Text="{Binding ImportText}"
+                            Command="{Binding ImportCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Settings.Backup.Import" />
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Backup.Status" />
+                    <Label Text="{Binding EmptyText}"
+                           IsVisible="{Binding IsEmpty}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Backup.Empty" />
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Spacing="{StaticResource space-sm}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:BackupItemViewModel">
+                                <VerticalStackLayout Spacing="{StaticResource space-xs}">
+                                    <Label Text="{Binding Title}"
+                                           Style="{StaticResource body-lg}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                           AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Title'}" />
+                                    <Label Text="{Binding SizeText}"
+                                           Style="{StaticResource body-sm}"
+                                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                           AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Size'}" />
+                                    <FlexLayout Wrap="Wrap">
+                                        <Button Text="{Binding RestoreText}"
+                                                Command="{Binding RestoreCommand}"
+                                                Style="{StaticResource TankbookButton}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding RestoreHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Restore'}" />
+                                        <Button Text="{Binding ShareText}"
+                                                Command="{Binding ShareCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding ShareHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Share'}" />
+                                        <Button Text="{Binding DeleteText}"
+                                                Command="{Binding DeleteCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                TextColor="{StaticResource ColorErrorRed}"
+                                                Margin="0,0,8,8"
+                                                SemanticProperties.Hint="{Binding DeleteHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Delete'}" />
+                                    </FlexLayout>
+
+                                    <!-- Rückfrage vor der Wiederherstellung -->
+                                    <VerticalStackLayout IsVisible="{Binding IsConfirmingRestore}" Spacing="{StaticResource space-sm}">
+                                        <Label Text="{Binding RestoreQuestion}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreQuestion'}" />
+                                        <Button Text="{Binding ConfirmRestoreText}"
+                                                Command="{Binding ConfirmRestoreCommand}"
+                                                Style="{StaticResource TankbookDangerButton}"
+                                                SemanticProperties.Hint="{Binding RestoreHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreConfirm'}" />
+                                        <Button Text="{Binding CancelText}"
+                                                Command="{Binding CancelRestoreCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreCancel'}" />
+                                    </VerticalStackLayout>
+
+                                    <!-- Rückfrage vor dem Löschen -->
+                                    <VerticalStackLayout IsVisible="{Binding IsConfirmingDelete}" Spacing="{StaticResource space-sm}">
+                                        <Label Text="{Binding DeleteQuestion}"
+                                               Style="{StaticResource body-md}"
+                                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                                               AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteQuestion'}" />
+                                        <Button Text="{Binding ConfirmDeleteText}"
+                                                Command="{Binding ConfirmDeleteCommand}"
+                                                Style="{StaticResource TankbookDangerButton}"
+                                                SemanticProperties.Hint="{Binding DeleteHint}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteConfirm'}" />
+                                        <Button Text="{Binding CancelText}"
+                                                Command="{Binding CancelDeleteCommand}"
+                                                Style="{StaticResource TankbookOutlineButton}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.DeleteCancel'}" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasDataSource}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding DataSource}" x:DataType="vm:DataSourceViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    <Label Text="{Binding Attribution}"
+                           Style="{StaticResource body-lg}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Attribution" />
+                    <Label Text="{Binding License}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <Label Text="{Binding KeyStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.PriceService.KeyStatus" />
+                    <Button Text="{Binding CheckButtonText}"
+                            Command="{Binding CheckCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                            BackgroundColor="{StaticResource ColorPrimaryTeal}"
+                            TextColor="White"
+                            AutomationId="Settings.PriceService.Check" />
+                    <Label Text="{Binding CheckStatus}"
+                           IsVisible="{Binding HasCheckStatus}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.PriceService.Status" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Unsichtbares Signal „Einstellungen geladen“ für Tests; am Ende, damit es weder Abstand oben erzeugt noch zuerst vorgelesen wird -->
+            <Label Text="Einstellungen geladen"
+                   IsVisible="{Binding IsLoaded}"
+                   Style="{StaticResource body-sm}"
+                   Opacity="0"
+                   HeightRequest="1"
+                   AutomationId="Settings.Loaded" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</views:TankradarContentPage>

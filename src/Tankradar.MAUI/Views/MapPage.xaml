@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<views:TankradarContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
+             xmlns:views="clr-namespace:Tankradar.MAUI.Views"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             xmlns:vm="clr-namespace:Tankradar.MAUI.ViewModels"
+             xmlns:controls="clr-namespace:Tankradar.MAUI.Views.Controls"
+             x:DataType="vm:MapViewModel"
+             x:Class="Tankradar.MAUI.Views.MapPage"
+             Title="Karte"
+             BackgroundColor="{AppThemeBinding Light={StaticResource ColorBackgroundLight}, Dark={StaticResource ColorBackgroundDark}}">
+
+    <views:TankradarContentPage.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:MapStyles />
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="LegendDot" TargetType="Border">
+                <Setter Property="WidthRequest" Value="12" />
+                <Setter Property="HeightRequest" Value="12" />
+                <Setter Property="StrokeThickness" Value="0" />
+                <Setter Property="StrokeShape" Value="RoundRectangle 6" />
+                <Setter Property="VerticalOptions" Value="Center" />
+            </Style>
+        </ResourceDictionary>
+    </views:TankradarContentPage.Resources>
+
+    <!-- Vollflächenkarte; darüber Suche (oben links), Legende (oben rechts), Nachladen und Quellenangabe (unten im Kartenbereich), Trefferliste (unten) und Suchdialog -->
+    <Grid RowDefinitions="*,Auto">
+
+        <controls:StationMapView x:Name="ResultMap"
+                                 Grid.Row="0"
+                                 Grid.RowSpan="2"
+                                 Markers="{Binding MapMarkers}"
+                                 Origin="{Binding Origin}"
+                                 Route="{Binding MapRoute}"
+                                 MapFitMode="{Binding MapFitMode}"
+                                 ResultVersion="{Binding MapResultVersion}"
+                                 MarkerCommand="{Binding OpenStationCommand}"
+                                 ViewportChanged="OnMapViewportChanged"
+                                 ViewportFitted="OnMapViewportFitted"
+                                 AutomationId="Search.Map" />
+
+        <Button Grid.Row="0"
+                Text="🔍"
+                Style="{StaticResource MapControlButton}"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                Margin="{StaticResource MapOverlayMargin}"
+                Command="{Binding OpenSearchOverlayCommand}"
+                SemanticProperties.Description="{x:Static texts:MapTexts.SearchButton}"
+                AutomationId="Search.Overlay.Open" />
+
+        <!-- Legende oben rechts, links neben den Zoom-Schaltflächen der Karte; sie klappt über die Symbolschaltfläche auf und zu (Start: eingeklappt) -->
+        <Border Grid.Row="0"
+                Style="{StaticResource MapBadge}"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="{StaticResource MapOverlayBesideMapControlsMargin}"
+                SemanticProperties.Description="{x:Static texts:MapTexts.LegendPlacement}">
+            <VerticalStackLayout Spacing="2">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-xs}">
+                    <Label Text="{x:Static texts:MapTexts.LegendHeading}"
+                           Style="{StaticResource body-sm}"
+                           FontFamily="InterSemibold"
+                           VerticalOptions="Center"
+                           AutomationId="Map.Legend"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}" />
+                    <Button Grid.Column="1"
+                            Text="{Binding LegendToggleGlyph}"
+                            Command="{Binding ToggleLegendCommand}"
+                            Style="{StaticResource MapControlButton}"
+                            FontSize="14"
+                            SemanticProperties.Description="{Binding LegendToggleDescription}"
+                            AutomationId="Map.Legend.Toggle" />
+                </Grid>
+                <VerticalStackLayout Spacing="2" IsVisible="{Binding IsLegendExpanded}">
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Cheapest}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelCheapest}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Normal}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelNormal}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Expensive}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelExpensive}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="6">
+                        <Border Style="{StaticResource LegendDot}" BackgroundColor="{x:Static resources:MapPalette.Closed}" />
+                        <Label Text="{x:Static texts:MapTexts.LevelClosed}" Style="{StaticResource body-sm}" VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Nachladen des sichtbaren Ausschnitts: Textschaltfläche ohne Hintergrund, erst nach einer Bewegung der Karte -->
+        <VerticalStackLayout Grid.Row="0"
+                             HorizontalOptions="Center"
+                             VerticalOptions="End"
+                             Margin="{StaticResource MapOverlayAboveAttributionMargin}"
+                             IsVisible="{Binding ShowAreaReloadButton}">
+            <Button Text="{x:Static texts:MapTexts.ReloadArea}"
+                    Command="{Binding ReloadVisibleAreaCommand}"
+                    BackgroundColor="Transparent"
+                    BorderWidth="0"
+                    MinimumHeightRequest="{StaticResource MinimumTouchTarget}"
+                    FontFamily="InterSemibold"
+                    FontSize="15"
+                    TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                    AutomationId="Map.ReloadArea" />
+            <Label Text="{Binding AreaReloadHint}"
+                   IsVisible="{Binding HasAreaReloadHint}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Style="{StaticResource body-sm}"
+                   TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                   AutomationId="Map.ReloadArea.Hint" />
+        </VerticalStackLayout>
+
+        <!-- Quellenangabe (Nutzungsbedingung von OpenStreetMap: dauerhaft sichtbar) unten links über der Trefferliste, als Link auf die Urheber- und Lizenzhinweise -->
+        <Border Grid.Row="0"
+                Style="{StaticResource MapBadge}"
+                Padding="4,0"
+                HorizontalOptions="Start"
+                VerticalOptions="End"
+                Margin="{StaticResource MapOverlayMargin}">
+            <VerticalStackLayout>
+                <Button Text="{x:Static texts:MapTexts.Attribution}"
+                        Clicked="OnAttributionClicked"
+                        BackgroundColor="Transparent"
+                        BorderWidth="0"
+                        Padding="4,0"
+                        MinimumHeightRequest="28"
+                        HeightRequest="28"
+                        FontFamily="InterRegular"
+                        FontSize="11"
+                        TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                        SemanticProperties.Hint="{x:Static texts:MapTexts.AttributionHint}"
+                        AutomationId="Map.Attribution" />
+                <Label Text="{Binding RoutingAttributionText}"
+                       IsVisible="{Binding HasMapRoute}"
+                       Padding="4,0,4,4"
+                       FontFamily="InterRegular"
+                       FontSize="11"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="Map.Attribution.Routing" />
+            </VerticalStackLayout>
+        </Border>
+
+        <controls:StationBottomSheet Grid.Row="1" />
+
+        <controls:MapSearchOverlay Grid.Row="0"
+                                   Grid.RowSpan="2"
+                                   IsVisible="{Binding IsSearchOverlayOpen}" />
+    </Grid>
+
+</views:TankradarContentPage>

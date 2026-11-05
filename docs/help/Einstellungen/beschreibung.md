@@ -1,0 +1,61 @@
+← [Zurück zur Übersicht](index.md)
+
+# Einstellungen — Beschreibung
+
+## Zweck
+
+Im Bereich **Optionen** passen Sie Tankatlas an Ihre Gewohnheiten an. Alle Einstellungen werden lokal auf Ihrem Gerät gespeichert, sofort beim Ändern und ohne separate Schaltfläche „Speichern“.
+
+## Einrichtung beim ersten Start
+
+Beim ersten Start nach der Installation fragt Tankatlas einmalig, welche Spritsorten Sie interessieren (**Super E5**, **Super E10**, **Diesel**; alle vorausgewählt). **Speichern** übernimmt Ihre Auswahl (mindestens eine Sorte), **Überspringen** übernimmt alle drei Sorten. Die Auswahl landet in der Gruppe **Spritsorten** dieser Seite und lässt sich dort jederzeit ändern. Die Einrichtung erscheint danach nicht wieder. Strom oder Laden sind dort nicht wählbar. Details unter [Ablauf für Anwender](ablauf-anwender.md#einrichtung-beim-ersten-start).
+
+## Funktionsweise
+
+Die Seite besteht aus fünf Gruppen:
+
+### Spritsorten
+Zur Auswahl stehen **Super E5**, **Super E10** und **Diesel**. Mit dem Schalter neben dem Namen wählen Sie eine Sorte aus oder ab. Mit den Pfeil-Schaltflächen (▲ und ▼) legen Sie die Reihenfolge fest. Mindestens eine Spritsorte muss ausgewählt bleiben; das Abwählen der letzten Sorte wird abgelehnt und mit einem Hinweis angezeigt.
+
+### Standort und GPS
+Legt fest, wann Tankatlas Ihren Standort verwenden darf: **Immer**, **Nur bei Nutzung** oder **Nie**. Voreingestellt ist „Nur bei Nutzung“: Der Standort wird nur verwendet, solange die App geöffnet ist.
+
+### In der Nähe
+Mit dem Schalter bei **In der Nähe** legen Sie fest, ob die [Startseite](../Startseite/index.md) zusätzlich Tankstellen im Umkreis von 5 km um Ihren Standort zeigt. Voreingestellt ist aus. Der Bereich erscheint nur, wenn auch die Standortnutzung nicht **Nie** ist; ist sie **Nie**, weist die Seite darauf hin („Wirkt nur, wenn die Standortnutzung nicht „Nie“ ist.“).
+
+### Standardansicht der Suchergebnisse
+**Liste** oder **Karte**. Voreingestellt ist „Liste“. Die Einstellung legt fest, ob die Trefferliste auf der Karte beim Öffnen des Bereichs ausgeklappt ist („Liste“) oder eingeklappt ist („Karte“).
+
+### Standardsortierung
+**Preis**, **Entfernung** oder **Name**. Voreingestellt ist „Preis“.
+
+### Standardwerte
+
+| Einstellung | Standard |
+|-------------|----------|
+| Spritsorten | Super E5, Super E10, Diesel (alle ausgewählt, in dieser Reihenfolge) |
+| Standort und GPS | Nur bei Nutzung |
+| In der Nähe | aus |
+| Standardansicht | Liste |
+| Standardsortierung | Preis |
+
+### Speicherung und Datenschutz
+
+Die Einstellungen liegen in einer lokalen Datenbank auf Ihrem Gerät und werden nicht übertragen. Unter iOS schützt die Datei zusätzlich der Dateischutz des Betriebssystems (Data Protection). Bei App-Updates wird die Datenbank automatisch auf den neuen Stand gebracht, ohne dass Ihre Einstellungen verloren gehen.
+
+## Beispiele
+
+**Sie tanken nur Diesel:** Schalten Sie Super E5 und Super E10 aus. Diesel bleibt ausgewählt.
+
+**Sie wollen zuerst die Karte sehen:** Wählen Sie unter „Standardansicht der Suchergebnisse“ die Option **Karte**. Die Trefferliste bleibt beim Öffnen eingeklappt; Sie klappen sie auf der Karte mit einem Tippen auf die Kopfzeile auf.
+
+## Einschränkungen
+
+- Die Umkreissuche nutzt die gewählten Spritsorten (in Ihrer Reihenfolge), die Standardsortierung und die Standardansicht („Liste“ oder „Karte“) als Vorbelegung; auf der Karte lässt sich die Trefferliste jederzeit ein- und ausklappen, ohne die Einstellung zu ändern.
+- Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt; sonst fragt die Suche beim Tippen auf „Suchen“ nach der Standortfreigabe des Geräts.
+- Die Spritsorten und ihre Reihenfolge bestimmen auch, welche Preise die [Startseite](../Startseite/index.md) in welcher Reihenfolge zeigt.
+- Die Einstellungen gelten für die App auf diesem Gerät und werden nicht zwischen Geräten synchronisiert.
+
+## Sicherung
+
+Die Karte **Sicherung** (zwischen **Sortierung** und **Datenquelle**) erstellt, listet, stellt wieder her, löscht und teilt Sicherungen Ihrer Daten und spielt externe Sicherungsdateien ein. Sie ist unter [Sicherung](../Sicherung/index.md) beschrieben. Eine Wiederherstellung setzt auch diese Einstellungen auf den Stand der Sicherung zurück; die Seite lädt sie danach neu.

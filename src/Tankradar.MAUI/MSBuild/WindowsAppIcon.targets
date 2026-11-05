@@ -1,0 +1,100 @@
+<Project>
+
+	<!-- Windows-App-Icon mit mehreren Größen (16, 24, 32, 48, 256 px).
+	Der MAUI-Resizetizer schreibt für Windows nur ein ICO mit einer einzigen Größe (64 px). Taskleiste, Titelleiste,
+	Explorer und Alt+Tab brauchen aber mehrere Größen, sonst wird skaliert und das Symbol unscharf.
+	Dieses Ziel läuft nach dem Resizetizer und ersetzt resizetizer\r\appicon.ico durch ein ICO, das die vom Resizetizer
+	bereits aus den SVG-Quellen erzeugten Dateien appiconLogo.targetsize-N.png als PNG-Einträge enthält (Format ab Windows Vista).
+	Auf diese Datei zeigt ApplicationIcon (vom Resizetizer gesetzt); sie wird zudem in die Build-Ausgabe kopiert.
+	Es ist keine zusätzliche Abhängigkeit nötig: Die Aufgabe nutzt nur die Basisbibliothek (RoslynCodeTaskFactory wie bei
+	TankerkoenigApiKey.targets). Fehlt eine der Größen, bricht der Build mit einer Meldung ab, statt ein unvollständiges Icon zu liefern. -->
+
+	<UsingTask TaskName="WriteMultiSizeIcon"
+	           TaskFactory="RoslynCodeTaskFactory"
+	           AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+		<ParameterGroup>
+			<PngFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+			<OutputFile ParameterType="System.String" Required="true" />
+		</ParameterGroup>
+		<Task>
+			<Using Namespace="System" />
+			<Using Namespace="System.IO" />
+			<Using Namespace="System.Linq" />
+			<Code Type="Fragment" Language="cs"><![CDATA[
+				var entries = new System.Collections.Generic.List<Tuple<int, byte[]>>();
+				foreach (var item in PngFiles)
+				{
+					var bytes = File.ReadAllBytes(item.ItemSpec);
+					// PNG: 8 Byte Signatur, dann IHDR mit Breite und Höhe (Big Endian) ab Offset 16.
+					if (bytes.Length < 24 || bytes[0] != 0x89 || bytes[1] != 0x50 || bytes[2] != 0x4E || bytes[3] != 0x47)
+					{
+						Log.LogError("Das Icon-Teilbild " + item.ItemSpec + " ist keine PNG-Datei.");
+						return false;
+					}
+
+					int width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+					int height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+					if (width != height || width < 16 || width > 256)
+					{
+						Log.LogError("Das Icon-Teilbild " + item.ItemSpec + " hat die Größe " + width + "x" + height + ", erwartet wird quadratisch 16 bis 256 px.");
+						return false;
+					}
+
+					entries.Add(Tuple.Create(width, bytes));
+				}
+
+				entries = entries.OrderBy(e => e.Item1).ToList();
+				using (var stream = new MemoryStream())
+				using (var writer = new BinaryWriter(stream))
+				{
+					writer.Write((ushort)0);
+					writer.Write((ushort)1);
+					writer.Write((ushort)entries.Count);
+					int offset = 6 + 16 * entries.Count;
+					foreach (var entry in entries)
+					{
+						byte size = entry.Item1 >= 256 ? (byte)0 : (byte)entry.Item1;
+						writer.Write(size);
+						writer.Write(size);
+						writer.Write((byte)0);
+						writer.Write((byte)0);
+						writer.Write((ushort)1);
+						writer.Write((ushort)32);
+						writer.Write(entry.Item2.Length);
+						writer.Write(offset);
+						offset += entry.Item2.Length;
+					}
+
+					foreach (var entry in entries)
+					{
+						writer.Write(entry.Item2);
+					}
+
+					writer.Flush();
+					File.WriteAllBytes(OutputFile, stream.ToArray());
+				}
+
+				Log.LogMessage(Microsoft.Build.Framework.MessageImportance.High, "Windows-Icon mit " + entries.Count + " Größen geschrieben: " + OutputFile);
+			]]></Code>
+		</Task>
+	</UsingTask>
+
+	<Target Name="TankradarMultiSizeWindowsIcon"
+	        AfterTargets="ResizetizeImages"
+	        Condition="'$(_ResizetizerIsWindowsAppSdk)' == 'True' And '$(EnableMauiImageProcessing)' == 'true'">
+		<PropertyGroup>
+			<_TankradarIconDir>$(_MauiIntermediateImages)</_TankradarIconDir>
+		</PropertyGroup>
+		<ItemGroup>
+			<_TankradarIconPart Include="$(_TankradarIconDir)appiconLogo.targetsize-16.png" />
+			<_TankradarIconPart Include="$(_TankradarIconDir)appiconLogo.targetsize-24.png" />
+			<_TankradarIconPart Include="$(_TankradarIconDir)appiconLogo.targetsize-32.png" />
+			<_TankradarIconPart Include="$(_TankradarIconDir)appiconLogo.targetsize-48.png" />
+			<_TankradarIconPart Include="$(_TankradarIconDir)appiconLogo.targetsize-256.png" />
+		</ItemGroup>
+		<Error Condition="!Exists('%(_TankradarIconPart.Identity)')"
+		       Text="Für das Windows-Icon fehlt das Teilbild %(_TankradarIconPart.Identity). Der Resizetizer hat die Größen nicht erzeugt." />
+		<WriteMultiSizeIcon PngFiles="@(_TankradarIconPart)" OutputFile="$(_TankradarIconDir)appicon.ico" />
+	</Target>
+
+</Project>

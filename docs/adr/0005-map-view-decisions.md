@@ -1,0 +1,164 @@
+# ADR 0005: Kartenansicht der Suchergebnisse
+
+## Status
+
+Angenommen (2026-10-06); Zwischenspeicher, Speicherort, Kennung, Quellenlink und Mausbedienung präzisiert in
+Schritt 10 (siehe Abschnitte „Zwischenspeicher nach HTTP-Caching-Angaben“, „Speicherort des Kachelspeichers“,
+„Kennung und Quellenangabe“ und „Mausbedienung unter Windows“). Bedienstruktur der Vollflächenkarte mit
+Suchdialog, Trefferliste im Panel und Nachladen des Kartenausschnitts (Issue #19) siehe Abschnitt „Bedienstruktur der Kartenansicht (Issue #19)“;
+dort ist die Festhöhe und die Umschaltung Liste/Karte aus Schritt 9 überholt.
+
+## Kontext
+
+Schritt 9 stellt die Suchergebnisse alternativ zur Liste auf einer Karte dar. Die Karte muss unter iOS und
+Windows gleich aussehen, in FlaUI-Tests über UI Automation prüfbar sein, die Quellenangabe
+„© OpenStreetMap-Mitwirkende“ zeigen, zoom- und verschiebbar sein und je Tankstelle eine Markierung mit Preis
+und Preisniveau-Farbe tragen. Kacheln dürfen in Tests nie von produktiven Servern kommen; das Repository
+ist öffentlich (keine Schlüssel in Artefakten). Designentwurf: Screen `suche_kartenansicht`.
+
+## Entscheidung
+
+- **Eigene Kartenkomponente ohne neues NuGet-Paket.** Native Karten-Steuerelemente (Maps-Bibliotheken,
+  WebView-Karten) sind unter iOS und Windows verschieden oder brauchen Zusatzpakete mit eigenen Lizenz-,
+  Schlüssel- und Prüfpflichten, und ihre Inhalte sind für UI Automation nicht zugänglich. Die Komponente
+  `StationMapView` setzt Kacheln als Bilder und Markierungen als Schaltflächen auf einem
+  `AbsoluteLayout`; die gesamte Kartenmathematik (Web-Mercator, Einpassen, sichtbare Kacheln) liegt
+  UI-unabhängig in `MapViewport` und ist unit-getestet. Es entstehen keine neuen Abhängigkeiten, die
+  Sicherheitsprüfung bleibt unverändert.
+- **Kachelanbieter: die Standard-Kachelserver von OpenStreetMap** (`tile.openstreetmap.org`), konsistent
+  mit der bereits genutzten Quelle der Adresssuche (Nominatim) und der geforderten Quellenangabe. Die
+  Nutzungsrichtlinie wird eingehalten: identifizierende Kennung mit tatsächlicher App-Version und
+  Kontaktangabe (`Tankatlas/<Version> (+https://github.com/martin-stromberg/Tankradar; de.martinstromberg.tankradar)`,
+  siehe unten), Zwischenspeicherung im Speicher und auf dem Gerät nach den HTTP-Caching-Angaben des Servers (siehe unten;
+  veraltete Kacheln werden bei Fehlern weiterverwendet; Obergrenze 100 MB), höchstens zwei parallele Abrufe, kurze Verzögerung vor dem Abruf
+  (Kacheln, die sofort wieder verschwinden, werden nicht abgerufen), kein Vorabruf, ein Wartefenster von
+  30 Sekunden nach Fehlern, keine Weiterleitungen, Antwortgröße und PNG-Format geprüft, Zoomstufen 4 bis 18.
+  Die Adressvorlage ist eine Einstellung (`TileServerOptions`); ein Wechsel auf einen kommerziellen
+  Kachelanbieter erfordert nur eine andere Vorlage (und ggf. einen Schlüssel, der dann wie der
+  Tankerkönig-Schlüssel nie in Artefakte gelangen dürfte). Bei starker Verbreitung der App wäre ein
+  eigener oder kommerzieller Kachelanbieter einzuplanen, da die OSM-Server nur leichte Nutzung vorsehen.
+- **Zwischenspeicher nach HTTP-Caching-Angaben (präzisiert in Schritt 10).** Die Gültigkeit einer Kachel
+  richtet sich nach den Angaben des Kachelservers, nicht nach einer festen Frist: `Cache-Control` hat Vorrang
+  (`max-age`; `no-cache` verlangt vor jeder Wiederverwendung eine Rückfrage; `no-store` verbietet das Speichern
+  auf dem Gerät, die Kachel bleibt nur im Arbeitsspeicher), danach `Expires` (bezogen auf die Serveruhr `Date`),
+  und nur wenn der Server nichts angibt, gilt pauschal der **Rückfall von 7 Tagen** (`CacheLifetime`, entspricht der
+  Mindestdauer der Nutzungsrichtlinie). Abgelaufene Kacheln werden **bedingt** neu angefragt
+  (`If-None-Match` aus dem gespeicherten `ETag`, sonst `If-Modified-Since` aus `Last-Modified`); ein `304`
+  verlängert die Gültigkeit ohne erneute Übertragung, ein `200` ersetzt die Kachel, bei einem Fehler wird die
+  abgelaufene Kachel weiterverwendet. Je Kachel liegt neben der PNG-Datei eine kleine `.meta`-Datei (ETag,
+  Last-Modified, Ablaufzeitpunkt); Kacheln aus früheren Versionen ohne `.meta` gelten ab ihrer Dateizeit für
+  die Rückfallfrist. Abwegig lange Angaben werden auf ein Jahr begrenzt. Die Prüfung aller Fälle erfolgt gegen
+  einen Test-HTTP-Handler und den Mock-Kachelserver (`ETag`, `Cache-Control`, `304`), nie gegen den echten Server.
+  **Präzisierung in Schritt 11:** Die Gültigkeit ist die Lebensdauer abzüglich der Angabe `Age` der Antwort (mindestens 0;
+  negative Werte gelten als 0, bei `no-cache`/`no-store` ohne Wirkung). Die Lebensdauer vor Abzug von `Age` steht in der
+  `.meta`-Datei (`TileMetadata.Lifetime`). Nennt eine `304`-Antwort keine eigenen Caching-Angaben, gilt die gespeicherte
+  Lebensdauer weiter (RFC 9111, 4.3.4) statt pauschal 7 Tage; Altbestand ohne gespeicherte Lebensdauer erhält die
+  Rückfallfrist.
+- **Speicherort des Kachelspeichers (Schritt 10).** Die Kacheln liegen im Zwischenspeicher-Verzeichnis der
+  Plattform (`FileSystem.CacheDirectory`, über `IAppDataPathProvider.GetCacheDirectory`) statt im Datenverzeichnis
+  (`AppDataDirectory`). Unter iOS ist das Cache-Verzeichnis von der Datensicherung ausgenommen, das System darf es
+  bei Platzmangel leeren; die Kacheln sind jederzeit neu abrufbar. Im Testmodus liegt der Zwischenspeicher im
+  isolierten Testverzeichnis.
+- **Kennung und Quellenangabe (Schritt 10).** Der `User-Agent` enthält die tatsächliche App-Version
+  (`AppInfo.VersionString`, nur Buchstaben, Ziffern, Punkt, Minus und Plus; sonst `0.0.0`) und die Projekt-URL
+  als Kontaktangabe; dieselbe Form verwenden Nominatim und der Preisdienst (`AppIdentity`). Die Quellenangabe
+  „© OpenStreetMap-Mitwirkende“ ist ein Link (Schaltfläche im Linkstil, `Launcher`) auf
+  https://www.openstreetmap.org/copyright und bleibt dauerhaft sichtbar.
+- **Mausbedienung unter Windows (Schritt 10).** Die Gestenerkenner der Karte reagieren unter Windows nur auf
+  Berührung und Stift. Für die Maus wertet die Karte die Zeigerereignisse des nativen Panels aus (nur
+  `PointerDeviceType.Mouse`, linke Taste): Ziehen verschiebt die Karte, das Mausrad zoomt um ganze Stufen (eine
+  Raste entspricht einer Stufe, Teilrasten von Touchpads summieren sich) und wird nicht an die umgebende Seite
+  weitergegeben. Die Umrechnung liegt plattformunabhängig und unit-getestet in `MapPointerTracker`; die
+  Zeigerereignisse selbst sind in FlaUI-Tests nicht prüfbar (der Mauszeiger des Anwenders darf im
+  Off-Screen-Betrieb nicht bewegt werden) und werden bei der Abnahme von Hand geprüft.
+- **Datenschutz:** Der Kachelabruf verrät dem Kachelserver die IP-Adresse und den betrachteten
+  Kartenausschnitt (Kachelnummern), nicht aber die genaue Suchposition. Kachelnummern werden nicht
+  protokolliert. Die Suchposition (eigener Standort bzw. gesuchte Adresse) wird nur im Arbeitsspeicher
+  des ViewModels als `MapOrigin` gehalten, bei jeder neuen Suche, bei Fehlern und beim Wechsel der
+  Suchart verworfen und nie gespeichert oder protokolliert. Der Standort wird weiterhin nur gemäß der
+  Einstellung zur Standortnutzung abgefragt; die Adresssuche fragt ihn nicht ab.
+- **Tests ohne produktive Server:** Im Testmodus ist ein Kachelserver nur über `TANKRADAR_TILE_URL`
+  (Loopback-HTTP, Mock-Server `MockTileServer`) einstellbar; ohne Adresse werden im Testmodus keine
+  Kacheln abgerufen (kein Rückfall auf den produktiven Server).
+- **Preisniveau-Farben** (`PriceLevelClassifier`, exakte Dezimalarithmetik): Grün = günstigster Preis
+  (bei Gleichstand alle Tankstellen mit diesem Preis), Rot = Preis ≥ Minimum + 2/3 der Spanne (nur bei
+  Spanne > 0, also nie bei einer einzelnen Tankstelle oder nur gleichen Preisen), Teal = übrige, Grau =
+  geschlossen. Geschlossene Tankstellen gehen nicht in die Spanne ein, damit „günstigster Preis“ ein
+  tatsächlich nutzbares Angebot bezeichnet. Unbekannter Öffnungszustand gilt als geöffnet. Eine
+  Tankstelle ohne Preis der maßgeblichen Sorte erhält eine Markierung ohne Preis (Teal, nicht in der Spanne).
+  Maßgeblich ist die gefilterte Sorte, ohne Filter die zuerst gewählte Sorte der Einstellungen
+  (`StationResultBuilder.ResolveFuelType`, dieselbe Regel wie die Preissortierung). Die Karte zeigt die
+  gesamte gefilterte Ergebnismenge, nicht nur die erste Listenseite.
+- **Farbwerte:** Grün `#006C49`, Rot `#BA1A1A`, Teal `#0F766E`, Grau `#64748B` (Entwurfs-Tokens
+  `secondary`, `error`, `primary-container`, Slate 500). Das hellere Emerald-Grün des Designsystems
+  erreicht mit weißem Text keinen ausreichenden Kontrast (unter 4,5:1). Farbe ist nicht das einzige
+  Merkmal: Beschreibung und Hinweis der Markierung nennen das Preisniveau, eine Legende erklärt die Farben.
+
+## Bedienstruktur der Kartenansicht (Issue #19)
+
+Die Ansicht „Karte“ ist eine Vollflächenkarte: `StationMapView` füllt den Bereich aus; alle Bedienelemente liegen darüber (`MapPage`, Grid-Überlagerung).
+
+- **Suchdialog statt Eingabeseite.** Die Symbolschaltfläche „Suche“ oben links öffnet `MapSearchOverlay` über der Karte (Abdunklung, Eingaben werden abgefangen). Er enthält Suchart, Adresse, Route (nur bei aktivierter Routensuche, ADR 0014), Start, Ziel, Abstand, Radius und „Suchen“. Eine Suche schließt den Dialog; „Schließen“ verwirft die Eingaben nicht. Die Logik der Suche bleibt unverändert (`SearchAsync`, `MapViewModel.Route`). Begründung: Die Karte bleibt im Baum und behält Markierungen; kein neues NuGet-Paket.
+- **Trefferliste als Panel (`StationBottomSheet`).** Am unteren Rand angedockt, zwei Zustände. Eingeklappt: Kopfzeile mit der Trefferanzahl („N Tankstellen“ bzw. „Keine Ergebnisse“). Ausgeklappt: Filter (Spritsorte) und Sortierung am Anfang des Panels, darunter die Liste mit seitenweiser Anzeige (25 je Seite, `ShowMoreCommand`). Auf- und Zuklappen über die Schaltfläche im Kopf (Pflicht, Bedienung ohne Geste, ADR-Abweichung „Verschieben auch über Schaltflächen“); Antippen des Kopfes und Ziehen sind zusätzliche Wege. Ausgeklappt höchstens 60 % der Seitenhöhe, damit die Karte und die Quellenangabe sichtbar bleiben. Statusmeldungen (Offline, Fortschritt, Fehler) stehen unter dem Kopf und bleiben auch eingeklappt sichtbar. Antippen eines Eintrags öffnet die Detailansicht (`OpenStationCommand`).
+- **Standardansicht steuert nur den Startzustand des Panels.** Die Einstellung `ResultView` (Liste/Karte) und ihr Speicherformat bleiben unverändert (keine Migration). „Liste“ öffnet das Panel ausgeklappt, „Karte“ eingeklappt. Der Zustand ist sitzungsbezogen und wird nicht gespeichert; er bleibt erhalten, bis sich die Standardansicht ändert. Die Umschaltung Liste/Karte in der Seite (`ViewOptions`, Chips) entfällt.
+- **Quellenangabe und Legende.** Die Quellenangabe „© OpenStreetMap-Mitwirkende“ bleibt dauerhaft sichtbar, unten links über dem Panel (ADR-Vorgabe oben). Die Preisniveau-Legende steht oben rechts über der Karte, neben den Zoom-Schaltflächen.
+- **Nachladen des sichtbaren Kartenausschnitts.** Die Textschaltfläche „Tankstellen in diesem Bereich laden“ erscheint nur in den Sucharten Standort und Adresse, und nur wenn Mitte oder Zoom vom Ausschnitt der letzten Suche abweichen (`OnViewportChanged`; das Ereignis `ViewportChanged` wird nur bei Nutzeraktionen gemeldet, nicht beim programmatischen Einpassen). Es wird nichts automatisch abgefragt (ADR 0014). Die Abfrage ist genau eine Umkreissuche (`MapAreaQuery.From`): Mittelpunkt ist die Mitte des Ausschnitts, der Radius die halbe Diagonale in ganzen Kilometern (aufgerundet, mindestens 1 km). Ergibt sich ein Radius über 25 km (Grenze der Preisquelle), ist die Schaltfläche deaktiviert und zeigt „Bitte näher heranzoomen“. Keine Mehrfachabfragen, keine Teilabdeckung ohne Hinweis.
+- **Takt.** Nach jeder Nachladeabfrage ist die Schaltfläche 60 Sekunden gesperrt (`AreaReloadMinInterval`, über `TimeProvider`; die Restzeit steht im Hinweis). Begründung: Die Nutzungsbedingungen der Preisquelle nennen eine Abfrage je Minute. Der `RouteQueryPacer` wurde bewusst nicht wiederverwendet, da er an die Routensuche gebunden ist.
+- **Ergebnis des Nachladens.** Liste, Markierungen und Zähler werden durch das neue Ergebnis ersetzt. Die Karte behält den Ausschnitt (`MapFitMode.KeepViewport`); nur neue Suchen (Standort, Adresse, Route) passen den Ausschnitt an (`MapFitMode.FitToResult`). Die Markierung der Suchposition bleibt die der letzten Suche. Im Routenmodus erscheint die Schaltfläche nicht, weil Routenergebnisse streckenbezogen sind.
+- **Höhe und Layout.** Die frühere feste Höhe der Karte (440 px innerhalb der scrollenden Seite) entfällt; die Karte füllt den Bereich aus. Die Eingabeoberfläche wandert in den Suchdialog.
+- **Datenschutz und Speicherung.** Panelzustand, Dialogzustand und Nachladeberechnung sind sitzungsbezogen; es entstehen keine Speicherung, keine Migration und keine neue Konfiguration. Die Suchposition bleibt wie in diesem ADR beschrieben nur im Arbeitsspeicher.
+
+## Abweichungen vom Designentwurf
+
+- **Tippen öffnet direkt die Detailansicht.** Die Anforderung verlangt das Öffnen der Detailansicht beim
+  Antippen einer Markierung; die Vorschaukarte des Entwurfs (Auswahl, Ausstattung, „Route starten“,
+  Favorit) entfällt. Route (Schritt 17) und Favoriten (Schritt 10, siehe ADR 0006) werden in der Detailansicht angeboten, die Ausstattung liefert die
+  Quelle nicht (siehe ADR 0004).
+- **Markierungen** zeigen den Preis (farbige Fläche mit weißem Text, 44 px hoch) ohne Marke und ohne
+  Auszeichnungssymbol. „Auch Strom“, „Entlang Route“, Verkehrslage und die Kopfleiste mit Logo/Avatar
+  entfallen (ADR 0001, ADR 0004; Routing ist Schritt 17).
+- **Umschalter Liste/Karte** als Auswahl-Chips wie die übrigen Gruppen der Suchseite statt eines
+  Segmentschalters; er steht in der ersten Karte der Suchseite. *(Überholt durch Issue #19: Die Umschaltung entfällt, siehe „Bedienstruktur der Kartenansicht“.)*
+- **Verschieben auch über Schaltflächen** (Pfeile) zusätzlich zur Wischgeste (unter Windows zusätzlich Ziehen
+  mit der Maus und Zoom mit dem Mausrad), und Zoom über Schaltflächen und Kneifgeste mit ganzzahligen Stufen. Grund: Bedienung ohne Wischgeste (Tastatur, Sprachausgabe) und
+  Prüfbarkeit per UI Automation, die keine Mausgesten braucht. „Ausschnitt zurücksetzen“ passt den
+  Ausschnitt wieder auf alle Ergebnisse und die Suchposition ein (statt „Auf mich zentrieren“).
+  *(Ergänzt nach Issue #19:)* Die Kneifgeste verläuft fließend wie in üblichen Kartenansichten: Die
+  Einzelfaktoren der Geste (`PinchGestureUpdatedEventArgs.Scale`, Faktor seit dem letzten Update) werden in
+  `MapPinchTracker` multipliziert; während der Geste wird nur die Kachelebene um den Gestenmittelpunkt
+  (`ScaleOrigin`, relativ zur Kartengröße) skaliert angezeigt, ohne Kachelabruf; Markierungen und Route folgen erst
+  beim Einrasten. Bei Gestenende rastet der Zoom auf die nächste ganze Stufe ein (gerundeter Zweierlogarithmus,
+  `MapViewport.ZoomStepsFor`), der Punkt unter dem Gestenmittelpunkt bleibt stehen (`MapViewport.ScaleAtPoint`).
+  Wischen wird während des Kneifens ignoriert. `ViewportChanged` gibt es nur bei geänderter Stufe.
+  Zoom-Schaltflächen und Mausrad behalten die Mitte bei.
+- **Doppeltipp zentriert und vergrößert** *(Issue #19).* Ein Doppeltipp (`TapGestureRecognizer`,
+  `NumberOfTapsRequired="2"`) bzw. unter Windows ein Doppelklick zentriert die Karte auf die angetippte Stelle und
+  zoomt eine Stufe hinein (`MapViewport.ZoomAndCenterAt`); bei Stufe 18 wird nur zentriert. Das zählt als
+  Nutzeraktion (`ViewportChanged`). Ein Doppeltipp auf eine Markierung öffnet wie der einfache Tipp sofort die
+  Detailansicht. Den Maus-Doppelklick erkennt unter Windows der Zeigerteil selbst (`MapDoubleTapDetector`:
+  höchstens 500 ms und 4 Pixel zwischen den Klicks), weil die Karte die Mausereignisse für das Ziehen behandelt;
+  der Doppeltipp der Gestenerkennung wird dann für die Maus unterdrückt, damit nicht doppelt gezoomt wird. Die
+  Gesten sind über UI Automation nicht auslösbar (E2E-Regel ohne Maus- und Klickaufrufe); abgesichert sind die
+  Rechenlogik und die Erkennung per Unit-Test, die Gesten selbst werden bei der Abnahme von Hand geprüft.
+- **Zähler** „X von Y Stationen sichtbar“ (Entwurf: „18 Stationen (10 km)“), da er sich mit dem
+  Ausschnitt ändert und so Zoomen und Verschieben prüfbar macht; zusätzlich die Zoomstufe.
+- **Kartenhöhe fest (440 px) innerhalb der scrollenden Suchseite.** Auf Touchgeräten kann die
+  Wischgeste der Karte mit dem Scrollen der Seite konkurrieren; die Bedienung über die Schaltflächen
+  bleibt immer möglich. *(Überholt durch Issue #19: Die Karte füllt den Bereich aus; die Seite scrollt nicht mehr.)*
+
+## Markierungen nur sichtbar, nur im Ausschnitt, begrenzt
+
+Jede Markierung ist eine Schaltfläche und damit ein Element im Oberflächenbaum und in der Bedienhilfe (UI Automation). Bei
+großen Ergebnismengen (z. B. 300 Stationen) machte das den Baum riesig: Baumsuchen wurden auf langsamen Rechnern extrem langsam
+und liefen in UIA-Timeouts (Staging-Lauf mit `SearchE2ETests_LargeResult`), zugleich stiegen Speicher und Layoutaufwand. Deshalb:
+
+- Die Karte baut Markierungen, Suchposition und Kacheln nur auf, solange sie sichtbar ist; beim Wechsel zur Liste werden sie aus dem Baum entfernt, beim Zurückwechseln neu aufgebaut.
+- Aufgebaut werden nur Stationen im sichtbaren Ausschnitt, höchstens `MapMarkerSelection.MaxRendered` (100), die der Bildmitte nächsten zuerst. Der Zähler „X von Y Stationen sichtbar“ nennt weiterhin alle Stationen im Ausschnitt; bei Begrenzung ergänzt er „N dargestellt – für alle hineinzoomen“.
+
+## Folgen
+
+- Die Kartenkomponente ist die Grundlage für spätere Schritte (z. B. Routenansicht, Schritt 17).
+- Das Verhalten der Gesten unter iOS ist nur per Compile-Prüfung (`local-ci.ps1`) abgesichert und erst auf
+  einem Gerät bzw. in TestFlight prüfbar.
+- Schritt 17 zeichnet auf dieser Karte die Route einer Routensuche (Linie unter den Markern, Ziel, Anpassung des Ausschnitts an die
+  Begrenzungsbox); siehe [ADR 0014](0014-route-search.md).

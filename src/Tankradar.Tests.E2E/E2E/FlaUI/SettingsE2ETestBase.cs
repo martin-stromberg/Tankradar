@@ -1,0 +1,252 @@
+using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Conditions;
+using FlaUI.Core.Definitions;
+using Tankradar.TestSupport;
+
+namespace Tankradar.Tests.E2E.E2E.FlaUI;
+
+/// <summary>
+/// Gemeinsame Hilfsmethoden für E2E-Tests der Optionen-Seite (Navigation, Warten, Bedienen von Schaltern, Auswahlfeldern und Schaltflächen).
+/// </summary>
+public abstract class SettingsE2ETestBase : E2ETestBase
+{
+    /// <summary>
+    /// Alle Spritsorten in der Standardreihenfolge (Namen entsprechen den AutomationIds).
+    /// </summary>
+    protected static readonly string[] DefaultFuelTypeOrder = ["SuperE5", "SuperE10", "Diesel"];
+
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// Startet die App mit Standardkonfiguration.
+    /// </summary>
+    protected SettingsE2ETestBase()
+    {
+    }
+
+    /// <summary>
+    /// Startet die App mit zusätzlichen Umgebungsvariablen (Testkonfiguration).
+    /// </summary>
+    /// <param name="additionalEnvironment">Die zusätzlichen Umgebungsvariablen.</param>
+    protected SettingsE2ETestBase(IReadOnlyDictionary<string, string> additionalEnvironment)
+        : base(additionalEnvironment)
+    {
+    }
+
+    /// <summary>
+    /// Wechselt auf die Optionen-Seite und wartet, bis die Einstellungen angezeigt und geladen sind.
+    /// </summary>
+    protected void OpenSettings()
+    {
+        NavigateToTab("Optionen");
+        WaitForElement(cf => cf.ByAutomationId("Settings.FuelType.SuperE5.Switch"));
+        WaitForAutomationId("Settings.Loaded");
+    }
+
+    /// <summary>
+    /// Wartet, bis ein Element mit der AutomationId vorhanden ist.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Das gefundene Element.</returns>
+    protected AutomationElement WaitForAutomationId(string automationId)
+    {
+        return WaitForElement(cf => cf.ByAutomationId(automationId));
+    }
+
+    /// <summary>
+    /// Prüft, ob ein Element mit der AutomationId aktuell existiert.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns><see langword="true"/>, wenn das Element existiert.</returns>
+    protected bool Exists(string automationId)
+    {
+        return FindByAutomationId(automationId) is not null;
+    }
+
+    /// <summary>
+    /// Liefert, ob die Option mit der AutomationId ausgewählt ist.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Auswahlfelds.</param>
+    /// <returns><see langword="true"/>, wenn ausgewählt.</returns>
+    protected bool IsRadioChecked(string automationId)
+    {
+        var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+        return element?.AsRadioButton().IsChecked == true;
+    }
+
+    /// <summary>
+    /// Wählt die Option mit der AutomationId aus.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Auswahlfelds.</param>
+    protected void SelectRadio(string automationId)
+    {
+        WaitForAutomationId(automationId).AsRadioButton().IsChecked = true;
+        WaitUntil(() => IsRadioChecked(automationId), $"Die Option '{automationId}' wurde nicht ausgewählt.");
+    }
+
+    /// <summary>
+    /// Liefert, ob der Schalter einer Spritsorte eingeschaltet ist.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname (z. B. SuperE5).</param>
+    /// <returns><see langword="true"/>, wenn die Sorte ausgewählt ist.</returns>
+    protected bool IsFuelTypeSelected(string fuelType)
+    {
+        var element = WaitForAutomationId($"Settings.FuelType.{fuelType}.Switch");
+        return element.Patterns.Toggle.Pattern.ToggleState.Value == ToggleState.On;
+    }
+
+    /// <summary>
+    /// Schaltet den Schalter einer Spritsorte um.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname.</param>
+    protected void ToggleFuelType(string fuelType)
+    {
+        WaitForAutomationId($"Settings.FuelType.{fuelType}.Switch").Patterns.Toggle.Pattern.Toggle();
+    }
+
+    /// <summary>
+    /// Betätigt die Schaltfläche zum Verschieben einer Spritsorte.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname.</param>
+    /// <param name="direction">Entweder <c>MoveUp</c> oder <c>MoveDown</c>.</param>
+    protected void MoveFuelType(string fuelType, string direction)
+    {
+        WaitForAutomationId($"Settings.FuelType.{fuelType}.{direction}").Patterns.Invoke.Pattern.Invoke();
+    }
+
+    /// <summary>
+    /// Liefert die Spritsorten in der Reihenfolge, in der sie auf der Seite von oben nach unten erscheinen.
+    /// </summary>
+    /// <returns>Die Spritsortennamen von oben nach unten.</returns>
+    protected string[] ReadFuelTypeOrder()
+    {
+        return DefaultFuelTypeOrder
+            .Select(fuelType => (fuelType, top: WaitForAutomationId($"Settings.FuelType.{fuelType}.Switch").BoundingRectangle.Top))
+            .OrderBy(item => item.top)
+            .Select(item => item.fuelType)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Trägt den Text per UI-Automation (ValuePattern) in das Eingabefeld ein, wartet, bis das native Feld ihn meldet, und stellt sicher, dass die App den Wert übernommen hat,
+    /// bevor der Test weiterarbeitet. SetValue ändert nur das native Feld; das Ereignis, über das MAUI die Bindung ans Modell aktualisiert, wird vom UI-Thread
+    /// verzögert zugestellt. Ein sofort folgendes Speichern oder Suchen sähe auf einem langsamen Rechner noch den alten Modellwert. Daher wird der UI-Thread der App
+    /// mehrfach nacheinander angesprochen: Jede UIA-Anfrage wird in dessen Nachrichtenschleife bearbeitet und kommt erst nach den bereits eingereihten
+    /// Änderungsereignissen an die Reihe. Es gibt bewusst keinen Fokuswechsel und keine Tastatureingabe: Das Testfenster darf nie den Tastaturfokus des Anwenders übernehmen.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Eingabefelds.</param>
+    /// <param name="text">Der Text.</param>
+    protected void SetFieldValue(string automationId, string text)
+    {
+        var field = WaitForAutomationId(automationId);
+        field.Patterns.Value.Pattern.SetValue(text);
+        WaitUntil(
+            () => FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault == text,
+            $"Das Feld '{automationId}' enthält nicht '{text}'.");
+
+        // Synchronisation über UIA-Roundtrips zum UI-Thread der App (kein Fokuswechsel): Die Abfragen der Eigenschaften werden erst nach den bereits
+        // eingereihten Änderungsereignissen beantwortet.
+        for (var round = 0; round < 8; round++)
+        {
+            _ = FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault;
+            _ = MainWindow.Properties.Name.ValueOrDefault;
+            Thread.Sleep(50);
+        }
+    }
+
+    /// <summary>
+    /// Wartet, bis die Bedingung erfüllt ist; schlägt andernfalls mit der Meldung fehl.
+    /// </summary>
+    /// <param name="condition">Die Bedingung.</param>
+    /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
+    protected static void WaitUntil(Func<bool> condition, string failureMessage)
+    {
+        WaitUntil(condition, failureMessage, DefaultTimeout);
+    }
+
+    /// <summary>
+    /// Wartet bis zur angegebenen Frist, bis die Bedingung erfüllt ist; schlägt andernfalls mit der Meldung fehl.
+    /// </summary>
+    /// <param name="condition">Die Bedingung.</param>
+    /// <param name="failureMessage">Die Fehlermeldung bei Zeitüberschreitung.</param>
+    /// <param name="timeout">Die Frist.</param>
+    protected static void WaitUntil(Func<bool> condition, string failureMessage, TimeSpan timeout)
+    {
+        // Ein UIA-Timeout (langsamer Runner, große Baumsuche) zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
+        // Andere Fehler und Assertions bleiben unverändert sichtbar.
+        if (TransientWait.Until(condition, timeout, out var lastTimeout))
+        {
+            return;
+        }
+
+        Assert.Fail(lastTimeout is null ? failureMessage : $"{failureMessage} Zuletzt antwortete die UI-Automation nicht rechtzeitig (UIA-Timeout): {lastTimeout.Message}");
+    }
+
+    /// <summary>
+    /// Sucht das erste Element mit der AutomationId unterhalb des Hauptfensters; ein vorübergehender UIA-Timeout wird begrenzt wiederholt.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId.</param>
+    /// <returns>Das Element oder <see langword="null"/>.</returns>
+    protected AutomationElement? FindByAutomationId(string automationId)
+    {
+        return TransientRetry.Run(
+            () => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId)),
+            $"Suche des Elements '{automationId}'",
+            maxAttempts: 3,
+            pause: TimeSpan.FromSeconds(1));
+    }
+
+    /// <summary>
+    /// Wartet, bis die Einrichtung beim ersten Start angezeigt wird (Schaltfläche „Speichern“ der Einrichtung vorhanden).
+    /// </summary>
+    protected void WaitForSetup()
+    {
+        WaitForAutomationId(SetupSaveId);
+    }
+
+    /// <summary>
+    /// Wartet, bis die Einrichtung ausgeblendet ist.
+    /// </summary>
+    protected void WaitForSetupClosed()
+    {
+        WaitUntil(() => FindByAutomationId(SetupSaveId) is null, "Die Einrichtung wurde nicht ausgeblendet.");
+    }
+
+    /// <summary>
+    /// Liefert, ob der Schalter einer Spritsorte in der Einrichtung eingeschaltet ist.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname (z. B. SuperE5).</param>
+    /// <returns><see langword="true"/>, wenn die Sorte ausgewählt ist.</returns>
+    protected bool IsSetupFuelTypeSelected(string fuelType)
+    {
+        var element = WaitForAutomationId(SetupFuelTypeSwitchId(fuelType));
+        return element.Patterns.Toggle.Pattern.ToggleState.Value == ToggleState.On;
+    }
+
+    /// <summary>
+    /// Schaltet den Schalter einer Spritsorte in der Einrichtung um und wartet, bis der neue Zustand angezeigt wird.
+    /// </summary>
+    /// <param name="fuelType">Der Spritsortenname.</param>
+    protected void ToggleSetupFuelType(string fuelType)
+    {
+        var expected = !IsSetupFuelTypeSelected(fuelType);
+        WaitForAutomationId(SetupFuelTypeSwitchId(fuelType)).Patterns.Toggle.Pattern.Toggle();
+        WaitUntil(() => IsSetupFuelTypeSelected(fuelType) == expected, $"Der Schalter der Einrichtung für {fuelType} wurde nicht umgeschaltet.");
+    }
+
+    /// <summary>
+    /// Betätigt eine Schaltfläche der Einrichtung per InvokePattern (kein Mausklick).
+    /// </summary>
+    /// <param name="automationId">Die AutomationId, z. B. <c>Setup.Save</c> oder <c>Setup.Skip</c>.</param>
+    protected void PressSetupButton(string automationId)
+    {
+        WaitForAutomationId(automationId).Patterns.Invoke.Pattern.Invoke();
+    }
+
+    private AutomationElement WaitForElement(Func<ConditionFactory, ConditionBase> condition)
+    {
+        AutomationElement? found = null;
+        WaitUntil(() => (found = TransientRetry.Run(() => MainWindow.FindFirstDescendant(condition), "Suche eines Elements", maxAttempts: 3, pause: TimeSpan.FromSeconds(1))) is not null, "Ein erwartetes Element wurde nicht gefunden.");
+        return found!;
+    }
+}

@@ -1,0 +1,309 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+#if WINDOWS
+using Microsoft.Maui.LifecycleEvents;
+#endif
+using Tankradar.MAUI.Data;
+using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Backup;
+using Tankradar.MAUI.Services.Export;
+using Tankradar.MAUI.Services.Favorites;
+using Tankradar.MAUI.Services.Geocoding;
+using Tankradar.MAUI.Services.Location;
+using Tankradar.MAUI.Services.Map;
+using Tankradar.MAUI.Services.Navigation;
+using Tankradar.MAUI.Services.Pricing;
+using Tankradar.MAUI.Services.Routing;
+using Tankradar.MAUI.Services.Tankbook;
+using Tankradar.MAUI.ViewModels;
+using Tankradar.MAUI.Views;
+using Tankradar.TestSupport;
+
+namespace Tankradar.MAUI;
+
+/// <summary>
+/// Baut und konfiguriert die MAUI-App inklusive Dependency Injection, Schriftarten und Diensten.
+/// </summary>
+public static class MauiProgram
+{
+    /// <summary>
+    /// Erstellt die konfigurierte <see cref="MauiApp"/>-Instanz für die App „Tankatlas“.
+    /// </summary>
+    /// <returns>Die gebaute <see cref="MauiApp"/>.</returns>
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>()
+            .ConfigureFonts(fonts =>
+            {
+                // Vollständige Font-Registrierung: OpenSans (Fallback-Schrift), Inter (Fließtext/Headlines)
+                // und JetBrains Mono (Code-Darstellung), jeweils Regular- und SemiBold-Schnitt.
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Inter-Regular.ttf", "InterRegular");
+                fonts.AddFont("Inter-SemiBold.ttf", "InterSemibold");
+                fonts.AddFont("JetBrainsMono-Regular.ttf", "JetBrainsMonoRegular");
+                fonts.AddFont("JetBrainsMono-SemiBold.ttf", "JetBrainsMonoSemibold");
+            });
+
+#if WINDOWS
+        if (TestWindowMode.ShouldHideWindow(Environment.GetEnvironmentVariable))
+        {
+            // Testmodus mit Off-Screen-Betrieb: Fenster außerhalb des Bildschirms, ohne Vordergrundwechsel.
+            builder.ConfigureLifecycleEvents(events => events.AddWindows(windows =>
+                windows.OnWindowCreated(window => Platforms.Windows.OffscreenWindow.Apply(window))));
+        }
+#endif
+
+        builder.Services.AddSingleton<AppConfiguration>();
+        builder.Services.AddSingleton<IAppDataPathProvider, AppDataPathProvider>();
+        builder.Services.AddSingleton<IDatabaseFileProtector, DatabaseFileProtector>();
+        builder.Services.AddDbContextFactory<TankradarDbContext>((serviceProvider, options) =>
+        {
+            var dataDirectory = serviceProvider.GetRequiredService<IAppDataPathProvider>().GetDataDirectory();
+            options.UseSqlite(TankradarDbContext.BuildConnectionString(TankradarDbContext.GetDatabasePath(dataDirectory)));
+        });
+        builder.Services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+        builder.Services.AddSingleton<ISettingsService, SettingsService>();
+        builder.Services.AddSingleton<ISetupStatusService, SetupStatusService>();
+        AddPriceServices(builder.Services);
+        builder.Services.AddSingleton<IFavoritesService, FavoritesService>();
+        builder.Services.AddSingleton<IReceiptPhotoStore, ReceiptPhotoStore>();
+        builder.Services.AddSingleton<IVehicleService, VehicleService>();
+        builder.Services.AddSingleton<IPreferences>(_ => Preferences.Default);
+        builder.Services.AddSingleton<IVehicleSelectionStore>(provider => new PreferencesVehicleSelectionStore(
+            provider.GetRequiredService<IPreferences>(),
+            GetTestPreferencesScope()));
+        builder.Services.AddSingleton<ITankbookEntryService, TankbookEntryService>();
+        builder.Services.AddSingleton<ITankbookStatisticsService, TankbookStatisticsService>();
+        builder.Services.AddSingleton<ITankbookExportService, TankbookExportService>();
+        builder.Services.AddSingleton<IReceiptPhotoPicker>(_ => ReceiptPhotoPickerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiReceiptPhotoPicker()));
+        builder.Services.AddSingleton<IRestoreRecovery, RestoreRecovery>();
+        builder.Services.AddSingleton<IRestoreNotifier, RestoreNotifier>();
+        builder.Services.AddSingleton<IBackupService, BackupService>();
+        builder.Services.AddSingleton<IBackupFilePicker>(_ => BackupFilePickerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiBackupFilePicker()));
+        builder.Services.AddSingleton<IBackupSharer>(_ => BackupSharerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiBackupSharer()));
+        AddGeocodingServices(builder.Services);
+        AddRoutingServices(builder.Services);
+        AddMapServices(builder.Services);
+        builder.Services.AddSingleton<ILocationService>(provider => LocationServiceSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiLocationService(provider.GetRequiredService<ILogger<MauiLocationService>>())));
+
+        builder.Services.AddTransient<NearbySectionViewModel>();
+        builder.Services.AddTransient<FavoritesViewModel>();
+        builder.Services.AddTransient<MapViewModel>();
+        builder.Services.AddTransient<TankbookViewModel>();
+        builder.Services.AddTransient<TankbookEntriesViewModel>();
+        builder.Services.AddTransient<TankbookEntryFormViewModel>();
+        builder.Services.AddTransient<TankbookStatisticsViewModel>();
+        builder.Services.AddTransient<TankbookExportViewModel>();
+        builder.Services.AddTransient<DataSourceViewModel>();
+        builder.Services.AddSingleton<ILinkOpener>(_ => new LauncherLinkOpener(IsTestMode()));
+        builder.Services.AddTransient(provider => new RouteSearchSettingsViewModel(
+            provider.GetRequiredService<IRouteSearchAccess>(),
+            provider.GetRequiredService<IRoutingKeyChecker>(),
+            provider.GetRequiredService<IConnectionMonitor>(),
+            provider.GetRequiredService<ILinkOpener>(),
+            provider.GetRequiredService<ILogger<RouteSearchSettingsViewModel>>(),
+            maskKeyInput: !IsTestMode()));
+        builder.Services.AddTransient<BackupViewModel>();
+        builder.Services.AddTransient<StationDetailViewModel>();
+        builder.Services.AddTransient<StationFavoritesViewModel>();
+        builder.Services.AddTransient<FavoriteGroupViewModel>();
+        builder.Services.AddSingleton<IScreenReaderAnnouncer, SemanticScreenReaderAnnouncer>();
+        builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
+        builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
+        builder.Services.AddSingleton<ITankbookNavigator, ShellTankbookNavigator>();
+        builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<SetupViewModel>();
+
+        builder.Services.AddTransient<FavoritesPage>();
+        builder.Services.AddTransient<MapPage>();
+        builder.Services.AddTransient<TankbookPage>();
+        builder.Services.AddTransient<TankbookEntriesPage>();
+        builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<AppShell>();
+
+        // App erzeugt die Shell erst in CreateWindow, nachdem die App-Ressourcen geladen sind; daher Fabrik statt direkter Injektion.
+        builder.Services.AddSingleton<Func<AppShell>>(provider => provider.GetRequiredService<AppShell>);
+        builder.Services.AddTransient<StationDetailPage>();
+        builder.Services.AddTransient<FavoriteGroupPage>();
+
+#if DEBUG
+        builder.Logging.AddDebug();
+#endif
+
+        return builder.Build();
+    }
+
+    /// <summary>
+    /// Liefert im Testmodus einen eigenen Bereich der gerätelokalen Einstellungen je Testdatenverzeichnis, damit sich Testläufe nicht beeinflussen.
+    /// </summary>
+    /// <returns>Der Bereich oder <see langword="null"/> außerhalb des Testmodus.</returns>
+    private static string? GetTestPreferencesScope()
+    {
+        var testDataPath = Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(testDataPath))
+        {
+            return null;
+        }
+
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(testDataPath));
+        return "tankradar.test." + Convert.ToHexString(hash, 0, 8);
+    }
+
+    private static bool IsTestMode()
+    {
+        return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable));
+    }
+
+    private static void AddGeocodingServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => GeocodingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
+        services.AddSingleton<IGeocodingService>(provider =>
+        {
+            var options = provider.GetRequiredService<GeocodingOptions>();
+
+            // Eigener HTTP-Client und eigene Drosselung: Die Nutzungsrichtlinie von Nominatim (höchstens eine Anfrage je Sekunde)
+            // gilt unabhängig vom Preisdienst; keine automatischen Weiterleitungen, begrenzte Antwortgröße.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                MaxResponseContentBufferSize = 256 * 1024,
+            };
+            var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+            return new NominatimGeocodingService(client, options, throttle, provider.GetRequiredService<ILogger<NominatimGeocodingService>>());
+        });
+    }
+
+    /// <summary>
+    /// Registriert die Dienste der Routensuche (Routingdienst, Stationssuche entlang der Route, Gesamtablauf). Voraussetzung sind die Registrierungen von <c>IGeocodingService</c>, <c>IFuelPriceService</c>, <c>IDelay</c>, <c>TimeProvider</c> und Logging.
+    /// </summary>
+    /// <param name="services">Die Dienstesammlung.</param>
+    public static void AddRoutingServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => RoutingOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
+        services.AddSingleton(_ => RouteSearchOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton<RouteQueryPacer>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider.GetRequiredService<RoutingOptions>();
+
+            // Eigener HTTP-Client und eigene Drosselung: keine automatischen Weiterleitungen (der Schlüssel steht im Anfragekopf
+            // und darf nie an einen anderen Host gehen), begrenzte Antwortgröße.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                MaxResponseContentBufferSize = 4 * 1024 * 1024,
+            };
+            var throttle = new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+            return new RoutingTransport(client, throttle);
+        });
+        services.AddSingleton<IRouteSearchAccess>(provider =>
+        {
+            // Schlüssel und Schalter liegen in der Keychain des Geräts (iOS) bzw. im Credential Locker (Windows), nie im Build und nie in der Sicherung der App; iOS-Keychain-Einträge können in verschlüsselten Gerätesicherungen enthalten sein und werden nicht mit iCloud synchronisiert.
+#if WINDOWS
+            return RouteSearchAccess.Create(
+                Environment.GetEnvironmentVariable,
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingResource),
+                () => new Platforms.Windows.CredentialLockerApiKeyStore(Platforms.Windows.CredentialLockerApiKeyStore.RoutingEnabledResource),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
+#else
+            return RouteSearchAccess.Create(
+                Environment.GetEnvironmentVariable,
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingStorageKey),
+                () => new SecureStorageApiKeyStore(SecureStorageApiKeyStore.RoutingEnabledStorageKey),
+                provider.GetRequiredService<ILogger<RouteSearchAccess>>());
+#endif
+        });
+        services.AddSingleton<IRoutingService>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
+            return new OpenRouteServiceClient(
+                transport.Client,
+                provider.GetRequiredService<IRouteSearchAccess>(),
+                provider.GetRequiredService<RoutingOptions>(),
+                provider.GetRequiredService<IDelay>(),
+                transport.Throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceClient>>());
+        });
+        services.AddSingleton<IRoutingKeyChecker>(provider =>
+        {
+            var transport = provider.GetRequiredService<RoutingTransport>();
+            return new OpenRouteServiceKeyChecker(
+                transport.Client,
+                provider.GetRequiredService<RoutingOptions>(),
+                transport.Throttle,
+                provider.GetRequiredService<ILogger<OpenRouteServiceKeyChecker>>());
+        });
+        services.AddSingleton<IRouteStationSearchService, RouteStationSearchService>();
+        services.AddSingleton<IRouteSearchService, RouteSearchService>();
+    }
+
+    private static void AddMapServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => TileServerOptions.FromEnvironment(Environment.GetEnvironmentVariable, AppIdentity.GetAppVersion()));
+        services.AddSingleton<ITileSource>(provider =>
+        {
+            var options = provider.GetRequiredService<TileServerOptions>();
+
+            // Eigener HTTP-Client: keine automatischen Weiterleitungen, begrenzte Wartezeit; die Kennung wird je Anfrage gesetzt.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+            var paths = provider.GetRequiredService<IAppDataPathProvider>();
+            LegacyTileCache.DeleteInBackground(Path.Combine(paths.GetDataDirectory(), "tiles"), Path.Combine(paths.GetCacheDirectory(), "tiles"));
+            return new HttpTileSource(
+                client,
+                options,
+                () => Path.Combine(paths.GetCacheDirectory(), "tiles"),
+                provider.GetRequiredService<TimeProvider>(),
+                provider.GetRequiredService<ILogger<HttpTileSource>>());
+        });
+    }
+
+    private static void AddPriceServices(IServiceCollection services)
+    {
+        services.AddSingleton(_ => PriceApiOptions.FromEnvironment(Environment.GetEnvironmentVariable));
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IDelay, TaskDelay>();
+        services.AddSingleton(provider =>
+        {
+            var options = provider.GetRequiredService<PriceApiOptions>();
+            return new RequestThrottle(options.MinRequestInterval, provider.GetRequiredService<IDelay>(), provider.GetRequiredService<TimeProvider>());
+        });
+        services.AddSingleton(_ =>
+        {
+            // Keine automatischen Weiterleitungen: Der Schlüssel steht in der Anfrageadresse und darf nie an einen anderen Host gehen.
+            var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(AppIdentity.BuildUserAgent(AppIdentity.GetAppVersion()));
+            return client;
+        });
+#if WINDOWS
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new Platforms.Windows.CredentialLockerApiKeyStore()));
+#else
+        services.AddSingleton<IApiKeyStore>(_ => ApiKeyStoreSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new SecureStorageApiKeyStore()));
+#endif
+        services.AddSingleton<IApiKeyProvider>(provider => new ApiKeyProvider(
+            provider.GetRequiredService<IApiKeyStore>(),
+            ApiKeyProvider.ReadBuildTimeKey,
+            Environment.GetEnvironmentVariable,
+            provider.GetRequiredService<ILogger<ApiKeyProvider>>()));
+        services.AddSingleton<ITankerkoenigClient, TankerkoenigClient>();
+        services.AddSingleton<IPriceRepository, PriceRepository>();
+        services.AddSingleton<INetworkStatusSource, MauiNetworkStatusSource>();
+        services.AddSingleton<IConnectionMonitor, ConnectionMonitor>();
+        services.AddSingleton<IFuelPriceService, FuelPriceService>();
+        services.AddSingleton<IPriceCacheInvalidator>(provider => (FuelPriceService)provider.GetRequiredService<IFuelPriceService>());
+    }
+}

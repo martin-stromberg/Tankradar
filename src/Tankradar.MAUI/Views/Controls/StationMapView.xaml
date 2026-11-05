@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:resources="clr-namespace:Tankradar.MAUI.Resources"
+             xmlns:texts="clr-namespace:Tankradar.MAUI.Resources.Texts"
+             x:Class="Tankradar.MAUI.Views.Controls.StationMapView">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <resources:MapStyles />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <!-- Vollflächenbetrieb: ohne Rahmen und Innenabstand, damit die Bedienelemente der Seite über der Karte liegen -->
+    <Grid x:Name="Surface"
+          BackgroundColor="{AppThemeBinding Light=#E8EDF5, Dark=#1E293B}"
+          IsClippedToBounds="True">
+        <Grid.GestureRecognizers>
+            <PanGestureRecognizer PanUpdated="OnPanUpdated" />
+            <PinchGestureRecognizer PinchUpdated="OnPinchUpdated" />
+            <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnDoubleTapped" />
+        </Grid.GestureRecognizers>
+
+        <AbsoluteLayout x:Name="TileLayer" InputTransparent="True" />
+        <GraphicsView x:Name="RouteLayer" InputTransparent="True" IsVisible="False" AutomationId="Map.Route" />
+        <AbsoluteLayout x:Name="MarkerLayer" />
+
+        <!-- Zähler und Zoomstufe oben links, unterhalb der Suchschaltfläche der Seite -->
+        <Border Style="{StaticResource MapBadge}"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                Margin="{StaticResource MapOverlayBelowSearchButtonMargin}"
+                InputTransparent="True">
+            <VerticalStackLayout>
+                <Label x:Name="CountLabel"
+                       FontFamily="InterSemibold"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorPrimaryTeal}, Dark={StaticResource ColorSecondaryEmerald}}"
+                       AutomationId="Map.StationCount" />
+                <Label x:Name="ZoomLabel"
+                       FontFamily="InterRegular"
+                       FontSize="11"
+                       TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                       AutomationId="Map.Zoom" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Zoom und Ausschnitt zurücksetzen oben rechts; das Verschieben der Karte erfolgt per Wischgeste bzw. Ziehen -->
+        <VerticalStackLayout x:Name="ControlsPanel" HorizontalOptions="End" VerticalOptions="Start" Margin="{StaticResource MapOverlayMargin}" Spacing="8">
+            <Button Text="+"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnZoomInClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.ZoomIn}"
+                    AutomationId="Map.ZoomIn" />
+            <Button Text="−"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnZoomOutClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.ZoomOut}"
+                    AutomationId="Map.ZoomOut" />
+            <Button Text="◎"
+                    Style="{StaticResource MapControlButton}"
+                    Clicked="OnRecenterClicked"
+                    SemanticProperties.Description="{x:Static texts:MapTexts.Recenter}"
+                    AutomationId="Map.Recenter" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

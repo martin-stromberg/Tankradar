@@ -1,0 +1,136 @@
+#!/usr/bin/env sh
+# Pre-Push-Hook: strikte Qualitätssicherung für Tankradar vor dem Push.
+#
+# Blockiert direkte Pushes auf main/staging (Branch-Schutz) sowie Pushes bei
+# Verstößen gegen die strikten Checks, das Conventional-Commits-Format oder
+# fehlschlagende Tests.
+#
+# Die Commit-Nachrichten-Prüfung nutzt den tatsächlich gepushten Bereich je
+# Ref aus stdin (<local_ref> <local_sha> <remote_ref> <remote_sha>), nicht
+# einen hartkodierten main..HEAD-Bereich: Basis ist die jeweilige
+# remote_sha (bzw. bei einem neuen Branch/Tag auf dem Remote die
+# automatisch ermittelte main-Referenz), Ende ist die jeweilige local_sha.
+#
+# Notfall-Fallback: SKIP_HOOKS=1 git push ... überspringt alle Hooks
+# (mit sichtbarer Warnung auf stderr).
+set -u
+
+if [ "${SKIP_HOOKS:-}" = "1" ]; then
+  echo "WARNUNG: SKIP_HOOKS=1 gesetzt - alle Git-Hooks werden übersprungen." >&2
+  exit 0
+fi
+
+hook_dir="$(cd "$(dirname "$0")" && pwd)"
+
+ZERO_SHA="0000000000000000000000000000000000000000"
+
+# stdin (je Zeile: local_ref local_sha remote_ref remote_sha) einmalig in eine Datei
+# sichern, da sowohl der Branch-Schutz als auch die Commit-Bereich-Prüfung je Ref stdin
+# lesen müssen.
+refs_file="$(mktemp)"
+trap 'rm -f "$refs_file"' EXIT
+cat > "$refs_file"
+
+# --- Branch-Schutz (blockierend) ---
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$remote_ref" ] && continue
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/staging)
+      branch_name="${remote_ref#refs/heads/}"
+      echo "FEHLER: Direkte Pushes auf '$branch_name' sind nicht erlaubt. Bitte per Pull Request aktualisieren." >&2
+      exit 1
+      ;;
+  esac
+done < "$refs_file"
+
+# --- Python-Interpreter ermitteln (python3 bevorzugt, sonst python) ---
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON="python"
+else
+  echo "FEHLER: Weder 'python3' noch 'python' im PATH gefunden. Die Git-Hooks benötigen Python 3.x." >&2
+  exit 1
+fi
+
+# --- Conventional Commits Validierung je gepushtem Ref (blockierend) ---
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "$remote_ref" ] && continue
+  if [ "$local_sha" = "$ZERO_SHA" ]; then
+    # Branch-/Tag-Löschung: keine Commits zu prüfen.
+    continue
+  fi
+
+  echo "Prüfe: Commit-Nachrichten für $remote_ref (conventional-commits-check.py) ..."
+  if [ "$remote_sha" = "$ZERO_SHA" ]; then
+    # Neuer Branch/Tag auf dem Remote: Basis automatisch ermitteln (main/origin main).
+    check_ok=1
+    "$PYTHON" "$hook_dir/conventional-commits-check.py" --end "$local_sha" || check_ok=0
+  else
+    check_ok=1
+    "$PYTHON" "$hook_dir/conventional-commits-check.py" --base "$remote_sha" --end "$local_sha" || check_ok=0
+  fi
+  if [ "$check_ok" -eq 0 ]; then
+    echo "FEHLER: Commit-Nachrichten für $remote_ref entsprechen nicht dem Conventional-Commits-Format. Push abgebrochen." >&2
+    exit 1
+  fi
+  echo
+done < "$refs_file"
+
+# Nur für Tests des Hooks: nach der Commit-Prüfung beenden (ohne Strict-Checks/Tests).
+if [ "${PRE_PUSH_COMMIT_CHECK_ONLY:-}" = "1" ]; then
+  exit 0
+fi
+
+# --- Strict Checks (ganzes Repo, blockierend) ---
+echo "Prüfe: Verbotene Muster / Secrets (forbidden-patterns-check.py --all --strict) ..."
+if ! "$PYTHON" "$hook_dir/forbidden-patterns-check.py" --all --strict; then
+  echo "FEHLER: Verbotene Muster (Secrets, Zertifikate, DB-Dumps, iOS-Signierungsdateien, Logdateien) gefunden. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Code-Formatierung (format-code-style-check.py --strict) ..."
+if ! "$PYTHON" "$hook_dir/format-code-style-check.py" --strict; then
+  echo "FEHLER: Code-Formatierung entspricht nicht den dotnet-format-Regeln. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: XML-Dokumentation (csproj-xmldoc-check.py --all) ..."
+if ! "$PYTHON" "$hook_dir/csproj-xmldoc-check.py" --all; then
+  echo "FEHLER: XML-Dokumentation unvollständig oder CS1591 nicht als Fehler konfiguriert. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Übersetzungs-Konsistenz (translation-check.py --all) ..."
+if ! "$PYTHON" "$hook_dir/translation-check.py" --all; then
+  echo "FEHLER: Übersetzungs-Inkonsistenzen gefunden. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Enum-Testabdeckung (enum-coverage-check.py --all --strict) ..."
+if ! "$PYTHON" "$hook_dir/enum-coverage-check.py" --all --strict; then
+  echo "FEHLER: Unvollständige Enum-Testabdeckung. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+echo "Prüfe: Platzhalter-Implementierungen (no-notimplemented-check.py --all --strict) ..."
+if ! "$PYTHON" "$hook_dir/no-notimplemented-check.py" --all --strict; then
+  echo "FEHLER: Platzhalter-Implementierungen gefunden. Push abgebrochen." >&2
+  exit 1
+fi
+echo
+
+# --- Test-Ausführungs-Validierung (blockierend) ---
+echo "Prüfe: Testausführung (test-execution-check.py) ..."
+if ! "$PYTHON" "$hook_dir/test-execution-check.py"; then
+  echo "FEHLER: Tests sind fehlgeschlagen oder ein Timeout wurde erreicht. Push abgebrochen." >&2
+  exit 1
+fi
+
+echo "Pre-Push-Prüfungen erfolgreich abgeschlossen."
+exit 0

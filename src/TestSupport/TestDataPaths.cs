@@ -1,0 +1,77 @@
+namespace Tankradar.TestSupport;
+
+/// <summary>
+/// Gemeinsam genutzte Konstanten für die Testdaten-Isolation von Integrations- und E2E-Tests.
+/// </summary>
+public static class TestDataPaths
+{
+    /// <summary>
+    /// Name der Umgebungsvariable, über die Tests ein isoliertes Testdatenverzeichnis vorgeben können.
+    /// </summary>
+    public const string TestDataPathEnvironmentVariable = "TANKATLAS_TEST_DATA_PATH";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Adresse des Preisdienstes (Mock-Server) vorgibt.
+    /// </summary>
+    public const string PriceApiUrlEnvironmentVariable = "TANKRADAR_PRICE_API_URL";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Adresse des Geokodierungsdienstes (Mock-Server) vorgibt.
+    /// </summary>
+    public const string GeocodingUrlEnvironmentVariable = "TANKRADAR_GEOCODING_URL";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Basisadresse des Kachelservers (Mock-Server) vorgibt; die App hängt <c>{z}/{x}/{y}.png</c> an.
+    /// </summary>
+    public const string TileUrlEnvironmentVariable = "TANKRADAR_TILE_URL";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Preisdienst vorgibt.
+    /// </summary>
+    public const string PriceApiKeyEnvironmentVariable = "TANKRADAR_PRICE_API_KEY";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Adresse des Routingdienstes (Mock-Server) vorgibt.
+    /// </summary>
+    public const string RoutingUrlEnvironmentVariable = "TANKRADAR_ROUTING_URL";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus einen Test-Schlüssel für den Routingdienst vorgibt.
+    /// </summary>
+    public const string RoutingTestApiKeyEnvironmentVariable = "TANKRADAR_ROUTING_TEST_API_KEY";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus den Mindestabstand zwischen zwei Preisabfragen einer Routensuche in Millisekunden vorgibt (ohne Angabe: 0).
+    /// </summary>
+    public const string RouteQueryIntervalEnvironmentVariable = "TANKRADAR_ROUTE_QUERY_INTERVAL_MS";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus einen festen Standort im Format <c>breite,länge</c> (invariante Kultur) vorgibt.
+    /// </summary>
+    public const string TestLocationEnvironmentVariable = "TANKATLAS_TEST_LOCATION";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus den Pfad der Bilddatei vorgibt, die die Test-Fotoauswahl als Belegfoto liefert.
+    /// </summary>
+    public const string TestReceiptPhotoEnvironmentVariable = "TANKATLAS_TEST_RECEIPT_PHOTO";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus den Pfad der Sicherungsdatei vorgibt, die die Test-Dateiauswahl zum Einspielen liefert.
+    /// </summary>
+    public const string TestBackupImportEnvironmentVariable = "TANKATLAS_TEST_BACKUP_IMPORT";
+
+    /// <summary>
+    /// Name der Umgebungsvariable, die im Testmodus die Fensterbetriebsart der App vorgibt (<see cref="TestWindowOffscreen"/> oder <see cref="TestWindowForeground"/>).
+    /// </summary>
+    public const string TestWindowEnvironmentVariable = "TANKATLAS_TEST_WINDOW";
+
+    /// <summary>
+    /// Wert von <see cref="TestWindowEnvironmentVariable"/>: Das Fenster startet außerhalb des sichtbaren Bereichs, ohne sich in den Vordergrund zu holen.
+    /// </summary>
+    public const string TestWindowOffscreen = "offscreen";
+
+    /// <summary>
+    /// Wert von <see cref="TestWindowEnvironmentVariable"/>: Das Fenster startet normal im Vordergrund (bisheriger Betrieb).
+    /// </summary>
+    public const string TestWindowForeground = "foreground";
+}

@@ -1,0 +1,47 @@
+name: GitHub Pages
+
+# Veroeffentlicht die statische App-Präsentation unter pages/ auf GitHub Pages.
+# Läuft bei jedem Merge/Push auf main (Issue #34) sowie manuell per workflow_dispatch.
+# Einmalige Einrichtung: Settings → Pages → Source "GitHub Actions" (siehe pages/README.md).
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pages/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
