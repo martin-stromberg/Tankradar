@@ -174,7 +174,8 @@ main {
 .site-footer a { color: #5eead4; }
 
 @media (max-width: 720px) {
-  .panel { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .panel,
+  .panel:nth-of-type(even) { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .panel:nth-of-type(even) .panel-text { order: 1; }
   .panel:nth-of-type(even) .device { order: 2; }
 }
