@@ -1,3 +1,5 @@
+using Tankradar.MAUI.Models.Search;
+
 namespace Tankradar.MAUI.Models.Pricing;
 
 /// <summary>
@@ -70,6 +72,22 @@ public sealed class StationInfo
     /// Der Längengrad der Tankstelle.
     /// </summary>
     public double Longitude { get; init; }
+
+    /// <summary>
+    /// Die Position der Tankstelle; <see langword="null"/>, wenn die gelieferten Koordinaten ungültig sind.
+    /// (0, 0) gilt als fehlende Angabe und liegt nie in Deutschland.
+    /// </summary>
+    public GeoPosition? Position
+    {
+        get
+        {
+            return Latitude == 0 && Longitude == 0
+                ? null
+                : GeoPosition.TryCreate(Latitude, Longitude, out var position)
+                    ? position
+                    : null;
+        }
+    }
 
     /// <summary>
     /// Die Entfernung zur Suchposition in Kilometern; nur bei Umkreissuchen gesetzt und nie gespeichert.

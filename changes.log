@@ -1,3 +1,11 @@
+## 2026-11-09 — Navigation zur Tankstelle aus der Detailansicht (Issue #41)
+
+- Die Tankstellen-Detailansicht bietet die Schaltfläche „Navigation starten“ (`Detail.Navigate`), die die Karten-App des Geräts mit der Tankstelle als Ziel im Routenmodus (Auto) öffnet — nur auf ausdrücklichen Wunsch des Anwenders.
+- Als Ziel gilt die Position der Tankstelle (`GeoPosition`); ohne gültige Position dient die Adresse als Fallback; fehlt beides, wird die Schaltfläche ausgeblendet.
+- Neuer Dienst `IMapOpener`/`EssentialsMapOpener` kapselt `Map.OpenAsync` aus .NET MAUI Essentials (`NavigationMode.Driving`); im Testmodus wird nie eine externe App gestartet.
+- Die Positionsprüfung (Wertebereich, (0, 0) ungültig) liegt zentral in `StationInfo.Position`; `StationDetailItem` führt das Ziel als `Position`, `StationListItem` ebenfalls.
+- Keine Schemaänderung.
+
 ## 2026-11-04 — UI im Tankbuch optimieren (Issue #31)
 
 - Der Tab „Tankbuch“ startet den Datenladevorgang erst nach Abgabe des UI-Threads; die Navigation reagiert dadurch unmittelbar.

@@ -1,7 +1,6 @@
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Models.Routing;
-using Tankradar.MAUI.Models.Search;
 using Tankradar.MAUI.Services.Pricing;
 
 namespace Tankradar.MAUI.Services.Routing;
@@ -103,7 +102,7 @@ public sealed class RouteStationSearchService : IRouteStationSearchService
         var stations = new List<RouteStation>();
         foreach (var station in found.Values)
         {
-            if (!GeoPosition.TryCreate(station.Latitude, station.Longitude, out _) || (station.Latitude == 0 && station.Longitude == 0))
+            if (station.Position is null)
             {
                 continue;
             }

@@ -107,6 +107,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TankbookExportViewModel>();
         builder.Services.AddTransient<DataSourceViewModel>();
         builder.Services.AddSingleton<ILinkOpener>(_ => new LauncherLinkOpener(IsTestMode()));
+        builder.Services.AddSingleton<IMapOpener>(_ => new EssentialsMapOpener(IsTestMode()));
         builder.Services.AddTransient(provider => new RouteSearchSettingsViewModel(
             provider.GetRequiredService<IRouteSearchAccess>(),
             provider.GetRequiredService<IRoutingKeyChecker>(),

@@ -86,6 +86,16 @@ public static class DetailTexts
     public const string Refresh = "Preise aktualisieren";
 
     /// <summary>
+    /// Beschriftung der Schaltfläche zum Starten der Navigation in der Karten-App.
+    /// </summary>
+    public const string Navigate = "Navigation starten";
+
+    /// <summary>
+    /// Fehlermeldung, wenn die Karten-App nicht geöffnet werden konnte.
+    /// </summary>
+    public const string NavigationFailed = "Die Karten-App konnte nicht geöffnet werden.";
+
+    /// <summary>
     /// Hinweis, dass keine Preise der aktivierten Sorten vorliegen.
     /// </summary>
     public const string NoPrices = "Für die aktivierten Spritsorten liegen keine Preise vor.";

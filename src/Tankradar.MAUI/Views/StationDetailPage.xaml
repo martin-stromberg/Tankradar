@@ -192,6 +192,14 @@
                         </VerticalStackLayout>
                     </Border>
 
+                    <!-- Navigation: Karten-App des Geräts mit der Tankstelle als Ziel (nur mit Position oder Adresse) -->
+                    <Button Text="{x:Static texts:DetailTexts.Navigate}"
+                            Command="{Binding NavigateCommand}"
+                            IsVisible="{Binding CanNavigate}"
+                            Style="{StaticResource DetailActionButton}"
+                            SemanticProperties.Description="{x:Static texts:DetailTexts.Navigate}"
+                            AutomationId="Detail.Navigate" />
+
                     <Label Text="{x:Static texts:DetailTexts.PricesHeading}"
                            Style="{StaticResource headline-md}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}" />

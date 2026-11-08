@@ -20,6 +20,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     private readonly ISettingsService _settingsService;
     private readonly IFuelPriceService _priceService;
     private readonly IConnectionMonitor _connection;
+    private readonly IMapOpener _mapOpener;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<StationDetailViewModel> _logger;
     private StationListItem? _origin;
@@ -44,6 +45,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     /// <param name="settingsService">Dienst zum Laden der Einstellungen (aktivierte Spritsorten).</param>
     /// <param name="priceService">Preisdienst für die Detailabfrage.</param>
     /// <param name="connection">Die Verbindungserkennung (Offline-Hinweis, automatische Aktualisierung).</param>
+    /// <param name="mapOpener">Öffnet die Karten-App mit der Tankstelle als Ziel.</param>
     /// <param name="timeProvider">Die Zeitquelle für Altersangaben.</param>
     /// <param name="logger">Logger (protokolliert nie Koordinaten).</param>
     /// <param name="favorites">Die Favoritengruppen der Tankstelle (Karte „Favoritengruppen“).</param>
@@ -51,6 +53,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         ISettingsService settingsService,
         IFuelPriceService priceService,
         IConnectionMonitor connection,
+        IMapOpener mapOpener,
         TimeProvider timeProvider,
         ILogger<StationDetailViewModel> logger,
         StationFavoritesViewModel favorites)
@@ -59,6 +62,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         _settingsService = settingsService;
         _priceService = priceService;
         _connection = connection;
+        _mapOpener = mapOpener;
         _timeProvider = timeProvider;
         _logger = logger;
         Title = DetailTexts.PageTitle;
@@ -66,8 +70,10 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
         RefreshCommand = new Command(() => LastLoadTask = LoadAsync());
         SaveCustomNameCommand = new Command(() => LastCustomNameTask = SaveCustomNameAsync(CustomNameInput));
         RemoveCustomNameCommand = new Command(() => LastCustomNameTask = SaveCustomNameAsync(null));
+        NavigateCommand = new Command(() => LastNavigationTask = NavigateAsync());
         LastLoadTask = Task.CompletedTask;
         LastCustomNameTask = Task.CompletedTask;
+        LastNavigationTask = Task.CompletedTask;
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(IsBusy))
@@ -95,6 +101,7 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
                 OnPropertyChanged(nameof(HasDetail));
                 OnPropertyChanged(nameof(HasCustomName));
                 OnPropertyChanged(nameof(ShowNoPrices));
+                OnPropertyChanged(nameof(CanNavigate));
             }
         }
     }
@@ -169,6 +176,22 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
     /// Befehl zum Aktualisieren der Preise.
     /// </summary>
     public ICommand RefreshCommand { get; }
+
+    /// <summary>
+    /// Befehl zum Starten der Navigation zur Tankstelle in der Karten-App des Geräts.
+    /// </summary>
+    public ICommand NavigateCommand { get; }
+
+    /// <summary>
+    /// Gibt an, ob „Navigation starten“ angeboten wird: nur wenn die Tankstelle eine Position oder eine Adresse hat.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    public bool CanNavigate => Detail is { } detail && (detail.HasPosition || detail.HasAddress);
+
+    /// <summary>
+    /// Der zuletzt gestartete Start der Karten-App (für Tests und Abwarten).
+    /// </summary>
+    public Task LastNavigationTask { get; private set; }
 
     /// <summary>
     /// Gibt an, ob „Preise aktualisieren“ bedienbar ist: nicht während eines Abrufs und nur mit Verbindung (ohne Verbindung bleibt die Schaltfläche deaktiviert; der Offline-Hinweis erklärt, warum).
@@ -280,7 +303,8 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             origin.HasUnconfirmedPrice,
             origin.IsAutomatedStation,
             [],
-            string.Empty);
+            string.Empty,
+            Position: origin.Position);
     }
 
     /// <summary>
@@ -450,6 +474,33 @@ public class StationDetailViewModel : BaseViewModel, IQueryAttributable
             {
                 CustomNameMessage = DetailTexts.CustomNameFailed;
             }
+        }
+    }
+
+    private async Task NavigateAsync()
+    {
+        var detail = Detail;
+        if (detail is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (detail.Position is { } position)
+            {
+                await _mapOpener.OpenAsync(position, detail.Name).ConfigureAwait(true);
+            }
+            else if (detail.HasAddress)
+            {
+                await _mapOpener.OpenAsync(detail.AddressText, detail.Name).ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Nur der Typ wird protokolliert: Ausnahmetexte könnten Koordinaten oder die Adresse enthalten.
+            _logger.LogWarning("Die Karten-App konnte nicht geöffnet werden ({ExceptionType}).", ex.GetType().Name);
+            StatusMessage = DetailTexts.NavigationFailed;
         }
     }
 
