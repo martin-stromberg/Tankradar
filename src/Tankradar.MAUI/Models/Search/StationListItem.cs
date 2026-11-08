@@ -55,6 +55,19 @@ public sealed record StationListItem(
     public bool HasPosition => Latitude is not null && Longitude is not null;
 
     /// <summary>
+    /// Die Position der Tankstelle; <see langword="null"/>, wenn keine gültigen Koordinaten vorliegen.
+    /// </summary>
+    public GeoPosition? Position
+    {
+        get
+        {
+            return Latitude is { } latitude && Longitude is { } longitude && GeoPosition.TryCreate(latitude, longitude, out var position)
+                ? position
+                : null;
+        }
+    }
+
+    /// <summary>
     /// Gibt an, ob eine Adresse vorliegt.
     /// </summary>
     public bool HasAddress => AddressText.Length > 0;

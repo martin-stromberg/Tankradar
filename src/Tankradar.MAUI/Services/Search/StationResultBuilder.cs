@@ -158,16 +158,10 @@ public static class StationResultBuilder
             StationHints.IsAutomatedStation(station.WholeDay, station.OpeningTimes),
             station.IsOpen is { } isOpen ? (isOpen ? SearchTexts.Open : SearchTexts.Closed) : string.Empty,
             SearchTexts.FormatAddress(station.Street, station.HouseNumber, station.PostCode, station.Place),
-            HasValidPosition(station) ? station.Latitude : null,
-            HasValidPosition(station) ? station.Longitude : null,
+            station.Position?.Latitude,
+            station.Position?.Longitude,
             station.IsOpen,
             station.SubName);
-    }
-
-    private static bool HasValidPosition(StationInfo station)
-    {
-        // (0, 0) ist der Standardwert fehlender Angaben und liegt nie in Deutschland.
-        return GeoPosition.TryCreate(station.Latitude, station.Longitude, out _) && !(station.Latitude == 0 && station.Longitude == 0);
     }
 
     private static IReadOnlyList<StationListItem> Sort(List<StationListItem> items, ResultSortOrder sortOrder, FuelType sortFuel)
