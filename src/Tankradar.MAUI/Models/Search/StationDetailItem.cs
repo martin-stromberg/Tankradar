@@ -27,6 +27,7 @@ public sealed record OpeningHoursLine(string DayText, string TimeText, string Di
 /// <param name="OpeningHours">Die Öffnungszeiten; leer, wenn die Quelle keine liefert oder sie zu alt sind.</param>
 /// <param name="OpeningHoursAgeText">Das Alter der Öffnungszeiten („Stand: vor X Min.“); leer, wenn keine Öffnungszeiten angezeigt werden.</param>
 /// <param name="CustomName">Der eigene Anzeigename des Anwenders; leer, wenn keiner vergeben ist.</param>
+/// <param name="Position">Die Position der Tankstelle (Navigationsziel); <see langword="null"/>, wenn die Quelle keine gültigen Koordinaten liefert.</param>
 /// <returns>Der Wert.</returns>
 public sealed record StationDetailItem(
     string Id,
@@ -40,12 +41,18 @@ public sealed record StationDetailItem(
     bool IsAutomatedStation,
     IReadOnlyList<OpeningHoursLine> OpeningHours,
     string OpeningHoursAgeText,
-    string CustomName = "")
+    string CustomName = "",
+    GeoPosition? Position = null)
 {
     /// <summary>
     /// Gibt an, ob der Stammdatenname klein unter dem Namen angezeigt wird.
     /// </summary>
     public bool HasSubName => SubNameText.Length > 0;
+
+    /// <summary>
+    /// Gibt an, ob eine gültige Position vorliegt (Voraussetzung für die Navigation per Koordinaten).
+    /// </summary>
+    public bool HasPosition => Position is not null;
 
     /// <summary>
     /// Gibt an, ob der Anwender einen eigenen Anzeigenamen vergeben hat.

@@ -25,7 +25,7 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     protected StationDetailViewModelTestBase()
     {
         Favorites = new StationFavoritesViewModel(FavoritesDb.CreateService(), NullLogger<StationFavoritesViewModel>.Instance);
-        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, Clock, Logger, Favorites);
+        ViewModel = new StationDetailViewModel(Settings, Prices, Connection, MapOpener, Clock, Logger, Favorites);
     }
 
     /// <summary>
@@ -56,6 +56,12 @@ public abstract class StationDetailViewModelTestBase : BaseTest
     /// </summary>
     /// <returns>Der Wert.</returns>
     protected FakeConnectionMonitor Connection { get; } = new();
+
+    /// <summary>
+    /// Der Karten-Öffner.
+    /// </summary>
+    /// <returns>Der Wert.</returns>
+    protected FakeMapOpener MapOpener { get; } = new();
 
     /// <summary>
     /// Die Uhr.

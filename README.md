@@ -19,7 +19,8 @@ Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANK
 - **Favoriten** – Tankstellen in selbst benannten Gruppen sammeln (Notiz, Priorität, eigener
   Anzeigename); die Startseite zeigt alle Gruppen mit aktuellen Preisen →
   [Favoriten](docs/help/Favoriten/index.md), [Startseite](docs/help/Startseite/index.md)
-- **Tankstellen-Details** – Adresse, Entfernung, Preise mit Alter und Öffnungszeiten →
+- **Tankstellen-Details** – Adresse, Entfernung, Preise mit Alter und Öffnungszeiten; per
+  Schaltfläche „Navigation starten“ öffnet die Karten-App des Geräts die Tankstelle als Ziel →
   [Hilfe](docs/help/Tankstellendetails/index.md)
 - **Tankbuch** – Fahrzeuge und Tank-/Ladevorgänge erfassen, Verbrauchs- und
   Kostenauswertung mit Diagrammen, Export als CSV oder PDF →

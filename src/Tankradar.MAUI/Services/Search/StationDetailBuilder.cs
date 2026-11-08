@@ -70,7 +70,8 @@ public static class StationDetailBuilder
             StationHints.IsAutomatedStation(current.WholeDay, current.OpeningTimes),
             hours,
             ageText,
-            current.CustomName?.Trim() ?? string.Empty);
+            current.CustomName?.Trim() ?? string.Empty,
+            current.Position);
     }
 
     private static OpeningHoursLine FormatOpeningHours(OpeningTimeEntry entry)
