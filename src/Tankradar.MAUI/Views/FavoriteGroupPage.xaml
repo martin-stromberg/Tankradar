@@ -132,6 +132,9 @@
                             <Border Style="{StaticResource GroupCard}">
                                 <VerticalStackLayout Spacing="{StaticResource space-xs}">
                                     <Grid>
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding OpenCommand}" />
+                                        </Grid.GestureRecognizers>
                                         <Label Text="{Binding StationName}" MaxLines="2" LineBreakMode="TailTruncation"
                                                Style="{StaticResource headline-md}"
                                                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"

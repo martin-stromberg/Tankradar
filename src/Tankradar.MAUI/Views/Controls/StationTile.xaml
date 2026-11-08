@@ -29,6 +29,9 @@
             StrokeShape="RoundRectangle 12"
             BackgroundColor="{AppThemeBinding Light=#F2F3FF, Dark=#131B2E}"
             SemanticProperties.Description="{Binding SpokenDescription}">
+        <Border.GestureRecognizers>
+            <TapGestureRecognizer Command="{Binding OpenCommand}" />
+        </Border.GestureRecognizers>
         <Grid>
             <VerticalStackLayout Spacing="{StaticResource space-sm}">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource space-sm}">
