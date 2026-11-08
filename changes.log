@@ -1,3 +1,10 @@
+## 2026-11-09 — Korrektur: Detailansicht aus der Favoritenansicht aufrufbar (Issue #44)
+
+- Die Tankstellenkacheln der Favoritenansicht (Favoritengruppen und „In der Nähe“ öffnen beim Antippen wieder die Detailansicht: Die Kachel trägt neben der transparenten Ebene für Bedienhilfen wieder einen `TapGestureRecognizer` — wie zuvor und wie die Tankstellenkarte der Kartenansicht.
+- Der Stationsname in der Gruppenansicht erhält denselben Zeiger-Fallback.
+- Struktureller Regressionstest sichert die Zeigerbedienung der Kachel und des Stationsnamens ab.
+- Keine Schemaänderung.
+
 ## 2026-11-09 — Navigation zur Tankstelle aus der Detailansicht (Issue #41)
 
 - Die Tankstellen-Detailansicht bietet die Schaltfläche „Navigation starten“ (`Detail.Navigate`), die die Karten-App des Geräts mit der Tankstelle als Ziel im Routenmodus (Auto) öffnet — nur auf ausdrücklichen Wunsch des Anwenders.
