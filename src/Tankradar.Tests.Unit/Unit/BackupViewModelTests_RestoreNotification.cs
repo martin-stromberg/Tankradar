@@ -37,21 +37,4 @@ public class BackupViewModelTests_RestoreNotification : BackupViewModelTestBase
 
         Assert.Equal(0, Restore.Generation);
     }
-
-    /// <summary>
-    /// Prüft, dass das Ereignis <c>Restored</c> des ViewModels weiterhin ausgelöst wird.
-    /// </summary>
-    [Fact]
-    public async Task Restore_Success_StillRaisesViewModelEvent()
-    {
-        await AppearAsync();
-        var item = ViewModel.Items[0];
-        var raised = 0;
-        ViewModel.Restored += (_, _) => raised++;
-        await PressAsync(item.RestoreCommand);
-
-        await PressAsync(item.ConfirmRestoreCommand);
-
-        Assert.Equal(1, raised);
-    }
 }

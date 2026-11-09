@@ -12,10 +12,11 @@ public class SettingsViewModelTests_Backup : BaseTest
 {
     private readonly FakeSettingsService _settings = new();
     private readonly FakeBackupService _service = new();
+    private readonly RestoreNotifier _notifier = new();
 
     private BackupViewModel CreateBackup()
     {
-        return new BackupViewModel(_service, new FakeBackupFilePicker(), new FakeBackupSharer(), new RestoreNotifier(), new FakeScreenReaderAnnouncer(), new ListLogger<BackupViewModel>());
+        return new BackupViewModel(_service, new FakeBackupFilePicker(), new FakeBackupSharer(), _notifier, new FakeScreenReaderAnnouncer(), new ListLogger<BackupViewModel>());
     }
 
     /// <summary>
@@ -24,7 +25,7 @@ public class SettingsViewModelTests_Backup : BaseTest
     [Fact]
     public void WithoutBackup_HasBackupIsFalse()
     {
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>());
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), _notifier);
 
         Assert.Null(viewModel.Backup);
         Assert.False(viewModel.HasBackup);
@@ -37,7 +38,7 @@ public class SettingsViewModelTests_Backup : BaseTest
     public async Task OnAppearing_LoadsBackupList()
     {
         var backup = CreateBackup();
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), null, backup);
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), _notifier, null, backup);
 
         viewModel.OnAppearing();
         await backup.LastTask;
@@ -55,7 +56,7 @@ public class SettingsViewModelTests_Backup : BaseTest
     {
         _service.Files = [new MAUI.Models.Backup.BackupFileInfo("tankatlas-backup-1.zip", DateTime.UtcNow, 10, "0.1.19", true)];
         var backup = CreateBackup();
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), null, backup);
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), _notifier, null, backup);
         await viewModel.LoadAsync();
         var loads = _settings.LoadCount;
         backup.OnAppearing();
@@ -67,6 +68,23 @@ public class SettingsViewModelTests_Backup : BaseTest
 
         item.ConfirmRestoreCommand.Execute(null);
         await backup.LastTask;
+        await WaitForAsync(() => _settings.LoadCount > loads && viewModel.ShowNearby);
+
+        Assert.True(viewModel.ShowNearby);
+    }
+
+    /// <summary>
+    /// Prüft, dass die Optionen auch ohne eingebettete Karte „Sicherung“ auf die Meldung des Wiederherstellungsdienstes neu laden.
+    /// </summary>
+    [Fact]
+    public async Task Restored_ViaNotifier_ReloadsSettings()
+    {
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), _notifier);
+        await viewModel.LoadAsync();
+        var loads = _settings.LoadCount;
+        _settings.Stored = _settings.Stored with { ShowNearby = true };
+
+        _notifier.NotifyRestored();
         await WaitForAsync(() => _settings.LoadCount > loads && viewModel.ShowNearby);
 
         Assert.True(viewModel.ShowNearby);

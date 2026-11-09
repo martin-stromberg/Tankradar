@@ -1,3 +1,10 @@
+## 2026-11-09 — Benachrichtigung nach Wiederherstellung vereinheitlicht (Issue #50)
+
+- Die Benachrichtigung geöffneter Seiten nach einer erfolgreichen Wiederherstellung läuft ausschließlich über `IRestoreNotifier.NotifyRestored()`: das seiteneigene Ereignis `BackupViewModel.Restored` entfällt; `BackupViewModel.ConfirmRestoreAsync` ruft nur noch den Notifier auf.
+- `SettingsViewModel` erhält `IRestoreNotifier` als Pflichtparameter im Konstruktor und abonniert `Restored` wie `TankbookViewModel` und `TankbookEntriesViewModel` (Handler `OnRestored` als Instanzmethode wegen `WeakEventManager`); das Abonnement ist nicht mehr an die eingebettete Karte „Sicherung“ gekoppelt.
+- Sichtbares Verhalten unverändert: Optionen-, Fahrzeug- und Vorgangsseiten laden nach der Wiederherstellung weiterhin sofort neu; künftige Seiten müssen nur noch den einen Benachrichtigungsmechanismus kennen.
+- Keine Schemaänderung.
+
 ## 2026-11-09 — CI: Diagnose für sporadischen Absturz 0xC0000005 im WinRT-Finalizer (Issue #22)
 
 - Keine Fachlogikänderung; reine CI-/Diagnoseinfrastruktur, um die Ursache des seit ADR 0015 (Teil B) beobachteten, sporadischen Absturzes der App beim Beenden in den FlaUI-E2E-Läufen eindeutig zu belegen.

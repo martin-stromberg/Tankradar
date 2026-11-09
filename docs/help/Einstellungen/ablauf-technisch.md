@@ -27,7 +27,7 @@ Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.
 Bewusst hingenommene Folgen:
 
 - **Bestandsinstallationen:** Die Zeile `UserSettings` entsteht nur durch `SettingsService.SaveAsync`. Installationen, die nur aktualisiert wurden und nie in den Optionen gespeichert haben, sehen die Einrichtung nach dem Update einmalig. Es gibt keine Datenmigration.
-- **Wiederherstellung:** `BackupViewModel.Restored` lädt nur die Einstellungen neu; der Einrichtungsstatus wird nicht gesondert behandelt. Enthält die wiederhergestellte Datenbank die Zeile, bleibt die Einrichtung aus; fehlt sie, erscheint die Einrichtung beim nächsten Start.
+- **Wiederherstellung:** `IRestoreNotifier.Restored` (ausgelöst von `BackupViewModel` nach erfolgreicher Wiederherstellung) lädt nur die Einstellungen neu; der Einrichtungsstatus wird nicht gesondert behandelt. Enthält die wiederhergestellte Datenbank die Zeile, bleibt die Einrichtung aus; fehlt sie, erscheint die Einrichtung beim nächsten Start.
 
 ### 2. Einstellungen laden
 
@@ -73,6 +73,7 @@ Migrationen liegen unter `src/Tankradar.MAUI/Data/Migrations/` (`InitialCreate`,
 - `IDatabaseInitializer` / `DatabaseInitializer`, `IDatabaseFileProtector` / `DatabaseFileProtector`
 - `ISettingsService` / `SettingsService`, `AppSettings`, `FuelTypeSelection`
 - `SettingsViewModel`, `FuelTypeItemViewModel`, `ChoiceOptionViewModel<T>`, `SettingsPage`
+- `IRestoreNotifier` / `RestoreNotifier` (Singleton): `SettingsViewModel` abonniert `Restored` und lädt die Einstellungen nach einer Wiederherstellung neu (siehe [Sicherung](../Sicherung/ablauf-technisch.md))
 - `SettingsTexts` (zentrale UI-Texte, `Resources/Texts/`)
 - Einrichtung beim ersten Start: `ISetupStatusService` / `SetupStatusService`, `SetupViewModel`, `SetupTexts`, `AppShell` (`SetupOverlayTemplate`, `CheckSetupAsync`), `App.CreateWindow`
 - `IAppDataPathProvider` (einzige Quelle des Datenbankpfads)

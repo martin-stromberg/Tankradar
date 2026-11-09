@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Resources.Texts;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -203,7 +204,7 @@ public class SettingsViewModelTests_Changes : BaseTest
     public async Task Save_Fails_LogsException()
     {
         var logger = new ListLogger<SettingsViewModel>();
-        var viewModel = new SettingsViewModel(_service, logger);
+        var viewModel = new SettingsViewModel(_service, logger, new RestoreNotifier());
         await viewModel.LoadAsync();
         var exception = new InvalidOperationException("kaputt");
         _service.SaveException = exception;
@@ -216,7 +217,7 @@ public class SettingsViewModelTests_Changes : BaseTest
 
     private async Task<SettingsViewModel> CreateLoadedAsync()
     {
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
         await viewModel.LoadAsync();
         return viewModel;
     }

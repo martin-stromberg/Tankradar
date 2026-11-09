@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Models.Pricing;
 using Tankradar.MAUI.Resources.Texts;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.Services.Pricing;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
@@ -120,8 +121,8 @@ public class DataSourceViewModelTests_Check : BaseTest
     [Fact]
     public void SettingsViewModel_HasDataSource_OnlyWhenProvided()
     {
-        var without = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance);
-        var with = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance, CreateViewModel());
+        var without = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
+        var with = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance, new RestoreNotifier(), CreateViewModel());
 
         Assert.False(without.HasDataSource);
         Assert.True(with.HasDataSource);

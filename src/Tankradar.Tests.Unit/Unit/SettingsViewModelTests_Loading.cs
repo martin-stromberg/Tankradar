@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Resources.Texts;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -29,7 +30,7 @@ public class SettingsViewModelTests_Loading : BaseTest
             GpsUsage.Never,
             ResultView.Map,
             ResultSortOrder.Distance);
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
 
         await viewModel.LoadAsync();
 
@@ -49,7 +50,7 @@ public class SettingsViewModelTests_Loading : BaseTest
     public async Task LoadAsync_ServiceThrows_ShowsStatusMessageAndKeepsDefaults()
     {
         _service.LoadException = new InvalidOperationException("kaputt");
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
 
         await viewModel.LoadAsync();
 
@@ -69,7 +70,7 @@ public class SettingsViewModelTests_Loading : BaseTest
         var exception = new InvalidOperationException("kaputt");
         _service.LoadException = exception;
         var logger = new ListLogger<SettingsViewModel>();
-        var viewModel = new SettingsViewModel(_service, logger);
+        var viewModel = new SettingsViewModel(_service, logger, new RestoreNotifier());
 
         await viewModel.LoadAsync();
 
@@ -83,7 +84,7 @@ public class SettingsViewModelTests_Loading : BaseTest
     [Fact]
     public async Task OnAppearing_StartsLoad()
     {
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
 
         viewModel.OnAppearing();
         await viewModel.LoadAsync();
@@ -97,7 +98,7 @@ public class SettingsViewModelTests_Loading : BaseTest
     [Fact]
     public async Task LoadAsync_DoesNotTriggerSave()
     {
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
 
         await viewModel.LoadAsync();
         await viewModel.LastSaveTask;

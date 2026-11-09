@@ -76,7 +76,7 @@ public class ViewModelTests_PageTitles : BaseTest
     [Fact]
     public void SettingsViewModel_Constructor_SetsTitle()
     {
-        var viewModel = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(new FakeSettingsService(), NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
 
         Assert.Equal("Optionen", viewModel.Title);
     }
