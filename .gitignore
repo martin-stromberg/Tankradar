@@ -465,6 +465,7 @@ artifacts/
 vulnerable-packages.txt
 vulnerable-packages.json
 e2e-diagnostics/
+e2e-dumps/
 
 # iOS-Deployment (scripts/iOS-Deployment.ps1): lokale Auswahl, temporäre Response-Dateien und Laufprotokolle
 .ios-deploy.user.json

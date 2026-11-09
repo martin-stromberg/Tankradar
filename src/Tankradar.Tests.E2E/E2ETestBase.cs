@@ -33,6 +33,12 @@ public abstract class E2ETestBase : IDisposable
     private bool _disposed;
 
     /// <summary>
+    /// Name des zuletzt über <see cref="RunWithDiagnostics"/> gestarteten Tests; wird im Teardown protokolliert (Issue #22),
+    /// damit sich eine ggf. erst später im Protokoll erscheinende Absturzmeldung des App-Prozesses eindeutig zuordnen lässt.
+    /// </summary>
+    private string _currentTestName = "vor einer Testmethode";
+
+    /// <summary>
     /// Erstellt die Testbasis, legt ein isoliertes Testdatenverzeichnis an und startet die Windows-App darauf ausgerichtet.
     /// </summary>
     protected E2ETestBase()
@@ -107,6 +113,7 @@ public abstract class E2ETestBase : IDisposable
     /// <param name="testName">Name des Tests (wird automatisch vom aufrufenden Testmethodennamen übernommen).</param>
     protected void RunWithDiagnostics(Action test, [CallerMemberName] string testName = "")
     {
+        _currentTestName = GetType().Name + "." + testName;
         try
         {
             test();
@@ -360,10 +367,8 @@ public abstract class E2ETestBase : IDisposable
                 process.Kill(entireProcessTree: true);
                 process.WaitForExit(TimeSpan.FromSeconds(10));
             }
-            else if (process.ExitCode == AccessViolationExitCode)
-            {
-                Console.Error.WriteLine($"Hinweis: Die Tankatlas-App (PID {process.Id}) endete mit 0xC0000005 (Zugriffsverletzung beim Beenden, siehe ADR 0015).");
-            }
+
+            LogTeardown(process);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
@@ -373,6 +378,26 @@ public abstract class E2ETestBase : IDisposable
         {
             process?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Protokolliert Testname, PID und Exit-Code der beendeten App-Instanz (Issue #22), damit sich eine Absturzmeldung des
+    /// App-Prozesses (z. B. 0xC0000005 im WinRT-Finalizer), die im CI-Protokoll ggf. erst nach dem nächsten Test erscheint,
+    /// eindeutig zuordnen lässt.
+    /// </summary>
+    /// <param name="process">Der beendete (oder zwangsweise beendete) App-Prozess.</param>
+    private void LogTeardown(Process process)
+    {
+        if (!process.HasExited)
+        {
+            Console.Error.WriteLine($"E2E-Teardown: Test='{_currentTestName}', PID={process.Id}, Prozess noch nicht beendet.");
+            return;
+        }
+
+        var exitCodeDescription = process.ExitCode == AccessViolationExitCode
+            ? $"0x{unchecked((uint)process.ExitCode):X8} (Zugriffsverletzung beim Beenden, siehe ADR 0015)"
+            : process.ExitCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        Console.Error.WriteLine($"E2E-Teardown: Test='{_currentTestName}', PID={process.Id}, ExitCode={exitCodeDescription}.");
     }
 
     private void LaunchApplication()

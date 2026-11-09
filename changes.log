@@ -1,3 +1,11 @@
+## 2026-11-09 — CI: Diagnose für sporadischen Absturz 0xC0000005 im WinRT-Finalizer (Issue #22)
+
+- Keine Fachlogikänderung; reine CI-/Diagnoseinfrastruktur, um die Ursache des seit ADR 0015 (Teil B) beobachteten, sporadischen Absturzes der App beim Beenden in den FlaUI-E2E-Läufen eindeutig zu belegen.
+- Der Schritt „Test E2E with FlaUI“ in `pr-staging-ci.yml` und `staging-ci.yml` aktiviert für den App-Prozess Speicherabzüge bei Absturz (`DOTNET_DbgEnableMiniDump=1`, `DOTNET_DbgMiniDumpType=2`, `DOTNET_DbgMiniDumpName` mit PID im Dateinamen); vorhandene Abzüge werden als Artefakt `e2e-dumps-pr`/`e2e-dumps-staging` hochgeladen (`if-no-files-found: ignore`, da im Regelfall keine entstehen).
+- `E2ETestBase` protokolliert im Teardown jetzt immer Testname, PID und Exit-Code der beendeten App-Instanz (vorher nur bei Absturz oder Timeout), damit sich eine im CI-Protokoll ggf. erst nach dem nächsten Test erscheinende Absturzmeldung eindeutig zuordnen lässt.
+- Die Ursache selbst (siehe ADR 0015) sowie „Application failed to exit“ und die beobachtete Fünf-Minuten-Lücke bleiben offen, bis ein Speicherabzug aus der CI vorliegt; keine Änderung an Systemeinstellungen der Entwicklungsrechner, E2E-Tests bleiben lokal ohne Vordergrundfenster.
+- Keine Schemaänderung.
+
 ## 2026-11-09 — Korrektur: Detailansicht aus der Favoritenansicht aufrufbar (Issue #44)
 
 - Die Tankstellenkacheln der Favoritenansicht (Favoritengruppen und „In der Nähe“ öffnen beim Antippen wieder die Detailansicht: Die Kachel trägt neben der transparenten Ebene für Bedienhilfen wieder einen `TapGestureRecognizer` — wie zuvor und wie die Tankstellenkarte der Kartenansicht.
