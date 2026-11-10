@@ -53,14 +53,12 @@ public class BackupViewModelTests_Restore : BackupViewModelTestBase
     {
         await AppearAsync();
         var item = ViewModel.Items[1];
-        var raised = 0;
-        ViewModel.Restored += (_, _) => raised++;
         await PressAsync(item.RestoreCommand);
 
         await PressAsync(item.ConfirmRestoreCommand);
 
         Assert.Equal(["tankatlas-backup-20261011-080000.zip"], Service.Restored);
-        Assert.Equal(1, raised);
+        Assert.Equal(1, Restore.Generation);
         Assert.Equal(BackupTexts.Restored, ViewModel.StatusMessage);
         Assert.Contains(BackupTexts.Restored, Announcer.Announcements);
         Assert.False(ViewModel.IsBusy);
@@ -80,14 +78,12 @@ public class BackupViewModelTests_Restore : BackupViewModelTestBase
     {
         await AppearAsync();
         var item = ViewModel.Items[0];
-        var raised = false;
-        ViewModel.Restored += (_, _) => raised = true;
         await PressAsync(item.RestoreCommand);
         Service.RestoreResult = result;
 
         await PressAsync(item.ConfirmRestoreCommand);
 
-        Assert.False(raised);
+        Assert.Equal(0, Restore.Generation);
         Assert.Equal(BackupTexts.GetMessage(result), ViewModel.StatusMessage);
     }
 

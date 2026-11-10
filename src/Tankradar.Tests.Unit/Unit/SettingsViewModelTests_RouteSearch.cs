@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -23,7 +24,7 @@ public class SettingsViewModelTests_RouteSearch : BaseTest
     [Fact]
     public void WithoutRouteSearch_HasRouteSearchIsFalse()
     {
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>());
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), new RestoreNotifier());
 
         Assert.Null(viewModel.RouteSearch);
         Assert.False(viewModel.HasRouteSearch);
@@ -38,7 +39,7 @@ public class SettingsViewModelTests_RouteSearch : BaseTest
     public async Task AppearingAndDisappearing_AreForwardedToCard()
     {
         var card = CreateCard();
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), null, null, card);
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), new RestoreNotifier(), null, null, card);
 
         viewModel.OnAppearing();
         await card.LastActionTask;
@@ -63,7 +64,7 @@ public class SettingsViewModelTests_RouteSearch : BaseTest
     public async Task RouteSearchState_IsIndependentOfSettingsAndBackup()
     {
         var card = CreateCard();
-        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), null, null, card);
+        var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), new RestoreNotifier(), null, null, card);
         await viewModel.LoadAsync();
         var saves = _settings.Saved.Count;
 

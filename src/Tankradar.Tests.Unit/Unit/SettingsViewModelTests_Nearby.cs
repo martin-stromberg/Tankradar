@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Resources.Texts;
+using Tankradar.MAUI.Services.Backup;
 using Tankradar.MAUI.ViewModels;
 using Tankradar.Tests.Unit.Unit.Support;
 
@@ -110,7 +111,7 @@ public class SettingsViewModelTests_Nearby : BaseTest
 
     private async Task<SettingsViewModel> CreateLoadedAsync()
     {
-        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance);
+        var viewModel = new SettingsViewModel(_service, NullLogger<SettingsViewModel>.Instance, new RestoreNotifier());
         await viewModel.LoadAsync();
         return viewModel;
     }
