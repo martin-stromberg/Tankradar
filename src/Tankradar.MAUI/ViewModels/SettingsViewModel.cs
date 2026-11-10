@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Tankradar.MAUI.Models;
 using Tankradar.MAUI.Resources.Texts;
 using Tankradar.MAUI.Services;
+using Tankradar.MAUI.Services.Backup;
 
 namespace Tankradar.MAUI.ViewModels;
 
@@ -25,12 +26,14 @@ public class SettingsViewModel : BaseViewModel
     /// </summary>
     /// <param name="settingsService">Dienst zum Laden und Speichern der Einstellungen.</param>
     /// <param name="logger">Logger für Lade- und Speicherfehler.</param>
+    /// <param name="restoreNotifier">Meldet, dass die Daten aus einer Sicherung wiederhergestellt wurden; die Einstellungen werden dann neu geladen.</param>
     /// <param name="dataSource">Die Karte „Datenquelle“ (Quellenangabe und Preisdienst-Prüfung); optional, damit die Einstellungen auch ohne Preisdienst nutzbar sind.</param>
-    /// <param name="backup">Die Karte „Sicherung“; optional, damit die Einstellungen auch ohne Sicherungsdienst nutzbar sind. Nach einer Wiederherstellung werden die Einstellungen neu geladen.</param>
+    /// <param name="backup">Die Karte „Sicherung“; optional, damit die Einstellungen auch ohne Sicherungsdienst nutzbar sind.</param>
     /// <param name="routeSearch">Die Karte „Routensuche“ (Schlüssel und Schalter); optional, damit die Einstellungen auch ohne Routensuche nutzbar sind.</param>
     public SettingsViewModel(
         ISettingsService settingsService,
         ILogger<SettingsViewModel> logger,
+        IRestoreNotifier restoreNotifier,
         DataSourceViewModel? dataSource = null,
         BackupViewModel? backup = null,
         RouteSearchSettingsViewModel? routeSearch = null)
@@ -40,10 +43,7 @@ public class SettingsViewModel : BaseViewModel
         _logger = logger;
         DataSource = dataSource;
         Backup = backup;
-        if (backup is not null)
-        {
-            backup.Restored += OnBackupRestored;
-        }
+        restoreNotifier.Restored += OnRestored;
 
         Title = "Optionen";
 
@@ -273,7 +273,7 @@ public class SettingsViewModel : BaseViewModel
         }
     }
 
-    private void OnBackupRestored(object? sender, EventArgs e)
+    private void OnRestored(object? sender, EventArgs e)
     {
         _ = LoadAsync();
     }

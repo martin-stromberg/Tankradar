@@ -51,11 +51,6 @@ public class BackupViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Wird ausgelöst, nachdem die Daten aus einer Sicherung wiederhergestellt wurden.
-    /// </summary>
-    public event EventHandler? Restored;
-
-    /// <summary>
     /// Die Sicherungen, neueste zuerst.
     /// </summary>
     public ObservableCollection<BackupItemViewModel> Items { get; } = [];
@@ -256,7 +251,6 @@ public class BackupViewModel : BaseViewModel
             {
                 SetStatus(BackupTexts.Restored);
                 await LoadAsync().ConfigureAwait(true);
-                Restored?.Invoke(this, EventArgs.Empty);
                 _restoreNotifier.NotifyRestored();
                 return;
             }
