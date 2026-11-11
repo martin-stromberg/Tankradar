@@ -173,6 +173,68 @@ public class MapViewModelTests_AutoLoad : MapViewModelTestBase
     }
 
     /// <summary>
+    /// Prüft, dass ein Wechsel der Standortnutzung auf „Nie“ die Startsuche auch dann still unterbleiben lässt, wenn das Einstellungsladen
+    /// beim erneuten Erscheinen noch läuft: Die Prüfung wartet den frischen Lauf ab statt den veralteten Zwischenstand zu lesen.
+    /// </summary>
+    [Fact]
+    public async Task GpsDisabledBeforeReappearWhileSettingsLoadPending_SkipsAutoSearchSilently()
+    {
+        // Erstes Erscheinen: Die Einstellungen („Bei Nutzung“) sind geladen; die Startsuche hängt an der Ortung und wird per Verlassen abgebrochen.
+        var locationGate = new TaskCompletionSource();
+        Location.Gate = locationGate.Task;
+        ViewModel.OnAppearing();
+        var firstSearch = ViewModel.LastSearchTask;
+        Assert.Single(Location.Calls);
+        ViewModel.OnDisappearing();
+        await firstSearch;
+        Assert.Empty(Prices.Queries);
+        Assert.False(ViewModel.HasStatusMessage);
+
+        // Der Anwender stellt die Ortung auf „Nie“; beim nächsten Erscheinen läuft das Einstellungsladen noch (asynchron).
+        Settings.Stored = Settings.Stored with { GpsUsage = GpsUsage.Never };
+        var loadGate = new TaskCompletionSource();
+        Settings.LoadGate = loadGate.Task;
+        Location.Gate = null;
+        Location.Calls.Clear();
+
+        ViewModel.OnAppearing();
+        var retry = ViewModel.LastSearchTask;
+        loadGate.SetResult();
+        await retry;
+
+        Assert.Empty(Location.Calls);
+        Assert.Empty(Prices.Queries);
+        Assert.False(ViewModel.HasStatusMessage);
+        Assert.Empty(ViewModel.Stations);
+    }
+
+    /// <summary>
+    /// Prüft, dass ein Wechsel der Standortnutzung von „Nie“ auf „Bei Nutzung“ beim erneuten Erscheinen mit noch laufendem
+    /// Einstellungsladen sofort nachgeholt wird: Der Vorlauf liest nicht den veralteten Zwischenstand „Nie“ und beendet sich still.
+    /// </summary>
+    [Fact]
+    public async Task GpsEnabledBeforeReappearWhileSettingsLoadPending_AutoSearchRuns()
+    {
+        Settings.Stored = Settings.Stored with { GpsUsage = GpsUsage.Never };
+        await AppearAndAutoSearchAsync();
+        Assert.Empty(Location.Calls);
+
+        Settings.Stored = Settings.Stored with { GpsUsage = GpsUsage.WhileInUse };
+        Prices.Result = Result(PriceDataSource.Live, PriceFailure.None, TwoStations());
+        var loadGate = new TaskCompletionSource();
+        Settings.LoadGate = loadGate.Task;
+        ViewModel.OnDisappearing();
+        ViewModel.OnAppearing();
+        var retry = ViewModel.LastSearchTask;
+        loadGate.SetResult();
+        await retry;
+
+        Assert.Equal([GpsUsage.WhileInUse], Location.Calls);
+        Assert.Single(Prices.Queries);
+        Assert.Equal(2, ViewModel.Stations.Count);
+    }
+
+    /// <summary>
     /// Prüft, dass ein Erscheinen im Adressmodus keine Startsuche auslöst.
     /// </summary>
     [Fact]

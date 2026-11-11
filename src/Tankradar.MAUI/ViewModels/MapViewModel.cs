@@ -912,8 +912,11 @@ public partial class MapViewModel : BaseViewModel
 
     private async Task<AppSettings?> GetSettingsOrReportAsync(bool clearResult, CancellationToken token)
     {
-        // Lädt die Einstellungen bei Bedarf nach; schlägt das fehl, erscheint die Meldung (bei neuen Suchen ohne das bisherige Ergebnis).
-        var settings = _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
+        // Ein laufender Ladevorgang geht dem _settings-Zwischenstand vor: Der kann beim erneuten Erscheinen noch veraltet sein,
+        // während der frische Lauf (etwa aus OnAppearing) bereits unterwegs ist — etwa nach einem Wechsel der Standortnutzung.
+        var settings = _settingsLoad is { IsCompleted: false } pending
+            ? await pending.ConfigureAwait(true)
+            : _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
         if (settings is null)
         {
