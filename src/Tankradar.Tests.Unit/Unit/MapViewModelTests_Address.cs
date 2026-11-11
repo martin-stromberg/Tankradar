@@ -15,6 +15,10 @@ public class MapViewModelTests_Address : MapViewModelTestBase
     private async Task SelectAddressModeAsync()
     {
         await AppearAsync();
+
+        // Die Startsuche beim ersten Erscheinen hat bereits Standort und Preisdienst abgefragt; die Adresstests zählen erst ab hier.
+        ResetSearchCounters();
+
         ViewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
     }
 

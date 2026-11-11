@@ -43,11 +43,30 @@ public abstract class RouteE2ETestBase : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Wechselt auf die Suche, wählt die Suchart „Route“ und die Sortierung nach Entfernung (Streckenposition).
+    /// Die Zahl der Umkreisanfragen des Preisdienstes nach der Startsuche beim ersten Öffnen der Karte; Grundlage der relativen Zählungen der Routentests.
     /// </summary>
-    protected void OpenRouteSearch()
+    protected int ListRequestsBeforeRoute { get; private set; }
+
+    /// <summary>
+    /// Die Gesamtzahl der Anfragen des Preisdienstes nach der Startsuche beim ersten Öffnen der Karte.
+    /// </summary>
+    protected int TotalRequestsBeforeRoute { get; private set; }
+
+    /// <summary>
+    /// Wechselt auf die Suche, wartet die Startsuche beim ersten Öffnen ab, wählt die Suchart „Route“ und die Sortierung nach Entfernung (Streckenposition).
+    /// </summary>
+    /// <param name="expectAutoSearch"><see langword="true"/> (Standard), wenn die Standortnutzung erlaubt ist und die Startsuche Alpha und Beta lädt; <see langword="false"/>, wenn die Standortnutzung „Nie“ die Startsuche still unterdrückt.</param>
+    protected void OpenRouteSearch(bool expectAutoSearch = true)
     {
         OpenSearch();
+        if (expectAutoSearch)
+        {
+            // Erst das Ergebnis der automatischen Startsuche abwarten: Danach stehen die Zählerstände fest und der Moduswechsel löscht ihr Ergebnis.
+            WaitForAutoSearch();
+        }
+
+        ListRequestsBeforeRoute = Server.ListRequests;
+        TotalRequestsBeforeRoute = Server.TotalRequests;
         SelectSort("Distance");
         SelectRouteMode();
     }

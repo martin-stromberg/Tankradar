@@ -15,9 +15,11 @@ public class AddressSearchMockServerTests_Flow : SearchMockServerTestBase
     private async Task<MapViewModel> CreateAddressViewModelAsync(Uri? geocodingUrl = null)
     {
         var viewModel = CreateViewModel(CreateService(), geocodingUrl is null ? null : CreateGeocoding(geocodingUrl));
+
+        // Der Adressmodus vor dem ersten Erscheinen unterdrückt die Startsuche am Standort: Die Adresstests zählen nur ihre eigenen Anfragen.
+        viewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
-        viewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         return viewModel;
     }
 

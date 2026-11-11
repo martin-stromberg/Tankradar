@@ -13,17 +13,17 @@ namespace Tankradar.Tests.Unit.Unit;
 public class MapViewModelTests_Search : MapViewModelTestBase
 {
     /// <summary>
-    /// Prüft, dass der Radius vorbelegt 5 ist und die Seite beim Erscheinen weder Standort noch Preisdienst abfragt.
+    /// Prüft, dass der Radius vorbelegt 5 ist und das Erscheinen die Startsuche am aktuellen Standort auslöst.
     /// </summary>
     [Fact]
-    public async Task Appearing_DoesNotQueryLocationOrPrices()
+    public async Task Appearing_StartsSearchAtCurrentLocation()
     {
         await AppearAsync();
 
         Assert.Equal(5, ViewModel.RadiusKm);
-        Assert.Empty(Location.Calls);
-        Assert.Empty(Prices.Queries);
-        Assert.False(ViewModel.ShowEmptyState);
+        Assert.Equal([GpsUsage.WhileInUse], Location.Calls);
+        var query = Assert.Single(Prices.Queries);
+        Assert.Equal(5, query.RadiusKm);
     }
 
     /// <summary>
@@ -37,12 +37,14 @@ public class MapViewModelTests_Search : MapViewModelTestBase
     public async Task InvalidRadius_CallsNeitherLocationNorPrices(int radius)
     {
         await AppearAsync();
+        var locationCalls = Location.Calls.Count;
+        var priceQueries = Prices.Queries.Count;
         ViewModel.RadiusKm = radius;
 
         await SearchAsync();
 
-        Assert.Empty(Location.Calls);
-        Assert.Empty(Prices.Queries);
+        Assert.Equal(locationCalls, Location.Calls.Count);
+        Assert.Equal(priceQueries, Prices.Queries.Count);
         Assert.Equal(SearchTexts.RadiusInvalid, ViewModel.StatusMessage);
         Assert.False(ViewModel.IsBusy);
     }
@@ -60,12 +62,12 @@ public class MapViewModelTests_Search : MapViewModelTestBase
 
         await SearchAsync();
 
-        var query = Assert.Single(Prices.Queries);
+        var query = Prices.Queries[^1];
         Assert.Equal(25, query.RadiusKm);
         Assert.Equal(StationFactory.CenterLatitude, query.Latitude);
         Assert.Equal(StationFactory.CenterLongitude, query.Longitude);
         Assert.Equal([FuelType.Diesel, FuelType.SuperE5], query.FuelTypes);
-        Assert.Equal([GpsUsage.WhileInUse], Location.Calls);
+        Assert.Equal(GpsUsage.WhileInUse, Location.Calls[^1]);
         Assert.Equal(2, ViewModel.Stations.Count);
         Assert.Null(ViewModel.StatusMessage);
         Assert.True(ViewModel.HasResults);
@@ -87,7 +89,7 @@ public class MapViewModelTests_Search : MapViewModelTestBase
 
         await SearchAsync();
 
-        var query = Assert.Single(Prices.Queries);
+        var query = Prices.Queries[^1];
         Assert.Equal(expected, query.RadiusKm);
         Assert.InRange(query.RadiusKm, 1, 25);
     }
@@ -181,6 +183,6 @@ public class MapViewModelTests_Search : MapViewModelTestBase
         ViewModel.SearchCommand.Execute(null);
         await ViewModel.LastSearchTask;
 
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 }

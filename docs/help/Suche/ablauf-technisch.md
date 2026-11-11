@@ -32,7 +32,7 @@
 5. `ApplyResult`: `StationResultBuilder.Build`, Meldung aus `SearchTexts.GetFailureMessage(Failure, hasStations)`, `SourceNote` bei `PriceDataSource.OfflineFallback` mit Treffern, `IsOffline` bei fehlender Verbindung oder Rückfall.
 6. Ausnahmen (außer Abbruch durch eine neuere Suche bzw. `OnDisappearing`): Liste leeren, `SearchTexts.SearchFailed`; protokolliert wird nur der Ausnahmetyp.
 
-`OnAppearing` lädt nur Einstellungen und abonniert `IConnectionMonitor.ConnectionChanged`; `OnDisappearing` meldet ab und bricht die Suche ab. Filter-/Sortieränderungen rufen `ApplyFilterAndSort` auf (kein Standort-, kein API-Aufruf). Die Standardsortierung kommt aus `AppSettings.ResultSortOrder`.
+`OnAppearing` lädt die Einstellungen, abonniert `IConnectionMonitor.ConnectionChanged` und stößt beim ersten Anzeigen die Startsuche an (siehe unten); `OnDisappearing` meldet ab und bricht die Suche ab, verwirft aber kein Ergebnis. Filter-/Sortieränderungen rufen `ApplyFilterAndSort` auf (kein Standort-, kein API-Aufruf). Die Standardsortierung kommt aus `AppSettings.ResultSortOrder`.
 
 ```mermaid
 flowchart TD
@@ -46,6 +46,34 @@ flowchart TD
     E --> F[StationResultBuilder.Build]
     F --> G[Liste, ggf. Offline-Hinweis]
 ```
+
+## Startsuche beim ersten Anzeigen (Issue #54)
+
+`MapViewModel.OnAppearing` ruft am Ende `MaybeStartAutoSearch()` auf. Der Guard bricht ab, wenn `_autoSearchDone` gesetzt ist, bereits ein Ergebnis vorliegt (`_lastResult is not null`), der Suchmodus nicht `SearchMode.CurrentLocation` ist oder ein Lauf aktiv ist (`_searchCancellation is not null`). Sonst startet `LastSearchTask = AutoSearchOnceAsync()`:
+
+1. `BeginSearchRun()` registriert synchron ein `_searchCancellation`: Der Vorlauf läuft im Abbruchkontext einer Suche — Verlassen der Seite, Moduswechsel und eine neue Suche erreichen ihn über `CancelSearch`. (`BeginSearchRun`/`EndSearchRun` sind dafür aus `RunGuardedSearchAsync` ausgelagert; `EndSearchRun` räumt nur auf, wenn der Lauf noch „aktuell“ ist, damit ein abgelöster Lauf die Registrierung des Nachfolgers nicht berührt.)
+2. `GetSettingsOrReportAsync(clearResult: false, token)` lädt die Einstellungen (dedupliziert über `_settingsLoad` mit dem parallel laufenden `LoadSettingsAsync` aus `OnAppearing`).
+3. Nach dem `await` werden die Auslösebedingungen erneut geprüft: `settings is not null && IsCurrent(cancellation) && _searchMode == SearchMode.CurrentLocation`. Ein Moduswechsel oder Abbruch inzwischen entbindet von der Startsuche.
+4. `!settings.GpsUsage.AllowsLocation()` (z. B. `GpsUsage.Never`) → die Methode endet still: kein `ILocationService`- und kein `IFuelPriceService`-Aufruf, keine `StatusMessage`. Da `_autoSearchDone` nicht gesetzt wird, prüft jedes `OnAppearing` erneut — aktiviert der Anwender die Ortung in derselben Sitzung, holt das nächste Erscheinen die Startsuche nach.
+5. Sonst `await SearchAsync()` — der unveränderte Ablauf oben mit `SearchRadius.Default` (5 km) und `MapFitMode.FitToResult`.
+6. Danach `_autoSearchDone = _lastResult is not null || HasStatusMessage`: Nur ein sichtbarer Ausgang (Ergebnis — auch ein leeres — oder Meldung, z. B. `PermissionDenied`, `Unavailable`, `SearchFailed`, `SettingsTexts.LoadFailed`) gilt als „erfolgt“ und verhindert Wiederholungen. Eine `OperationCanceledException` im eigenen Abbruchkontext (Seite verlassen während des Laufs) hinterlässt keinen Ausgang → die Startsuche läuft beim nächsten `OnAppearing` erneut.
+
+```mermaid
+flowchart TD
+    A[OnAppearing] --> B{Guard: autoSearchDone,<br/>Ergebnis, Modus, laufende Suche?}
+    B -- Ja --> X[keine Startsuche]
+    B -- Nein --> C[AutoSearchOnceAsync:<br/>Einstellungen laden]
+    C --> D{AllowsLocation?}
+    D -- Nein --> Y[still enden,<br/>Retry beim nächsten Erscheinen]
+    D -- Ja --> E[SearchAsync am Standort, 5 km]
+    E --> F[autoSearchDone = Ergebnis<br/>oder Meldung vorhanden]
+```
+
+Der Zustand `_autoSearchDone` gilt sitzungsbezogen: `MapPage`/`MapViewModel` sind als `Transient` registriert, die `ShellContent`-Instanz im `TabBar` bleibt aber sitzungslang erhalten. `OnDisappearing` bricht eine laufende Suche ab, verwirft aber weder `_lastResult`, `Origin`, `MapMarkers`, `_routeResult` noch Filter, Sortierung und Panelzustand — beim erneuten Erscheinen greift der Guard, und das Ergebnis bleibt unverändert sichtbar.
+
+**Cache-Synergie mit „In der Nähe“:** Die Startsuche stellt dieselbe `StationSearchQuery` wie `NearbySectionViewModel.LoadAsync` (5 km um den Standort); trifft sie denselben Schlüssel im Such-Zwischenspeicher `_searchCache` des `FuelPriceService` (`CacheLifetime` 5 min, Schlüssel aus gerundeten Koordinaten und Radius), liefert `SearchNearbyAsync` `PriceDataSource.Cache` ohne zweiten API-Abruf. Der Standort wird je Seite separat über `ILocationService` ermittelt; es gibt keinen geteilten `LocationResult`-Halter.
+
+Tests: `MapViewModelTests_AutoLoad` (Unit), `MapE2ETests_AutoLoad` (E2E), `AutoSearchMockServerTests_Cache` (Integration, Cache-Treffer ohne zweiten `ListRequest`); `MapViewModelTestBase` stellt `AppearAndAutoSearchAsync()` (Erscheinen inkl. Abwarten von `LastSearchTask`) und `ResetSearchCounters()` (Rücksetzen der Aufrufzähler nach der Startsuche) bereit.
 
 ## Ablauf der Adresssuche
 
@@ -95,8 +123,8 @@ Abnahme:
 
 1. In der PowerShell-Sitzung setzen: `$env:TANKATLAS_TEST_DATA_PATH = "<leeres Testverzeichnis>"`, `$env:TANKATLAS_TEST_LOCATION = "52.5200,13.4050"`, `$env:TANKRADAR_PRICE_API_URL` und `$env:TANKRADAR_PRICE_API_KEY` auf einen erreichbaren Mock-Preisdienst (`MockTankerkoenigServer`, `src/TestSupport`).
 2. App aus derselben Sitzung starten (`dotnet run --project src/Tankradar.MAUI -f net10.0-windows10.0.19041.0` oder `Tankradar.MAUI.exe`).
-3. In **Optionen** Spritsorten wählen, dann **Karte** öffnen, im Suchdialog (Schaltfläche „Suche“) Radius setzen, **Suchen**: Panel-Liste, Filter und Sortierung prüfen.
-4. Prüffälle: **Standort und GPS** = **Nie** (Hinweis, keine Abfrage); `TANKATLAS_TEST_LOCATION` entfernen oder ungültig setzen (Hinweis „Standort nicht ermittelt“); Radiusprüfung über Unit-/Integrationstests (die Oberfläche bietet nur gültige Stufen an); nicht erreichbare Preisdienst-Adresse (Offline-Hinweis).
+3. In **Optionen** Spritsorten wählen, dann **Karte** öffnen: Die Startsuche läuft mit dem Teststandort und 5 km automatisch. Danach im Suchdialog (Schaltfläche „Suche“) Radius setzen, **Suchen**: Panel-Liste, Filter und Sortierung prüfen.
+4. Prüffälle: **Standort und GPS** = **Nie** (Startsuche unterbleibt still, manuelle Suche zeigt den Hinweis; es wird nichts abgefragt); `TANKATLAS_TEST_LOCATION` entfernen oder ungültig setzen (Hinweis „Standort nicht ermittelt“); Radiusprüfung über Unit-/Integrationstests (die Oberfläche bietet nur gültige Stufen an); nicht erreichbare Preisdienst-Adresse (Offline-Hinweis).
 
 Die automatisierten Tests nutzen dieselben Variablen: `E2ETestBase` / `SearchE2ETestBase` (FlaUI), `SearchMockServerTestBase` (Integration); Unit-Tests `MapViewModelTests_*`, `StationResultBuilderTests_*`, `LocationService*Tests`, `SearchRadiusTests_Validation`, `TestModeVariableTests_Rename`.
 

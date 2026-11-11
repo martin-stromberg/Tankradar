@@ -28,6 +28,10 @@ public abstract class MapViewModelRouteTestBase : MapViewModelTestBase
     protected async Task PrepareRouteAsync(bool startAddress = true)
     {
         await AppearAsync();
+
+        // Die Startsuche beim ersten Erscheinen hat bereits Standort und Preisdienst abgefragt; die Routentests zählen erst ab hier.
+        ResetSearchCounters();
+
         ViewModel.ModeOptions.Single(option => option.Value == SearchMode.Route).SelectCommand.Execute(null);
         if (startAddress)
         {

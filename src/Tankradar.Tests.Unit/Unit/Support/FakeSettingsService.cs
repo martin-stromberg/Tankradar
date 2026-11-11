@@ -27,6 +27,11 @@ public class FakeSettingsService : ISettingsService
     public Exception? LoadException { get; set; }
 
     /// <summary>
+    /// Wenn gesetzt, wartet <see cref="LoadAsync"/> auf diesen Task, bevor es den gespeicherten Stand liefert (z. B. um ein laufendes Laden festzuhalten).
+    /// </summary>
+    public Task? LoadGate { get; set; }
+
+    /// <summary>
     /// Wenn gesetzt, wird sie von <see cref="SaveAsync"/> ausgelöst.
     /// </summary>
     public Exception? SaveException { get; set; }
@@ -52,10 +57,15 @@ public class FakeSettingsService : ISettingsService
     public List<AppSettings> Saved { get; } = [];
 
     /// <inheritdoc />
-    public Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default)
+    public async Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
         LoadCount++;
-        return LoadException is null ? Task.FromResult(Stored) : Task.FromException<AppSettings>(LoadException);
+        if (LoadGate is { } gate)
+        {
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return LoadException is null ? Stored : throw LoadException;
     }
 
     /// <inheritdoc />

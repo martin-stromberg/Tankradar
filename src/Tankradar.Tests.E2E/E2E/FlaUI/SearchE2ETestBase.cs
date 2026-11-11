@@ -143,6 +143,16 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
+    /// Wartet, bis die beim ersten Öffnen der Karte automatisch gestartete Suche am Teststandort abgeschlossen ist
+    /// (die Trefferliste zeigt Alpha und Beta); Voraussetzung: Die Standortnutzung ist nicht „Nie“.
+    /// Danach ist auch der Such-Zwischenspeicher gefüllt, und eine identische Suche sendet keine weitere Anfrage.
+    /// </summary>
+    protected void WaitForAutoSearch()
+    {
+        WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
+    }
+
+    /// <summary>
     /// Öffnet den Suchdialog über der Karte (Suchart, Eingaben, Radius, Suchen), sofern er nicht bereits offen ist.
     /// </summary>
     protected void OpenSearchOverlay()
@@ -293,10 +303,12 @@ public abstract class SearchE2ETestBase : SettingsE2ETestBase
 
     /// <summary>
     /// Löst die Suche im Suchdialog aus (öffnet ihn dazu bei Bedarf); bei gültiger Eingabe schließt sich der Dialog.
+    /// Wartet zuvor die Freigabe der Schaltfläche ab, weil eine laufende Suche (z. B. die Startsuche beim ersten Öffnen) sie sperrt.
     /// </summary>
     protected void Submit()
     {
         OpenSearchOverlay();
+        WaitUntil(() => WaitForAutomationId("Search.Submit").IsEnabled, "Die Schaltfläche „Suchen“ blieb gesperrt.");
         WaitForAutomationId("Search.Submit").Patterns.Invoke.Pattern.Invoke();
     }
 

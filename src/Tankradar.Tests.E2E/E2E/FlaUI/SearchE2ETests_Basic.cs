@@ -14,6 +14,7 @@ public class SearchE2ETests_Basic : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             Assert.Equal("5", ReadRadius());
             Assert.False(Exists("Search.OfflineBanner"));
 
@@ -34,22 +35,6 @@ public class SearchE2ETests_Basic : SearchE2ETestBase
             Assert.Equal(["Alpha Tankstelle"], StationNamesOf("Search.Price.Diesel"));
             Assert.Equal(1, Server.ListRequests);
             Assert.Equal(5, Server.LastListRadius);
-        });
-    }
-
-    /// <summary>
-    /// Prüft, dass vor der ersten Suche keine Anfrage gesendet wird und weder Ergebnisse noch Leerzustand erscheinen.
-    /// </summary>
-    [Fact]
-    public void OpeningSearch_DoesNotQueryBeforeSubmit()
-    {
-        RunWithDiagnostics(() =>
-        {
-            OpenSearch();
-
-            Assert.Equal(0, Server.TotalRequests);
-            Assert.False(Exists("Search.Station.Name"));
-            Assert.False(Exists("Search.EmptyState"));
         });
     }
 }

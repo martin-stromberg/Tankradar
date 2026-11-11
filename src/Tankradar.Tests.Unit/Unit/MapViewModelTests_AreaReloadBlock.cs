@@ -38,7 +38,7 @@ public class MapViewModelTests_AreaReloadBlock : MapViewModelTestBase
         Assert.Equal(MapTexts.ReloadAreaWait(60), ViewModel.AreaReloadHint);
 
         Reload();
-        Assert.Equal(2, Prices.Queries.Count);
+        Assert.Equal(3, Prices.Queries.Count);
     }
 
     /// <summary>
@@ -73,6 +73,6 @@ public class MapViewModelTests_AreaReloadBlock : MapViewModelTestBase
 
         Reload();
         await ViewModel.LastSearchTask;
-        Assert.Equal(3, Prices.Queries.Count);
+        Assert.Equal(4, Prices.Queries.Count);
     }
 }

@@ -52,7 +52,7 @@ Die Einstellungen liegen in einer lokalen Datenbank auf Ihrem Gerät und werden 
 ## Einschränkungen
 
 - Die Umkreissuche nutzt die gewählten Spritsorten (in Ihrer Reihenfolge), die Standardsortierung und die Standardansicht („Liste“ oder „Karte“) als Vorbelegung; auf der Karte lässt sich die Trefferliste jederzeit ein- und ausklappen, ohne die Einstellung zu ändern.
-- Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt; sonst fragt die Suche beim Tippen auf „Suchen“ nach der Standortfreigabe des Geräts.
+- Die Einstellung „Standort und GPS“ gilt für die [Umkreissuche](../Suche/index.md): Bei „Nie“ wird kein Standort abgefragt (auch die automatische Startsuche beim ersten Öffnen der Karte unterbleibt dann); sonst fragt die Suche beim Tippen auf „Suchen“ bzw. bereits beim ersten Öffnen der Karte nach der Standortfreigabe des Geräts.
 - Die Spritsorten und ihre Reihenfolge bestimmen auch, welche Preise die [Startseite](../Startseite/index.md) in welcher Reihenfolge zeigt.
 - Die Einstellungen gelten für die App auf diesem Gerät und werden nicht zwischen Geräten synchronisiert.
 

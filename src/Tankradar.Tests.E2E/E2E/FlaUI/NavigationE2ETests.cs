@@ -4,8 +4,9 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
 /// E2E-Rauchtest: Startet die Windows-App und prüft, dass alle vier Navigationsbereiche erreichbar sind.
+/// Der Mock-Preisdienst der Basis beantwortet die Startsuche beim ersten Öffnen der Karte; produktive Endpunkte werden nie berührt.
 /// </summary>
-public class NavigationE2ETests : E2ETestBase
+public class NavigationE2ETests : SearchE2ETestBase
 {
     private static readonly string[] TabTitles = ["Favoriten", "Karte", "Tankbuch", "Optionen"];
 

@@ -127,6 +127,7 @@ public class RoutePrivacyTests_Persistence : RouteSearchMockServerTestBase
         var fresh = CreateViewModel(CreateService());
         fresh.OnAppearing();
         await fresh.LastSettingsTask;
+        await fresh.LastSearchTask;
 
         Assert.Equal(string.Empty, fresh.StartInput);
         Assert.Equal(string.Empty, fresh.DestinationInput);

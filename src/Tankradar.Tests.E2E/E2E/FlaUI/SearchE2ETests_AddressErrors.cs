@@ -16,6 +16,8 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.TotalRequests;
             SelectAddressMode();
             SetAddress(MockNominatimServer.QueryUnknown);
 
@@ -25,7 +27,7 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
             Assert.False(Exists("Search.Station.Name"));
             Assert.False(Exists("Search.EmptyState"));
             Assert.Equal(1, Geocoding.Requests);
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(requests, Server.TotalRequests);
         });
     }
 
@@ -38,6 +40,8 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.TotalRequests;
             SelectAddressMode();
 
             Submit();
@@ -52,7 +56,7 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
             WaitForStatusMessage("Die Eingabe enthält ungültige Zeichen. Erlaubt sind Buchstaben, Ziffern und gängige Satzzeichen.");
 
             Assert.Equal(0, Geocoding.Requests);
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(requests, Server.TotalRequests);
         });
     }
 
@@ -66,13 +70,15 @@ public class SearchE2ETests_AddressErrors : SearchE2ETestBase
         {
             RestartApplication(CreateEnvironment(Server.BaseUrl, TestLocation, MockTankerkoenigServer.AcceptedKey, ClosedPortUrl()));
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.TotalRequests;
             SelectAddressMode();
             SetAddress("Berlin");
 
             Submit();
 
             WaitForStatusMessage("Der Ortssuchdienst von OpenStreetMap ist nicht erreichbar. Bitte versuche es später erneut.");
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(requests, Server.TotalRequests);
         });
     }
 

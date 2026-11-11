@@ -82,13 +82,13 @@ public abstract class MapE2ETestBase : SearchE2ETestBase
     }
 
     /// <summary>
-    /// Sucht am Teststandort mit dem Standardradius, wartet auf beide Teststationen, klappt die Trefferliste ein und wartet auf den Kartenzähler.
+    /// Öffnet die Karte, wartet das Ergebnis der automatischen Startsuche am Teststandort (beide Teststationen) ab,
+    /// klappt die Trefferliste ein und wartet auf den Kartenzähler.
     /// </summary>
     protected void SearchAndShowMap()
     {
         OpenSearch();
-        Submit();
-        WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
+        WaitForAutoSearch();
         CollapsePanel();
         WaitForMapCount("2 von 2 Stationen sichtbar");
     }

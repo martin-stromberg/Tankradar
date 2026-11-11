@@ -8,7 +8,7 @@ namespace Tankradar.Tests.Unit.Unit;
 public class MapViewModelTests_Concurrency : MapViewModelTestBase
 {
     /// <summary>
-    /// Prüft, dass das Verlassen der Seite eine laufende Standortabfrage abbricht, ohne Preisabfrage, Fehlermeldung oder Ergebnis.
+    /// Prüft, dass das Verlassen der Seite eine laufende Standortabfrage abbricht, ohne weitere Preisabfrage, Fehlermeldung oder Ergebnis.
     /// </summary>
     [Fact]
     public async Task OnDisappearing_CancelsRunningSearch()
@@ -23,7 +23,7 @@ public class MapViewModelTests_Concurrency : MapViewModelTestBase
         await search;
 
         Assert.False(ViewModel.IsBusy);
-        Assert.Empty(Prices.Queries);
+        Assert.Single(Prices.Queries);
         Assert.Null(ViewModel.StatusMessage);
         Assert.Empty(ViewModel.Stations);
     }
@@ -48,6 +48,6 @@ public class MapViewModelTests_Concurrency : MapViewModelTestBase
         Assert.Equal(2, ViewModel.Stations.Count);
         Assert.Null(ViewModel.StatusMessage);
         Assert.False(ViewModel.IsBusy);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 }

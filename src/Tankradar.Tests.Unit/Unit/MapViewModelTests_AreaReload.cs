@@ -158,8 +158,8 @@ public class MapViewModelTests_AreaReload : MapViewModelTestBase
         ViewModel.OnViewportChanged(viewport.ZoomBy(-1));
 
         Assert.True(ViewModel.ShowAreaReloadButton);
-        Assert.Single(Prices.Queries);
-        Assert.Single(Location.Calls);
+        Assert.Equal(2, Prices.Queries.Count);
+        Assert.Equal(2, Location.Calls.Count);
         Assert.False(ViewModel.IsBusy);
     }
 
@@ -172,9 +172,10 @@ public class MapViewModelTests_AreaReload : MapViewModelTestBase
         await AppearAndViewportAsync(SearchMode.Route, search: false);
         Assert.False(ViewModel.ShowAreaReloadButton);
         Assert.False(ViewModel.ReloadVisibleAreaCommand.CanExecute(null));
+        var queries = Prices.Queries.Count;
 
         Reload();
-        Assert.Empty(Prices.Queries);
+        Assert.Equal(queries, Prices.Queries.Count);
     }
 
     /// <summary>
@@ -205,7 +206,7 @@ public class MapViewModelTests_AreaReload : MapViewModelTestBase
         Assert.False(ViewModel.ReloadVisibleAreaCommand.CanExecute(null));
 
         Reload();
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 
     /// <summary>
@@ -242,7 +243,7 @@ public class MapViewModelTests_AreaReload : MapViewModelTestBase
         Reload();
         await ViewModel.LastSearchTask;
 
-        Assert.Equal(2, Prices.Queries.Count);
+        Assert.Equal(3, Prices.Queries.Count);
         var expected = MapAreaQuery.From(viewport.GetBounds(), [FuelType.SuperE5, FuelType.SuperE10, FuelType.Diesel])!;
         var query = Prices.Queries[^1];
         Assert.Equal(expected.Latitude, query.Latitude, 6);
@@ -255,7 +256,7 @@ public class MapViewModelTests_AreaReload : MapViewModelTestBase
         Assert.Equal(MapFitMode.KeepViewport, ViewModel.MapFitMode);
         Assert.False(ViewModel.ShowAreaReloadButton);
         Assert.False(ViewModel.IsAreaReloading);
-        Assert.Single(Location.Calls);
+        Assert.Equal(2, Location.Calls.Count);
     }
 
     /// <summary>

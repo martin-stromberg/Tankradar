@@ -38,7 +38,8 @@ public class SearchE2ETests_Errors : SearchE2ETestBase
     {
         RunWithDiagnostics(() =>
         {
-            Server.EnqueueStatuses(500, 500, 500);
+            // Die Statuscodes decken die Startsuche beim ersten Öffnen und die anschließende Suche ab.
+            Server.EnqueueStatuses(500, 500, 500, 500, 500, 500);
             OpenSearch();
 
             Submit();
