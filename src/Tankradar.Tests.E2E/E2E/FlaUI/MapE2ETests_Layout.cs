@@ -19,13 +19,10 @@ public class MapE2ETests_Layout : MapE2ETestBase
             OpenSearch();
 
             Assert.False(IsPanelExpanded());
-            WaitUntil(() => ReadPanelCount() == "Keine Ergebnisse", "Die Trefferliste zeigt nicht „Keine Ergebnisse“.");
             Assert.True(Exists("Map.Legend"));
             Assert.True(Exists("Map.Attribution"));
             Assert.False(Exists("Search.Submit"));
             Assert.False(Exists("Search.View.List"));
-
-            Submit();
 
             WaitForMapCount("2 von 2 Stationen sichtbar");
             WaitUntil(() => ReadPanelCount() == "2 Tankstellen", "Die Trefferliste zeigt nicht die Anzahl der Treffer.");

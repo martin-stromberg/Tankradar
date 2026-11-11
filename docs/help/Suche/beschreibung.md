@@ -12,7 +12,14 @@ Im Bereich **Karte** finden Sie Tankstellen in Ihrer Nähe und sehen auf einen B
 
 Die Suche öffnen Sie über die Schaltfläche **Suche** (Lupe) oben links auf der Karte. Im Suchdialog wählen Sie unter **Suchradius** per Chip eine Stufe: **1**, **2**, **5**, **10**, **15** oder **25 km** (voreingestellt 5 km) und tippen auf **Suchen**. Mit **Schließen** verlassen Sie den Dialog, ohne zu suchen; Ihre Eingaben bleiben erhalten. Während der Suche erscheint ein Ladeanzeiger und die Schaltfläche ist gesperrt. Eine neue Suche ersetzt eine noch laufende. Die Oberfläche bietet nur gültige Radien (1 bis 25 km) an; intern wird jeder Radius vor dem Abruf geprüft, ein ungültiger Wert löst keine Abfrage aus (Meldung „Bitte einen Radius von 1 bis 25 km eingeben.“).
 
-Die Suche läuft nur, wenn Sie sie auslösen; beim Öffnen des Bereichs wird weder der Standort abgefragt noch gesucht.
+### Startsuche beim Öffnen der Karte
+
+Beim ersten Öffnen des Bereichs **Karte** in einer Sitzung sucht Tankatlas automatisch Tankstellen im Umkreis von **5 km** um Ihren aktuellen Standort — dasselbe Ergebnis wie **Suchen** im Suchdialog mit den Voreinstellungen. Während der Startsuche erscheint der Ladeanzeiger; anschließend passt die Karte den Ausschnitt auf Standort und Treffer ein.
+
+- Steht **Standort und GPS** in den **Optionen** auf **Nie**, unterbleibt die Startsuche still: Es wird nichts abgefragt und kein Hinweis gezeigt, die Karte bleibt im Ausgangszustand. Schalten Sie die Standortnutzung noch in derselben Sitzung ein, holt das nächste Öffnen der Karte die Startsuche nach.
+- Verlassen Sie die Karte, während die Startsuche noch läuft, wird sie abgebrochen und beim nächsten Öffnen erneut gestartet.
+- Beim erneuten Öffnen der Karte — etwa nach dem Wechsel zu einem anderen Bereich oder der Rückkehr aus der Detailansicht — bleibt das zuletzt gezeigte Ergebnis vollständig erhalten (Trefferliste, Markierungen, Suchposition, Filter, Sortierung, auch ein Routenergebnis); es findet keine neue Suche statt.
+- Alle weiteren Suchen (anderer Radius, Adresse, Route, Nachladen des Ausschnitts) starten nur, wenn Sie sie auslösen.
 
 ### Suchart: Standort oder Adresse
 
@@ -48,13 +55,15 @@ Bei ungültiger Eingabe und ohne Verbindung wird keine Anfrage gesendet.
 
 ### Standort
 
-Tankatlas ermittelt Ihren Standort erst beim Tippen auf **Suchen** und nur, wenn die Einstellung **Standort und GPS** in den **Optionen** auf **Immer** oder **Nur bei Nutzung** steht. Der Standort wird nie gespeichert.
+Tankatlas ermittelt Ihren Standort bei der Startsuche beim ersten Öffnen der Karte sowie beim Tippen auf **Suchen** — jeweils nur, wenn die Einstellung **Standort und GPS** in den **Optionen** auf **Immer** oder **Nur bei Nutzung** steht. Der Standort wird nie gespeichert. Beim ersten Öffnen kann das Gerät daher bereits den Standortzugriff erfragen, ohne dass Sie **Suchen** betätigt haben.
 
 | Situation | Hinweis |
 |-----------|---------|
 | Einstellung steht auf **Nie** | „Die Standortnutzung ist ausgeschaltet. Du kannst sie unter „Optionen“ ändern.“ (es wird nichts abgefragt) |
 | Zugriff auf den Standort verweigert | „Ohne Zugriff auf den Standort ist keine Umkreissuche möglich. Bitte erlaube den Standortzugriff in den Systemeinstellungen.“ |
 | Standort nicht ermittelbar | „Der Standort konnte nicht ermittelt werden. Bitte versuche es später erneut.“ |
+
+Die Hinweise gelten für die von Ihnen ausgelöste Suche. Die Startsuche zeigt bei **Standort und GPS** = **Nie** keinen Hinweis, sondern unterbleibt still (siehe oben); bei verweigertem oder nicht ermittelbarem Standort meldet sie sich wie eine manuelle Suche.
 
 ### Trefferliste am unteren Rand
 
@@ -103,6 +112,7 @@ Filter und Sortierung wirken sofort auf die vorhandene Liste, ohne neue Suche. S
 - Die Adresssuche liefert nur Orte in Deutschland, weil auch die Preisquelle nur deutsche Tankstellen kennt; sie bietet keine Vorschläge beim Tippen. Der Radius bleibt auf 25 km begrenzt (siehe [ADR 0003](../../adr/0003-address-search-decisions.md)).
 - Die Tankstellen im Kartenausschnitt werden nur auf Ihre Aufforderung nachgeladen (Schaltfläche „Tankstellen in diesem Bereich laden“); die Abfrage umfasst höchstens 25 km um die Mitte des Ausschnitts, und zwischen zwei Abfragen liegen 60 Sekunden.
 - Der Radius ist auf 25 km begrenzt (Vorgabe der Preisquelle) und wird in den Stufen 1, 2, 5, 10, 15 und 25 km gewählt.
+- Die Startsuche läuft nur einmal je Sitzung, immer am aktuellen Standort mit fest 5 km, und ist nicht gesondert abschaltbar — sie folgt der Einstellung **Standort und GPS** (bei **Nie** unterbleibt sie). Einen anderen Umkreis oder eine andere Suchart wählen Sie anschließend im Suchdialog.
 - Abweichungen vom Designentwurf der Suche sind in [ADR 0002](../../adr/0002-search-page-design-deviations.md) dokumentiert.
 - Die Liste zeigt nur Preise der in den **Optionen** gewählten Spritsorten.
 

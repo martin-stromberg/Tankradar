@@ -50,6 +50,7 @@ public partial class MapViewModel : BaseViewModel
     private int _mapResultVersion;
     private StationSearchResult? _lastResult;
     private CancellationTokenSource? _searchCancellation;
+    private bool _autoSearchDone;
     private bool _subscribed;
     private bool _isOpeningStation;
     private int _radiusKm = SearchRadius.Default;
@@ -431,7 +432,7 @@ public partial class MapViewModel : BaseViewModel
     public bool ShowEmptyState => _lastResult is not null && Stations.Count == 0 && !HasStatusMessage;
 
     /// <summary>
-    /// Lädt die Einstellungen und meldet sich beim Verbindungsmonitor an; ein Standort wird dabei nicht abgefragt.
+    /// Lädt die Einstellungen, meldet sich beim Verbindungsmonitor an und stößt beim ersten Anzeigen die Startsuche am aktuellen Standort an.
     /// </summary>
     public override void OnAppearing()
     {
@@ -447,6 +448,7 @@ public partial class MapViewModel : BaseViewModel
         ResumeAreaReloadTimer();
         LastSettingsTask = LoadSettingsAsync();
         LastRouteAccessTask = RefreshRouteAvailabilityAsync();
+        MaybeStartAutoSearch();
     }
 
     /// <summary>
@@ -507,10 +509,54 @@ public partial class MapViewModel : BaseViewModel
         _logger.LogWarning("Die Suche ist fehlgeschlagen ({ExceptionType}).", ex.GetType().Name);
     }
 
+    private void MaybeStartAutoSearch()
+    {
+        // Ein tatsächlich aktiver Lauf (Startsuche oder Suche per Suchbefehl) wird nicht doppelt gestartet; ein abgebrochener,
+        // noch abwickelnder Lauf (CancelSearch leert das Feld synchron) blockiert die Wiederholung beim nächsten Erscheinen nicht.
+        if (_autoSearchDone || _lastResult is not null || _searchMode != SearchMode.CurrentLocation || _searchCancellation is not null)
+        {
+            return;
+        }
+
+        LastSearchTask = AutoSearchOnceAsync();
+    }
+
+    private async Task AutoSearchOnceAsync()
+    {
+        // Der Vorlauf (Einstellungen laden) läuft im Abbruchkontext der Suche: Verlassen der Seite, Moduswechsel und neue Suchen erreichen ihn über CancelSearch.
+        var cancellation = BeginSearchRun();
+        try
+        {
+            var settings = await GetSettingsOrReportAsync(clearResult: false, cancellation.Token).ConfigureAwait(true);
+
+            // Die Auslösebedingungen werden nach dem asynchronen Laden erneut geprüft: Ein Moduswechsel oder ein Abbruch inzwischen entbindet von der Startsuche.
+            if (settings is not null && IsCurrent(cancellation) && _searchMode == SearchMode.CurrentLocation)
+            {
+                // Bei deaktivierter Standortnutzung unterbleibt die Startsuche still; sie wird bei jedem Erscheinen erneut geprüft.
+                if (!settings.GpsUsage.AllowsLocation())
+                {
+                    return;
+                }
+
+                await SearchAsync().ConfigureAwait(true);
+            }
+
+            // Erst ein sichtbarer Ausgang (Ergebnis oder Meldung) gilt als „erfolgt“: Ein Abbruch ohne Ausgang läuft beim nächsten Erscheinen erneut.
+            _autoSearchDone = _lastResult is not null || HasStatusMessage;
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // Der abgebrochene Vorlauf hinterlässt keinen Ausgang: Die Startsuche gilt nicht als „erfolgt“ und wird beim nächsten Erscheinen erneut geprüft.
+        }
+        finally
+        {
+            EndSearchRun(cancellation);
+        }
+    }
+
     private async Task RunGuardedSearchAsync(Func<CancellationTokenSource, Task> work, Action<Exception> logFailure, Action? onFinished = null)
     {
-        var cancellation = new CancellationTokenSource();
-        _searchCancellation = cancellation;
+        var cancellation = BeginSearchRun();
 
         // Die Eingaben sind gültig und die Suche startet: Der Suchdialog gibt die Karte frei (Fehler zeigt dann die Statuszeile der Trefferliste).
         IsSearchOverlayOpen = false;
@@ -536,12 +582,11 @@ public partial class MapViewModel : BaseViewModel
         {
             if (IsCurrent(cancellation))
             {
-                _searchCancellation = null;
                 onFinished?.Invoke();
-
                 IsBusy = false;
-                cancellation.Dispose();
             }
+
+            EndSearchRun(cancellation);
         }
     }
 
@@ -772,6 +817,26 @@ public partial class MapViewModel : BaseViewModel
         OnPropertyChanged(nameof(ShowEmptyState));
     }
 
+    private CancellationTokenSource BeginSearchRun()
+    {
+        // Registriert den neuen Lauf synchron: Abbruch, Moduswechsel und Wiederholungsschutz lesen das Feld ohne await dazwischen.
+        var cancellation = new CancellationTokenSource();
+        _searchCancellation = cancellation;
+        return cancellation;
+    }
+
+    private void EndSearchRun(CancellationTokenSource cancellation)
+    {
+        // Nur der aktuelle Lauf räumt auf: Ein abgelöster Lauf darf die Registrierung des Nachfolgers nicht berühren.
+        if (!IsCurrent(cancellation))
+        {
+            return;
+        }
+
+        _searchCancellation = null;
+        cancellation.Dispose();
+    }
+
     private bool IsCurrent(CancellationTokenSource cancellation)
     {
         return ReferenceEquals(_searchCancellation, cancellation);
@@ -847,8 +912,11 @@ public partial class MapViewModel : BaseViewModel
 
     private async Task<AppSettings?> GetSettingsOrReportAsync(bool clearResult, CancellationToken token)
     {
-        // Lädt die Einstellungen bei Bedarf nach; schlägt das fehl, erscheint die Meldung (bei neuen Suchen ohne das bisherige Ergebnis).
-        var settings = _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
+        // Ein laufender Ladevorgang geht dem _settings-Zwischenstand vor: Der kann beim erneuten Erscheinen noch veraltet sein,
+        // während der frische Lauf (etwa aus OnAppearing) bereits unterwegs ist — etwa nach einem Wechsel der Standortnutzung.
+        var settings = _settingsLoad is { IsCompleted: false } pending
+            ? await pending.ConfigureAwait(true)
+            : _settings ?? await LoadSettingsAsync().ConfigureAwait(true);
         token.ThrowIfCancellationRequested();
         if (settings is null)
         {

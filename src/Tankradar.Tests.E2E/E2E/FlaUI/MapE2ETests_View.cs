@@ -18,6 +18,7 @@ public class MapE2ETests_View : MapE2ETestBase
         {
             OpenSearch();
             Assert.True(IsPanelExpanded());
+            WaitForAutoSearch();
             Submit();
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
             WaitForMapCount("2 von 2 Stationen sichtbar");
@@ -39,7 +40,7 @@ public class MapE2ETests_View : MapE2ETestBase
     }
 
     /// <summary>
-    /// Prüft, dass die Standardansicht „Karte“ aus den Einstellungen die Trefferliste eingeklappt öffnet (zunächst „Keine Ergebnisse“, nach der Suche mit Anzahl) und der Nutzer sie ausklappen kann.
+    /// Prüft, dass die Standardansicht „Karte“ aus den Einstellungen die Trefferliste eingeklappt öffnet und die Startsuche Anzahl und Karte füllt, ohne die Liste aufzuklappen; der Nutzer kann sie ausklappen.
     /// </summary>
     [Fact]
     public void DefaultViewFromSettings_Map_OpensSearchAsMap()
@@ -51,9 +52,6 @@ public class MapE2ETests_View : MapE2ETestBase
             OpenSearch();
 
             Assert.False(IsPanelExpanded());
-            WaitUntil(() => ReadPanelCount() == "Keine Ergebnisse", "Die Trefferliste zeigt nicht „Keine Ergebnisse“.");
-
-            Submit();
 
             WaitForMapCount("2 von 2 Stationen sichtbar");
             WaitUntil(() => ReadPanelCount() == "2 Tankstellen", "Die Trefferliste zeigt nicht die Anzahl.");

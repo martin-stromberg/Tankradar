@@ -59,8 +59,8 @@ public class MapViewModelTests_Sort : MapViewModelRouteTestBase
 
         Sort(ResultSortOrder.Price);
         Assert.Equal(["Bravo", "Charlie", "Alpha"], Names());
-        Assert.Single(Location.Calls);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Location.Calls.Count);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 
     /// <summary>

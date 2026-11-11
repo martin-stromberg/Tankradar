@@ -45,7 +45,7 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
 
         Assert.Equal(15, ViewModel.RadiusKm);
         Assert.Equal([15], ViewModel.RadiusOptions.Where(option => option.IsSelected).Select(option => option.RadiusKm));
-        Assert.Equal(15, Assert.Single(Prices.Queries).RadiusKm);
+        Assert.Equal(15, Prices.Queries[^1].RadiusKm);
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ public class MapViewModelTests_Chips : MapViewModelTestBase
         await SearchAsync();
 
         Assert.Equal(SearchTexts.RadiusInvalid, ViewModel.StatusMessage);
-        Assert.Empty(Prices.Queries);
+        Assert.Single(Prices.Queries);
     }
 
     /// <summary>

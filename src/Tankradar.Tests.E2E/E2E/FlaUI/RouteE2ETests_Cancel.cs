@@ -33,7 +33,7 @@ public class RouteE2ETests_Cancel : RouteE2ETestBase
 
             // Die verzögerte Antwort des Routingdienstes trifft nach dem Abbruch ein; sie darf keine Preisabfrage und kein Ergebnis mehr auslösen.
             Thread.Sleep(TimeSpan.FromSeconds(4));
-            Assert.Equal(0, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute, Server.ListRequests);
             Assert.Empty(ReadTexts("Search.Station.Name"));
             Assert.Equal(CancelledMessage, FindByAutomationId("Search.StatusMessage")?.Properties.Name.ValueOrDefault);
         });

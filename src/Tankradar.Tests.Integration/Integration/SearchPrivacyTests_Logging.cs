@@ -43,6 +43,7 @@ public class SearchPrivacyTests_Logging : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
         await viewModel.SearchAsync();
 
         Server.EnqueueStatuses(503, 503, 503);
@@ -52,6 +53,7 @@ public class SearchPrivacyTests_Logging : SearchMockServerTestBase
         var rejected = CreateViewModel(CreateService(key: "falscher-schluessel"));
         rejected.OnAppearing();
         await rejected.LastSettingsTask;
+        await rejected.LastSearchTask;
         Clock.Advance(TimeSpan.FromMinutes(10));
         await rejected.SearchAsync();
 
@@ -59,6 +61,7 @@ public class SearchPrivacyTests_Logging : SearchMockServerTestBase
         var unreachable = CreateViewModel(CreateService(baseUrl: closed));
         unreachable.OnAppearing();
         await unreachable.LastSettingsTask;
+        await unreachable.LastSearchTask;
         Clock.Advance(TimeSpan.FromMinutes(10));
         await unreachable.SearchAsync();
 

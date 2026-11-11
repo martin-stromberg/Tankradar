@@ -15,6 +15,7 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             SetRadius("25");
 
             Submit();
@@ -34,6 +35,7 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             SetRadius("1");
 
             Submit();
@@ -52,6 +54,7 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             SetRadius("10");
 
             Submit();
@@ -70,13 +73,15 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.TotalRequests;
             Assert.Equal("5", ReadRadius());
 
             SetRadius("15");
 
             Assert.Equal("15", ReadRadius());
             Assert.False(IsChipSelected("Search.Radius.5"));
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(requests, Server.TotalRequests);
         });
     }
 
@@ -89,6 +94,7 @@ public class SearchE2ETests_Radius : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             Submit();
             WaitForStationNames("Alpha Tankstelle", "Beta Tankstelle");
 

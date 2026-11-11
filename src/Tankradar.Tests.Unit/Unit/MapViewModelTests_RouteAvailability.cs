@@ -194,6 +194,6 @@ public class MapViewModelTests_RouteAvailability : MapViewModelRouteTestBase
         await SearchAsync();
 
         Assert.Empty(RouteSearch.Requests);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 }

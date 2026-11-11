@@ -15,6 +15,7 @@ public class SearchE2ETests_Address : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
             SelectAddressMode();
             Assert.Equal("Geodaten © OpenStreetMap-Mitwirkende", WaitForAutomationId("Search.Attribution").Name);
             SetAddress("Oranienburg");
@@ -42,6 +43,8 @@ public class SearchE2ETests_Address : SearchE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.ListRequests;
             SelectAddressMode();
             SetAddress("Berlin");
             SetRadius("25");
@@ -54,7 +57,7 @@ public class SearchE2ETests_Address : SearchE2ETestBase
             WaitForStationNames("Alpha Tankstelle", "Delta Tankstelle", "Gamma Tankstelle");
 
             Assert.Equal(1, Geocoding.Requests);
-            Assert.Equal(1, Server.ListRequests);
+            Assert.Equal(requests + 1, Server.ListRequests);
         });
     }
 

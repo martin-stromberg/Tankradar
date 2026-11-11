@@ -59,6 +59,7 @@ public class SearchMockServerTests_Offline : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService(baseUrl: closedUrl));
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
 
         await viewModel.SearchAsync();
 
@@ -83,6 +84,7 @@ public class SearchMockServerTests_Offline : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService(baseUrl: closedUrl));
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
 
         await viewModel.SearchAsync();
 

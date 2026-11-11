@@ -34,6 +34,9 @@ public abstract class RouteSearchMockServerTestBase : SearchMockServerTestBase
     protected async Task<MapViewModel> CreateRouteViewModelAsync(FuelPriceService? service = null, IRouteSearchService? routeSearch = null, int distanceKm = 2, bool startAddress = true, IGeocodingService? geocoding = null)
     {
         var viewModel = CreateViewModel(service ?? CreateService(), geocoding, routeSearch);
+
+        // Der Adressmodus vor dem ersten Erscheinen unterdrückt die Startsuche am Standort: Die Routentests zählen nur ihre eigenen Anfragen.
+        viewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
         viewModel.SortOptions.Single(option => option.Value == MAUI.Models.ResultSortOrder.Distance).SelectCommand.Execute(null);

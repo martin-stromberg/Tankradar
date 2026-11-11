@@ -26,6 +26,7 @@ public class HomePrivacyTests_Persistence : SearchMockServerTestBase
         var search = CreateViewModel(CreateService());
         search.OnAppearing();
         await search.LastSettingsTask;
+        await search.LastSearchTask;
         await search.SearchAsync();
 
         var factory = Database.CreateFactory();

@@ -18,6 +18,7 @@ public class MapViewModelTests_SearchOverlay : MapViewModelTestBase
     {
         await AppearAsync();
         Assert.False(ViewModel.IsSearchOverlayOpen);
+        var queries = Prices.Queries.Count;
 
         ViewModel.OpenSearchOverlayCommand.Execute(null);
         Assert.True(ViewModel.IsSearchOverlayOpen);
@@ -31,7 +32,7 @@ public class MapViewModelTests_SearchOverlay : MapViewModelTestBase
         Assert.True(ViewModel.IsAddressMode);
         Assert.Equal("Berlin", ViewModel.AddressText);
         Assert.Equal(10, ViewModel.RadiusKm);
-        Assert.Empty(Prices.Queries);
+        Assert.Equal(queries, Prices.Queries.Count);
         Assert.Empty(Geocoding.Inputs);
     }
 
@@ -42,12 +43,13 @@ public class MapViewModelTests_SearchOverlay : MapViewModelTestBase
     public async Task Search_InvalidInput_KeepsOverlayOpen()
     {
         await OpenOverlayInAddressModeAsync();
+        var queries = Prices.Queries.Count;
 
         await SearchAsync();
 
         Assert.True(ViewModel.IsSearchOverlayOpen);
         Assert.Equal(SearchTexts.AddressEmpty, ViewModel.StatusMessage);
-        Assert.Empty(Prices.Queries);
+        Assert.Equal(queries, Prices.Queries.Count);
     }
 
     /// <summary>
