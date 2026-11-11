@@ -14,8 +14,10 @@ Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANK
 ## Funktionen
 
 - **Karte und Suche** – Tankstellen am aktuellen Standort, rund um eine Adresse, einen Ort
-  oder eine PLZ sowie entlang einer Route finden; Kartenansicht (OpenStreetMap) mit
-  Preisniveau-Markierungen → [Hilfe](docs/help/Suche/index.md)
+  oder eine PLZ sowie entlang einer Route finden; beim ersten Öffnen sucht die Karte
+  automatisch im Umkreis von 5 km um den Standort (nur bei erlaubter Standortnutzung),
+  danach bleibt das Ergebnis beim Bereichswechsel erhalten; Kartenansicht (OpenStreetMap)
+  mit Preisniveau-Markierungen → [Hilfe](docs/help/Suche/index.md)
 - **Favoriten** – Tankstellen in selbst benannten Gruppen sammeln (Notiz, Priorität, eigener
   Anzeigename); die Startseite zeigt alle Gruppen mit aktuellen Preisen →
   [Favoriten](docs/help/Favoriten/index.md), [Startseite](docs/help/Startseite/index.md)

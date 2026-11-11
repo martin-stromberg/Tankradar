@@ -248,7 +248,7 @@ public class MapViewModelTests_Route : MapViewModelRouteTestBase
         Assert.Equal(2, ViewModel.Stations.Count);
         Assert.Empty(RouteSearch.Requests);
         Assert.False(ViewModel.HasMapRoute);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 
     /// <summary>

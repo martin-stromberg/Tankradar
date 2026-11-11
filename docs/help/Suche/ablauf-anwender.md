@@ -12,15 +12,17 @@
 
 ### 1. Bereich öffnen
 
-Tippen Sie in der unteren Menüleiste auf **Karte**. Die Karte füllt die Ansicht aus.
+Tippen Sie in der unteren Menüleiste auf **Karte**. Die Karte füllt die Ansicht aus. Beim ersten Öffnen in einer Sitzung sucht Tankatlas automatisch Tankstellen im Umkreis von **5 km** um Ihren Standort: Der Ladeanzeiger erscheint, und die Treffer erscheinen in der Liste am unteren Rand und als Preismarkierungen auf der Karte. Beim ersten Mal fragt das Gerät eventuell, ob Tankatlas auf den Standort zugreifen darf; erlauben Sie es für die Umkreissuche.
+
+> **Hinweis:** Steht **Standort und GPS** auf **Nie**, bleibt die Karte zunächst leer — ohne Abfrage und ohne Hinweis. Schalten Sie die Standortnutzung ein und öffnen die Karte erneut, läuft die Startsuche nach. In jedem Fall können Sie wie gewohnt über die Schaltfläche **Suche** selbst suchen (etwa nach einer Adresse).
 
 ### 2. Suchdialog öffnen und Radius festlegen
 
-Tippen Sie oben links auf die Schaltfläche **Suche** (Lupe). Im Suchdialog ist unter **Suchradius** voreingestellt **5 km** gewählt. Tippen Sie bei Bedarf auf einen anderen Chip (**1**, **2**, **5**, **10**, **15** oder **25 km**).
+Möchten Sie einen anderen Umkreis, tippen Sie oben links auf die Schaltfläche **Suche** (Lupe). Im Suchdialog ist unter **Suchradius** voreingestellt **5 km** gewählt. Tippen Sie bei Bedarf auf einen anderen Chip (**1**, **2**, **5**, **10**, **15** oder **25 km**).
 
 ### 3. Suchen
 
-Tippen Sie im Suchdialog auf **Suchen**. Der Dialog schließt sich, und das Ergebnis erscheint in der Trefferliste am unteren Rand. Beim ersten Mal fragt das Gerät eventuell, ob Tankatlas auf den Standort zugreifen darf; erlauben Sie es für die Umkreissuche. Während der Suche zeigt die App einen Ladeanzeiger.
+Tippen Sie im Suchdialog auf **Suchen**. Der Dialog schließt sich, und das Ergebnis erscheint in der Trefferliste am unteren Rand. Während der Suche zeigt die App einen Ladeanzeiger.
 
 > **Hinweis:** Steht **Standort und GPS** auf **Nie**, erscheint ein Hinweis und es wird nichts abgefragt.
 
@@ -47,6 +49,8 @@ Ein GPS ist dafür nicht nötig; es funktioniert auch bei **Standort und GPS** =
 ## Ergebnis
 
 Eine Liste der Tankstellen im gewählten Umkreis, im Panel am unteren Rand der Karte. Eingeklappt sehen Sie die Anzahl; ausgeklappt die Liste. Erscheint „Offline: keine Verbindung zum Preisdienst.“, sind es die zuletzt bekannten Preise; tippen Sie später erneut auf **Suche** und dann auf **Suchen**.
+
+Wechseln Sie zu einem anderen Bereich (etwa **Favoriten**) oder in die Detailansicht und zurück, bleibt das Ergebnis samt Filter, Sortierung und Kartenmarkierungen erhalten — es wird nicht erneut gesucht.
 
 ## Ergebnisse auf der Karte ansehen
 

@@ -15,7 +15,7 @@ public class RouteE2ETests_GpsNever : RouteE2ETestBase
         {
             OpenSettings();
             SelectRadio("Settings.Gps.Never");
-            OpenRouteSearch();
+            OpenRouteSearch(expectAutoSearch: false);
             SetRouteDestination("Oranienburg");
 
             Submit();

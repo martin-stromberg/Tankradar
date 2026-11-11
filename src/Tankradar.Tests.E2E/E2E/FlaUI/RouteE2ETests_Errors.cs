@@ -5,9 +5,10 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 /// </summary>
 public class RouteE2ETests_Errors : RouteE2ETestBase
 {
-    private void SearchExpecting(string start, string destination, string message)
+    private void SearchExpecting(string start, string destination, string message, Action? arrangeAfterOpen = null)
     {
         OpenRouteSearch();
+        arrangeAfterOpen?.Invoke();
         FillRoute(start, destination);
         Submit();
         WaitForStatusMessage(message);
@@ -26,7 +27,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
             SearchExpecting("10115", "Nirgendwoburg", "Zum Ziel wurde in Deutschland kein Ort gefunden. Bitte die Schreibweise prüfen oder genauer angeben.");
 
             Assert.Equal(0, Routing.Requests);
-            Assert.Equal(0, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute, Server.ListRequests);
         });
     }
 
@@ -42,7 +43,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
 
             Assert.Equal(0, Geocoding.Requests);
             Assert.Equal(0, Routing.Requests);
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(TotalRequestsBeforeRoute, Server.TotalRequests);
         });
     }
 
@@ -59,7 +60,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
             SearchExpecting("10115", "Oranienburg", "Zwischen Start und Ziel konnte keine Route berechnet werden.");
 
             Assert.Equal(1, Routing.Requests);
-            Assert.Equal(0, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute, Server.ListRequests);
         });
     }
 
@@ -76,7 +77,7 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
             SearchExpecting("10115", "Oranienburg", "Der Routendienst ist gerade ausgelastet oder das Tageskontingent ist aufgebraucht. Bitte später erneut versuchen.");
 
             Assert.Equal(3, Routing.Requests);
-            Assert.Equal(0, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute, Server.ListRequests);
         });
     }
 
@@ -109,21 +110,19 @@ public class RouteE2ETests_Errors : RouteE2ETestBase
             SearchExpecting("10115", "Oranienburg", "Die Route ist 592 km lang. Bei 2 km Abstand zur Route kann nur bis 131 km Länge gesucht werden, weil die Preisabfragen begrenzt sind. Wähle eine kürzere Strecke oder einen kleineren Abstand.");
 
             Assert.Equal(1, Routing.Requests);
-            Assert.Equal(0, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute, Server.ListRequests);
         });
     }
 
     /// <summary>
-    /// Prüft die Meldung bei einem Fehler des Preisdienstes (ohne Teilergebnisse).
+    /// Prüft die Meldung bei einem Fehler des Preisdienstes (ohne Teilergebnisse). Die Fehlerfolge wird erst nach der Startsuche eingereiht, damit diese regulär läuft.
     /// </summary>
     [Fact]
     public void PriceServiceError_ShowsMessageWithoutPartialResults()
     {
         RunWithDiagnostics(() =>
         {
-            Server.EnqueueStatuses(503, 503, 503);
-
-            SearchExpecting("10115", "Oranienburg", "Der Preisdienst ist nicht erreichbar.");
+            SearchExpecting("10115", "Oranienburg", "Der Preisdienst ist nicht erreichbar.", () => Server.EnqueueStatuses(503, 503, 503));
         });
     }
 

@@ -56,7 +56,7 @@ public class RouteE2ETests_Basic : RouteE2ETestBase
             WaitForStationNames(TwoKilometerStations);
             Assert.Equal(2, Geocoding.Requests);
             Assert.Equal(1, Routing.Requests);
-            Assert.Equal(1, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute + 1, Server.ListRequests);
             Assert.InRange(Server.LastListRadius!.Value, 1, 25);
             Assert.Equal(MockOpenRouteServiceServer.AcceptedKey, Routing.LastAuthorization);
             Assert.DoesNotContain(MockOpenRouteServiceServer.AcceptedKey, Routing.LastRawRequest, StringComparison.Ordinal);

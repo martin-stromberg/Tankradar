@@ -59,7 +59,7 @@ public class MapViewModelTests_Settings : MapViewModelTestBase
         Assert.Equal(2, ViewModel.Stations.Count);
         ViewModel.ToggleBottomSheetCommand.Execute(null);
         Assert.Equal(2, ViewModel.Stations.Count);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 
     /// <summary>

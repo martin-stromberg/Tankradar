@@ -104,6 +104,18 @@ public abstract class MapViewModelTestBase : BaseTest
     }
 
     /// <summary>
+    /// Lässt die Seite erscheinen und wartet zusätzlich die beim ersten Erscheinen ausgelöste Startsuche ab (deterministischer Endzustand).
+    /// </summary>
+    /// <returns>Ein Task, der nach Einstellungen, Routenabgleich und Startsuche abgeschlossen ist.</returns>
+    protected async Task AppearAndAutoSearchAsync()
+    {
+        ViewModel.OnAppearing();
+        await ViewModel.LastSettingsTask;
+        await ViewModel.LastRouteAccessTask;
+        await ViewModel.LastSearchTask;
+    }
+
+    /// <summary>
     /// Lässt die Seite erscheinen, wählt die Suchart (bei „Adresse“ mit der Eingabe „Berlin“), führt auf Wunsch eine Suche aus und meldet danach einen Kartenausschnitt
     /// um den Teststandort (400 × 700 Pixel) als Bewegung des Anwenders.
     /// </summary>
@@ -137,6 +149,16 @@ public abstract class MapViewModelTestBase : BaseTest
     protected async Task SearchAsync()
     {
         await ViewModel.SearchAsync();
+    }
+
+    /// <summary>
+    /// Setzt die Aufrufzähler für Standort und Preisdienst zurück (die Startsuche beim ersten Erscheinen hat beide bereits abgefragt),
+    /// damit ein Test erst ab diesem Punkt zählt.
+    /// </summary>
+    protected void ResetSearchCounters()
+    {
+        Location.Calls.Clear();
+        Prices.Queries.Clear();
     }
 
     /// <summary>

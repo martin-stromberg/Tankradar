@@ -27,8 +27,8 @@ public class MapE2ETests_SearchOverlay : MapE2ETestBase
             WaitForAutomationId("Search.Submit").Patterns.Invoke.Pattern.Invoke();
 
             WaitUntil(() => !Exists("Search.Overlay.Close"), "Der Suchdialog wurde beim Start der Suche nicht geschlossen.");
+            WaitUntil(() => FindByAutomationId("Map.Origin")?.Name == "Gesuchte Position", "Die gesuchte Position wurde auf der Karte nicht markiert.");
             WaitForMapCount("2 von 2 Stationen sichtbar");
-            Assert.Equal("Gesuchte Position", WaitForAutomationId("Map.Origin").Name);
             Assert.Equal("Berlin", Geocoding.LastQuery);
         });
     }
@@ -42,13 +42,15 @@ public class MapE2ETests_SearchOverlay : MapE2ETestBase
         RunWithDiagnostics(() =>
         {
             OpenSearch();
+            WaitForAutoSearch();
+            var requests = Server.TotalRequests;
             SelectAddressMode();
             SetAddress("Frankfurt");
             SetRadius("10");
 
             CloseSearchOverlay();
 
-            Assert.Equal(0, Server.TotalRequests);
+            Assert.Equal(requests, Server.TotalRequests);
             Assert.Equal(0, Geocoding.Requests);
             Assert.Equal("Frankfurt", ReadAddress());
             Assert.Equal("10", ReadRadius());

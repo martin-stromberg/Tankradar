@@ -23,6 +23,7 @@ public class AreaSearchMockServerTests_Flow : SearchMockServerTestBase
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
         await viewModel.LastRouteAccessTask;
+        await viewModel.LastSearchTask;
         await viewModel.SearchAsync();
         return viewModel;
     }

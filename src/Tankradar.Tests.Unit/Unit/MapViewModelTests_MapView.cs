@@ -41,11 +41,12 @@ public class MapViewModelTests_MapView : MapViewModelTestBase
         await AppearAsync();
         ViewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         ViewModel.AddressText = "Berlin";
+        var locationCalls = Location.Calls.Count;
 
         await SearchAsync();
 
         Assert.Equal(MapOriginKind.SearchedPlace, ViewModel.Origin!.Kind);
-        Assert.Empty(Location.Calls);
+        Assert.Equal(locationCalls, Location.Calls.Count);
     }
 
     /// <summary>

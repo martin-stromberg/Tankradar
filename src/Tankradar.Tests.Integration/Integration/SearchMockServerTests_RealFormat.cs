@@ -60,6 +60,7 @@ public class SearchMockServerTests_RealFormat : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
 
         await viewModel.SearchAsync();
 

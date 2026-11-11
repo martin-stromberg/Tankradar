@@ -39,7 +39,8 @@ public class MapViewModelTests_Panel : MapViewModelTestBase
     [Fact]
     public async Task DefaultView_List_OpensPanelExpanded()
     {
-        Settings.Stored = Settings.Stored with { ResultView = ResultView.List };
+        // GpsUsage.Never unterdrückt die Startsuche, damit der Ausgangszustand unberührt bleibt.
+        Settings.Stored = Settings.Stored with { ResultView = ResultView.List, GpsUsage = GpsUsage.Never };
 
         await AppearAsync();
 
@@ -121,8 +122,8 @@ public class MapViewModelTests_Panel : MapViewModelTestBase
         TogglePanel();
         TogglePanel();
 
-        Assert.Single(Prices.Queries);
-        Assert.Single(Location.Calls);
+        Assert.Equal(2, Prices.Queries.Count);
+        Assert.Equal(2, Location.Calls.Count);
         Assert.Equal(2, ViewModel.Stations.Count);
         Assert.Equal(2, ViewModel.MapMarkers.Count);
     }

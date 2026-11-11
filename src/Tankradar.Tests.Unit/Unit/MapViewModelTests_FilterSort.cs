@@ -54,14 +54,14 @@ public class MapViewModelTests_FilterSort : MapViewModelTestBase
         FilterOption("Diesel").IsSelected = true;
 
         Assert.Equal(["Nahe"], ViewModel.Stations.Select(item => item.Name));
-        Assert.Single(Location.Calls);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Location.Calls.Count);
+        Assert.Equal(2, Prices.Queries.Count);
         Assert.False(FilterOption("All").IsSelected);
 
         FilterOption("All").IsSelected = true;
 
         Assert.Equal(2, ViewModel.Stations.Count);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Prices.Queries.Count);
     }
 
     /// <summary>
@@ -79,8 +79,8 @@ public class MapViewModelTests_FilterSort : MapViewModelTestBase
         SortOption(ResultSortOrder.Name).IsSelected = true;
         Assert.Equal(["Ferne", "Nahe"], ViewModel.Stations.Select(item => item.Name));
 
-        Assert.Single(Location.Calls);
-        Assert.Single(Prices.Queries);
+        Assert.Equal(2, Location.Calls.Count);
+        Assert.Equal(2, Prices.Queries.Count);
         Assert.False(SortOption(ResultSortOrder.Distance).IsSelected);
     }
 

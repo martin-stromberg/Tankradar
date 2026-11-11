@@ -78,15 +78,17 @@ public class SearchMockServerTests_Flow : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
+        var requests = Server.TotalRequests;
 
         viewModel.RadiusKm = 26;
         await viewModel.SearchAsync();
-        Assert.Equal(0, Server.TotalRequests);
+        Assert.Equal(requests, Server.TotalRequests);
         Assert.Equal(SearchTexts.RadiusInvalid, viewModel.StatusMessage);
 
         viewModel.RadiusKm = 25;
         await viewModel.SearchAsync();
-        Assert.Equal(1, Server.ListRequests);
+        Assert.Equal(requests + 1, Server.ListRequests);
         Assert.Equal(25, Server.LastListRadius);
         Assert.Equal(4, viewModel.Stations.Count);
     }

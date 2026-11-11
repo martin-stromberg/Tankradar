@@ -1,3 +1,11 @@
+## 2026-11-11 — Automatische Startsuche beim Öffnen der Karte (Issue #54)
+
+- Beim erstmaligen Anzeigen des Bereichs „Karte“ in einer App-Sitzung startet `MapViewModel` selbständig eine Umkreissuche am aktuellen Standort (`SearchMode.CurrentLocation`, Radius `SearchRadius.Default` = 5 km) — der Suchdialog muss dafür nicht geöffnet und „Suchen“ nicht betätigt werden.
+- Steht **Standort und GPS** auf **Nie**, unterbleibt die Startsuche still: keine Standort- oder Preisabfrage und keine Hinweismeldung (die manuelle Suche zeigt den Hinweis weiterhin). Wird die Ortung noch in derselben Sitzung aktiviert, holt das nächste Anzeigen der Karte die Startsuche nach.
+- Das zuletzt gezeigte Ergebnis (Trefferliste, Markierungen, Suchposition, Filter, Sortierung — auch Routen- und Ausschnittsergebnisse) bleibt beim Wechsel zwischen den Bereichen und bei der Rückkehr aus der Detailansicht erhalten; es findet kein erneuter automatischer Suchlauf statt. Bricht das Verlassen der Seite die laufende Startsuche ab, läuft sie beim nächsten Anzeigen erneut.
+- Technik: `MapViewModel.OnAppearing` ruft neu `MaybeStartAutoSearch()` auf; der Vorlauf `AutoSearchOnceAsync` (Einstellungen laden, `GpsUsage.AllowsLocation()` prüfen) läuft im selben Abbruchkontext wie eine Suche (neu ausgelagerte Methoden `BeginSearchRun`/`EndSearchRun` aus `RunGuardedSearchAsync`). Das Flag `_autoSearchDone` wird nur gesetzt, wenn die Startsuche einen sichtbaren Ausgang hinterlassen hat (Ergebnis oder Meldung). Keine neue Einstellung, nichts wird persistiert.
+- Keine Schemaänderung.
+
 ## 2026-11-09 — Benachrichtigung nach Wiederherstellung vereinheitlicht (Issue #50)
 
 - Die Benachrichtigung geöffneter Seiten nach einer erfolgreichen Wiederherstellung läuft ausschließlich über `IRestoreNotifier.NotifyRestored()`: das seiteneigene Ereignis `BackupViewModel.Restored` entfällt; `BackupViewModel.ConfirmRestoreAsync` ruft nur noch den Notifier auf.

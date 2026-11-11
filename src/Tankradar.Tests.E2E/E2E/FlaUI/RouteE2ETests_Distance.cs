@@ -35,8 +35,8 @@ public class RouteE2ETests_Distance : RouteE2ETestBase
             WaitForRouteSummary(Summary(7, 10));
 
             Assert.Equal(4, Routing.Requests);
-            Assert.InRange(queriesAfterFirst, 1, 15);
-            Assert.InRange(Server.ListRequests, 4, 4 * 15);
+            Assert.InRange(queriesAfterFirst - ListRequestsBeforeRoute, 1, 15);
+            Assert.InRange(Server.ListRequests - ListRequestsBeforeRoute, 4, 4 * 15);
         });
     }
 }

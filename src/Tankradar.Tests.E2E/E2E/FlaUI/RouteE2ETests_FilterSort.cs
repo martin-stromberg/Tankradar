@@ -34,7 +34,7 @@ public class RouteE2ETests_FilterSort : RouteE2ETestBase
 
             Assert.Equal(2, Geocoding.Requests);
             Assert.Equal(1, Routing.Requests);
-            Assert.Equal(1, Server.ListRequests);
+            Assert.Equal(ListRequestsBeforeRoute + 1, Server.ListRequests);
         });
     }
 

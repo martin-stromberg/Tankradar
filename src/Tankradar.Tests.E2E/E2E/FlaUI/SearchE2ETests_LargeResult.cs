@@ -51,14 +51,17 @@ public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
         {
             OpenSearch();
 
+            // Die Startsuche beim ersten Öffnen der Karte abwarten; die anschließende Suche trifft denselben Zwischenspeicher (insgesamt genau eine Anfrage).
+            var remainingOnFirstPage = WaitForRemaining(null, "Die erste Seite der Ergebnisliste der Startsuche wurde nicht angezeigt (keine Schaltfläche „Weitere anzeigen“).").Remaining;
+            Assert.True(remainingOnFirstPage >= 300 - PageSize, $"Es sollten mindestens {300 - PageSize} Treffer fehlen, gemeldet: {remainingOnFirstPage}.");
+
             // Das Element der Sortierung wird vor der großen Ergebnisliste gesucht, danach sucht der Test nur noch am Rand des Baums.
             var sortChip = WaitForAutomationId("Search.Sort.Name");
             Automation.TransactionTimeout = InvokeTimeout;
             Submit();
             Automation.TransactionTimeout = PollTimeout;
 
-            var remainingOnFirstPage = WaitForRemaining(null, "Die erste Seite der Ergebnisliste wurde nicht angezeigt (keine Schaltfläche „Weitere anzeigen“).").Remaining;
-            Assert.True(remainingOnFirstPage >= 300 - PageSize, $"Es sollten mindestens {300 - PageSize} Treffer fehlen, gemeldet: {remainingOnFirstPage}.");
+            WaitForRemaining(remainingOnFirstPage, "Nach der Suche wird nicht die erste Seite angezeigt.");
 
             // Nach „Weitere anzeigen“ und Ruhe der App einmal zählen: Die Zahl der Schaltfläche allein bewiese nicht, dass wirklich 50 Einträge aufgebaut sind.
             InvokeWithLongTimeout(_showMore!);

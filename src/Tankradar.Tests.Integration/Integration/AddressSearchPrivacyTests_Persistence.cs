@@ -20,6 +20,7 @@ public class AddressSearchPrivacyTests_Persistence : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
         viewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         viewModel.AddressText = UniqueInput;
         viewModel.RadiusKm = 5;
@@ -89,6 +90,7 @@ public class AddressSearchPrivacyTests_Persistence : SearchMockServerTestBase
         var viewModel = CreateViewModel(CreateService());
         viewModel.OnAppearing();
         await viewModel.LastSettingsTask;
+        await viewModel.LastSearchTask;
         viewModel.ModeOptions.Single(option => option.Value == SearchMode.Address).SelectCommand.Execute(null);
         viewModel.AddressText = UniqueInput;
         await viewModel.SearchAsync();
