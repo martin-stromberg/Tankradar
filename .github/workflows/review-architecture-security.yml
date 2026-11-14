@@ -1,0 +1,59 @@
+name: Monthly Architecture & Security Review
+
+# Erzeugt monatlich ein Issue mit dem fest vorgegebenen Prüfauftrag für @softwarewerkstatt.
+# Die eigentliche Prüfung obliegt dem erwähnten Account; dieser Workflow führt selbst keine
+# Analyse durch.
+# Duplikatvermeidung und Label-Erzeugung liegen in der gemeinsamen Composite Action
+# .github/actions/create-review-issue; deshalb ist hier - anders als bei reinen gh-Aufrufen -
+# ein Checkout nötig (lokale Actions müssen im Arbeitsbaum liegen).
+# Der schedule-Trigger wirkt erst, sobald diese Datei auf dem Default-Branch main liegt
+# (Plattformverhalten; im Staging-Workflow also erst nach der Promotion staging -> main).
+# GitHub kann geplante Läufe bei hoher Last verzögern und nach 60 Tagen Repository-Inaktivität
+# deaktivieren.
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # 1. Tag des Monats, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read   # für den Checkout der lokalen Composite Action
+  issues: write
+
+concurrency:
+  group: review-architecture-security
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Create review issue
+        uses: ./.github/actions/create-review-issue
+        with:
+          label: review-architecture-security
+          color: 'B60205'
+          description: Monatliches Architektur- und Sicherheitsreview
+          title: Architektur- und Sicherheitsreview
+          date-format: '%Y-%m'
+          body: |
+            @softwarewerkstatt
+
+            Bitte führe ein Architektur- und Sicherheitsreview durch.
+
+            Prüfe insbesondere:
+
+            - Neue Sicherheitsrisiken in verwendeten Frameworks und Bibliotheken
+            - Bekannte Schwachstellen (CVEs) in NuGet-Abhängigkeiten
+            - Neue Empfehlungen für ASP.NET Core, Blazor, .NET und verwandte Technologien
+            - Änderungen bei Authentifizierung und Autorisierung
+            - Neue oder inzwischen bevorzugte Design Patterns
+            - Veraltete, abgekündigte oder problematische APIs
+            - Verbesserungsmöglichkeiten hinsichtlich Wartbarkeit, Erweiterbarkeit und Testbarkeit
+            - Aktuelle Empfehlungen zu Logging, Telemetrie und Monitoring
+            - Relevante Erkenntnisse aus der Community, Microsoft-Dokumentation und Sicherheitsmeldungen
+
+            Erstelle eine priorisierte Liste konkreter Handlungsempfehlungen.

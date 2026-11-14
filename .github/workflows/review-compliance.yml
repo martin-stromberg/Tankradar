@@ -1,0 +1,59 @@
+name: Yearly Compliance & Copyright Review
+
+# Erzeugt jährlich am 1. Januar ein Issue mit dem fest vorgegebenen Prüfauftrag für
+# @softwarewerkstatt. Die eigentliche Prüfung (Copyright-Hinweise, Impressum, Lizenzen)
+# obliegt dem erwähnten Account; dieser Workflow führt selbst keine Analyse durch.
+# Duplikatvermeidung und Label-Erzeugung liegen in der gemeinsamen Composite Action
+# .github/actions/create-review-issue; deshalb ist hier - anders als bei reinen gh-Aufrufen -
+# ein Checkout nötig (lokale Actions müssen im Arbeitsbaum liegen).
+# Der schedule-Trigger wirkt erst, sobald diese Datei auf dem Default-Branch main liegt
+# (Plattformverhalten; im Staging-Workflow also erst nach der Promotion staging -> main).
+# GitHub kann geplante Läufe bei hoher Last verzögern und nach 60 Tagen Repository-Inaktivität
+# deaktivieren.
+on:
+  schedule:
+    - cron: '0 6 1 1 *'   # 1. Januar, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read   # für den Checkout der lokalen Composite Action
+  issues: write
+
+concurrency:
+  group: review-compliance
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Create review issue
+        uses: ./.github/actions/create-review-issue
+        with:
+          label: review-compliance
+          color: '5319E7'
+          description: Jährliches Compliance- und Copyright-Review
+          title: Compliance- und Copyright-Review
+          date-format: '%Y'
+          body: |
+            @softwarewerkstatt
+
+            Bitte führe das jährliche Compliance-Review durch.
+
+            Prüfe:
+
+            - Copyright-Hinweise im Quellcode
+            - Copyright-Angaben auf Webseiten
+            - Copyright-Angaben in About-Dialogen
+            - Impressum
+            - Datenschutzerklärung
+            - Drittanbieter-Lizenzen
+            - Open-Source-Verpflichtungen
+            - Unternehmens- und Kontaktinformationen
+            - App-Store-Metadaten (falls vorhanden)
+
+            Erstelle konkrete Änderungsvorschläge und liste erkannte Risiken oder Handlungsbedarfe auf.
