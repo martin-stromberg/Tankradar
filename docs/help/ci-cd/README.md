@@ -26,6 +26,12 @@
    muss (nicht Squash/Rebase), damit der Release-Tag von `staging` aus erreichbar bleibt.
 5. **Wöchentlich** — `Security Scan` prüft die Abhängigkeiten auch ohne Codeänderung auf neu bekannt
    gewordene Schwachstellen.
+6. **Zeitgesteuert — Review-Issues** — Drei Workflows erzeugen wiederkehrend ein GitHub-Issue mit
+   fest vorgegebenem Prüfauftrag, dessen Body mit der Erwähnung `@softwarewerkstatt` beginnt:
+   monatlich das Architektur- und Sicherheitsreview (1. des Monats), wöchentlich die
+   NuGet-Paketprüfung (dienstags) und jährlich das Compliance- und Copyright-Review (1. Januar).
+   Existiert noch ein offenes Issue desselben Prüftyps (Erkennung über das jeweilige Label), wird
+   kein neues erzeugt. Die Cron-Trigger wirken erst, sobald die Workflows auf `main` liegen.
 
 ## Release-Artefakte
 

@@ -1,0 +1,60 @@
+name: Weekly NuGet Package Review
+
+# Erzeugt wöchentlich ein Issue mit dem fest vorgegebenen Prüfauftrag für @softwarewerkstatt.
+# Die eigentliche Paketanalyse (und die Umsetzung unbedenklicher Updates als Pull Request)
+# obliegt dem erwähnten Account; dieser Workflow führt selbst keine Analyse durch.
+# Duplikatvermeidung und Label-Erzeugung liegen in der gemeinsamen Composite Action
+# .github/actions/create-review-issue; deshalb ist hier - anders als bei reinen gh-Aufrufen -
+# ein Checkout nötig (lokale Actions müssen im Arbeitsbaum liegen).
+# Der schedule-Trigger wirkt erst, sobald diese Datei auf dem Default-Branch main liegt
+# (Plattformverhalten; im Staging-Workflow also erst nach der Promotion staging -> main).
+# GitHub kann geplante Läufe bei hoher Last verzögern und nach 60 Tagen Repository-Inaktivität
+# deaktivieren.
+on:
+  schedule:
+    - cron: '0 5 * * 2'   # Dienstag 05:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read   # für den Checkout der lokalen Composite Action
+  issues: write
+
+concurrency:
+  group: review-nuget-packages
+  cancel-in-progress: false
+
+jobs:
+  create-review-issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Create review issue
+        uses: ./.github/actions/create-review-issue
+        with:
+          label: review-nuget-packages
+          color: 'FBCA04'
+          description: Wöchentliche NuGet-Paketprüfung
+          title: NuGet-Paketprüfung
+          date-format: '%Y-%m-%d'
+          body: |
+            @softwarewerkstatt
+
+            Bitte analysiere alle verwendeten NuGet-Pakete.
+
+            Prüfe:
+
+            - Verfügbare Updates
+            - Security-Updates
+            - Pakete mit bekannt gewordenen Schwachstellen
+            - Veraltete oder nicht mehr gepflegte Pakete
+            - Empfohlene Nachfolgepakete
+            - Mögliche Breaking Changes bei Updates
+
+            Erstelle konkrete Update-Empfehlungen inklusive Risikobewertung.
+
+            Setze die unbedenklichen Empfehlungen (niedriges bis mittleres Risiko)
+            direkt in einem Pull Request um. Risikoreiche oder aufgeschobene
+            Empfehlungen dokumentiere im PR-Body bzw. als eigenes Folge-Issue.

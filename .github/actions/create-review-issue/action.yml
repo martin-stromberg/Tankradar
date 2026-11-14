@@ -1,0 +1,58 @@
+name: Create review issue
+description: >
+  Legt ein Prüf-Label idempotent an ('gh label create --force') und erzeugt ein Issue mit dem
+  übergebenen Prüfauftrag, sofern noch kein offenes Issue mit diesem Label existiert
+  (Duplikatvermeidung per 'gh issue list --state open --label'). Wird von den drei
+  review-*.yml-Workflows genutzt. Der aufrufende Job benötigt 'permissions: issues: write'
+  und einen Checkout, damit die Action-Datei im Arbeitsbaum liegt.
+
+inputs:
+  label:
+    description: Name des Labels; steuert die Duplikatvermeidung und markiert das Issue.
+    required: true
+  color:
+    description: Hex-Farbcode des Labels ohne führendes '#'.
+    required: true
+  description:
+    description: Beschreibung des Labels (wird beim automatischen Anlegen gesetzt).
+    required: true
+  title:
+    description: Issue-Titel ohne Datumsteil; im Titel folgt ' – ' plus Datum.
+    required: true
+  date-format:
+    description: Formatstring für 'date -u', der als Datumsteil an den Titel angehängt wird (z. B. '%Y-%m').
+    required: true
+  body:
+    description: Issue-Body (Markdown, mehrzeilig; beginnt mit '@softwarewerkstatt').
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure label exists
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        LABEL: ${{ inputs.label }}
+        LABEL_COLOR: ${{ inputs.color }}
+        LABEL_DESCRIPTION: ${{ inputs.description }}
+      run: gh label create "$LABEL" --color "$LABEL_COLOR" --description "$LABEL_DESCRIPTION" --force
+
+    - name: Create review issue if none is open
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        LABEL: ${{ inputs.label }}
+        TITLE: ${{ inputs.title }}
+        DATE_FORMAT: ${{ inputs.date-format }}
+        ISSUE_BODY: ${{ inputs.body }}
+      run: |
+        existing="$(gh issue list --state open --label "$LABEL" --json number)"
+        if [ "$(echo "$existing" | jq length)" -gt 0 ]; then
+          echo "Offenes Issue mit Label '$LABEL' vorhanden - kein neues Issue erzeugt."
+        else
+          gh issue create \
+            --title "$TITLE – $(date -u +"$DATE_FORMAT")" \
+            --label "$LABEL" \
+            --body "$ISSUE_BODY"
+        fi
