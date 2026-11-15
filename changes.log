@@ -1,3 +1,11 @@
+## 2026-11-14 — Automatische Review-Issues per Cron (Issue #58)
+
+- Drei neue Workflows unter `.github/workflows/` erzeugen zeitgesteuert (Cron plus manuell per `workflow_dispatch`) je ein GitHub-Issue mit fest vorgegebenem deutschem Prüfauftrag, dessen Body mit der Zeile `@softwarewerkstatt` beginnt: `review-architecture-security.yml` (monatlich am 1. des Monats, 06:00 UTC), `review-nuget-packages.yml` (wöchentlich dienstags, 05:00 UTC) und `review-compliance.yml` (jährlich am 1. Januar, 06:00 UTC).
+- Duplikatvermeidung und Label-Erzeugung liegen in der gemeinsamen Composite Action `.github/actions/create-review-issue`, die alle drei Workflows mit ihren prüftypspezifischen Werten aufrufen: Vor jeder Erzeugung prüft sie per `gh issue list --state open --label <label>`, ob bereits ein offenes Issue desselben Prüftyps existiert, und überspringt die Erstellung in diesem Fall. Die drei Labels (`review-architecture-security` `B60205`, `review-nuget-packages` `FBCA04`, `review-compliance` `5319E7`) legt die Action beim ersten Lauf selbst an (`gh label create ... --force`).
+- Die Workflows führen selbst keine Prüfung durch — sie erzeugen nur das Issue; die Analyse obliegt dem erwähnten Account. Berechtigungen: `issues: write` plus `contents: read` für den Checkout, den lokale Composite Actions benötigen; die `schedule`-Trigger wirken erst, sobald die Dateien auf `main` liegen (also nach der Promotion `staging` → `main`).
+- Dokumentation: `docs/help/ci-cd/workflows.md` (Übersicht jetzt „Die elf Workflows“, einschließlich der bislang fehlenden `pages.yml`-Zeile), `docs/help/ci-cd/README.md` (neuer Ablaufpunkt „Zeitgesteuert — Review-Issues“) und `docs/help/ci-cd/einrichtung.md` (Abschnitt „3. Labels“) aktualisiert.
+- Keine Schemaänderung.
+
 ## 2026-11-11 — Automatische Startsuche beim Öffnen der Karte (Issue #54)
 
 - Beim erstmaligen Anzeigen des Bereichs „Karte“ in einer App-Sitzung startet `MapViewModel` selbständig eine Umkreissuche am aktuellen Standort (`SearchMode.CurrentLocation`, Radius `SearchRadius.Default` = 5 km) — der Suchdialog muss dafür nicht geöffnet und „Suchen“ nicht betätigt werden.
