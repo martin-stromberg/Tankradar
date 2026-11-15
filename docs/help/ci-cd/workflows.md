@@ -5,7 +5,7 @@
 Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vorlage
 „CI Workflows for a Staging-Based .NET Release Pipeline“, angepasst an die MAUI-App.
 
-## Die sieben Workflows
+## Die elf Workflows
 
 | Datei | Anzeigename | Trigger | Aufgabe |
 |---|---|---|---|
@@ -16,9 +16,25 @@ Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vor
 | `sync-staging-with-main.yml` | Backmerge Main to Staging | Push → `main` | Eröffnet den PR `main` → `staging` (Label `automated-backmerge`). |
 | `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, prüft/repariert vorhandene Releases, veröffentlicht `release-win-x64.zip` + `update.json`, baut iOS. |
 | `security-scan.yml` | Security Scan | wöchentlich (Mo 04:00 UTC), manuell | Schwachstellenprüfung unabhängig von Codeänderungen. |
+| `pages.yml` | GitHub Pages | Push → `main` (nur `pages/` und die Workflow-Datei), manuell | Veröffentlicht die App-Präsentation auf GitHub Pages. |
+| `review-architecture-security.yml` | Monthly Architecture & Security Review | monatlich (1. des Monats, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Review-Auftrag für `@softwarewerkstatt` (Label `review-architecture-security`). |
+| `review-nuget-packages.yml` | Weekly NuGet Package Review | wöchentlich (Di 05:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit der Paketprüfungs-Aufgabe für `@softwarewerkstatt` (Label `review-nuget-packages`). |
+| `review-compliance.yml` | Yearly Compliance & Copyright Review | jährlich (1. Januar, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Compliance-Auftrag für `@softwarewerkstatt` (Label `review-compliance`). |
 
 Wichtig: `staging-to-main-promotion.yml` referenziert den **Anzeigenamen** `Pre-Release`. Wer den Namen
 in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`validate-workflows.py` prüft das).
+
+Die drei `review-*.yml`-Workflows folgen demselben Issue-/Dedup-Muster und rufen dafür die
+gemeinsame Composite Action [`.github/actions/create-review-issue`](../../../.github/actions/create-review-issue/action.yml)
+mit ihren prüftypspezifischen Werten auf (Label, Farbe, Beschreibung, Titel, Datumsformat,
+Issue-Body): Sie legt das Label beim ersten Lauf selbst an (`gh label create ... --force`),
+prüft per `gh issue list --state open --label <label>`, ob bereits ein offenes Issue desselben
+Prüftyps existiert, und erzeugt nur dann ein neues Issue (`gh issue create`), dessen Body mit
+der Zeile `@softwarewerkstatt` beginnt. Die eigentliche Prüfung führt der erwähnte Account
+durch — die Workflows selbst führen keine Analyse aus. Berechtigungen: `issues: write` für die
+Issue-/Label-Aufrufe plus `contents: read`, weil lokale Composite Actions einen Checkout des
+Arbeitsbaums benötigen. Wie alle `schedule`-Trigger wirken sie erst, sobald die Dateien auf dem
+Default-Branch `main` liegen (nach der Promotion `staging` → `main`).
 
 ## Gemeinsame Bausteine
 
@@ -26,6 +42,7 @@ in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`valida
 |---|---|
 | `.github/actions/security-scan` | `dotnet list package --vulnerable --include-transitive --format json`, ausgewertet sprachunabhängig über `scripts/check-vulnerabilities.mjs` (derselbe Code wie im lokalen Prüflauf; Bericht `vulnerable-packages.json`); lässt den Schritt bei Funden **fehlschlagen**. Von `static checks` und vom wöchentlichen Scan genutzt. |
 | `.github/actions/build-and-package` | Veröffentlicht die Windows-App und erzeugt ZIP und `update.json` (ruft `scripts/package-windows.ps1`). Das Paket ist öffentlich herunterladbar und wird deshalb **ohne Tankerkönig-Schlüssel** gebaut: kein Schlüssel-Input, die Schlüsselquellen werden explizit geleert. `scripts/validate-workflows.py` prüft das. |
+| `.github/actions/create-review-issue` | Gemeinsame Logik der drei `review-*.yml`-Workflows: legt das Prüftyp-Label idempotent an (`gh label create --force`) und erzeugt per `gh issue create` ein Issue, sofern kein offenes Issue mit diesem Label existiert (Dedup über `gh issue list` + `jq length`). Inputs: `label`, `color`, `description`, `title`, `date-format`, `body`; der Datumsteil des Titels wird zur Laufzeit per `date -u` gebildet. Benötigt `issues: write` und einen Checkout im aufrufenden Job. |
 | `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`10.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa` (nur im Runner; sie wird **nicht** als Workflow-Artefakt hochgeladen, weil sie den Tankerkönig-Schlüssel enthält und das Repository öffentlich ist), optional TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Sonst unsignierter Simulator-Build als Compile-Prüfung (kein Fehlschlag). Blendet die übrigen Zielframeworks per Eigenschaft aus (`IncludeAndroidTarget=false`, `IncludeMacCatalystTarget=false`), weil der Restore alle Zielframeworks der `.csproj` auswertet und bei fehlender Workload mit `NETSDK1147` scheitern würde; die Windows-Jobs blenden umgekehrt die Apple-Ziele aus (`IncludeIosTarget=false`, `IncludeMacCatalystTarget=false`). Der lokale Prüflauf (`scripts/local-ci.ps1`) simuliert die Windows-Jobs mit diesen `false`-Werten, stellt die Variablen danach wieder her und prüft iOS in einem eigenen Schritt „iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus; ohne iOS-Workload übersprungen). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
 
 ## Skripte
@@ -48,7 +65,8 @@ Tests der Node-Skripte: `npm test` (`scripts/*.test.mjs`, keine Abhängigkeiten 
 
 Windows-spezifische Schritte (Format, Analyse, Build, Tests, Paket) laufen auf `windows-latest`, weil die
 MAUI-Windows-App und die FlaUI-Tests Windows benötigen. iOS läuft auf `macos-latest`. Leichtgewichtige
-Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion) laufen auf `ubuntu-latest`.
+Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion, Review-Issue-Erzeugung) laufen auf
+`ubuntu-latest`.
 
 ## Abweichungen von der Vorlage
 

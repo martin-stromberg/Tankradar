@@ -27,6 +27,10 @@ wurden noch nicht auf GitHub ausgeführt.
 
 - [ ] `automated-promotion` (Farbe `0E8A16`) und `automated-backmerge` (Farbe `1D76DB`). Die Workflows legen
       sie beim ersten Lauf selbst an; manuell: `gh label create automated-promotion --color 0E8A16`.
+- [ ] `review-architecture-security` (Farbe `B60205`), `review-nuget-packages` (Farbe `FBCA04`) und
+      `review-compliance` (Farbe `5319E7`). Auch diese Labels legen die drei Review-Workflows
+      (`review-*.yml`, über die gemeinsame Action `.github/actions/create-review-issue`) beim
+      ersten Lauf selbst an; manuell: `gh label create <name> --color <farbe>`.
 
 ## 4. Apple-seitige Vorbereitung (für signierte iOS-Builds und TestFlight)
 
