@@ -4,7 +4,7 @@
 
 ## Übersicht
 
-Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.db`), angesprochen über Entity Framework Core 10.0.10 (`Microsoft.EntityFrameworkCore.Sqlite`) im Projekt `Tankradar.MAUI` (Ordner `Data/`). Das Schema wird ausschließlich über Migrationen verwaltet (kein `EnsureCreated`). Der Zugriff der UI erfolgt über `ISettingsService`; die ViewModels kennen keine EF-Typen.
+Die Einstellungen liegen in einer einzigen lokalen SQLite-Datenbank (`tankatlas.db`), angesprochen über Entity Framework Core 10.0.15 (`Microsoft.EntityFrameworkCore.Sqlite`) im Projekt `Tankradar.MAUI` (Ordner `Data/`). Das Schema wird ausschließlich über Migrationen verwaltet (kein `EnsureCreated`). Der Zugriff der UI erfolgt über `ISettingsService`; die ViewModels kennen keine EF-Typen.
 
 ## Ablauf
 

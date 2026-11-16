@@ -28,7 +28,7 @@
 		<!-- MAUI-Version explizit festgelegt, unabhängig von der installierten Workload (Standard wäre MauiWorkloadVersion):
 		Microsoft.Maui.* (Controls, Core, Essentials, Resizetizer) kommen so in jedem Job in derselben Version aus NuGet.
 		Ab 10.0.60 fordert MediaPicker.PhotoAsync auf iOS für die Aufnahme keine PhotosAddOnly-Berechtigung mehr an (dotnet/maui#34287), siehe ADR 0016. -->
-		<MauiVersion>10.0.120</MauiVersion>
+		<MauiVersion>10.0.130</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -102,11 +102,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.15" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
 		<!-- Hebt die transitiv gezogene, als anfällig gemeldete Version 2.1.11 (GHSA-2m69-gcr7-jv3q) an. -->
-		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
