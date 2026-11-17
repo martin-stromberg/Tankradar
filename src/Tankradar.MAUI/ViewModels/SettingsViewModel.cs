@@ -30,19 +30,22 @@ public class SettingsViewModel : BaseViewModel
     /// <param name="dataSource">Die Karte „Datenquelle“ (Quellenangabe und Preisdienst-Prüfung); optional, damit die Einstellungen auch ohne Preisdienst nutzbar sind.</param>
     /// <param name="backup">Die Karte „Sicherung“; optional, damit die Einstellungen auch ohne Sicherungsdienst nutzbar sind.</param>
     /// <param name="routeSearch">Die Karte „Routensuche“ (Schlüssel und Schalter); optional, damit die Einstellungen auch ohne Routensuche nutzbar sind.</param>
+    /// <param name="diagnostics">Die Karte „Diagnose“; optional, damit die Einstellungen auch ohne Diagnosedienst nutzbar sind.</param>
     public SettingsViewModel(
         ISettingsService settingsService,
         ILogger<SettingsViewModel> logger,
         IRestoreNotifier restoreNotifier,
         DataSourceViewModel? dataSource = null,
         BackupViewModel? backup = null,
-        RouteSearchSettingsViewModel? routeSearch = null)
+        RouteSearchSettingsViewModel? routeSearch = null,
+        DiagnosticsViewModel? diagnostics = null)
     {
         RouteSearch = routeSearch;
         _settingsService = settingsService;
         _logger = logger;
         DataSource = dataSource;
         Backup = backup;
+        Diagnostics = diagnostics;
         restoreNotifier.Restored += OnRestored;
 
         Title = "Optionen";
@@ -87,6 +90,16 @@ public class SettingsViewModel : BaseViewModel
     /// Gibt an, ob die Karte „Sicherung“ angezeigt wird.
     /// </summary>
     public bool HasBackup => Backup is not null;
+
+    /// <summary>
+    /// Die Karte „Diagnose“; <see langword="null"/>, wenn kein Diagnosedienst eingebunden ist.
+    /// </summary>
+    public DiagnosticsViewModel? Diagnostics { get; }
+
+    /// <summary>
+    /// Gibt an, ob die Karte „Diagnose“ angezeigt wird.
+    /// </summary>
+    public bool HasDiagnostics => Diagnostics is not null;
 
     /// <summary>
     /// Die Spritsorten in der aktuellen Reihenfolge.
