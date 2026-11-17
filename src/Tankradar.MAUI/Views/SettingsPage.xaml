@@ -268,6 +268,20 @@
                            Style="{StaticResource body-sm}"
                            TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
                            AutomationId="Settings.Backup.Hint" />
+                    <Entry Placeholder="{Binding PasswordPlaceholderText}"
+                           Text="{Binding CreatePassword}"
+                           IsPassword="True"
+                           SemanticProperties.Description="{Binding PasswordPlaceholderText}"
+                           AutomationId="Settings.Backup.Password" />
+                    <Entry Placeholder="{Binding PasswordRepeatPlaceholderText}"
+                           Text="{Binding CreatePasswordRepeat}"
+                           IsPassword="True"
+                           SemanticProperties.Description="{Binding PasswordRepeatPlaceholderText}"
+                           AutomationId="Settings.Backup.PasswordRepeat" />
+                    <Label Text="{Binding PasswordHintText}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Backup.PasswordHint" />
                     <Button Text="{Binding CreateText}"
                             Command="{Binding CreateCommand}"
                             Style="{StaticResource TankbookButton}"
@@ -276,6 +290,27 @@
                             Command="{Binding ImportCommand}"
                             Style="{StaticResource TankbookOutlineButton}"
                             AutomationId="Settings.Backup.Import" />
+
+                    <!-- Passwortabfrage für eine verschlüsselte Datei beim Einspielen -->
+                    <VerticalStackLayout IsVisible="{Binding IsAwaitingImportPassword}" Spacing="{StaticResource space-sm}">
+                        <Label Text="{Binding ImportPasswordText}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="Settings.Backup.ImportPasswordLabel" />
+                        <Entry Placeholder="{Binding PasswordPlaceholderText}"
+                               Text="{Binding ImportPassword}"
+                               IsPassword="True"
+                               SemanticProperties.Description="{Binding PasswordPlaceholderText}"
+                               AutomationId="Settings.Backup.ImportPassword" />
+                        <Button Text="{Binding ImportUnlockText}"
+                                Command="{Binding ConfirmImportPasswordCommand}"
+                                Style="{StaticResource TankbookButton}"
+                                AutomationId="Settings.Backup.ImportPasswordConfirm" />
+                        <Button Text="{Binding ImportCancelText}"
+                                Command="{Binding CancelImportPasswordCommand}"
+                                Style="{StaticResource TankbookOutlineButton}"
+                                AutomationId="Settings.Backup.ImportPasswordCancel" />
+                    </VerticalStackLayout>
                     <Label Text="{Binding StatusMessage}"
                            IsVisible="{Binding HasStatusMessage}"
                            Style="{StaticResource body-md}"
@@ -320,15 +355,27 @@
                                                 AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.Delete'}" />
                                     </FlexLayout>
 
-                                    <!-- Rückfrage vor der Wiederherstellung -->
+                                    <!-- Rückfrage vor der Wiederherstellung (bei verschlüsselten Dateien zuerst das Passwort) -->
                                     <VerticalStackLayout IsVisible="{Binding IsConfirmingRestore}" Spacing="{StaticResource space-sm}">
                                         <Label Text="{Binding RestoreQuestion}"
                                                Style="{StaticResource body-md}"
                                                TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreQuestion'}" />
+                                        <Entry Placeholder="{Binding PasswordPlaceholderText}"
+                                               Text="{Binding RestorePassword}"
+                                               IsPassword="True"
+                                               IsVisible="{Binding IsPasswordStage}"
+                                               SemanticProperties.Description="{Binding PasswordPlaceholderText}"
+                                               AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestorePassword'}" />
+                                        <Button Text="{Binding UnlockText}"
+                                                Command="{Binding UnlockRestoreCommand}"
+                                                Style="{StaticResource TankbookButton}"
+                                                IsVisible="{Binding IsPasswordStage}"
+                                                AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreUnlock'}" />
                                         <Button Text="{Binding ConfirmRestoreText}"
                                                 Command="{Binding ConfirmRestoreCommand}"
                                                 Style="{StaticResource TankbookDangerButton}"
+                                                IsVisible="{Binding IsCountStage}"
                                                 SemanticProperties.Hint="{Binding RestoreHint}"
                                                 AutomationId="{Binding AutomationKey, StringFormat='Settings.Backup.Item.{0}.RestoreConfirm'}" />
                                         <Button Text="{Binding CancelText}"

@@ -199,9 +199,10 @@ Systemdialoge). Es gibt keine eigene Seite und kein neues Symbol.
 
 ## Folgen
 
-- **Sicherungen sind unverschlüsselt.** Sie enthalten Fahrdaten und Belege. Die Datei im Datenverzeichnis hat den Dateischutz
-  der App; eine geteilte oder gespeicherte Kopie liegt außerhalb davon. Die Oberfläche und die Hilfe weisen darauf hin. Eine
-  Verschlüsselung mit Passwort wäre eine eigene Entscheidung (Schlüsselverwaltung, Verlustrisiko).
+- **Sicherungen sind unverschlüsselt**, sofern beim Erstellen kein Passwort vergeben wird. Sie enthalten Fahrdaten und
+  Belege. Die Datei im Datenverzeichnis hat den Dateischutz der App; eine geteilte oder gespeicherte Kopie liegt außerhalb
+  davon. Die Oberfläche und die Hilfe weisen darauf hin. Die optionale Verschlüsselung mit Passwort ist in
+  [ADR 0019](0019-backup-encryption.md) entschieden (Schlüsselverwaltung, Verlustrisiko).
 - **Keine automatische Sicherung** und keine Cloud-Anbindung; beides ist nicht Teil der Anforderung.
 - **Ein Wechsel des Datenformats** (neue Tabellen, neue Migrationen) bleibt über die Migrationsregeln abgedeckt; ändert sich das
   Archivformat selbst, ist `schemaVersion` zu erhöhen. Beispiel Schritt 15a: Die neue Spalte `Stations.CustomName` (eigener

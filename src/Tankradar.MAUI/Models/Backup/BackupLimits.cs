@@ -34,4 +34,9 @@ public static class BackupLimits
     /// Höchstdauer der Prüfung und Aufbereitung der Datenbank einer Sicherung in Sekunden (zwei Minuten); danach bricht der Vorgang ab, ohne den Bestand zu verändern.
     /// </summary>
     public const int PrepareTimeoutSeconds = 120;
+
+    /// <summary>
+    /// Höchstlänge in Bytes, die beim Einlesen des unverschlüsselten Headers einer verschlüsselten Sicherung gelesen wird (4 KiB, ADR 0019).
+    /// </summary>
+    public const int MaxEncryptedHeaderBytes = 4 * 1024;
 }

@@ -14,7 +14,8 @@ public sealed class FakeBackupService : IBackupService
     public FakeBackupService()
     {
         Manifest = new BackupManifest { AppVersion = "0.1.19", Counts = new BackupManifestCounts { Vehicles = 1, Entries = 2, Groups = 3, Favorites = 4, Stations = 5, Prices = 6, Photos = 1 } };
-        ImportedFile = new BackupFileInfo("tankatlas-backup-20261012-130000.zip", new DateTime(2026, 10, 12, 13, 0, 0, DateTimeKind.Utc), 2048, "0.1.19", true);
+        ImportedFile = new BackupFileInfo("tankatlas-backup-20261012-130000.zip", new DateTime(2026, 10, 12, 13, 0, 0, DateTimeKind.Utc), 2048, "0.1.19", true, false);
+        ImportResults = new Queue<BackupResult>();
     }
 
     /// <summary>
@@ -51,6 +52,11 @@ public sealed class FakeBackupService : IBackupService
     /// Das Ergebnis von <see cref="ImportAsync"/>; bei <see cref="BackupResult.Ok"/> wird <see cref="ImportedFile"/> in die Liste aufgenommen.
     /// </summary>
     public BackupResult ImportResult { get; set; } = BackupResult.Ok;
+
+    /// <summary>
+    /// Aufeinanderfolgende Ergebnisse von <see cref="ImportAsync"/> (z. B. erst <see cref="BackupResult.PasswordRequired"/>, dann <see cref="BackupResult.Ok"/>); solange Einträge vorhanden sind, gehen sie <see cref="ImportResult"/> vor.
+    /// </summary>
+    public Queue<BackupResult> ImportResults { get; }
 
     /// <summary>
     /// Die Sicherung, die ein erfolgreicher Import liefert.
@@ -98,14 +104,35 @@ public sealed class FakeBackupService : IBackupService
     public List<string> Imported { get; } = [];
 
     /// <summary>
+    /// Die Passwörter der Aufrufe von <see cref="CreateAsync"/>.
+    /// </summary>
+    public List<string?> CreatedPasswords { get; } = [];
+
+    /// <summary>
+    /// Die Passwörter der Aufrufe von <see cref="InspectAsync"/>.
+    /// </summary>
+    public List<string?> InspectedPasswords { get; } = [];
+
+    /// <summary>
+    /// Die Passwörter der Aufrufe von <see cref="RestoreAsync"/>.
+    /// </summary>
+    public List<string?> RestoredPasswords { get; } = [];
+
+    /// <summary>
+    /// Die Passwörter der Aufrufe von <see cref="ImportAsync"/>.
+    /// </summary>
+    public List<string?> ImportedPasswords { get; } = [];
+
+    /// <summary>
     /// Wird, wenn gesetzt, am Anfang von <see cref="CreateAsync"/> abgewartet (Sperrtests).
     /// </summary>
     public TaskCompletionSource? CreateGate { get; set; }
 
     /// <inheritdoc />
-    public async Task<BackupOutcome> CreateAsync(CancellationToken cancellationToken = default)
+    public async Task<BackupOutcome> CreateAsync(string? password = null, CancellationToken cancellationToken = default)
     {
         CreateCount++;
+        CreatedPasswords.Add(password);
         if (CreateGate is not null)
         {
             await CreateGate.Task;
@@ -121,7 +148,7 @@ public sealed class FakeBackupService : IBackupService
             return new BackupOutcome(CreateResult);
         }
 
-        var file = new BackupFileInfo("tankatlas-backup-20261012-14" + (Files.Count + 10) + "00.zip", new DateTime(2026, 10, 12, 14, 0, 0, DateTimeKind.Utc).AddMinutes(Files.Count), 1024, "0.1.19", true);
+        var file = new BackupFileInfo("tankatlas-backup-20261012-14" + (Files.Count + 10) + "00.zip", new DateTime(2026, 10, 12, 14, 0, 0, DateTimeKind.Utc).AddMinutes(Files.Count), 1024, "0.1.19", true, !string.IsNullOrEmpty(password));
         Files.Insert(0, file);
         return new BackupOutcome(BackupResult.Ok, file);
     }
@@ -139,31 +166,35 @@ public sealed class FakeBackupService : IBackupService
     }
 
     /// <inheritdoc />
-    public Task<BackupOutcome> InspectAsync(string fileName, CancellationToken cancellationToken = default)
+    public Task<BackupOutcome> InspectAsync(string fileName, string? password = null, CancellationToken cancellationToken = default)
     {
         Inspected.Add(fileName);
+        InspectedPasswords.Add(password);
         var manifest = InspectResult is BackupResult.Ok or BackupResult.TooNew ? Manifest : null;
         return Task.FromResult(new BackupOutcome(InspectResult, null, manifest));
     }
 
     /// <inheritdoc />
-    public Task<BackupResult> RestoreAsync(string fileName, CancellationToken cancellationToken = default)
+    public Task<BackupResult> RestoreAsync(string fileName, string? password = null, CancellationToken cancellationToken = default)
     {
         Restored.Add(fileName);
+        RestoredPasswords.Add(password);
         return Exception is null ? Task.FromResult(RestoreResult) : Task.FromException<BackupResult>(Exception);
     }
 
     /// <inheritdoc />
-    public Task<BackupOutcome> ImportAsync(PickedBackupFile file, CancellationToken cancellationToken = default)
+    public Task<BackupOutcome> ImportAsync(PickedBackupFile file, string? password = null, CancellationToken cancellationToken = default)
     {
         Imported.Add(file.FileName);
-        if (ImportResult == BackupResult.Ok)
+        ImportedPasswords.Add(password);
+        var result = ImportResults.Count > 0 ? ImportResults.Dequeue() : ImportResult;
+        if (result == BackupResult.Ok)
         {
             Files.Insert(0, ImportedFile);
             return Task.FromResult(new BackupOutcome(BackupResult.Ok, ImportedFile));
         }
 
-        return Task.FromResult(new BackupOutcome(ImportResult, null, ImportResult == BackupResult.TooNew ? Manifest : null));
+        return Task.FromResult(new BackupOutcome(result, null, result == BackupResult.TooNew ? Manifest : null));
     }
 
     /// <inheritdoc />

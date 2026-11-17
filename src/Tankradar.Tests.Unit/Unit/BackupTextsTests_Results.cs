@@ -35,17 +35,19 @@ public class BackupTextsTests_Results : BaseTest
         Assert.Contains("Deine Daten wurden nicht verändert.", BackupTexts.GetMessage(BackupResult.Failed), StringComparison.Ordinal);
         Assert.Contains("bereits ein anderer", BackupTexts.GetMessage(BackupResult.Busy), StringComparison.Ordinal);
         Assert.Equal("Der Vorgang wurde abgeschlossen.", BackupTexts.GetMessage(BackupResult.Ok));
+        Assert.Contains("verschlüsselt", BackupTexts.GetMessage(BackupResult.PasswordRequired), StringComparison.Ordinal);
+        Assert.Equal("Das Passwort ist falsch oder die Datei ist beschädigt. Deine Daten wurden nicht verändert.", BackupTexts.GetMessage(BackupResult.WrongPassword));
     }
 
     /// <summary>
-    /// Prüft, dass der Hinweis der Karte den Umfang, die lokale Ablage und die fehlende Verschlüsselung nennt.
+    /// Prüft, dass der Hinweis der Karte den Umfang, die lokale Ablage und die optionale Verschlüsselung nennt.
     /// </summary>
     [Fact]
     public void Hint_NamesScopeAndEncryption()
     {
         Assert.Contains("Zugangsschlüssel zum Preisdienst", BackupTexts.Hint, StringComparison.Ordinal);
         Assert.Contains("nur auf diesem Gerät", BackupTexts.Hint, StringComparison.Ordinal);
-        Assert.Contains("nicht verschlüsselt", BackupTexts.Hint, StringComparison.Ordinal);
+        Assert.Contains("mit einem Passwort geschützt", BackupTexts.Hint, StringComparison.Ordinal);
         Assert.Contains("nicht automatisch", BackupTexts.Hint, StringComparison.Ordinal);
     }
 }

@@ -89,8 +89,10 @@ public class BackupTextsTests_Format : BaseTest
     public void DeleteQuestionTitleAndHints()
     {
         Assert.Equal($"Sicherung vom {Local()} löschen? Die Sicherungsdatei wird endgültig gelöscht. Deine aktuellen Daten bleiben unverändert.", BackupTexts.FormatDeleteQuestion(Created));
-        Assert.Equal(Local(), BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, "1", true)));
-        Assert.Equal($"{Local()} (nicht lesbar)", BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, string.Empty, false)));
+        Assert.Equal(Local(), BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, "1", true, false)));
+        Assert.Equal($"{Local()} (nicht lesbar)", BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, string.Empty, false, false)));
+        Assert.Equal($"{Local()} (verschlüsselt)", BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, string.Empty, true, true)));
+        Assert.Equal($"{Local()} (nicht lesbar)", BackupTexts.FormatItemTitle(new BackupFileInfo("a.zip", Created, 1, string.Empty, false, true)));
         Assert.Equal($"Sicherung vom {Local()} wiederherstellen", BackupTexts.FormatRestoreHint(Created));
         Assert.Equal($"Sicherung vom {Local()} teilen oder speichern", BackupTexts.FormatShareHint(Created));
         Assert.Equal($"Sicherung vom {Local()} löschen", BackupTexts.FormatDeleteHint(Created));

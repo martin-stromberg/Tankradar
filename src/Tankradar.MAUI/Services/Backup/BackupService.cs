@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Models.Backup;
 using Tankradar.MAUI.Services.Pricing;
@@ -62,7 +63,7 @@ public sealed class BackupService : IBackupService
     }
 
     /// <inheritdoc />
-    public async Task<BackupOutcome> CreateAsync(CancellationToken cancellationToken = default)
+    public async Task<BackupOutcome> CreateAsync(string? password = null, CancellationToken cancellationToken = default)
     {
         if (!_gate.Wait(0, CancellationToken.None))
         {
@@ -88,14 +89,22 @@ public sealed class BackupService : IBackupService
 
             var finalPath = GetUniquePath(directory, now);
             tempPath = finalPath + BackupFormat.TempExtension;
-            await BackupArchiveWriter.WriteAsync(tempPath, snapshotPath, Path.Combine(dataDirectory, ReceiptPhotoStore.DirectoryName), header, cancellationToken).ConfigureAwait(false);
+
+            // Mit Passwort entsteht zuerst das unverschlüsselte ZIP im Arbeitsverzeichnis; nur der verschlüsselte Container wandert zum Zielnamen.
+            var zipPath = string.IsNullOrEmpty(password) ? tempPath : Path.Combine(workDirectory, "sicherung" + BackupFormat.FileExtension);
+            await BackupArchiveWriter.WriteAsync(zipPath, snapshotPath, Path.Combine(dataDirectory, ReceiptPhotoStore.DirectoryName), header, cancellationToken).ConfigureAwait(false);
 
             // Es wird keine Sicherung abgelegt, die die Wiederherstellung später ablehnen würde (Größen- und Mengengrenzen, Struktur).
             var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
-            if (BackupArchiveValidator.Validate(tempPath, known).Result != BackupResult.Ok)
+            if (BackupArchiveValidator.Validate(zipPath, known).Result != BackupResult.Ok)
             {
                 _logger.LogWarning("Die Sicherung überschreitet die Grenzen der Wiederherstellung und wird nicht abgelegt.");
                 return new BackupOutcome(BackupResult.Failed);
+            }
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                await BackupCrypto.EncryptAsync(zipPath, tempPath, password, cancellationToken).ConfigureAwait(false);
             }
 
             File.Move(tempPath, finalPath);
@@ -160,7 +169,7 @@ public sealed class BackupService : IBackupService
     }
 
     /// <inheritdoc />
-    public async Task<BackupOutcome> InspectAsync(string fileName, CancellationToken cancellationToken = default)
+    public async Task<BackupOutcome> InspectAsync(string fileName, string? password = null, CancellationToken cancellationToken = default)
     {
         var path = GetFullPath(fileName);
         if (path is null)
@@ -174,10 +183,23 @@ public sealed class BackupService : IBackupService
         }
 
         string? staging = null;
+        string? decrypted = null;
         try
         {
+            var decrypt = await DecryptToTempAsync(path, password, cancellationToken).ConfigureAwait(false);
+            if (decrypt.Result != BackupResult.Ok)
+            {
+                return new BackupOutcome(decrypt.Result);
+            }
+
+            var zipPath = decrypt.Path!;
+            if (zipPath != path)
+            {
+                decrypted = zipPath;
+            }
+
             var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
-            var outcome = BackupArchiveValidator.Validate(path, known);
+            var outcome = BackupArchiveValidator.Validate(zipPath, known);
             if (outcome.Result != BackupResult.Ok || outcome.Manifest is null)
             {
                 return outcome.Result is BackupResult.TooNew ? outcome with { File = ReadInfo(path) } : outcome;
@@ -185,7 +207,7 @@ public sealed class BackupService : IBackupService
 
             // Die Zählwerte der Rückfrage stammen aus der geprüften Datenbank, nicht aus dem Manifest (das eine präparierte Datei beliebig beschreiben kann).
             staging = Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var staged = await StageAsync(path, outcome.Manifest, staging, databaseOnly: true, cancellationToken).ConfigureAwait(false);
+            var staged = await StageAsync(zipPath, outcome.Manifest, staging, databaseOnly: true, cancellationToken).ConfigureAwait(false);
             if (staged.Result != BackupResult.Ok || staged.Counts is null)
             {
                 return new BackupOutcome(staged.Result);
@@ -202,6 +224,7 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
+            BackupFileCleanup.DeleteFile(decrypted);
             BackupFileCleanup.DeleteDirectory(staging);
             BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
             _gate.Release();
@@ -209,7 +232,7 @@ public sealed class BackupService : IBackupService
     }
 
     /// <inheritdoc />
-    public async Task<BackupResult> RestoreAsync(string fileName, CancellationToken cancellationToken = default)
+    public async Task<BackupResult> RestoreAsync(string fileName, string? password = null, CancellationToken cancellationToken = default)
     {
         if (!_gate.Wait(0, CancellationToken.None))
         {
@@ -217,6 +240,7 @@ public sealed class BackupService : IBackupService
         }
 
         string? staging = null;
+        string? decrypted = null;
         try
         {
             await _initializer.InitializeAsync().ConfigureAwait(false);
@@ -226,8 +250,20 @@ public sealed class BackupService : IBackupService
                 return BackupResult.NotFound;
             }
 
+            var decrypt = await DecryptToTempAsync(path, password, cancellationToken).ConfigureAwait(false);
+            if (decrypt.Result != BackupResult.Ok)
+            {
+                return decrypt.Result;
+            }
+
+            var zipPath = decrypt.Path!;
+            if (zipPath != path)
+            {
+                decrypted = zipPath;
+            }
+
             var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
-            var validation = BackupArchiveValidator.Validate(path, known);
+            var validation = BackupArchiveValidator.Validate(zipPath, known);
             if (validation.Result != BackupResult.Ok || validation.Manifest is null)
             {
                 return validation.Result;
@@ -235,7 +271,7 @@ public sealed class BackupService : IBackupService
 
             var dataDirectory = _paths.GetDataDirectory();
             staging = Path.Combine(dataDirectory, BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var staged = await StageAsync(path, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
+            var staged = await StageAsync(zipPath, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
             if (staged.Result != BackupResult.Ok)
             {
                 return staged.Result;
@@ -253,6 +289,7 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
+            BackupFileCleanup.DeleteFile(decrypted);
             BackupFileCleanup.DeleteDirectory(staging);
             BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
             _gate.Release();
@@ -260,7 +297,7 @@ public sealed class BackupService : IBackupService
     }
 
     /// <inheritdoc />
-    public async Task<BackupOutcome> ImportAsync(PickedBackupFile file, CancellationToken cancellationToken = default)
+    public async Task<BackupOutcome> ImportAsync(PickedBackupFile file, string? password = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(file);
         if (!_gate.Wait(0, CancellationToken.None))
@@ -269,20 +306,46 @@ public sealed class BackupService : IBackupService
         }
 
         string? tempPath = null;
+        string? decrypted = null;
         string? staging = null;
         try
         {
             await _initializer.InitializeAsync().ConfigureAwait(false);
             var directory = GetBackupDirectory();
             Directory.CreateDirectory(directory);
+
+            // Der Blick auf den Header vor dem Kopieren trennt die Fälle früh: keine Datei (ungültige Datei), zu neue Version oder fehlendes Passwort.
+            await using (var peek = await file.OpenReadAsync().ConfigureAwait(false))
+            {
+                // Der Picker-Strom muss nicht seekbar sein; für die Erkennung wandert der Dateianfang dann in einen seekbaren Puffer, damit beide Lesevorgänge denselben Anfang sehen.
+                await using var buffered = peek.CanSeek ? null : await BufferHeaderAsync(peek, cancellationToken).ConfigureAwait(false);
+                var peekResult = ClassifyContainer(buffered ?? peek, password).Result;
+                if (peekResult != BackupResult.Ok)
+                {
+                    return new BackupOutcome(peekResult);
+                }
+            }
+
             tempPath = Path.Combine(directory, "import-" + Guid.NewGuid().ToString("N") + BackupFormat.TempExtension);
             if (!await CopyLimitedAsync(file, tempPath, cancellationToken).ConfigureAwait(false))
             {
                 return new BackupOutcome(BackupResult.InvalidFile);
             }
 
+            var decrypt = await DecryptToTempAsync(tempPath, password, cancellationToken).ConfigureAwait(false);
+            if (decrypt.Result != BackupResult.Ok)
+            {
+                return new BackupOutcome(decrypt.Result);
+            }
+
+            var zipPath = decrypt.Path!;
+            if (zipPath != tempPath)
+            {
+                decrypted = zipPath;
+            }
+
             var known = await GetKnownMigrationsAsync().ConfigureAwait(false);
-            var validation = BackupArchiveValidator.Validate(tempPath, known);
+            var validation = BackupArchiveValidator.Validate(zipPath, known);
             if (validation.Result != BackupResult.Ok || validation.Manifest is null)
             {
                 return validation;
@@ -290,7 +353,7 @@ public sealed class BackupService : IBackupService
 
             // Eine externe Datei gilt erst als gültige Sicherung, wenn auch ihre Datenbank die Prüfung der Wiederherstellung besteht (Prüfsummen, Migration, Schema).
             staging = Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName, Guid.NewGuid().ToString("N"));
-            var staged = await StageAsync(tempPath, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
+            var staged = await StageAsync(zipPath, validation.Manifest, staging, databaseOnly: false, cancellationToken).ConfigureAwait(false);
             if (staged.Result != BackupResult.Ok)
             {
                 return new BackupOutcome(staged.Result);
@@ -309,6 +372,7 @@ public sealed class BackupService : IBackupService
         }
         finally
         {
+            BackupFileCleanup.DeleteFile(decrypted);
             BackupFileCleanup.DeleteFile(tempPath);
             BackupFileCleanup.DeleteDirectory(staging);
             BackupFileCleanup.DeleteDirectory(Path.Combine(_paths.GetDataDirectory(), BackupFormat.StagingDirectoryName), onlyIfEmpty: true);
@@ -384,13 +448,113 @@ public sealed class BackupService : IBackupService
     private static BackupFileInfo ReadInfo(string path)
     {
         var info = new FileInfo(path);
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (BackupCrypto.IsEncrypted(stream))
+            {
+                // Bei der verschlüsselten Datei liegt nur der unverschlüsselte Header offen; Manifest und Zählwerte bleiben bis zur Eingabe des Passworts verborgen.
+                return new BackupFileInfo(info.Name, info.LastWriteTimeUtc, info.Length, string.Empty, BackupCrypto.ReadHeader(stream) is not null, IsEncrypted: true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Eine gesperrte Datei ist in der Liste nicht lesbar — wie bei ReadManifest.
+            return new BackupFileInfo(info.Name, info.LastWriteTimeUtc, info.Length, string.Empty, false, IsEncrypted: false);
+        }
+
         var manifest = BackupArchiveValidator.ReadManifest(path);
         if (manifest is { Format: BackupFormat.FormatName, SchemaVersion: >= 1 })
         {
-            return new BackupFileInfo(info.Name, DateTime.SpecifyKind(manifest.CreatedUtc, DateTimeKind.Utc), info.Length, manifest.AppVersion ?? string.Empty, true);
+            return new BackupFileInfo(info.Name, DateTime.SpecifyKind(manifest.CreatedUtc, DateTimeKind.Utc), info.Length, manifest.AppVersion ?? string.Empty, true, IsEncrypted: false);
         }
 
-        return new BackupFileInfo(info.Name, info.LastWriteTimeUtc, info.Length, string.Empty, false);
+        return new BackupFileInfo(info.Name, info.LastWriteTimeUtc, info.Length, string.Empty, false, IsEncrypted: false);
+    }
+
+    private static async Task<(BackupResult Result, string? Path)> DecryptToTempAsync(string sourcePath, string? password, CancellationToken cancellationToken)
+    {
+        // Unverschlüsselte Dateien gehen ohne Zwischenschritt in die bisherige Prüfung; der Container landet entschlüsselt in einer temporären Datei.
+        await using var stream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, BackupLimits.BufferSize, useAsync: true);
+        var classified = ClassifyContainer(stream, password);
+        if (classified.Result != BackupResult.Ok)
+        {
+            return (classified.Result, null);
+        }
+
+        if (classified.Header is null)
+        {
+            return (BackupResult.Ok, sourcePath);
+        }
+
+        var tempPath = Path.Combine(Path.GetDirectoryName(sourcePath)!, "decrypt-" + Guid.NewGuid().ToString("N") + BackupFormat.TempExtension);
+        try
+        {
+            await BackupCrypto.DecryptAsync(sourcePath, tempPath, password!, cancellationToken).ConfigureAwait(false);
+            return (BackupResult.Ok, tempPath);
+        }
+        catch (Exception ex) when (ex is CryptographicException or EndOfStreamException)
+        {
+            // Falsches Passwort und manipulierter/verkürzter Chiffretext sind an der AEAD-Prüfung nicht unterscheidbar (ADR 0019).
+            BackupFileCleanup.DeleteFile(tempPath);
+            return (BackupResult.WrongPassword, null);
+        }
+        catch (InvalidDataException)
+        {
+            BackupFileCleanup.DeleteFile(tempPath);
+            return (BackupResult.InvalidFile, null);
+        }
+        catch (Exception)
+        {
+            BackupFileCleanup.DeleteFile(tempPath);
+            throw;
+        }
+    }
+
+    private static (BackupResult Result, BackupEncryptionHeader? Header) ClassifyContainer(Stream stream, string? password)
+    {
+        // Die gemeinsame Einordnung des Dateianfangs: unverschlüsselt (Ok ohne Header), defekter Header, zu neue Version oder fehlendes Passwort.
+        if (!BackupCrypto.IsEncrypted(stream))
+        {
+            return (BackupResult.Ok, null);
+        }
+
+        var header = BackupCrypto.ReadHeader(stream);
+        if (header is null)
+        {
+            return (BackupResult.InvalidFile, null);
+        }
+
+        if (header.ContainerVersion > BackupFormat.EncryptedContainerVersion)
+        {
+            return (BackupResult.TooNew, header);
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            return (BackupResult.PasswordRequired, header);
+        }
+
+        return (BackupResult.Ok, header);
+    }
+
+    private static async Task<MemoryStream> BufferHeaderAsync(Stream stream, CancellationToken cancellationToken)
+    {
+        // Liest höchstens die größtmögliche Headerlänge des nicht seekbaren Stroms in einen seekbaren Puffer für die Erkennung.
+        var buffer = new byte[BackupLimits.MaxEncryptedHeaderBytes];
+        var total = 0;
+        while (total < buffer.Length)
+        {
+            var read = await stream.ReadAsync(buffer.AsMemory(total), cancellationToken).ConfigureAwait(false);
+            if (read == 0)
+            {
+                break;
+            }
+
+            total += read;
+        }
+
+        return new MemoryStream(buffer, 0, total, writable: false);
     }
 
     private static void CleanUpLeftovers(string directory)

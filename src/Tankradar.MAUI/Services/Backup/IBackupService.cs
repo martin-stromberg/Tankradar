@@ -3,16 +3,17 @@ using Tankradar.MAUI.Models.Backup;
 namespace Tankradar.MAUI.Services.Backup;
 
 /// <summary>
-/// Lokale Sicherung und Wiederherstellung der Daten (Datenbank und Belegfotos) als ZIP-Datei im Datenverzeichnis.
+/// Lokale Sicherung und Wiederherstellung der Daten (Datenbank und Belegfotos) als ZIP-Datei im Datenverzeichnis, optional passwortverschlüsselt (ADR 0019).
 /// </summary>
 public interface IBackupService
 {
     /// <summary>
     /// Erstellt eine Sicherung aus einem konsistenten Datenbankstand und allen Belegfotos.
     /// </summary>
+    /// <param name="password">Das Passwort für eine verschlüsselte Datei; <see langword="null"/> oder leer erzeugt die unverschlüsselte Datei.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns><see cref="BackupResult.Ok"/> mit der neuen Sicherung, <see cref="BackupResult.Busy"/> oder <see cref="BackupResult.Failed"/>; bei einem Fehler bleibt keine halbe Datei zurück.</returns>
-    Task<BackupOutcome> CreateAsync(CancellationToken cancellationToken = default);
+    Task<BackupOutcome> CreateAsync(string? password = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Listet die vorhandenen Sicherungen, neueste zuerst. Nicht lesbare Dateien erscheinen gekennzeichnet.
@@ -25,25 +26,28 @@ public interface IBackupService
     /// Prüft die Struktur einer Sicherung und liefert ihr Manifest (für die Rückfrage vor der Wiederherstellung); verändert nichts.
     /// </summary>
     /// <param name="fileName">Der Dateiname aus der Liste.</param>
+    /// <param name="password">Das Passwort, wenn die Datei verschlüsselt ist; ohne Passwort antwortet <see cref="BackupResult.PasswordRequired"/>.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
-    /// <returns>Das Ergebnis mit Datei und Manifest bei <see cref="BackupResult.Ok"/>.</returns>
-    Task<BackupOutcome> InspectAsync(string fileName, CancellationToken cancellationToken = default);
+    /// <returns>Das Ergebnis mit Datei und Manifest bei <see cref="BackupResult.Ok"/>; <see cref="BackupResult.WrongPassword"/> bei falscher Eingabe oder beschädigter Datei.</returns>
+    Task<BackupOutcome> InspectAsync(string fileName, string? password = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Stellt die Daten aus einer Sicherung wieder her: vollständige Prüfung, Entpacken in ein Staging-Verzeichnis, Migration, atomarer Austausch mit Rollback.
     /// </summary>
     /// <param name="fileName">Der Dateiname aus der Liste.</param>
+    /// <param name="password">Das Passwort, wenn die Datei verschlüsselt ist; ohne Passwort antwortet <see cref="BackupResult.PasswordRequired"/>.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Das Ergebnis; außer bei <see cref="BackupResult.Ok"/> sind die bisherigen Daten unverändert.</returns>
-    Task<BackupResult> RestoreAsync(string fileName, CancellationToken cancellationToken = default);
+    Task<BackupResult> RestoreAsync(string fileName, string? password = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Übernimmt eine externe Datei nach vollständiger Prüfung in die Liste der Sicherungen.
     /// </summary>
     /// <param name="file">Die gewählte Datei.</param>
+    /// <param name="password">Das Passwort, wenn die Datei verschlüsselt ist; ohne Passwort antwortet <see cref="BackupResult.PasswordRequired"/>, ohne die Datei zu kopieren.</param>
     /// <param name="cancellationToken">Abbruchsignal.</param>
     /// <returns>Das Ergebnis mit der neuen Sicherung bei <see cref="BackupResult.Ok"/>; bei <see cref="BackupResult.TooNew"/> mit dem Manifest.</returns>
-    Task<BackupOutcome> ImportAsync(PickedBackupFile file, CancellationToken cancellationToken = default);
+    Task<BackupOutcome> ImportAsync(PickedBackupFile file, string? password = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Löscht eine Sicherung.

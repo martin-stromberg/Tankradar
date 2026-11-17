@@ -34,6 +34,7 @@
     <Compile Include="..\TestSupport\MockTileServer.cs" Link="TestSupport\MockTileServer.cs" />
     <Compile Include="..\TestSupport\LoopbackHttpListener.cs" Link="TestSupport\LoopbackHttpListener.cs" />
     <Compile Include="..\TestSupport\BackupTestArchive.cs" Link="TestSupport\BackupTestArchive.cs" />
+    <Compile Include="..\TestSupport\BackupEncryptedTestArchive.cs" Link="TestSupport\BackupEncryptedTestArchive.cs" />
     <Compile Include="..\TestSupport\BackupTestTampering.cs" Link="TestSupport\BackupTestTampering.cs" />
     <Compile Include="..\TestSupport\RecordingLogger.cs" Link="TestSupport\RecordingLogger.cs" />
   </ItemGroup>

@@ -137,6 +137,52 @@ public abstract class BackupE2ETestBase : TankbookE2ETestBase
     }
 
     /// <summary>
+    /// Trägt ein Passwort in beide Passwortfelder des Erstellens ein.
+    /// </summary>
+    /// <param name="password">Das Passwort.</param>
+    /// <param name="repeat">Die Wiederholung; <see langword="null"/> wiederholt das Passwort.</param>
+    protected void EnterPassword(string password, string? repeat = null)
+    {
+        TypePassword("Settings.Backup.Password", password);
+        TypePassword("Settings.Backup.PasswordRepeat", repeat ?? password);
+    }
+
+    /// <summary>
+    /// Wartet, bis das Passwort-Stadium der Wiederherstellung eines Eintrags angezeigt wird.
+    /// </summary>
+    /// <param name="item">Der Listenplatz ab 1.</param>
+    protected void WaitForPasswordStage(int item)
+    {
+        WaitForAutomationId(ItemId(item, "RestorePassword"));
+    }
+
+    /// <summary>
+    /// Trägt ein Passwort im Passwort-Stadium ein und löst die Prüfung aus.
+    /// </summary>
+    /// <param name="item">Der Listenplatz ab 1.</param>
+    /// <param name="password">Das Passwort.</param>
+    protected void EnterRestorePassword(int item, string password)
+    {
+        WaitForPasswordStage(item);
+        TypePassword(ItemId(item, "RestorePassword"), password);
+        Press(ItemId(item, "RestoreUnlock"));
+    }
+
+    /// <summary>
+    /// Stellt eine verschlüsselte Sicherung über Passwort-Stadium und Rückfrage wieder her.
+    /// </summary>
+    /// <param name="item">Der Listenplatz ab 1.</param>
+    /// <param name="password">Das Passwort.</param>
+    protected void RestoreEncryptedBackup(int item, string password)
+    {
+        Press(ItemId(item, "Restore"));
+        EnterRestorePassword(item, password);
+        WaitForAutomationId(ItemId(item, "RestoreConfirm"));
+        Press(ItemId(item, "RestoreConfirm"));
+        WaitForStatus(RestoredMessage);
+    }
+
+    /// <summary>
     /// Liest, ob der Schalter „In der Nähe“ eingeschaltet ist.
     /// </summary>
     /// <returns><see langword="true"/>, wenn eingeschaltet.</returns>

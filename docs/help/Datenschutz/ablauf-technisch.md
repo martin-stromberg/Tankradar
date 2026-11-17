@@ -37,7 +37,7 @@ Weitere `NS…UsageDescription`-Schlüssel sind nicht erlaubt (Test `Info_plist_
 
 ## Dateischutz
 
-Die Schutzklasse ist bewusst `CompleteUntilFirstUserAuthentication`: Die höchste Klasse (`Complete`) würde Datenbankzugriffe im gesperrten Zustand (Aktualisierung im Hintergrund) verhindern. Neue Dateien in geschützten Verzeichnissen erben die Klasse; ausdrücklich geschützt werden Datenbank, `-wal`, `-shm`, Belegfotos (`ReceiptPhotoStore`), fertige Sicherungen (`BackupService`) und fertige Exportdateien (`TankbookExportService`, Test `Create_ProtectsFinishedFile`).
+Die Schutzklasse ist bewusst `CompleteUntilFirstUserAuthentication`: Die höchste Klasse (`Complete`) würde Datenbankzugriffe im gesperrten Zustand (Aktualisierung im Hintergrund) verhindern. Neue Dateien in geschützten Verzeichnissen erben die Klasse; ausdrücklich geschützt werden Datenbank, `-wal`, `-shm`, Belegfotos (`ReceiptPhotoStore`), fertige Sicherungen (`BackupService`) und fertige Exportdateien (`TankbookExportService`, Test `Create_ProtectsFinishedFile`). Zusätzlich zum Dateischutz können Sicherungen seit ADR 0019 beim Erstellen optional mit einem Passwort verschlüsselt werden (PBKDF2-HMAC-SHA256, AES-256-GCM); das Passwort wird nirgendwo gespeichert.
 
 ## Prüfungen ohne Mac
 
