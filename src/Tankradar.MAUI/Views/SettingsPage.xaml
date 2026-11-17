@@ -408,6 +408,52 @@
             </Border>
 
             <Border Style="{StaticResource SettingsCard}"
+                    IsVisible="{Binding HasDiagnostics}">
+                <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding Diagnostics}" x:DataType="vm:DiagnosticsViewModel">
+                    <Label Text="{Binding Heading}"
+                           Style="{StaticResource headline-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           SemanticProperties.HeadingLevel="Level2"
+                           AutomationId="Settings.Diagnostics.Heading" />
+                    <Label Text="{Binding Hint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Diagnostics.Hint" />
+                    <Label Text="{Binding PrivacyHint}"
+                           Style="{StaticResource body-sm}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                           AutomationId="Settings.Diagnostics.PrivacyHint" />
+                    <Button Text="{Binding PreviewButtonText}"
+                            Command="{Binding PreviewCommand}"
+                            Style="{StaticResource TankbookOutlineButton}"
+                            AutomationId="Settings.Diagnostics.Preview" />
+                    <VerticalStackLayout IsVisible="{Binding HasPreview}" Spacing="{StaticResource space-sm}">
+                        <Label Text="{Binding PreviewHeading}"
+                               Style="{StaticResource body-md}"
+                               TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                               AutomationId="Settings.Diagnostics.PreviewHeading" />
+                        <ScrollView MaximumHeightRequest="240">
+                            <Label Text="{Binding PreviewText}"
+                                   Style="{StaticResource body-sm}"
+                                   FontFamily="JetBrainsMonoRegular"
+                                   TextColor="{AppThemeBinding Light={StaticResource ColorTextSecondaryLight}, Dark={StaticResource ColorTextSecondaryDark}}"
+                                   AutomationId="Settings.Diagnostics.PreviewText" />
+                        </ScrollView>
+                    </VerticalStackLayout>
+                    <Button Text="{Binding ShareButtonText}"
+                            Command="{Binding ShareCommand}"
+                            IsEnabled="{Binding HasPreview}"
+                            Style="{StaticResource TankbookButton}"
+                            AutomationId="Settings.Diagnostics.Share" />
+                    <Label Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
+                           Style="{StaticResource body-md}"
+                           TextColor="{AppThemeBinding Light={StaticResource ColorTextPrimaryLight}, Dark={StaticResource ColorTextPrimaryDark}}"
+                           AutomationId="Settings.Diagnostics.Status" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}"
                     IsVisible="{Binding HasDataSource}">
                 <VerticalStackLayout Spacing="{StaticResource space-sm}" BindingContext="{Binding DataSource}" x:DataType="vm:DataSourceViewModel">
                     <Label Text="{Binding Heading}"
