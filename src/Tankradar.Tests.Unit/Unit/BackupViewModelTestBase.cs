@@ -17,8 +17,8 @@ public abstract class BackupViewModelTestBase : BaseTest
     {
         Service.Files =
         [
-            new BackupFileInfo("tankatlas-backup-20261012-131500.zip", new DateTime(2026, 10, 12, 13, 15, 0, DateTimeKind.Utc), 1_258_291, "0.1.19", true),
-            new BackupFileInfo("tankatlas-backup-20261011-080000.zip", new DateTime(2026, 10, 11, 8, 0, 0, DateTimeKind.Utc), 900, "0.1.18", true),
+            new BackupFileInfo("tankatlas-backup-20261012-131500.zip", new DateTime(2026, 10, 12, 13, 15, 0, DateTimeKind.Utc), 1_258_291, "0.1.19", true, false),
+            new BackupFileInfo("tankatlas-backup-20261011-080000.zip", new DateTime(2026, 10, 11, 8, 0, 0, DateTimeKind.Utc), 900, "0.1.18", true, false),
         ];
         ViewModel = new BackupViewModel(Service, Picker, Sharer, Restore, Announcer, new ListLogger<BackupViewModel>());
     }

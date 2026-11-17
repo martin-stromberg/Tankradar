@@ -13,6 +13,7 @@ public sealed class TankbookE2EDriver
 {
     private readonly Func<Window> _window;
     private readonly Action<string, string> _setFieldValue;
+    private readonly Action<string, string> _setSecretValue;
     private readonly Action<Func<bool>, string> _waitUntil;
     private readonly Action<string, string[]> _navigateToTab;
 
@@ -23,10 +24,12 @@ public sealed class TankbookE2EDriver
     /// <param name="setFieldValue">Trägt einen Text in ein Eingabefeld ein und wartet, bis die App ihn übernommen hat.</param>
     /// <param name="waitUntil">Wartet auf eine Bedingung und schlägt sonst mit der Meldung fehl.</param>
     /// <param name="navigateToTab">Wechselt in einen Reiter der App (Titel, AutomationIds gleichwertiger Zielseiten; ohne Angabe wird der Seitentitel der Shell geprüft).</param>
-    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string[]> navigateToTab)
+    /// <param name="setSecretValue">Trägt ein Geheimnis in ein Passwortfeld ein (maskierte Rückmeldung); ohne Angabe fällt <see cref="TypePassword"/> auf <paramref name="setFieldValue"/> zurück.</param>
+    public TankbookE2EDriver(Func<Window> window, Action<string, string> setFieldValue, Action<Func<bool>, string> waitUntil, Action<string, string[]> navigateToTab, Action<string, string>? setSecretValue = null)
     {
         _window = window;
         _setFieldValue = setFieldValue;
+        _setSecretValue = setSecretValue ?? setFieldValue;
         _waitUntil = waitUntil;
         _navigateToTab = navigateToTab;
     }
@@ -216,6 +219,17 @@ public sealed class TankbookE2EDriver
     public void Type(string automationId, string text)
     {
         _setFieldValue(automationId, text);
+    }
+
+    /// <summary>
+    /// Trägt das Geheimnis in das Passwortfeld mit der AutomationId ein und wartet, bis die App es übernommen hat.
+    /// Passwortfelder melden über die UI-Automation nur Maskierungszeichen — der Klartext lässt sich nicht zurücklesen.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Passwortfelds.</param>
+    /// <param name="text">Das Geheimnis.</param>
+    public void TypePassword(string automationId, string text)
+    {
+        _setSecretValue(automationId, text);
     }
 
     /// <summary>

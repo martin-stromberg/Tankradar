@@ -2,6 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Export-Compliance (Entscheidung vom 2026-11-17): false bleibt, weil ausschließlich betriebssystemimplementierte Standardverfahren genutzt werden — auch für die optionale Sicherungsverschlüsselung (PBKDF2, AES-256-GCM über .NET/Apple-Crypto, siehe docs/adr/0019-backup-encryption.md). -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

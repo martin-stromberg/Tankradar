@@ -54,7 +54,7 @@ public class SettingsViewModelTests_Backup : BaseTest
     [Fact]
     public async Task Restored_ReloadsSettings()
     {
-        _service.Files = [new MAUI.Models.Backup.BackupFileInfo("tankatlas-backup-1.zip", DateTime.UtcNow, 10, "0.1.19", true)];
+        _service.Files = [new MAUI.Models.Backup.BackupFileInfo("tankatlas-backup-1.zip", DateTime.UtcNow, 10, "0.1.19", true, false)];
         var backup = CreateBackup();
         var viewModel = new SettingsViewModel(_settings, new ListLogger<SettingsViewModel>(), _notifier, null, backup);
         await viewModel.LoadAsync();

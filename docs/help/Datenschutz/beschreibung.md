@@ -50,7 +50,7 @@ Hinweis zur Einordnung: Nach Apples Definition gilt ein Abruf nur dann als „Sa
 
 **Tracking:** Nein (`NSPrivacyTracking` = false, keine Tracking-Domains).
 
-**Export-Compliance:** `ITSAppUsesNonExemptEncryption` = false in der Info.plist. Die App nutzt ausschließlich die Standard-Verschlüsselung des Betriebssystems (HTTPS/TLS, Keychain, Dateischutz) und keine eigene oder nicht freigestellte Verschlüsselung. Die Frage in App Store Connect entfällt damit.
+**Export-Compliance:** `ITSAppUsesNonExemptEncryption` = false in der Info.plist (Entscheidung vom 2026-11-17). Die App nutzt ausschließlich betriebssystemimplementierte Standardverfahren (HTTPS/TLS, Keychain, Dateischutz sowie PBKDF2 und AES-256-GCM über .NET/Apple-Crypto für den optionalen Passwortschutz der Sicherungen, siehe [ADR 0019](../../adr/0019-backup-encryption.md)) — keine proprietären oder nicht freigestellten Algorithmen; der Quelltext ist öffentlich publiziert. Die Frage in App Store Connect entfällt damit; die endgültige Erklärung verifiziert der Inhaber bei der nächsten Einreichung.
 
 **Datenschutzerklärung (URL):** App Store Connect verlangt eine öffentlich erreichbare Datenschutzerklärung. Sie ist noch zu erstellen und zu veröffentlichen (Verantwortlicher ist der Inhaber, nicht eine Marke); der Inhalt der Abschnitte oben ist die Grundlage. Offen: Der Inhaber nennt die URL.
 

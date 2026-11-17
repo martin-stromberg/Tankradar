@@ -26,7 +26,7 @@ public static class BackupTexts
     public const string Hint = "Eine Sicherung enthält deine Einstellungen, Favoriten, Fahrzeuge, Tank- und Ladevorgänge mit Belegfotos und die gespeicherten Preisstände. "
         + "Nicht enthalten sind der Zugangsschlüssel zum Preisdienst, Kartenkacheln und dein Standort. "
         + "Sicherungen entstehen nur auf deine Veranlassung und liegen nur auf diesem Gerät; die App überträgt sie nicht automatisch. "
-        + "Wenn du eine Sicherung teilst oder speicherst, ist die Datei nicht verschlüsselt.";
+        + "Wenn du eine Sicherung teilst oder speicherst, ist die Datei nur dann verschlüsselt, wenn du sie beim Erstellen mit einem Passwort geschützt hast.";
 
     /// <summary>
     /// Beschriftung der Schaltfläche „Sicherung erstellen“.
@@ -77,6 +77,56 @@ public static class BackupTexts
     /// Kennzeichnung einer nicht lesbaren Sicherungsdatei.
     /// </summary>
     public const string Unreadable = "nicht lesbar";
+
+    /// <summary>
+    /// Kennzeichnung einer verschlüsselten Sicherungsdatei.
+    /// </summary>
+    public const string Encrypted = "verschlüsselt";
+
+    /// <summary>
+    /// Platzhalter der Passwortfelder (bei der Erstellung erklärt der Hinweis, dass das Feld frei bleiben darf).
+    /// </summary>
+    public const string PasswordPlaceholder = "Passwort";
+
+    /// <summary>
+    /// Platzhalter des Wiederholungsfelds beim Erstellen.
+    /// </summary>
+    public const string PasswordRepeatPlaceholder = "Passwort wiederholen";
+
+    /// <summary>
+    /// Hinweis zu den Passwortfeldern beim Erstellen.
+    /// </summary>
+    public const string PasswordHint = "Ohne Passwort wird die Sicherung unverschlüsselt angelegt. Das Passwort wird nicht gespeichert; ohne es lässt sich eine verschlüsselte Sicherung nicht mehr öffnen.";
+
+    /// <summary>
+    /// Meldung, wenn die beiden Passworteingaben unterschiedlich sind.
+    /// </summary>
+    public const string PasswordsDoNotMatch = "Die beiden Passwörter stimmen nicht überein. Es wurde keine Sicherung erstellt.";
+
+    /// <summary>
+    /// Rückfrage nach dem Passwort einer verschlüsselten Sicherung in der Liste.
+    /// </summary>
+    public const string PasswordQuestion = "Diese Sicherung ist mit einem Passwort verschlüsselt. Gib das Passwort ein, um sie zu prüfen und wiederherzustellen.";
+
+    /// <summary>
+    /// Rückfrage nach dem Passwort einer verschlüsselten Datei beim Einspielen.
+    /// </summary>
+    public const string ImportPasswordQuestion = "Die gewählte Datei ist mit einem Passwort verschlüsselt. Gib das Passwort ein, um sie einzuspielen.";
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche, die das Passwort prüft.
+    /// </summary>
+    public const string UnlockButton = "Prüfen";
+
+    /// <summary>
+    /// Meldung bei fehlendem Passwort für eine verschlüsselte Datei.
+    /// </summary>
+    public const string PasswordRequired = "Diese Sicherung ist verschlüsselt. Gib das Passwort ein. Deine Daten wurden nicht verändert.";
+
+    /// <summary>
+    /// Meldung bei falschem Passwort oder beschädigter verschlüsselter Datei.
+    /// </summary>
+    public const string WrongPassword = "Das Passwort ist falsch oder die Datei ist beschädigt. Deine Daten wurden nicht verändert.";
 
     /// <summary>
     /// Meldung nach dem Erstellen.
@@ -154,6 +204,8 @@ public static class BackupTexts
             BackupResult.TooNew => FormatTooNew(appVersion),
             BackupResult.Busy => Busy,
             BackupResult.Failed => Failed,
+            BackupResult.PasswordRequired => PasswordRequired,
+            BackupResult.WrongPassword => WrongPassword,
             _ => Failed,
         };
     }
@@ -209,7 +261,7 @@ public static class BackupTexts
     }
 
     /// <summary>
-    /// Liefert den Titel eines Listeneintrags (Datum, bei nicht lesbaren Dateien mit Kennzeichnung).
+    /// Liefert den Titel eines Listeneintrags (Datum, bei nicht lesbaren und bei verschlüsselten Dateien mit Kennzeichnung).
     /// </summary>
     /// <param name="info">Der Eintrag.</param>
     /// <returns>Der Text.</returns>
@@ -217,7 +269,12 @@ public static class BackupTexts
     {
         ArgumentNullException.ThrowIfNull(info);
         var date = FormatDate(info.CreatedUtc);
-        return info.IsReadable ? date : $"{date} ({Unreadable})";
+        if (!info.IsReadable)
+        {
+            return $"{date} ({Unreadable})";
+        }
+
+        return info.IsEncrypted ? $"{date} ({Encrypted})" : date;
     }
 
     /// <summary>

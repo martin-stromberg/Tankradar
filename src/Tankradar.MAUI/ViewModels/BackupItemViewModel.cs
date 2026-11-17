@@ -12,6 +12,8 @@ public sealed class BackupItemViewModel : BaseViewModel
 {
     private bool _isConfirmingRestore;
     private string _restoreQuestion = string.Empty;
+    private bool _isPasswordStage;
+    private string _restorePassword = string.Empty;
     private bool _isConfirmingDelete;
     private string _deleteQuestion = string.Empty;
 
@@ -21,6 +23,7 @@ public sealed class BackupItemViewModel : BaseViewModel
     /// <param name="info">Die Sicherung.</param>
     /// <param name="index">Die 1-basierte Position in der Liste (neueste zuerst); Grundlage der AutomationIds.</param>
     /// <param name="restore">Startet die Wiederherstellung (zeigt die Rückfrage).</param>
+    /// <param name="unlockRestore">Prüft das eingegebene Passwort einer verschlüsselten Sicherung (zeigt danach die Zählwerte).</param>
     /// <param name="confirmRestore">Stellt nach der Bestätigung wieder her.</param>
     /// <param name="share">Gibt die Sicherung weiter.</param>
     /// <param name="delete">Startet das Löschen (zeigt die Rückfrage).</param>
@@ -30,6 +33,7 @@ public sealed class BackupItemViewModel : BaseViewModel
         BackupFileInfo info,
         int index,
         Action<BackupItemViewModel> restore,
+        Action<BackupItemViewModel> unlockRestore,
         Action<BackupItemViewModel> confirmRestore,
         Action<BackupItemViewModel> share,
         Action<BackupItemViewModel> delete,
@@ -46,6 +50,7 @@ public sealed class BackupItemViewModel : BaseViewModel
         ShareHint = BackupTexts.FormatShareHint(info.CreatedUtc);
         DeleteHint = BackupTexts.FormatDeleteHint(info.CreatedUtc);
         RestoreCommand = new Command(() => restore(this), canExecute);
+        UnlockRestoreCommand = new Command(() => unlockRestore(this), canExecute);
         ConfirmRestoreCommand = new Command(() => confirmRestore(this), canExecute);
         ShareCommand = new Command(() => share(this), canExecute);
         DeleteCommand = new Command(() => delete(this), canExecute);
@@ -103,16 +108,54 @@ public sealed class BackupItemViewModel : BaseViewModel
     public bool IsConfirmingRestore
     {
         get => _isConfirmingRestore;
-        private set => SetProperty(ref _isConfirmingRestore, value);
+        private set
+        {
+            if (SetProperty(ref _isConfirmingRestore, value))
+            {
+                OnPropertyChanged(nameof(IsCountStage));
+            }
+        }
     }
 
     /// <summary>
-    /// Die Rückfrage zur Wiederherstellung mit Datum, Version und Zählwerten.
+    /// Die Rückfrage zur Wiederherstellung mit Datum, Version und Zählwerten; im Passwort-Stadium die Passwortabfrage.
     /// </summary>
     public string RestoreQuestion
     {
         get => _restoreQuestion;
         private set => SetProperty(ref _restoreQuestion, value);
+    }
+
+    /// <summary>
+    /// Gibt an, ob die Rückfrage zur Wiederherstellung gerade das Passwort einer verschlüsselten Sicherung abfragt.
+    /// </summary>
+    public bool IsPasswordStage
+    {
+        get => _isPasswordStage;
+        private set
+        {
+            if (SetProperty(ref _isPasswordStage, value))
+            {
+                OnPropertyChanged(nameof(IsCountStage));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gibt an, ob die Rückfrage zur Wiederherstellung gerade die Zählwerte und die Bestätigungsschaltfläche zeigt.
+    /// </summary>
+    public bool IsCountStage
+    {
+        get { return IsConfirmingRestore && !IsPasswordStage; }
+    }
+
+    /// <summary>
+    /// Das Passwort zur verschlüsselten Sicherung (nie gespeichert; nach der Passwortprüfung für die Bestätigung vorgemerkt).
+    /// </summary>
+    public string RestorePassword
+    {
+        get => _restorePassword;
+        set => SetProperty(ref _restorePassword, value ?? string.Empty);
     }
 
     /// <summary>
@@ -174,6 +217,22 @@ public sealed class BackupItemViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Platzhalter des Passwortfelds im Passwort-Stadium.
+    /// </summary>
+    public string PasswordPlaceholderText
+    {
+        get { return BackupTexts.PasswordPlaceholder; }
+    }
+
+    /// <summary>
+    /// Beschriftung der Schaltfläche, die das Passwort prüft.
+    /// </summary>
+    public string UnlockText
+    {
+        get { return BackupTexts.UnlockButton; }
+    }
+
+    /// <summary>
     /// Beschriftung von „Abbrechen“ in den Rückfragen.
     /// </summary>
     public string CancelText
@@ -185,6 +244,11 @@ public sealed class BackupItemViewModel : BaseViewModel
     /// Befehl „Wiederherstellen“: zeigt die Rückfrage.
     /// </summary>
     public ICommand RestoreCommand { get; }
+
+    /// <summary>
+    /// Befehl „Prüfen“ im Passwort-Stadium: prüft das eingegebene Passwort und zeigt danach die Zählwerte.
+    /// </summary>
+    public ICommand UnlockRestoreCommand { get; }
 
     /// <summary>
     /// Befehl der Bestätigung der Wiederherstellung.
@@ -217,22 +281,37 @@ public sealed class BackupItemViewModel : BaseViewModel
     public ICommand CancelDeleteCommand { get; }
 
     /// <summary>
-    /// Zeigt die Rückfrage zur Wiederherstellung.
+    /// Zeigt die Rückfrage zur Wiederherstellung mit den Zählwerten.
     /// </summary>
     /// <param name="question">Der Text der Rückfrage.</param>
     public void ShowRestoreQuestion(string question)
     {
         RestoreQuestion = question;
         IsConfirmingDelete = false;
+        IsPasswordStage = false;
         IsConfirmingRestore = true;
     }
 
     /// <summary>
-    /// Blendet die Rückfrage zur Wiederherstellung aus.
+    /// Zeigt statt der Zählwerte die Passwortabfrage einer verschlüsselten Sicherung.
+    /// </summary>
+    /// <param name="question">Der Text der Passwortabfrage.</param>
+    public void ShowPasswordQuestion(string question)
+    {
+        RestoreQuestion = question;
+        IsConfirmingDelete = false;
+        IsPasswordStage = true;
+        IsConfirmingRestore = true;
+    }
+
+    /// <summary>
+    /// Blendet die Rückfrage zur Wiederherstellung aus und verwirft ein eingegebenes Passwort.
     /// </summary>
     public void HideRestoreQuestion()
     {
         IsConfirmingRestore = false;
+        IsPasswordStage = false;
+        RestorePassword = string.Empty;
     }
 
     /// <summary>
@@ -259,6 +338,7 @@ public sealed class BackupItemViewModel : BaseViewModel
     public void RefreshCommandStates()
     {
         ((Command)RestoreCommand).ChangeCanExecute();
+        ((Command)UnlockRestoreCommand).ChangeCanExecute();
         ((Command)ConfirmRestoreCommand).ChangeCanExecute();
         ((Command)ShareCommand).ChangeCanExecute();
         ((Command)DeleteCommand).ChangeCanExecute();

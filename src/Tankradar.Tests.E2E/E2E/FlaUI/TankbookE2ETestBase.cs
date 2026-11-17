@@ -59,6 +59,16 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
     }
 
     /// <summary>
+    /// Trägt das Geheimnis in das Passwortfeld mit der AutomationId ein und wartet, bis die App es übernommen hat.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Passwortfelds.</param>
+    /// <param name="text">Das Geheimnis.</param>
+    protected void TypePassword(string automationId, string text)
+    {
+        Tankbook.TypePassword(automationId, text);
+    }
+
+    /// <summary>
     /// Liefert die Texte aller Elemente mit der AutomationId von oben nach unten.
     /// </summary>
     /// <param name="automationId">Die AutomationId.</param>
@@ -132,6 +142,6 @@ public abstract class TankbookE2ETestBase : SettingsE2ETestBase
 
     private TankbookE2EDriver CreateDriver()
     {
-        return new TankbookE2EDriver(() => MainWindow, SetFieldValue, WaitUntil, NavigateToTab);
+        return new TankbookE2EDriver(() => MainWindow, SetFieldValue, WaitUntil, NavigateToTab, SetSecretValue);
     }
 }

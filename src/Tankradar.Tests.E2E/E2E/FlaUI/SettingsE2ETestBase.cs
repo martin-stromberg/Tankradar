@@ -155,6 +155,29 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     }
 
     /// <summary>
+    /// Trägt einen geheimen Text (Passwortfeld mit IsPassword = true) in das Eingabefeld ein. Solche Felder
+    /// melden über das ValuePattern nur Maskierungszeichen; geprüft wird daher auf die Länge statt auf den Klartext. Die anschließende
+    /// Synchronisation über UIA-Roundtrips zum UI-Thread der App bleibt wie bei <see cref="SetFieldValue"/>.
+    /// </summary>
+    /// <param name="automationId">Die AutomationId des Passwortfelds.</param>
+    /// <param name="text">Das Geheimnis.</param>
+    protected void SetSecretValue(string automationId, string text)
+    {
+        var field = WaitForAutomationId(automationId);
+        field.Patterns.Value.Pattern.SetValue(text);
+        WaitUntil(
+            () => FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault is { } value && value.Length == text.Length,
+            $"Das Passwortfeld '{automationId}' enthält keinen Text der Länge {text.Length}.");
+
+        for (var round = 0; round < 8; round++)
+        {
+            _ = FindByAutomationId(automationId)?.Patterns.Value.PatternOrDefault?.Value.ValueOrDefault;
+            _ = MainWindow.Properties.Name.ValueOrDefault;
+            Thread.Sleep(50);
+        }
+    }
+
+    /// <summary>
     /// Wartet, bis die Bedingung erfüllt ist; schlägt andernfalls mit der Meldung fehl.
     /// </summary>
     /// <param name="condition">Die Bedingung.</param>

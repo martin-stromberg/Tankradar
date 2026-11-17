@@ -78,6 +78,51 @@ public static partial class BackupFormat
     public const string WorkDirectoryPrefix = ".work-";
 
     /// <summary>
+    /// Magic-Bytes am Anfang einer verschlüsselten Sicherung (<c>TKBENC01</c>, bewusst ohne <c>PK</c>-Anfang, ADR 0019).
+    /// </summary>
+    public static ReadOnlySpan<byte> EncryptedMagic => "TKBENC01"u8;
+
+    /// <summary>
+    /// Aktuelle Version des verschlüsselten Containers (steht im unverschlüsselten Header, ADR 0019).
+    /// </summary>
+    public const ushort EncryptedContainerVersion = 1;
+
+    /// <summary>
+    /// KDF-Kennung des verschlüsselten Containers: PBKDF2-HMAC-SHA256.
+    /// </summary>
+    public const ushort EncryptedKdfPbkdf2Sha256 = 1;
+
+    /// <summary>
+    /// Iterationszahl der Schlüsselableitung (PBKDF2-HMAC-SHA256, OWASP-Richtwert); steht zusätzlich im Header jeder Datei.
+    /// </summary>
+    public const int Pbkdf2Iterations = 600_000;
+
+    /// <summary>
+    /// Klartext-Größe eines Verschlüsselungschunks in Bytes (1 MiB).
+    /// </summary>
+    public const int EncryptedChunkSize = 1024 * 1024;
+
+    /// <summary>
+    /// Länge des abgeleiteten Schlüssels in Bytes (AES-256).
+    /// </summary>
+    public const int EncryptedKeyBytes = 32;
+
+    /// <summary>
+    /// Länge des Salts der Schlüsselableitung in Bytes.
+    /// </summary>
+    public const int EncryptedSaltBytes = 16;
+
+    /// <summary>
+    /// Länge der Nonce-Basis und der Nonce je Chunk in Bytes (AES-GCM).
+    /// </summary>
+    public const int EncryptedNonceBytes = 12;
+
+    /// <summary>
+    /// Länge des Authentifikations-Tags je Chunk in Bytes.
+    /// </summary>
+    public const int EncryptedTagBytes = 16;
+
+    /// <summary>
     /// Prüft, ob ein Name eine Sicherungsdatei bezeichnet (<c>tankatlas-backup-*.zip</c>, ohne Pfadanteile).
     /// </summary>
     /// <param name="fileName">Der Name.</param>
