@@ -1,0 +1,30 @@
+<Project>
+
+  <!-- Zentrale Paketverwaltung (Central Package Management): Versionen werden nur hier
+       gepflegt; die .csproj führen PackageReference ohne Version. Dependabot
+       (.github/dependabot.yml) erzeugt Update-PRs direkt auf diese Datei. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- MAUI-Version explizit festgelegt, unabhängig von der installierten Workload (Standard wäre MauiWorkloadVersion):
+    Microsoft.Maui.* (Controls, Core, Essentials, Resizetizer) kommen so in jedem Job in derselben Version aus NuGet.
+    Ab 10.0.60 fordert MediaPicker.PhotoAsync auf iOS für die Aufnahme keine PhotosAddOnly-Berechtigung mehr an (dotnet/maui#34287), siehe ADR 0016. -->
+    <MauiVersion>10.0.130</MauiVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15" />
+    <!-- Hebt die transitiv gezogene, als anfällig gemeldete Version 2.1.11 (GHSA-2m69-gcr7-jv3q) an. -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.2" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="FlaUI.Core" Version="5.0.0" />
+    <PackageVersion Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.15" />
+  </ItemGroup>
+
+</Project>

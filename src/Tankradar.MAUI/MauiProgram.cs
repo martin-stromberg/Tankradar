@@ -6,6 +6,7 @@ using Microsoft.Maui.LifecycleEvents;
 using Tankradar.MAUI.Data;
 using Tankradar.MAUI.Services;
 using Tankradar.MAUI.Services.Backup;
+using Tankradar.MAUI.Services.Diagnostics;
 using Tankradar.MAUI.Services.Export;
 using Tankradar.MAUI.Services.Favorites;
 using Tankradar.MAUI.Services.Geocoding;
@@ -90,6 +91,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IBackupSharer>(_ => BackupSharerSelector.Create(
             Environment.GetEnvironmentVariable,
             () => new MauiBackupSharer()));
+        AddDiagnosticsServices(builder.Services);
         AddGeocodingServices(builder.Services);
         AddRoutingServices(builder.Services);
         AddMapServices(builder.Services);
@@ -123,6 +125,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IStationNavigator, ShellStationNavigator>();
         builder.Services.AddSingleton<IFavoriteGroupNavigator, ShellFavoriteGroupNavigator>();
         builder.Services.AddSingleton<ITankbookNavigator, ShellTankbookNavigator>();
+        builder.Services.AddTransient<DiagnosticsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SetupViewModel>();
 
@@ -141,6 +144,8 @@ public static class MauiProgram
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
+        builder.Services.AddSingleton<ILoggerProvider>(provider =>
+            new DiagnosticsLoggerProvider(provider.GetRequiredService<IDiagnosticsLogBuffer>()));
 
         return builder.Build();
     }
@@ -164,6 +169,31 @@ public static class MauiProgram
     private static bool IsTestMode()
     {
         return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(TestDataPaths.TestDataPathEnvironmentVariable));
+    }
+
+    /// <summary>
+    /// Registriert den Diagnosepuffer, den Paketdienst und die Weitergabe des Opt-in-Diagnosepakets (Issue #70).
+    /// Der Puffer liegt nur im Speicher des laufenden Starts; ein Paket entsteht ausschließlich auf Benutzeraktion.
+    /// </summary>
+    /// <param name="services">Die Dienstesammlung.</param>
+    private static void AddDiagnosticsServices(IServiceCollection services)
+    {
+        services.AddSingleton<IDiagnosticsLogBuffer>(provider => new DiagnosticsLogBuffer(provider.GetRequiredService<TimeProvider>()));
+        services.AddSingleton<ISensitiveValueProvider, SensitiveValueProvider>();
+        services.AddSingleton<IDiagnosticsPackageService>(provider => new DiagnosticsPackageService(
+            provider.GetRequiredService<IDiagnosticsLogBuffer>(),
+            provider.GetRequiredService<ISensitiveValueProvider>(),
+            provider.GetRequiredService<TimeProvider>(),
+            () => new DiagnosticsEnvironmentInfo(
+                AppIdentity.GetAppVersion(),
+                System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+                DeviceInfo.Manufacturer + " " + DeviceInfo.Model,
+                System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription),
+            Path.Combine(provider.GetRequiredService<IAppDataPathProvider>().GetCacheDirectory(), DiagnosticsPackageService.DirectoryName),
+            provider.GetRequiredService<ILogger<DiagnosticsPackageService>>()));
+        services.AddSingleton<IDiagnosticsSharer>(_ => DiagnosticsSharerSelector.Create(
+            Environment.GetEnvironmentVariable,
+            () => new MauiDiagnosticsSharer()));
     }
 
     private static void AddGeocodingServices(IServiceCollection services)
