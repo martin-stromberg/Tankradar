@@ -134,7 +134,7 @@ public class DiagnosticsViewModel : BaseViewModel
         }
         finally
         {
-            IsBusy = false;
+            EndOperation();
         }
     }
 
@@ -154,7 +154,14 @@ public class DiagnosticsViewModel : BaseViewModel
         }
         finally
         {
-            IsBusy = false;
+            EndOperation();
         }
+    }
+
+    private void EndOperation()
+    {
+        IsBusy = false;
+        ((Command)PreviewCommand).ChangeCanExecute();
+        ((Command)ShareCommand).ChangeCanExecute();
     }
 }

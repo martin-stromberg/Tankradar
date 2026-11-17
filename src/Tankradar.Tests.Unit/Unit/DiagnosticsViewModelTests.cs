@@ -62,6 +62,22 @@ public class DiagnosticsViewModelTests : BaseTest
     }
 
     /// <summary>
+    /// Prüft, dass die Freigabe der Teilen-Schaltfläche nach Abschluss der Vorschau auch als Ereignis signalisiert wird.
+    /// Die gebundene Schaltfläche in der App wertet ausschließlich dieses Ereignis aus.
+    /// </summary>
+    [Fact]
+    public async Task Preview_Completion_RaisesShareCanExecuteChanged()
+    {
+        var enabledWhenRaised = new List<bool>();
+        ViewModel.ShareCommand.CanExecuteChanged += (_, _) => enabledWhenRaised.Add(ViewModel.ShareCommand.CanExecute(null));
+
+        ViewModel.PreviewCommand.Execute(null);
+        await ViewModel.LastTask;
+
+        Assert.Contains(true, enabledWhenRaised);
+    }
+
+    /// <summary>
     /// Prüft, dass nach Vorschau und Teilen das Paket erzeugt und weitergegeben wird.
     /// </summary>
     [Fact]
