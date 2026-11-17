@@ -1,3 +1,13 @@
+## 2026-11-16 — NuGet-Pakete auf den November-2026-Patchstand angehoben (Issue #63)
+
+- Sicherheitslauf November 2026 (aus dem Architektur- und Sicherheitsreview, Issue #62): Sechs Pakete (sieben direkte Paketreferenzen; `SQLitePCLRaw.bundle_e_sqlite3` in App- und E2E-Projekt) auf den jeweils neuesten Patchstand ihrer Linie angehoben — .NET-10-Pakete auf 10.0.15 (Patch-Release vom 10.11.2026 mit Sicherheitsfixes), MAUI auf 10.0.130, SQLitePCLRaw auf 2.1.14 (weiterhin im 2.x-Zweig).
+- `Tankradar.MAUI.csproj`: `<MauiVersion>` 10.0.120 auf 10.0.130 (steuert `Microsoft.Maui.Controls`, Core, Essentials, Resizetizer und Build-Tasks aus NuGet), `Microsoft.EntityFrameworkCore.Sqlite` und `Microsoft.EntityFrameworkCore.Design` (nur Design-Time) 10.0.10 auf 10.0.15, `Microsoft.Extensions.Logging.Debug` 10.0.0 auf 10.0.15, `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12 auf 2.1.14 (transitives Pinning gegen GHSA-2m69-gcr7-jv3q bleibt bestehen).
+- `Tankradar.Tests.E2E.csproj`: `Microsoft.Data.Sqlite` 10.0.10 auf 10.0.15 (gleicher SQLite-Stand wie das Hauptprojekt) und `SQLitePCLRaw.bundle_e_sqlite3` 2.1.12 auf 2.1.14.
+- Transitiv gezogene Änderungen unter MAUI 10.0.130 (Windows): `Microsoft.Web.WebView2` 1.0.4258.31 auf 1.0.4314.35; `Microsoft.WindowsAppSDK` 1.8.260529003, `Microsoft.Graphics.Win2D` 1.4.0 und `Microsoft.Windows.SDK.BuildTools` 10.0.26100.8249 bleiben unverändert. Kein NU1605-Konflikt beim Restore.
+- `dotnet list Tankradar.sln package --vulnerable --include-transitive` ohne Befund. Verifiziert: Auch in `Microsoft.Maui.Controls` 10.0.130 existieren keine `Shell.TabBar*Shadow*`/`TabBar*Bold*`-Attached-Properties — die dokumentierte Abweichung zum Designentwurf (TabBar-Schatten, Halbfett-Titel) bleibt bestehen; Hilfetexte in `docs/help/` auf die neuen Versionsnummern angehoben.
+- Da das Windows-Paket self-contained ausgeliefert wird, erzeugt der reguläre Release-Weg (staging-ci-Pre-Release, Promotion `staging` → `main`, `release.yml`) das neue Paket mit den aktualisierten Abhängigkeiten.
+- Keine Schemaänderung.
+
 ## 2026-11-14 — Automatische Review-Issues per Cron (Issue #58)
 
 - Drei neue Workflows unter `.github/workflows/` erzeugen zeitgesteuert (Cron plus manuell per `workflow_dispatch`) je ein GitHub-Issue mit fest vorgegebenem deutschem Prüfauftrag, dessen Body mit der Zeile `@softwarewerkstatt` beginnt: `review-architecture-security.yml` (monatlich am 1. des Monats, 06:00 UTC), `review-nuget-packages.yml` (wöchentlich dienstags, 05:00 UTC) und `review-compliance.yml` (jährlich am 1. Januar, 06:00 UTC).
