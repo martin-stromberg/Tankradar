@@ -127,7 +127,7 @@ public class BackupViewModelTests_Restore : BackupViewModelTestBase
     [Fact]
     public async Task Restore_UnreadableFile_ShowsInvalidWithoutService()
     {
-        Service.Files = [new BackupFileInfo("tankatlas-backup-x.zip", new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), 5, string.Empty, false)];
+        Service.Files = [new BackupFileInfo("tankatlas-backup-x.zip", new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), 5, string.Empty, false, false)];
         await AppearAsync();
 
         await PressAsync(ViewModel.Items[0].RestoreCommand);

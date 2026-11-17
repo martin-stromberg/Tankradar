@@ -134,7 +134,7 @@ public class BackupServiceTests_Schema : IDisposable
         using var cancelled = new CancellationTokenSource();
         await cancelled.CancelAsync();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _environment.CreateService().RestoreAsync(created.File!.FileName, cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _environment.CreateService().RestoreAsync(created.File!.FileName, null, cancelled.Token));
 
         Assert.Equal(before, _environment.Snapshot());
         Assert.False(Directory.Exists(Path.Combine(_environment.DataDirectory, BackupFormat.StagingDirectoryName)));

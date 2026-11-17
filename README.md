@@ -27,7 +27,8 @@ Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANK
 - **Tankbuch** – Fahrzeuge und Tank-/Ladevorgänge erfassen, Verbrauchs- und
   Kostenauswertung mit Diagrammen, Export als CSV oder PDF →
   [Hilfe](docs/help/Tankbuch/index.md)
-- **Sicherung** – lokale Sicherung und Wiederherstellung als ZIP-Archiv →
+- **Sicherung** – lokale Sicherung und Wiederherstellung als ZIP-Archiv, beim
+  Erstellen optional mit Passwort verschlüsselt →
   [Hilfe](docs/help/Sicherung/index.md)
 - **Offline-first** – Preise werden lokal mit Zeitstempel gespeichert; ohne Verbindung gilt
   der zuletzt bekannte Stand → [Hilfe](docs/help/Preisdaten/index.md)
@@ -126,8 +127,11 @@ Testmodus, der ausschließlich über Umgebungsvariablen (`TANKATLAS_TEST_DATA_PA
   konfiguriert); Anleitung unter
   [docs/help/ci-cd/ios-deployment.md](docs/help/ci-cd/ios-deployment.md), Datenschutzangaben
   unter [docs/help/Datenschutz/](docs/help/Datenschutz/index.md)
-- **Sicherungen sind unverschlüsselt** –
-  [ADR 0011](docs/adr/0011-local-backup-restore.md)
+- **Sicherungen sind standardmäßig unverschlüsselt** – beim Erstellen kann ein
+  Passwort vergeben werden; Wiederherstellen und Einspielen erkennen
+  verschlüsselte Dateien automatisch und fragen das Passwort ab –
+  [ADR 0011](docs/adr/0011-local-backup-restore.md),
+  [ADR 0019](docs/adr/0019-backup-encryption.md)
 - **Keine Strompreise in Version 1.0** (keine frei nutzbare Strompreis-API) –
   [ADR 0001](docs/adr/0001-no-electricity-prices-in-v1.md)
 - **Android/MacCatalyst-Ziele** des MAUI-Templates sind vorhanden, aber nicht im Fokus

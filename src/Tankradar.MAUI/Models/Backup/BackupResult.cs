@@ -34,4 +34,14 @@ public enum BackupResult
     /// Die Operation ist aus einem anderen Grund fehlgeschlagen.
     /// </summary>
     Failed,
+
+    /// <summary>
+    /// Die Sicherung ist verschlüsselt und es wurde kein Passwort übergeben.
+    /// </summary>
+    PasswordRequired,
+
+    /// <summary>
+    /// Die Entschlüsselung ist fehlgeschlagen: falsches Passwort oder beschädigte/manipulierte Datei.
+    /// </summary>
+    WrongPassword,
 }

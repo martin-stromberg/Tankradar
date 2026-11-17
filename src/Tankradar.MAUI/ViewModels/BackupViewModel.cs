@@ -21,6 +21,12 @@ public class BackupViewModel : BaseViewModel
     private readonly IScreenReaderAnnouncer _announcer;
     private readonly ILogger<BackupViewModel> _logger;
     private string? _statusMessage;
+    private string _createPassword = string.Empty;
+    private string _createPasswordRepeat = string.Empty;
+    private bool _isAwaitingImportPassword;
+    private string _importPassword = string.Empty;
+    private string _importPasswordText = string.Empty;
+    private PickedBackupFile? _pendingImport;
 
     /// <summary>
     /// Erstellt das ViewModel.
@@ -47,6 +53,8 @@ public class BackupViewModel : BaseViewModel
         _logger = logger;
         CreateCommand = new Command(() => LastTask = CreateAsync(), () => IsNotBusy);
         ImportCommand = new Command(() => LastTask = ImportAsync(), () => IsNotBusy);
+        ConfirmImportPasswordCommand = new Command(() => LastTask = ConfirmImportPasswordAsync(), () => IsNotBusy);
+        CancelImportPasswordCommand = new Command(CancelImportPassword, () => IsNotBusy);
         LastTask = Task.CompletedTask;
     }
 
@@ -135,6 +143,91 @@ public class BackupViewModel : BaseViewModel
     }
 
     /// <summary>
+    /// Platzhalter des Passwortfelds.
+    /// </summary>
+    public string PasswordPlaceholderText
+    {
+        get { return BackupTexts.PasswordPlaceholder; }
+    }
+
+    /// <summary>
+    /// Platzhalter des Wiederholungsfelds.
+    /// </summary>
+    public string PasswordRepeatPlaceholderText
+    {
+        get { return BackupTexts.PasswordRepeatPlaceholder; }
+    }
+
+    /// <summary>
+    /// Hinweis zu den Passwortfeldern beim Erstellen.
+    /// </summary>
+    public string PasswordHintText
+    {
+        get { return BackupTexts.PasswordHint; }
+    }
+
+    /// <summary>
+    /// Beschriftung der Bestätigung der Passwortabfrage beim Einspielen.
+    /// </summary>
+    public string ImportUnlockText
+    {
+        get { return BackupTexts.UnlockButton; }
+    }
+
+    /// <summary>
+    /// Beschriftung von „Abbrechen“ der Passwortabfrage beim Einspielen.
+    /// </summary>
+    public string ImportCancelText
+    {
+        get { return BackupTexts.Cancel; }
+    }
+
+    /// <summary>
+    /// Das Passwort der neuen Sicherung; leer erzeugt eine unverschlüsselte Datei (nie gespeichert, wird nach dem Vorgang geleert).
+    /// </summary>
+    public string CreatePassword
+    {
+        get => _createPassword;
+        set => SetProperty(ref _createPassword, value ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Die Wiederholung des Passworts der neuen Sicherung (Abgleich vor dem Erstellen).
+    /// </summary>
+    public string CreatePasswordRepeat
+    {
+        get => _createPasswordRepeat;
+        set => SetProperty(ref _createPasswordRepeat, value ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Gibt an, ob die Passwortabfrage für eine verschlüsselte Datei beim Einspielen angezeigt wird.
+    /// </summary>
+    public bool IsAwaitingImportPassword
+    {
+        get => _isAwaitingImportPassword;
+        private set => SetProperty(ref _isAwaitingImportPassword, value);
+    }
+
+    /// <summary>
+    /// Das Passwort der einzuspielenden Datei (nie gespeichert; wird nach dem Vorgang geleert).
+    /// </summary>
+    public string ImportPassword
+    {
+        get => _importPassword;
+        set => SetProperty(ref _importPassword, value ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Der Text der Passwortabfrage beim Einspielen.
+    /// </summary>
+    public string ImportPasswordText
+    {
+        get => _importPasswordText;
+        private set => SetProperty(ref _importPasswordText, value);
+    }
+
+    /// <summary>
     /// Befehl „Sicherung erstellen“.
     /// </summary>
     public ICommand CreateCommand { get; }
@@ -143,6 +236,16 @@ public class BackupViewModel : BaseViewModel
     /// Befehl „Sicherung aus Datei einspielen“.
     /// </summary>
     public ICommand ImportCommand { get; }
+
+    /// <summary>
+    /// Befehl „Prüfen“ der Passwortabfrage beim Einspielen.
+    /// </summary>
+    public ICommand ConfirmImportPasswordCommand { get; }
+
+    /// <summary>
+    /// Befehl „Abbrechen“ der Passwortabfrage beim Einspielen.
+    /// </summary>
+    public ICommand CancelImportPasswordCommand { get; }
 
     /// <summary>
     /// Der zuletzt gestartete Vorgang (für Tests und Abwarten).
@@ -174,11 +277,13 @@ public class BackupViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Erstellt eine Sicherung und aktualisiert die Liste.
+    /// Erstellt eine Sicherung und aktualisiert die Liste; bei gefüllten Passwortfeldern mit Verschlüsselung.
     /// </summary>
     /// <returns>Ein Task, der nach dem Vorgang abgeschlossen ist.</returns>
     public async Task CreateAsync()
     {
+        var password = CreatePassword;
+        var repeat = CreatePasswordRepeat;
         if (!TryBeginOperation())
         {
             return;
@@ -186,7 +291,13 @@ public class BackupViewModel : BaseViewModel
 
         try
         {
-            var outcome = await _service.CreateAsync().ConfigureAwait(true);
+            if (password != repeat)
+            {
+                SetStatus(BackupTexts.PasswordsDoNotMatch);
+                return;
+            }
+
+            var outcome = await _service.CreateAsync(string.IsNullOrEmpty(password) ? null : password).ConfigureAwait(true);
             if (outcome.Result == BackupResult.Ok)
             {
                 await LoadAsync().ConfigureAwait(true);
@@ -204,6 +315,9 @@ public class BackupViewModel : BaseViewModel
         }
         finally
         {
+            // Die Passwörter bleiben nicht in der Oberfläche liegen, gleich wie der Vorgang ausgegangen ist.
+            CreatePassword = string.Empty;
+            CreatePasswordRepeat = string.Empty;
             EndOperation();
         }
     }
@@ -232,13 +346,16 @@ public class BackupViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Stellt die Daten nach der Bestätigung aus einem Eintrag wieder her.
+    /// Prüft das Passwort einer verschlüsselten Sicherung und zeigt bei Erfolg die Rückfrage mit den Zählwerten.
     /// </summary>
     /// <param name="item">Der Eintrag.</param>
-    /// <returns>Ein Task, der nach dem Vorgang abgeschlossen ist.</returns>
-    public async Task ConfirmRestoreAsync(BackupItemViewModel item)
+    /// <returns>Ein Task, der nach der Prüfung abgeschlossen ist.</returns>
+    public async Task UnlockRestoreAsync(BackupItemViewModel item)
     {
         ArgumentNullException.ThrowIfNull(item);
+
+        // Das Passwort wird vor Beginn des Vorgangs gesichert: TryBeginOperation schließt die Rückfrage und leert das Feld.
+        var password = item.RestorePassword;
         if (!TryBeginOperation())
         {
             return;
@@ -246,7 +363,57 @@ public class BackupViewModel : BaseViewModel
 
         try
         {
-            var result = await _service.RestoreAsync(item.FileName).ConfigureAwait(true);
+            var outcome = await _service.InspectAsync(item.FileName, password).ConfigureAwait(true);
+            if (outcome is { Result: BackupResult.Ok, Manifest: { } manifest })
+            {
+                item.ShowRestoreQuestion(BackupTexts.FormatRestoreQuestion(item.Info.CreatedUtc, manifest.AppVersion, manifest.Counts));
+                item.RestorePassword = password;
+                _announcer.Announce(item.RestoreQuestion);
+                return;
+            }
+
+            SetStatus(BackupTexts.GetMessage(outcome.Result, outcome.Manifest?.AppVersion));
+            if (outcome.Result is BackupResult.WrongPassword or BackupResult.PasswordRequired)
+            {
+                // Die Passwortabfrage bleibt geöffnet, damit die Eingabe direkt erneut versucht werden kann.
+                item.ShowPasswordQuestion(BackupTexts.PasswordQuestion);
+                _announcer.Announce(item.RestoreQuestion);
+            }
+            else if (outcome.Result == BackupResult.NotFound)
+            {
+                await LoadAsync().ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Die Sicherung konnte nicht geprüft werden ({ExceptionType}).", ex.GetType().Name);
+            SetStatus(BackupTexts.Failed);
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
+
+    /// <summary>
+    /// Stellt die Daten nach der Bestätigung aus einem Eintrag wieder her.
+    /// </summary>
+    /// <param name="item">Der Eintrag.</param>
+    /// <returns>Ein Task, der nach dem Vorgang abgeschlossen ist.</returns>
+    public async Task ConfirmRestoreAsync(BackupItemViewModel item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        // Das Passwort wird vor Beginn des Vorgangs gesichert: TryBeginOperation schließt die Rückfrage und leert das Feld.
+        var password = item.RestorePassword;
+        if (!TryBeginOperation())
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await _service.RestoreAsync(item.FileName, string.IsNullOrEmpty(password) ? null : password).ConfigureAwait(true);
             if (result == BackupResult.Ok)
             {
                 SetStatus(BackupTexts.Restored);
@@ -389,23 +556,7 @@ public class BackupViewModel : BaseViewModel
                 return;
             }
 
-            var outcome = await _service.ImportAsync(picked).ConfigureAwait(true);
-            if (outcome.Result != BackupResult.Ok || outcome.File is null)
-            {
-                SetStatus(BackupTexts.GetMessage(outcome.Result, outcome.Manifest?.AppVersion));
-                return;
-            }
-
-            await LoadAsync().ConfigureAwait(true);
-            var item = Items.FirstOrDefault(candidate => candidate.FileName == outcome.File.FileName);
-            if (item is not null)
-            {
-                await ShowRestoreQuestionAsync(item).ConfigureAwait(true);
-                if (item.IsConfirmingRestore)
-                {
-                    StatusMessage = BackupTexts.Imported;
-                }
-            }
+            await ImportFileAsync(picked, null).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -418,7 +569,87 @@ public class BackupViewModel : BaseViewModel
         }
     }
 
-    private async Task ShowRestoreQuestionAsync(BackupItemViewModel item)
+    private async Task ConfirmImportPasswordAsync()
+    {
+        var file = _pendingImport;
+        var password = ImportPassword;
+        if (file is null || !TryBeginOperation())
+        {
+            return;
+        }
+
+        try
+        {
+            if (string.IsNullOrEmpty(password))
+            {
+                // Die vorgemerkte Datei ist verschlüsselt; ohne Eingabe gibt es nichts zu prüfen, die Abfrage bleibt und die Meldung fordert das Passwort an.
+                SetStatus(BackupTexts.PasswordRequired);
+                return;
+            }
+
+            await ImportFileAsync(file, password).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning("Die Sicherung konnte nicht eingespielt werden ({ExceptionType}).", ex.GetType().Name);
+            SetStatus(BackupTexts.Failed);
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
+
+    private void CancelImportPassword()
+    {
+        // Die gewählte Datei und das Passwort werden verworfen; in der Liste ändert sich nichts.
+        _pendingImport = null;
+        ImportPassword = string.Empty;
+        IsAwaitingImportPassword = false;
+    }
+
+    private async Task ImportFileAsync(PickedBackupFile file, string? password)
+    {
+        var outcome = await _service.ImportAsync(file, password).ConfigureAwait(true);
+        if (outcome.Result is BackupResult.PasswordRequired or BackupResult.WrongPassword)
+        {
+            // Die Datei bleibt vorgemerkt: die Passwortabfrage fordert die Eingabe an, bei falschem Passwort kommt zusätzlich die Meldung dazu.
+            _pendingImport = file;
+            ImportPassword = string.Empty;
+            ImportPasswordText = BackupTexts.ImportPasswordQuestion;
+            IsAwaitingImportPassword = true;
+            _announcer.Announce(BackupTexts.ImportPasswordQuestion);
+            if (outcome.Result == BackupResult.WrongPassword)
+            {
+                SetStatus(BackupTexts.WrongPassword);
+            }
+
+            return;
+        }
+
+        _pendingImport = null;
+        ImportPassword = string.Empty;
+        IsAwaitingImportPassword = false;
+        if (outcome.Result != BackupResult.Ok || outcome.File is null)
+        {
+            SetStatus(BackupTexts.GetMessage(outcome.Result, outcome.Manifest?.AppVersion));
+            return;
+        }
+
+        await LoadAsync().ConfigureAwait(true);
+        var item = Items.FirstOrDefault(candidate => candidate.FileName == outcome.File.FileName);
+        if (item is not null)
+        {
+            // Das beim Einspielen eingegebene Passwort gilt für die Rückfrage mit; es wird nicht ein zweites Mal abgefragt.
+            await ShowRestoreQuestionAsync(item, password).ConfigureAwait(true);
+            if (item.IsConfirmingRestore)
+            {
+                StatusMessage = BackupTexts.Imported;
+            }
+        }
+    }
+
+    private async Task ShowRestoreQuestionAsync(BackupItemViewModel item, string? password = null)
     {
         CloseQuestions();
         StatusMessage = null;
@@ -428,12 +659,25 @@ public class BackupViewModel : BaseViewModel
             return;
         }
 
+        if (item.Info.IsEncrypted && string.IsNullOrEmpty(password))
+        {
+            // Verschlüsselte Dateien fragen zuerst das Passwort ab; die Zählwerte folgen erst nach dem Entschlüsseln.
+            item.ShowPasswordQuestion(BackupTexts.PasswordQuestion);
+            _announcer.Announce(item.RestoreQuestion);
+            return;
+        }
+
         try
         {
-            var outcome = await _service.InspectAsync(item.FileName).ConfigureAwait(true);
+            var outcome = await _service.InspectAsync(item.FileName, password).ConfigureAwait(true);
             if (outcome is { Result: BackupResult.Ok, Manifest: { } manifest })
             {
                 item.ShowRestoreQuestion(BackupTexts.FormatRestoreQuestion(item.Info.CreatedUtc, manifest.AppVersion, manifest.Counts));
+                if (!string.IsNullOrEmpty(password))
+                {
+                    item.RestorePassword = password;
+                }
+
                 _announcer.Announce(item.RestoreQuestion);
                 return;
             }
@@ -484,6 +728,8 @@ public class BackupViewModel : BaseViewModel
     {
         ((Command)CreateCommand).ChangeCanExecute();
         ((Command)ImportCommand).ChangeCanExecute();
+        ((Command)ConfirmImportPasswordCommand).ChangeCanExecute();
+        ((Command)CancelImportPasswordCommand).ChangeCanExecute();
         foreach (var item in Items)
         {
             item.RefreshCommandStates();
@@ -499,6 +745,7 @@ public class BackupViewModel : BaseViewModel
                 list[index],
                 index + 1,
                 item => LastTask = BeginRestoreAsync(item),
+                item => LastTask = UnlockRestoreAsync(item),
                 item => LastTask = ConfirmRestoreAsync(item),
                 item => LastTask = ShareAsync(item),
                 BeginDelete,
