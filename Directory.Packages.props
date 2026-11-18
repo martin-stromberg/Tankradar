@@ -17,7 +17,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15" />
     <!-- Hebt die transitiv gezogene, als anfällig gemeldete Version 2.1.11 (GHSA-2m69-gcr7-jv3q) an. -->
-    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.14" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.2" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
