@@ -1,0 +1,37 @@
+version: 2
+
+# Automatisierte Update-PRs für NuGet (zentrale Paketverwaltung über
+# Directory.Packages.props) und GitHub Actions (Major-/Minor-/Patch-Tags).
+# Ergänzt den wöchentlichen Review-Workflow review-nuget-packages.yml, der
+# weiterhin den menschlichen/analytischen Prüfauftrag erzeugt. Zielbranch ist
+# staging; Dependabot richtet seine PRs gegen den Default-Branch, die Zielwahl
+# erfolgt deshalb explizit über target-branch.
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    target-branch: "staging"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 10
+    # Major-Updates landen bewusst als eigene, einzeln prüfbare PRs;
+    # Patch-/Minor-Updates eines Ökosystems werden gebündelt.
+    groups:
+      patch-and-minor:
+        update-types:
+          - "patch"
+          - "minor"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "staging"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 10
+    groups:
+      actions:
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
