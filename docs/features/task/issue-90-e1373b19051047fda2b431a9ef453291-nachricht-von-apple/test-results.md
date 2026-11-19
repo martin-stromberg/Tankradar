@@ -18,6 +18,21 @@ MSI-Workload-Installation ohne Elevation nicht möglich ist),
 | `python scripts/test_validate_workflows.py` | 13/14 — 1 preexisting Failure (dieselbe `e2e-dumps`-Ursache) |
 | `dotnet ef migrations script` (Probe) | bestätigt `COLLATE "NOCASE"` als EF-11-Emission |
 
+## CI-Befund und Fix (PR #91)
+
+Der erste `ios build`-Lauf auf `xcode-27` schlug mit `error MT7199` fehl:
+Ab dem iOS-/MacCatalyst-27-SDK verlangt Apple den UIKit-Scene-Lifecycle
+(`UIApplicationSceneManifest` in der Info.plist), sonst crasht die App auf
+iOS 27 beim Start. Umsetzung nach dem offiziellen Migrationsleitfaden:
+
+- `UIApplicationSceneManifest` (Single-Scene, `__MAUI_DEFAULT_SCENE_CONFIGURATION__`,
+  `SceneDelegate`) in `Platforms/iOS/Info.plist` und
+  `Platforms/MacCatalyst/Info.plist`.
+- `SceneDelegate : MauiUISceneDelegate` in beiden Plattformordnern;
+  `AppDelegate`/`Program.cs` bleiben unverändert (keine eigenen
+  Lifecycle-Handler vorhanden — nur Windows-Events in `MauiProgram`).
+- `test-ios-deployment.ps1` prüft Manifest und SceneDelegate-Datei ab.
+
 ## Umgesetzte Fixes während der Verifikation
 
 1. `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 → 3.0.5 (NU1605; EF Core 11

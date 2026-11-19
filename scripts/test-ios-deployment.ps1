@@ -160,6 +160,8 @@ try {
     Assert-That "PrivacyInfo.xcprivacy liegt im iOS-Ressourcenordner" (Test-Path (Join-Path $mauiDir "Platforms/iOS/Resources/PrivacyInfo.xcprivacy"))
     $infoPlist = [IO.File]::ReadAllText((Join-Path $mauiDir "Platforms/iOS/Info.plist"))
     Assert-That "Info.plist setzt ITSAppUsesNonExemptEncryption auf false" ($infoPlist -match '<key>ITSAppUsesNonExemptEncryption</key>\s*<false\s*/>')
+    Assert-That "Info.plist enthaelt UIApplicationSceneManifest (Pflicht ab iOS-27-SDK)" ($infoPlist -match '<key>UIApplicationSceneManifest</key>' -and $infoPlist -match '<string>SceneDelegate</string>' -and $infoPlist -match '__MAUI_DEFAULT_SCENE_CONFIGURATION__')
+    Assert-That "SceneDelegate.cs liegt im iOS-Plattformordner" (Test-Path (Join-Path $mauiDir "Platforms/iOS/SceneDelegate.cs"))
 
     Write-Host "Mindestversion iOS 16"
     Assert-That "csproj: SupportedOSPlatformVersion iOS = 16.0" ($csprojText -match "<SupportedOSPlatformVersion Condition=`"[^`"]*== 'ios'`">16\.0</SupportedOSPlatformVersion>")
