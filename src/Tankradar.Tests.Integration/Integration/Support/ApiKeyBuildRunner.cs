@@ -62,7 +62,7 @@ public sealed class ApiKeyBuildRunner : IDisposable
             project,
             "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
             + "  <PropertyGroup>\n"
-            + "    <TargetFramework>net10.0</TargetFramework>\n"
+            + "    <TargetFramework>net11.0</TargetFramework>\n"
             + "    <OutputType>Library</OutputType>\n"
             + "    <" + _profile.LocalPropsProperty + ">" + LocalPropsPath + "</" + _profile.LocalPropsProperty + ">\n"
             + "  </PropertyGroup>\n"
@@ -119,7 +119,7 @@ public sealed class ApiKeyBuildRunner : IDisposable
         }
 
         process.WaitForExit();
-        var assemblyPath = Path.Combine(_directory, "bin", "Debug", "net10.0", "KeyProbe.dll");
+        var assemblyPath = Path.Combine(_directory, "bin", "Debug", "net11.0", "KeyProbe.dll");
         return new ApiKeyBuildResult(process.ExitCode, output.ToString(), ReadBinlog(binlog), assemblyPath);
     }
 

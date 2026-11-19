@@ -33,6 +33,12 @@ iOS 27 beim Start. Umsetzung nach dem offiziellen Migrationsleitfaden:
   Lifecycle-Handler vorhanden — nur Windows-Events in `MauiProgram`).
 - `test-ios-deployment.ps1` prüft Manifest und SceneDelegate-Datei ab.
 
+Zweiter Lauf: `ios build` und `static checks` grün; `build & test` fiel im
+Schritt `Test E2E with FlaUI`: `AppRelativePath` in `E2ETestBase` zeigte noch
+auf `net10.0-windows10.0.19041.0`. Zwei übersehene TFM-Reste korrigiert
+(`E2ETestBase.AppRelativePath`, `ApiKeyBuildRunner`-Probeprojekt `net10.0` →
+`net11.0`, plus zwei Skript-Fixture-Strings).
+
 ## Umgesetzte Fixes während der Verifikation
 
 1. `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 → 3.0.5 (NU1605; EF Core 11
