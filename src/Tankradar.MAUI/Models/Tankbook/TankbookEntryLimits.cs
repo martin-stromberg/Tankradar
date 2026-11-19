@@ -76,5 +76,5 @@ public static class TankbookEntryLimits
     /// <summary>
     /// Die erlaubten Dateiendungen eines Belegfotos (klein geschrieben, samt Punkt).
     /// </summary>
-    public static readonly IReadOnlyList<string> ReceiptPhotoExtensions = [".jpg", ".jpeg", ".png", ".heic", ".heif"];
+    public static readonly IReadOnlyList<string> ReceiptPhotoExtensions = new string[] { ".jpg", ".jpeg", ".png", ".heic", ".heif" };
 }

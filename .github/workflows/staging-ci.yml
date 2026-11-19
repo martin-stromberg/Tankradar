@@ -64,7 +64,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.4xx'
+          dotnet-version: '11.0.1xx'
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -117,7 +117,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.4xx'
+          dotnet-version: '11.0.1xx'
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -289,7 +289,7 @@ jobs:
     name: ios prerelease
     needs: [detect-backmerge, version]
     if: needs.detect-backmerge.outputs.is_backmerge != 'true' && needs.version.outputs.changed == 'true'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 60
     steps:
       - name: Checkout

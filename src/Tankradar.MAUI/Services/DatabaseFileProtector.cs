@@ -26,13 +26,13 @@ public class DatabaseFileProtector : IDatabaseFileProtector
     {
         // Neue Dateien (z. B. -wal/-shm, die erst später entstehen) erben die Schutzklasse des Verzeichnisses;
         // vorhandene Dateien werden zusätzlich ausdrücklich geschützt.
-        ApplyProtection(databasePath, [databasePath, databasePath + "-wal", databasePath + "-shm"]);
+        ApplyProtection(databasePath, new string[] { databasePath, databasePath + "-wal", databasePath + "-shm" });
     }
 
     /// <inheritdoc />
     public void ProtectFile(string filePath)
     {
-        ApplyProtection(filePath, [filePath]);
+        ApplyProtection(filePath, new string[] { filePath });
     }
 
     private void ApplyProtection(string path, IReadOnlyList<string> files)

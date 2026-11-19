@@ -16,7 +16,7 @@ Variante A, Umgebungsvariable vor dem Build (eine der beiden Namen genügt):
 
 ```powershell
 $env:FUEL_PRICE_API_KEY = "<Ihr Schlüssel>"
-dotnet build src/Tankradar.MAUI -f net10.0-windows10.0.19041.0
+dotnet build src/Tankradar.MAUI -f net11.0-windows10.0.19041.0
 ```
 
 Der Schlüssel erscheint dabei weder im Repository noch in Logs oder Build-Ausgaben: Eine kleine Build-Aufgabe (`src/Tankradar.MAUI/MSBuild/TankerkoenigApiKey.targets`) liest die Umgebungsvariablen selbst und schreibt die generierte Quelldatei mit dem Assembly-Metadatum direkt nach `obj/`. Der Wert kommt dadurch in keiner MSBuild-Eigenschaft, keinem Item-Metadatum und keinem Task-Parameter vor und wird auch bei `-v:detailed`, `-v:diag` und in Binlogs (`-bl`) nicht protokolliert; ins Log gelangt nur „Tankerkönig-Schlüssel beim Build vorhanden: ja/nein“. Ein automatisierter Test (`ApiKeyBuildTests_Log`, `ApiKeyBuildTests_Sources`) baut mit `-v:diag` und Binlog und Platzhalterschlüsseln: Der Platzhalter darf nicht im Log stehen, muss aber in der gebauten Assembly vorhanden sein; ein zweiter Test sichert die Reihenfolge der drei Quellen. Die echten Umgebungsvariablen werden im Test aus der Prozessumgebung entfernt.

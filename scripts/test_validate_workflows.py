@@ -69,7 +69,7 @@ class ReleaseCommandTests(unittest.TestCase):
         self.assertTrue(release_errors('gh release create v1 artifacts/a.zip \\\n  build/App.ipa --title t'))
 
     def test_directory_pattern_and_variable_assets_are_rejected(self):
-        for assets in ['artifacts/', 'artifacts/*', '"$ASSET"', '*.bin', 'src/Tankradar.MAUI/bin/Release/net10.0-ios']:
+        for assets in ['artifacts/', 'artifacts/*', '"$ASSET"', '*.bin', 'src/Tankradar.MAUI/bin/Release/net11.0-ios']:
             self.assertTrue(release_errors(f'gh release upload v1 {assets}'), assets)
 
     def test_label_suffix_and_other_commands_are_handled(self):
