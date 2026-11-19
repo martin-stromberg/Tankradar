@@ -39,6 +39,15 @@ auf `net10.0-windows10.0.19041.0`. Zwei übersehene TFM-Reste korrigiert
 (`E2ETestBase.AppRelativePath`, `ApiKeyBuildRunner`-Probeprojekt `net10.0` →
 `net11.0`, plus zwei Skript-Fixture-Strings).
 
+Dritter Lauf: `build & test` fiel in `Test integration`:
+`Restore_PrepareTimeout_FailsWithoutChangingLiveData` (erwartet `Failed`, kam
+`Ok`). Ursache: `CancellationTokenSource.CancelAfter(TimeSpan.Zero)` bricht
+unter .NET 11 nicht mehr synchron ab (lokal verifiziert: `IsCancellationRequested`
+direkt nach dem Aufruf `false`) — damit war der Test racy. Fix:
+`BackupDatabasePreparer.PrepareAsync` behandelt ein Budget ≤ 0 jetzt
+deterministisch als sofort überschritten (`Failed`). 34/34 Schema-Tests lokal
+erneut grün.
+
 ## Umgesetzte Fixes während der Verifikation
 
 1. `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 → 3.0.5 (NU1605; EF Core 11
