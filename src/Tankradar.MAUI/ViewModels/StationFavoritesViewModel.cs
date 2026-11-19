@@ -280,7 +280,7 @@ public class StationFavoritesViewModel : BaseViewModel
 
         if (AssignedGroups.Count == 1)
         {
-            await RemoveFromAsync([AssignedGroups[0].Id]).ConfigureAwait(true);
+            await RemoveFromAsync(new long[] { AssignedGroups[0].Id }).ConfigureAwait(true);
             return;
         }
 

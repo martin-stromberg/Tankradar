@@ -115,7 +115,7 @@ param(
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $projectPath = Join-Path $repoRoot "src/Tankradar.MAUI/Tankradar.MAUI.csproj"
-$framework = "net10.0-ios"
+$framework = "net11.0-ios"
 
 $onWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
 $onMacOS = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)

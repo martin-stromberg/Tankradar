@@ -156,7 +156,7 @@ public static class BackupTestTampering
             BackupTamper.ExtraCheck => "PRAGMA writable_schema=ON; UPDATE sqlite_master SET sql = substr(sql, 1, length(sql) - 1) || ', CHECK (Id < 2))' WHERE type = 'table' AND name = 'Vehicles'",
             BackupTamper.ManipulatedSequence => "UPDATE sqlite_sequence SET seq = 9223372036854775807 WHERE name = 'Vehicles'",
             BackupTamper.MigrationLockRow => "INSERT INTO __EFMigrationsLock (Id, Timestamp) VALUES (1, '2026-10-12 12:00:00')",
-            BackupTamper.RemovedCollation => "PRAGMA writable_schema=ON; UPDATE sqlite_master SET sql = replace(sql, 'COLLATE NOCASE', '') WHERE type = 'table' AND name = 'Vehicles'",
+            BackupTamper.RemovedCollation => "PRAGMA writable_schema=ON; UPDATE sqlite_master SET sql = replace(replace(sql, 'COLLATE \"NOCASE\"', ''), 'COLLATE NOCASE', '') WHERE type = 'table' AND name = 'Vehicles'",
             BackupTamper.ExtraColumn => "ALTER TABLE Vehicles ADD COLUMN EvilColumn TEXT",
             BackupTamper.ExtraTable => "CREATE TABLE EvilTable (Id INTEGER PRIMARY KEY, Payload TEXT)",
             BackupTamper.ExtraIndex => "CREATE INDEX evil_index ON Vehicles (Name)",

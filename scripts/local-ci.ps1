@@ -20,7 +20,7 @@
                               Bildschirms. Rückfall auf den Vordergrundbetrieb: -E2EForeground. Diagnosedaten
                               fehlgeschlagener Tests liegen unter e2e-diagnostics\)
         8. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
-        9. iOS-Compile-Prüfung: net10.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
+        9. iOS-Compile-Prüfung: net11.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
                               lokale iOS-Workload mit Hinweis übersprungen. Signierte Pakete/TestFlight nur auf dem Mac bzw. in der CI.
 
     Beispiele:
@@ -214,10 +214,10 @@ try {
     $iosWorkload = $false
     try { $iosWorkload = [bool]((dotnet workload list 2>$null | Out-String) -match '(?m)^\s*ios\s') } catch { }
     if (-not $iosWorkload) {
-        Skip-Step "iOS-Compile-Prüfung (net10.0-ios)" "iOS-Workload nicht installiert (dotnet workload restore Tankradar.sln)"
+        Skip-Step "iOS-Compile-Prüfung (net11.0-ios)" "iOS-Workload nicht installiert (dotnet workload restore Tankradar.sln)"
     }
     else {
-        Invoke-Step "iOS-Compile-Prüfung (net10.0-ios)" {
+        Invoke-Step "iOS-Compile-Prüfung (net11.0-ios)" {
             [Environment]::SetEnvironmentVariable('IncludeAndroidTarget', 'false')
             [Environment]::SetEnvironmentVariable('IncludeIosTarget', 'true')
             [Environment]::SetEnvironmentVariable('IncludeMacCatalystTarget', 'false')
@@ -225,7 +225,7 @@ try {
             $buildExit = 1
             try {
                 # Eigener Restore (impliziert im Build), weil der Restore oben ohne Apple-Ziele erfolgte.
-                dotnet build "src/Tankradar.MAUI/Tankradar.MAUI.csproj" --configuration Release --framework net10.0-ios `
+                dotnet build "src/Tankradar.MAUI/Tankradar.MAUI.csproj" --configuration Release --framework net11.0-ios `
                     -p:RuntimeIdentifier=iossimulator-arm64 -p:TreatWarningsAsErrors=true -p:MauiXamlInflator=XamlC
                 $buildExit = $LASTEXITCODE
             }

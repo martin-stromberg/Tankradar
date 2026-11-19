@@ -1,0 +1,38 @@
+# Testergebnisse – Issue #90 (.NET 11 / iOS 27 SDK)
+
+Umgebung: Windows, .NET SDK 11.0.100 (userbezogen, `~/dotnet11`, da die
+MSI-Workload-Installation ohne Elevation nicht möglich ist),
+`IncludeAndroidTarget=false`, `IncludeIosTarget=false`,
+`IncludeMacCatalystTarget=false` (Windows-Ziel wie in den CI-Jobs).
+
+| Prüfung | Ergebnis |
+|---|---|
+| `dotnet workload restore` (Band 11.0.100) | OK — installiert `maui-tizen` (enthält `Microsoft.Maui.Sdk` 11.0.0 u. a.) |
+| `dotnet restore Tankradar.sln -p:Configuration=Release` | OK |
+| `dotnet build Tankradar.sln -c Release --no-restore -p:TreatWarningsAsErrors=true` | OK — 0 Warnungen, 0 Fehler |
+| `dotnet test Tankradar.Tests.Unit -c Release --no-build` | 2164/2164 bestanden |
+| `dotnet test Tankradar.Tests.Integration -c Release --no-build` | 311/311 bestanden |
+| `pwsh scripts/test-ios-deployment.ps1` | OK (alle Assertions) |
+| `npm test` (scripts/*.test.mjs) | 32/32 bestanden |
+| `python scripts/validate-workflows.py` | Exit 1; exakt die 2 preexisting `e2e-dumps`-Befunde (`pr-staging-ci.yml`, `staging-ci.yml`) — unverändertes Vorhalten aus Issue #58 |
+| `python scripts/test_validate_workflows.py` | 13/14 — 1 preexisting Failure (dieselbe `e2e-dumps`-Ursache) |
+| `dotnet ef migrations script` (Probe) | bestätigt `COLLATE "NOCASE"` als EF-11-Emission |
+
+## Umgesetzte Fixes während der Verifikation
+
+1. `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 → 3.0.5 (NU1605; EF Core 11
+   verlangt transitiv >= 3.0.5).
+2. CsWinRT1032 in App-Code: 11 Collection-Expressions als explizite
+   `new T[]`-Initialisierer formuliert (Analyzer-Vorgabe und
+   XML-Doc-Checker-konform, verhaltensgleich).
+3. CsWinRT1032 in Tests.Unit/Tests.Integration: `NoWarn` (Testassemblys
+   werden nicht als WinRT-Komponente ausgeliefert).
+4. `BackupTestTampering.RemovedCollation`: Tamper entfernt jetzt beide
+   Schreibweisen (`COLLATE "NOCASE"`/EF 11, `COLLATE NOCASE`/EF 10).
+
+## Nicht lokal prüfbar (erfolgt in der CI)
+
+- iOS-Compile-Prüfung `net11.0-ios` (kein Mac/kein iOS-Build unter
+  Windows) → PR-Check `ios build` auf `xcode-27`.
+- Android-/MacCatalyst-Targets (Workloads nicht installiert) → CI-Jobs.
+- Reale E2E-/Geräteabnahme → nächster Staging-Pre-Release bzw. Release.

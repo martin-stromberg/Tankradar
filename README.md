@@ -1,6 +1,6 @@
 # Tankatlas
 
-[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
+[![.NET](https://img.shields.io/badge/.NET-11.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Tankatlas-0F766E?logo=github)](https://martin-stromberg.github.io/Tankradar/)
 
 Tankatlas ist eine .NET-MAUI-App für Kraftstoffpreise, Favoriten und ein offline nutzbares
@@ -37,7 +37,7 @@ Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANK
 
 ### Voraussetzungen
 
-- .NET SDK 10.0.401 oder neuer
+- .NET SDK 11.0.100 oder neuer
 - .NET MAUI Workloads für iOS und Windows:
 
   ```powershell
@@ -52,7 +52,7 @@ Namespace- und Assembly-Namen (`Tankradar.*`) sowie die Umgebungsvariablen `TANK
 ```powershell
 dotnet restore
 dotnet build Tankradar.sln
-dotnet run --project src/Tankradar.MAUI -f net10.0-windows10.0.19041.0
+dotnet run --project src/Tankradar.MAUI -f net11.0-windows10.0.19041.0
 ```
 
 ### Git-Hooks installieren
@@ -123,7 +123,7 @@ Testmodus, der ausschließlich über Umgebungsvariablen (`TANKATLAS_TEST_DATA_PA
 
 ## Bekannte Einschränkungen
 
-- **iOS-Build:** Erfordert einen Mac mit Xcode bzw. die CI (`net10.0-ios`, iOS 16 ist
+- **iOS-Build:** Erfordert einen Mac mit Xcode bzw. die CI (`net11.0-ios`, iOS 16 ist
   konfiguriert); Anleitung unter
   [docs/help/ci-cd/ios-deployment.md](docs/help/ci-cd/ios-deployment.md), Datenschutzangaben
   unter [docs/help/Datenschutz/](docs/help/Datenschutz/index.md)

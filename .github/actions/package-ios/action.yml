@@ -54,9 +54,9 @@ inputs:
   ios-workload-version:
     description: Zu pinnende Microsoft.iOS.Sdk-Pack-/Manifest-Version. Muss zu einem Release-Xcode auf dem Runner passen - der App Store lehnt Builds aus Beta-Xcode ab.
     required: false
-    default: '26.5.10318'
+    default: '27.2.11039'
   xcode-version:
-    description: "Optional: gewünschte Xcode-Version (z. B. 26.0). Leer = Standard des Runners."
+    description: "Optional: gewünschte Xcode-Version (z. B. 27.2). Leer = Standard des Runners."
     required: false
     default: ''
   fuel-price-api-key:
@@ -116,28 +116,26 @@ runs:
           echo "::warning::IOS_SIGNING_ENABLED ist 'true', aber es fehlen Secrets:$missing - iOS wird unsigniert gebaut."
         fi
 
-    # SDK-Band 10.0.1xx pinnen: die iOS-Workload-Manifeste werden pro SDK-Band publiziert; 26.x-Manifeste
-    # (Release-Xcode-kompatibel) existieren nur im 10.0.100-Feed, der 10.0.400-Feed kennt nur 27.x-Workloads,
-    # die Beta-Xcode verlangen (der Store lehnt Beta ab). Das gilt auch für den unsignierten Compile-Check,
-    # damit er dieselbe Toolchain prüft wie der Release-Build.
+    # SDK-Band 11.0.1xx pinnen: die iOS-Workload-Manifeste werden pro SDK-Band publiziert; das 27.2-Manifest
+    # (iOS 27.2 SDK, Release-Xcode 27.2) liegt im 11.0.100-Feed. Das gilt auch für den unsignierten
+    # Compile-Check, damit er dieselbe Toolchain prüft wie der Release-Build.
     - name: Setup .NET
       uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '10.0.1xx'
+        dotnet-version: '11.0.1xx'
 
-    # global.json nur im CI-Workspace: der Runner bringt zusätzlich ein neueres SDK (10.0.4xx) mit; ohne
-    # global.json wählt der Host-Resolver immer das höchste SDK und das Workload-Band wäre wieder 10.0.400.
-    # Die Datei wird absichtlich nicht committet - lokal darf jedes 10.0.x-SDK verwendet werden.
+    # global.json nur im CI-Workspace: der Runner kann zusätzlich ein neueres SDK mitbringen; ohne
+    # global.json wählt der Host-Resolver immer das höchste SDK und das Workload-Band wäre nicht 11.0.100.
+    # Die Datei wird absichtlich nicht committet - lokal darf jedes 11.0.x-SDK verwendet werden.
     - name: Pin SDK band for this job
       shell: bash
       run: |
-        printf '{"sdk":{"version":"10.0.100","rollForward":"latestPatch","allowPrerelease":false}}\n' > global.json
+        printf '{"sdk":{"version":"11.0.100","rollForward":"latestPatch","allowPrerelease":false}}\n' > global.json
         dotnet --version
 
-    # Workload-Version pinnen: 'workload restore' aktualisiert die Manifeste immer auf 'latest' (aktuell 27.x
-    # mit Beta-Xcode-Anforderung) und würde den Pin wieder deinstallieren. Deshalb erst per Rollback-File das
-    # iOS-Manifest pinnen, dann mit --skip-manifest-update installieren, damit exakt die gepinnte Version
-    # aufgelöst wird.
+    # Workload-Version pinnen: 'workload restore' aktualisiert die Manifeste immer auf 'latest' und würde
+    # den Pin wieder deinstallieren. Deshalb erst per Rollback-File das iOS-Manifest pinnen, dann mit
+    # --skip-manifest-update installieren, damit exakt die gepinnte Version aufgelöst wird.
     - name: Install .NET MAUI workload
       shell: bash
       env:
@@ -154,7 +152,7 @@ runs:
         # Bewusste Abweichung von der Vorlage (dort: rm -rf "$(dirname "$d")", also das ganze Pack-Verzeichnis):
         # Hier wird nur das Versionsverzeichnis entfernt, damit ein Pack-Verzeichnis, das auch die gepinnte Version
         # enthält, nicht samt dieser Version gelöscht wird.
-        for d in "$HOME"/.dotnet/packs/Microsoft.iOS.Sdk.net10.0_*/*/; do
+        for d in "$HOME"/.dotnet/packs/Microsoft.iOS.Sdk.net11.0_*/*/; do
           [ -d "$d" ] || continue
           [ "$(basename "$d")" = "$IOS_WORKLOAD_VERSION" ] || rm -rf "$d"
         done
@@ -199,7 +197,7 @@ runs:
     # MAUI-Version in der iOS-Kompilierung; übernommen, bis auf macOS das Gegenteil belegt ist.
     # Abweichung zur Vorlage: kein separates 'restore -r ios-arm64' mit --no-restore, der implizite Restore
     # von build/publish reicht. Wichtig: Der Restore wertet ALLE Zielframeworks der csproj aus und bricht bei
-    # einer fehlenden Workload mit NETSDK1147 ab - '-f net10.0-ios' schränkt das nicht ein. Wie in der Vorlage
+    # einer fehlenden Workload mit NETSDK1147 ab - '-f net11.0-ios' schränkt das nicht ein. Wie in der Vorlage
     # werden deshalb die übrigen Zielframeworks per Eigenschaft ausgeblendet (IncludeAndroidTarget=false,
     # IncludeMacCatalystTarget=false, siehe Tankradar.MAUI.csproj); installiert ist nur die iOS-Workload.
     - name: Build iOS
@@ -218,7 +216,7 @@ runs:
         set -euo pipefail
         BUILD_NUMBER=$(( $(git rev-list --count HEAD) + RUN_ATTEMPT - 1 ))
         args=(src/Tankradar.MAUI/Tankradar.MAUI.csproj
-          --configuration Release --framework net10.0-ios
+          --configuration Release --framework net11.0-ios
           "-p:ApplicationVersion=$BUILD_NUMBER"
           -p:MauiXamlInflator=XamlC)
         if [ -n "$RELEASE_VERSION" ]; then

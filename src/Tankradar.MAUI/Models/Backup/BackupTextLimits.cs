@@ -18,8 +18,8 @@ public static class BackupTextLimits
     /// <summary>
     /// Die Spalten mit Obergrenze: Tabelle, Spalte und höchste Länge in Zeichen.
     /// </summary>
-    public static IReadOnlyList<(string Table, string Column, int MaxLength)> Columns { get; } =
-    [
+    public static IReadOnlyList<(string Table, string Column, int MaxLength)> Columns { get; } = new[]
+    {
         ("UserSettings", "GpsUsage", ShortText),
         ("UserSettings", "ResultView", ShortText),
         ("UserSettings", "ResultSortOrder", ShortText),
@@ -47,5 +47,5 @@ public static class BackupTextLimits
         ("TankbookEntries", "StationId", ShortText),
         ("TankbookEntries", "Note", LongText),
         ("TankbookEntries", "ReceiptPhotoFileName", Name),
-    ];
+    };
 }
