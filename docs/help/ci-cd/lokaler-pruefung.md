@@ -8,7 +8,7 @@ Pipeline auf dem Entwicklungsrechner aus.
 
 ## Voraussetzungen
 
-- .NET SDK 10.0.401 oder neuer mit den MAUI-Workloads (`dotnet workload restore Tankradar.sln`)
+- .NET SDK 11.0.100 oder neuer mit den MAUI-Workloads (`dotnet workload restore Tankradar.sln`)
 - Node.js 22 oder neuer (Skripttests, Abdeckungsprüfung)
 - Python 3 mit PyYAML (Workflow-Validierung); optional `actionlint` im `PATH` für tiefergehende Prüfung
 - PowerShell 7 (`pwsh`) oder Windows PowerShell
@@ -34,7 +34,7 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Unit- und Integrationstests mit Coverage, Mindestabdeckung 70 % | `Test …` / `Enforce coverage threshold` |
 | FlaUI-E2E-Tests (blockierend, Off-Screen-Betrieb) | `Test E2E with FlaUI (blocking)` |
 | Windows-Paket (`-Package`) | `Build and package` |
-| iOS-Compile-Prüfung (`net10.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
+| iOS-Compile-Prüfung (`net11.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
 
 Am Ende zeigt eine Tabelle den Status jedes Schritts. Exit-Code 0 bedeutet: alle blockierenden Prüfungen
 bestanden. Berichte liegen unter `TestResults/` und `coverage-report/` (nicht versioniert). Schlägt ein E2E-Test fehl,

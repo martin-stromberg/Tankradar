@@ -32,7 +32,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot "src/Tankradar.MAUI/Tankradar.MAUI.csproj"
-$framework = "net10.0-windows10.0.19041.0"
+$framework = "net11.0-windows10.0.19041.0"
 $displayVersion = ($Version -split "-")[0]
 
 if (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {

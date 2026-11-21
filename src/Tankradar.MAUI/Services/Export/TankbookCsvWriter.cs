@@ -17,8 +17,8 @@ public static class TankbookCsvWriter
     /// <summary>
     /// Die Spaltenüberschriften in der Reihenfolge der Datei.
     /// </summary>
-    public static IReadOnlyList<string> Columns { get; } =
-    [
+    public static IReadOnlyList<string> Columns { get; } = new string[]
+    {
         "Datum",
         "Uhrzeit",
         "Tankstelle",
@@ -34,7 +34,7 @@ public static class TankbookCsvWriter
         "Verbrauchseinheit",
         "Hinweis zum Verbrauch",
         "Notiz",
-    ];
+    };
 
     /// <summary>
     /// Erzeugt die Bytes der CSV-Datei.
@@ -51,7 +51,8 @@ public static class TankbookCsvWriter
             var entry = overview.Entry;
             AppendRow(
                 builder,
-                [
+                new string[]
+                {
                     TankbookExportFormatter.FormatDate(entry.OccurredAt),
                     TankbookExportFormatter.FormatTime(entry.OccurredAt),
                     ProtectText(entry.StationName),
@@ -67,7 +68,7 @@ public static class TankbookCsvWriter
                     overview.Consumption is null ? string.Empty : TankbookEntryTexts.GetConsumptionUnit(entry.Kind),
                     TankbookExportFormatter.GetConsumptionNote(overview),
                     ProtectText(entry.Note),
-                ]);
+                });
         }
 
         var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);

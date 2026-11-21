@@ -183,8 +183,8 @@ public sealed class FuelPriceService : IFuelPriceService, IPriceCacheInvalidator
         try
         {
             var station = await _client.GetDetailAsync(id, cancellationToken).ConfigureAwait(false);
-            await TrySaveAsync([station], cancellationToken).ConfigureAwait(false);
-            var named = await WithCustomNamesAsync([station], cancellationToken).ConfigureAwait(false);
+            await TrySaveAsync(new StationInfo[] { station }, cancellationToken).ConfigureAwait(false);
+            var named = await WithCustomNamesAsync(new StationInfo[] { station }, cancellationToken).ConfigureAwait(false);
             return new StationDetailResult(named[0], PriceDataSource.Live, PriceFailure.None);
         }
         catch (PriceApiException ex)

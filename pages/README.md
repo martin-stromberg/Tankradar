@@ -28,7 +28,7 @@ dotnet run --project src/PagesScreenshots
 ```
 
 Voraussetzung: ein Debug-Build der Windows-App
-(`dotnet build -f net10.0-windows10.0.19041.0` in `src/Tankradar.MAUI`) und
+(`dotnet build -f net11.0-windows10.0.19041.0` in `src/Tankradar.MAUI`) und
 Netzwerkzugriff auf `tile.openstreetmap.org` für die Kartenkacheln.
 Optionales Argument: ein abweichendes Zielverzeichnis für die PNG-Dateien.
 

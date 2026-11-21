@@ -48,7 +48,7 @@ if ([string]::IsNullOrWhiteSpace($changelogEntry)) {
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$targetFramework = "net10.0-windows10.0.19041.0"
+$targetFramework = "net11.0-windows10.0.19041.0"
 $mauiProject = Join-Path $repoRoot "src\Tankradar.MAUI\Tankradar.MAUI.csproj"
 
 if (-not (Test-Path $mauiProject)) {

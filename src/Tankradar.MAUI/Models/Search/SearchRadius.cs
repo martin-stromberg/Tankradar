@@ -25,7 +25,7 @@ public static class SearchRadius
     /// <summary>
     /// Die in der Oberfläche wählbaren Radiusstufen in Kilometern (alle innerhalb von <see cref="Min"/> bis <see cref="Max"/>).
     /// </summary>
-    public static readonly IReadOnlyList<int> Steps = [1, 2, 5, 10, 15, 25];
+    public static readonly IReadOnlyList<int> Steps = new int[] { 1, 2, 5, 10, 15, 25 };
 
     /// <summary>
     /// Prüft, ob ein Radius im zulässigen Bereich liegt.

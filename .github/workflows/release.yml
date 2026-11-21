@@ -66,7 +66,7 @@ jobs:
         if: steps.version.outputs.released == 'true'
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.4xx'
+          dotnet-version: '11.0.1xx'
 
       - name: Install MAUI workloads
         if: steps.version.outputs.released == 'true'
@@ -121,7 +121,7 @@ jobs:
     name: ios
     needs: release
     if: needs.release.outputs.released == 'true' && needs.release.outputs.release_action == 'create'
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 60
     steps:
       - name: Checkout

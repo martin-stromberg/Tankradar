@@ -185,7 +185,7 @@ Falls MAUI älter als 8.0 ist (was in diesem Projekt nicht der Fall ist):
 - `AppThemeBinding` funktioniert nicht automatisch
 - Workaround: Manueller Event-Handler auf `AppThemeChanged` erforderlich
 
-Aktuelles Projekt nutzt .NET 10.0.401 und MAUI 8.0+, daher kein Problem.
+Aktuelles Projekt nutzt .NET 11.0.100 und MAUI 8.0+, daher kein Problem.
 
 ### ViewModel-Injection-Fehler
 

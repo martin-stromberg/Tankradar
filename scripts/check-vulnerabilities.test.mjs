@@ -15,7 +15,7 @@ const withFindings = JSON.stringify({
       path: "C:/repo/src/vuln.csproj",
       frameworks: [
         {
-          framework: "net10.0",
+          framework: "net11.0",
           topLevelPackages: [
             {
               id: "Newtonsoft.Json",

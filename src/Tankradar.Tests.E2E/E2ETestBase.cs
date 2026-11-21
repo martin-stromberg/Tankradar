@@ -19,7 +19,7 @@ public abstract class E2ETestBase : IDisposable
     private const string BuildConfiguration = "Release";
 #endif
 
-    private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\" + BuildConfiguration + @"\net10.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
+    private const string AppRelativePath = @"..\..\..\..\Tankradar.MAUI\bin\" + BuildConfiguration + @"\net11.0-windows10.0.19041.0\win-x64\Tankradar.MAUI.exe";
 
     /// <summary>
     /// Name der Umgebungsvariable des Testlaufs, mit der der Off-Screen-Betrieb auf <c>foreground</c> (Vordergrundbetrieb) zurückgestellt werden kann.
@@ -585,7 +585,7 @@ public abstract class E2ETestBase : IDisposable
         if (!File.Exists(candidate))
         {
             throw new FileNotFoundException(
-                "Die Tankradar.MAUI.exe wurde nicht gefunden. Bitte zunächst 'dotnet build -f net10.0-windows10.0.19041.0' im Hauptprojekt (src/Tankradar.MAUI) ausführen.",
+                "Die Tankradar.MAUI.exe wurde nicht gefunden. Bitte zunächst 'dotnet build -f net11.0-windows10.0.19041.0' im Hauptprojekt (src/Tankradar.MAUI) ausführen.",
                 candidate);
         }
 
