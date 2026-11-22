@@ -15,7 +15,7 @@ public static class RouteDistance
     /// <summary>
     /// Die in der Oberfläche wählbaren Abstandsstufen in Kilometern.
     /// </summary>
-    public static readonly IReadOnlyList<int> Options = [1, 2, 5, 10];
+    public static readonly IReadOnlyList<int> Options = new int[] { 1, 2, 5, 10 };
 
     /// <summary>
     /// Prüft, ob der Abstand einer der zulässigen Stufen entspricht.

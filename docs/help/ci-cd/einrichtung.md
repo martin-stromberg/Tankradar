@@ -80,7 +80,7 @@ Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllByt
 |---|---|---|
 | `IOS_SIGNING_ENABLED` | `true` schaltet signierten iOS-Build und TestFlight-Upload ein; jeder andere Wert oder fehlende Variable = unsignierter Compile-Check | zum Aktivieren |
 | `APP_BUNDLE_ID` | Bundle-ID der App; nur nötig, um den Standardwert `de.martinstromberg.tankradar` aus der `.csproj` zu überschreiben | optional |
-| `IOS_XCODE_VERSION` | Gewünschte Xcode-Version (z. B. `26.0`); leer = Runner-Standard | optional |
+| `IOS_XCODE_VERSION` | Gewünschte Xcode-Version (aktuell `27.2`, passend zur gepinnten iOS-Workload); leer = Runner-Standard | optional |
 
 Verhalten der Pipeline:
 

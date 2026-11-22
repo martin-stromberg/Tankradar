@@ -10,10 +10,10 @@
 		<IncludeMacCatalystTarget Condition="'$(IncludeMacCatalystTarget)' == ''">true</IncludeMacCatalystTarget>
 		<IncludeWindowsTarget Condition="'$(IncludeWindowsTarget)' == ''">true</IncludeWindowsTarget>
 
-		<TargetFrameworks Condition="'$(IncludeAndroidTarget)' == 'true'">net10.0-android</TargetFrameworks>
-		<TargetFrameworks Condition="'$(IncludeIosTarget)' == 'true' And !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-ios</TargetFrameworks>
-		<TargetFrameworks Condition="'$(IncludeMacCatalystTarget)' == 'true' And !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net10.0-maccatalyst</TargetFrameworks>
-		<TargetFrameworks Condition="'$(IncludeWindowsTarget)' == 'true' And $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(IncludeAndroidTarget)' == 'true'">net11.0-android</TargetFrameworks>
+		<TargetFrameworks Condition="'$(IncludeIosTarget)' == 'true' And !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-ios</TargetFrameworks>
+		<TargetFrameworks Condition="'$(IncludeMacCatalystTarget)' == 'true' And !$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);net11.0-maccatalyst</TargetFrameworks>
+		<TargetFrameworks Condition="'$(IncludeWindowsTarget)' == 'true' And $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-windows10.0.19041.0</TargetFrameworks>
 
 		<!-- Note for MacCatalyst:
 		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.

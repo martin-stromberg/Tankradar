@@ -122,7 +122,7 @@ Windows-Rechner haben meist keinen Standortdienst; ohne Testmodus meldet die Suc
 Abnahme:
 
 1. In der PowerShell-Sitzung setzen: `$env:TANKATLAS_TEST_DATA_PATH = "<leeres Testverzeichnis>"`, `$env:TANKATLAS_TEST_LOCATION = "52.5200,13.4050"`, `$env:TANKRADAR_PRICE_API_URL` und `$env:TANKRADAR_PRICE_API_KEY` auf einen erreichbaren Mock-Preisdienst (`MockTankerkoenigServer`, `src/TestSupport`).
-2. App aus derselben Sitzung starten (`dotnet run --project src/Tankradar.MAUI -f net10.0-windows10.0.19041.0` oder `Tankradar.MAUI.exe`).
+2. App aus derselben Sitzung starten (`dotnet run --project src/Tankradar.MAUI -f net11.0-windows10.0.19041.0` oder `Tankradar.MAUI.exe`).
 3. In **Optionen** Spritsorten wählen, dann **Karte** öffnen: Die Startsuche läuft mit dem Teststandort und 5 km automatisch. Danach im Suchdialog (Schaltfläche „Suche“) Radius setzen, **Suchen**: Panel-Liste, Filter und Sortierung prüfen.
 4. Prüffälle: **Standort und GPS** = **Nie** (Startsuche unterbleibt still, manuelle Suche zeigt den Hinweis; es wird nichts abgefragt); `TANKATLAS_TEST_LOCATION` entfernen oder ungültig setzen (Hinweis „Standort nicht ermittelt“); Radiusprüfung über Unit-/Integrationstests (die Oberfläche bietet nur gültige Stufen an); nicht erreichbare Preisdienst-Adresse (Offline-Hinweis).
 

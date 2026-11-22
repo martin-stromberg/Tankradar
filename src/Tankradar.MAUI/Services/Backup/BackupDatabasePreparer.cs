@@ -35,6 +35,12 @@ public static class BackupDatabasePreparer
     public static async Task<BackupPreparation> PrepareAsync(string databasePath, BackupManifest manifest, string workDirectory, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
+        if (timeout <= TimeSpan.Zero)
+        {
+            // Ohne Zeitbudget ist die Höchstdauer sofort überschritten (CancelAfter(0) bricht nicht synchron ab).
+            return new BackupPreparation(BackupResult.Failed);
+        }
+
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         limit.CancelAfter(timeout);
         try

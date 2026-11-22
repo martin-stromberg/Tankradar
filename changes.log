@@ -1,3 +1,13 @@
+## 2026-11-19 — Plattform-Upgrade auf .NET 11 / iOS-27-SDK (Issue #90)
+
+- Anlass ist die Apple-Meldung ITMS-90725 (App-Store-Uploads verlangen ab April 2027 Builds mit dem iOS-27-SDK / Xcode 27). Auf Wunsch des Repository-Eigentümers wurde zuvor der Branch `maintenance/net10` vom letzten .NET-10-Stand (`staging`) abgezweigt; er bleibt als Wartungsanker der .NET-10-Linie erhalten.
+- SDK und Zielframeworks: `global.json` auf .NET SDK `11.0.100` (`rollForward: latestPatch`), alle Projekte von `net10.0-*` auf `net11.0-*` (`net11.0-android`, `net11.0-ios`, `net11.0-maccatalyst`, `net11.0-windows10.0.19041.0`); iOS-Mindestversion bleibt 16.0.
+- Pakete (`Directory.Packages.props`): `MauiVersion` 10.0.130 auf 11.0.10; `Microsoft.EntityFrameworkCore.Sqlite`/`.Design`, `Microsoft.Extensions.Logging.Debug` und `Microsoft.Data.Sqlite` jeweils 10.0.15 auf 11.0.0. Keine Schemaänderung — die vorhandenen EF-Migrationen bleiben unverändert gültig, eine neue Migration ist nicht erforderlich.
+- CI: `dotnet-version` in allen Workflows von `10.0.4xx` auf `11.0.1xx` (`build-and-package`: `11.0.x`); iOS-Jobs laufen auf dem `xcode-27`-Runner-Image (macOS 27, enthält Xcode 27.x — `macos-latest`/`macos-26` bietet kein Xcode 27) und wählen über `IOS_XCODE_VERSION=27.2` explizit `Xcode_27.2.app`.
+- `package-ios`-Baustein: SDK-Band-Pin auf `11.0.1xx`/CI-`global.json` `11.0.100`; iOS-Workload-Pin von `26.5.10318` (iOS 26.5 SDK) auf `27.2.11039` (`Microsoft.iOS.Sdk.net11.0_27.2`, Bindungen für Release-Xcode 27.2); Pack-Bereinigung auf `Microsoft.iOS.Sdk.net11.0_*` umgestellt; Build-Framework `net11.0-ios`.
+- Lokale Skripte (`iOS-Deployment.ps1`, `local-ci.ps1`, `package-windows.ps1`, `create-review-version.ps1`, `test-ios-deployment.ps1`) und Dokumentation (`README`, `pages/README`, `docs/help/**`, `docs/RELEASE_NOTES.md`) auf die neuen Zielframeworks/Versionen angehoben.
+- Keine Schemaänderung.
+
 ## 2026-11-17 — Lokale Sicherungen optional verschlüsseln (Issue #67)
 
 - Die Sicherungskarte in den Optionen erhält zwei Passwortfelder (**Passwort**/**Passwort wiederholen**): Mit gleichen Eingaben entsteht eine verschlüsselte Sicherung, mit leeren Feldern wie bisher eine unverschlüsselte; bei ungleichen Eingaben wird keine Datei angelegt. Verschlüsselte Einträge tragen in der Liste den Zusatz „(verschlüsselt)" und zeigen das Dateidatum statt des Manifest-Inhalts.
