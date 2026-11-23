@@ -72,13 +72,39 @@ jobs:
         if: steps.version.outputs.released == 'true'
         run: dotnet workload restore Tankradar.sln
 
-      - name: Release gate - regular tests
-        # Erster Lauf von `dotnet test --configuration Release` der Pipeline-Kette: hartkodierte Debug-Pfade in
+      - name: Release gate - regular tests (unit)
+        # Blockierendes Release-Gate der deterministischen Lane (Category!=OsInterface). Erster Lauf von
+        # `dotnet test --configuration Release` der Pipeline-Kette: hartkodierte Debug-Pfade in
         # Testhelfern würden hier auffallen (Vorlage, Abschnitt 11.6).
         if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
         run: |
-          dotnet test src/Tankradar.Tests.Unit --configuration Release
-          dotnet test src/Tankradar.Tests.Integration --configuration Release
+          dotnet test src/Tankradar.Tests.Unit --configuration Release --filter "Category!=OsInterface" --results-directory TestResults --logger "trx;LogFileName=test-results-unit.trx"
+
+      - name: Release gate - regular tests (integration)
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        run: |
+          dotnet test src/Tankradar.Tests.Integration --configuration Release --filter "Category!=OsInterface" --results-directory TestResults --logger "trx;LogFileName=test-results-integration.trx"
+
+      - name: Release gate - OS interface tests (unit)
+        # Best-effort-Lane (Issue #93): sichtbar, aber nicht blockierend — continue-on-error auf Schrittebene.
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        continue-on-error: true
+        run: |
+          dotnet test src/Tankradar.Tests.Unit --configuration Release --filter "Category=OsInterface" --results-directory TestResults --logger "trx;LogFileName=test-results-os-interface-unit.trx"
+
+      - name: Release gate - OS interface tests (integration)
+        if: steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        continue-on-error: true
+        run: |
+          dotnet test src/Tankradar.Tests.Integration --configuration Release --filter "Category=OsInterface" --results-directory TestResults --logger "trx;LogFileName=test-results-os-interface-integration.trx"
+
+      - name: Upload release-gate test results
+        if: always() && steps.version.outputs.released == 'true' && steps.version.outputs.release_action == 'create'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-release
+          path: TestResults/*.trx
+          retention-days: 14
 
       - name: Build and package
         if: steps.version.outputs.released == 'true'

@@ -11,6 +11,7 @@ namespace Tankradar.Tests.E2E;
 /// <summary>
 /// Basisklasse für FlaUI-E2E-Tests; startet die Windows-Anwendung mit einem isolierten Testdatenverzeichnis und automatisiert sie über UI Automation.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public abstract class E2ETestBase : IDisposable
 {
 #if DEBUG
@@ -27,6 +28,11 @@ public abstract class E2ETestBase : IDisposable
     public const string WindowModeEnvironmentVariable = "TANKRADAR_E2E_WINDOW";
 
     private static readonly string DefaultDiagnosticsDirectory = E2EDiagnostics.ResolveDirectory();
+
+    // Frist aller Poll-Warteschleifen des Test-Hosts (Element-Sichtbarkeit, Seitenwechsel, Ein-/Ausblenden): mindestens 30 s,
+    // in der CI 120 s — damit liegt sie über dem UIA-Timeout einer einzelnen Anfrage (60 s CI / 15 s lokal), das der innere
+    // Retry von TransientWait/TransientRetry aufbrauchen darf, bevor die Host-Frist endet.
+    private static readonly TimeSpan HostPollTimeout = E2EStartupPolicy.ResolveHostPollTimeout(Environment.GetEnvironmentVariable);
 
     private readonly string _testDataDirectory;
     private IReadOnlyDictionary<string, string> _additionalEnvironment;
@@ -136,11 +142,11 @@ public abstract class E2ETestBase : IDisposable
     /// (z. B. die Wurzel eines Reiters oder eine darauf geöffnete Seite), eine genügt. Ohne Angabe wird der Seitentitel der Shell geprüft.</param>
     protected void NavigateToTab(string tabTitle, params string[] pageAutomationIds)
     {
-        const int maxAttempts = 5;
-        var attemptTimeout = TimeSpan.FromSeconds(5);
+        const int maxAttempts = 3;
+        var attemptTimeout = HostPollTimeout;
 
         // Erst wenn die Shell interaktiv ist (Tab-Leiste vorhanden), wird geklickt.
-        var tab = WaitForTab(tabTitle, TimeSpan.FromSeconds(30))
+        var tab = WaitForTab(tabTitle, HostPollTimeout)
             ?? throw new Xunit.Sdk.XunitException($"Der Reiter '{tabTitle}' wurde nicht gefunden.");
 
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
@@ -193,7 +199,7 @@ public abstract class E2ETestBase : IDisposable
     protected void WaitForPageTitle(string title)
     {
         // Ein UIA-Timeout zählt als „noch nicht erfüllt“; gewartet wird bis zur Frist weiter.
-        if (!TransientWait.Until(() => IsShellTitle(title), TimeSpan.FromSeconds(30), out _))
+        if (!TransientWait.Until(() => IsShellTitle(title), HostPollTimeout, out _))
         {
             Xunit.Assert.Fail($"Der Seitentitel '{title}' wurde nicht angezeigt.");
         }
@@ -292,17 +298,9 @@ public abstract class E2ETestBase : IDisposable
         // Bei einem vor der Initialisierung abgebrochenen Start kann die Automation fehlen; das Aufräumen darf die Startausnahme nicht verdecken.
         ((IDisposable?)Automation)?.Dispose();
 
-        try
-        {
-            if (Directory.Exists(_testDataDirectory))
-            {
-                Directory.Delete(_testDataDirectory, recursive: true);
-            }
-        }
-        catch (IOException)
-        {
-            // Best-effort: Verzeichnis kann noch kurz durch den beendeten Prozess gesperrt sein.
-        }
+        // Best-effort mit Wiederholungen: Das Verzeichnis kann noch kurz durch den beendeten Prozess gesperrt sein;
+        // ein Restfehler wird nur protokolliert und verdeckt nie das Testergebnis.
+        TempDirectoryCleanup.DeleteBestEffort(_testDataDirectory);
 
         _disposed = true;
         Cleanup();
@@ -535,7 +533,7 @@ public abstract class E2ETestBase : IDisposable
     /// </summary>
     private void SkipSetup()
     {
-        var timeout = TimeSpan.FromSeconds(30);
+        var timeout = HostPollTimeout;
         if (!TransientWait.Until(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId)) is not null, timeout, out _))
         {
             throw new Xunit.Sdk.XunitException("Die Einrichtung beim ersten Start wurde nicht angezeigt.");
@@ -557,7 +555,7 @@ public abstract class E2ETestBase : IDisposable
                 lastTransientError = ex;
             }
 
-            if (TransientWait.Until(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId)) is null, TimeSpan.FromSeconds(6), out _))
+            if (TransientWait.Until(() => MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(SetupSkipId)) is null, HostPollTimeout, out _))
             {
                 return;
             }

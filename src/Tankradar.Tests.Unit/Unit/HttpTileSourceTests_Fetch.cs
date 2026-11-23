@@ -36,9 +36,9 @@ public class HttpTileSourceTests_Fetch : BaseTest
     {
         if (disposing)
         {
-            foreach (var directory in new[] { _directory, _directory + "-slow", _directory + "-big" }.Where(Directory.Exists))
+            foreach (var directory in new[] { _directory, _directory + "-slow", _directory + "-big" })
             {
-                Directory.Delete(directory, recursive: true);
+                TempDirectoryCleanup.DeleteBestEffort(directory);
             }
         }
 

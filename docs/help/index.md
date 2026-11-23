@@ -19,3 +19,4 @@
 
 - [Git-Hooks zur Qualitätssicherung](git-hooks/index.md) — Automatisierte Qualitätsprüfungen beim Commit und Push. Prüft Übersetzungen, XML-Dokumentation, Platzhalter-Implementierungen, Enum-Testabdeckung, Code-Formatierung, Secrets und das Commit-Nachrichten-Format. Installationsanleitung und Troubleshooting enthalten.
 - [CI/CD-Pipeline mit Pre-Releases und Releases](ci-cd/index.md) — Automatischer Build, Prüfungen und Veröffentlichung über GitHub Actions: Branch-Modell `main`/`staging`, Pre-Releases bei jedem Push auf `staging`, Releases bei jedem Push auf `main`, Versionierung ab 0.1.0, lokaler Prüflauf als Ersatz für Actions und Einrichtungs-Checkliste für GitHub.
+- [Teststabilität](stabilitaet/index.md) — Zwei Test-Lanes: deterministische Tests blockierend, OS-nahe Tests (FlaUI, Prozessstarts, Loopback-Listener) als `Category=OsInterface` best-effort mit einmaligem `Flaky`-Retry, Flake-Statistik und Quarantäne-Prozess.

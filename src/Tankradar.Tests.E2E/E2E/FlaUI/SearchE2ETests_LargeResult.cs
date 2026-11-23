@@ -22,6 +22,10 @@ namespace Tankradar.Tests.E2E.E2E.FlaUI;
 /// die Messzeit abzüglich der in vorübergehenden Fehlern verbrachten Zeit (<c>timeoutTime</c> von <see cref="TransientWait"/>); eine Ausnahme für UIA-Timeouts gibt es nicht mehr.
 /// Einen Container „Search.Results“ gibt es im UIA-Baum nicht (das <c>VerticalStackLayout</c> erzeugt kein Automation-Element), die Suche wird daher nicht auf ihn begrenzt.
 /// </remarks>
+// OsInterface wird am Typ wiederholt: xUnit 2.9.3 wertet den geerbten Basisklassen-Trait nicht zusätzlich zum
+// eigenen Category-Trait aus, sodass die Klasse sonst in die blockierende Lane rutschen würde.
+[Trait("Category", TestCategories.OsInterface)]
+[Trait("Category", TestCategories.Flaky)]
 public partial class SearchE2ETests_LargeResult : SearchE2ETestBase
 {
     private const int PageSize = 25;

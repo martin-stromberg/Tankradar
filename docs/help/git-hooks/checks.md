@@ -14,7 +14,7 @@
 | Code-Formatierung | pre-commit, pre-push (`--strict`) | blockierend | `dotnet format --verify-no-changes` | `format-code-style-check.py` |
 | Verbotene Muster / Secrets | pre-commit, pre-push (`--all --strict`) | blockierend | API-Schlüssel, Zertifikate, Signierungsdaten, DB-Dumps, Logdateien | `forbidden-patterns-check.py` |
 | Commit-Nachrichten-Format | pre-push | blockierend | Conventional-Commits-Format für gepushte Commits | `conventional-commits-check.py` |
-| Testausführung | pre-push | blockierend | `dotnet build` + `dotnet test --no-build` für Unit/Integration, E2E nur mit `PRE_PUSH_E2E=1` (Timeout 10 Min.) | `test-execution-check.py` |
+| Testausführung | pre-push | blockierend | `dotnet build` + `dotnet test --no-build --filter "Category!=OsInterface"` für Unit/Integration, E2E ungefiltert nur mit `PRE_PUSH_E2E=1` (Timeout 10 Min.) | `test-execution-check.py` |
 
 ## Branch-Schutz
 
@@ -191,8 +191,14 @@ wenn Build oder Tests fehlschlagen oder ein Zeitlimit überschritten wird.
 - **Oberflächentests (E2E) laufen standardmäßig nicht:** Damit das Pushen den Anwender nicht stört, werden
   Testprojekte mit `E2E` im Namen übersprungen (Unit- und Integrationstests laufen). Mit
   `PRE_PUSH_E2E=1 git push ...` wird stattdessen die gesamte Solution getestet, einschließlich E2E. Die
-  E2E-Tests sichern die Auslieferung in der PR-CI nach `staging` (blockierend) und lokal über
-  `scripts/local-ci.ps1` ab.
+  E2E-Tests laufen in der CI in der best-effort-Lane `os-interface tests` und lokal über
+  `scripts/local-ci.ps1` mit.
+
+- **Nur die deterministische Lane:** Die Standard-Testprojekte laufen mit
+  `--filter "Category!=OsInterface"` — OS-nahe Tests (Loopback-Listener, echte Prozessstarts)
+  gehören in die best-effort-Lane der CI und sollen einen Push nicht blockieren
+  ([OS-Schnittstellen-Tests](../stabilitaet/os-interface-tests.md), Issue #93). Mit
+  `PRE_PUSH_E2E=1` bleibt der Solution-Lauf bewusst ungefiltert.
 
 - **Timeout:** 10 Minuten gesamt für Build und Tests (Standard), überschreibbar über die Umgebungsvariable
   `TEST_TIMEOUT_SECONDS=<Sekunden>`.

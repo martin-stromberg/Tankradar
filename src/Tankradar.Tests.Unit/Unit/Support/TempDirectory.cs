@@ -1,3 +1,5 @@
+using Tankradar.TestSupport;
+
 namespace Tankradar.Tests.Unit.Unit.Support;
 
 /// <summary>
@@ -32,13 +34,7 @@ public sealed class TempDirectory : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(Path, recursive: true);
-        }
-        catch (IOException)
-        {
-            // Aufräumen ist nicht kritisch.
-        }
+        // Best-effort mit Wiederholungen; ein Restfehler wird nur protokolliert.
+        TempDirectoryCleanup.DeleteBestEffort(Path);
     }
 }

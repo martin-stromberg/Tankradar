@@ -18,13 +18,7 @@ public class BackupCryptoTests : BaseTest
     {
         if (disposing)
         {
-            try
-            {
-                Directory.Delete(_directory, recursive: true);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
-            {
-            }
+            TempDirectoryCleanup.DeleteBestEffort(_directory);
         }
 
         base.Dispose(disposing);

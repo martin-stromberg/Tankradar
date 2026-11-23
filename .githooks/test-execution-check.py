@@ -85,9 +85,14 @@ def main():
         print(f'Hinweis: Oberflächentests (E2E) werden im Pre-Push-Hook übersprungen (mit {E2E_ENV_VARIABLE}=1 einschaltbar).')
     print(f'Führe "dotnet build" und "dotnet test --no-build" für {", ".join(t.name for t in targets)} aus (Timeout gesamt: {timeout}s)...')
 
+    # Ohne PRE_PUSH_E2E laufen nur die deterministischen Tests (Category!=OsInterface): OS-nahe Tests
+    # (Loopback-Listener, echte Prozessstarts, FlaUI) gehören in die best-effort-Lane der CI (Issue #93).
+    # Mit PRE_PUSH_E2E=1 bleibt der Solution-Lauf bewusst ungefiltert (volle Suite inkl. E2E).
+    test_filter_args = [] if e2e_enabled() else ['--filter', 'Category!=OsInterface']
+
     start = time.monotonic()
     commands = [['dotnet', 'build', str(solution), '--nologo', '--verbosity', 'quiet']]
-    commands += [['dotnet', 'test', str(target), '--no-build', '--nologo', '--verbosity', 'quiet'] for target in targets]
+    commands += [['dotnet', 'test', str(target), '--no-build', '--nologo', '--verbosity', 'quiet'] + test_filter_args for target in targets]
     result = None
     for command in commands:
         remaining = max(1, timeout - (time.monotonic() - start))

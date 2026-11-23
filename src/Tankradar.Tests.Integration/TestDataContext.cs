@@ -36,10 +36,8 @@ public class TestDataContext : IDisposable
     /// </summary>
     public void Cleanup()
     {
-        if (Directory.Exists(DataDirectory))
-        {
-            Directory.Delete(DataDirectory, recursive: true);
-        }
+        // Best-effort mit Wiederholungen; ein Restfehler wird nur protokolliert und verdeckt nie den Assert.
+        TempDirectoryCleanup.DeleteBestEffort(DataDirectory);
     }
 
     /// <summary>

@@ -116,6 +116,32 @@ class TestExecutionCheckTests_DotnetTest(unittest.TestCase):
         for call in test_calls:
             self.assertIn('--no-build', call)
 
+    def test_default_test_calls_filter_out_os_interface_lane(self):
+        # Issue #93: Die Standard-Ziele laufen nur mit der deterministischen Lane (Category!=OsInterface).
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            self._make_repo(tmp_root, ['App.Tests.Unit', 'App.Tests.Integration'])
+
+            calls = self._run_main_collecting_calls(tmp_root)
+
+        test_calls = [c for c in calls if c[:2] == ['dotnet', 'test']]
+        for call in test_calls:
+            self.assertIn('--filter', call)
+            self.assertIn('Category!=OsInterface', call)
+
+    def test_pre_push_e2e_runs_unfiltered(self):
+        # Mit PRE_PUSH_E2E=1 bleibt der Solution-Lauf bewusst ungefiltert (volle Suite inkl. E2E).
+        os.environ['PRE_PUSH_E2E'] = '1'
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            self._make_repo(tmp_root, ['App.Tests.Unit', 'App.Tests.E2E'])
+
+            calls = self._run_main_collecting_calls(tmp_root)
+
+        test_calls = [c for c in calls if c[:2] == ['dotnet', 'test']]
+        self.assertEqual(len(test_calls), 1)
+        self.assertNotIn('--filter', test_calls[0])
+
     def test_pre_push_e2e_variable_includes_e2e_via_solution(self):
         os.environ['PRE_PUSH_E2E'] = '1'
         with tempfile.TemporaryDirectory() as tmp:
