@@ -36,6 +36,8 @@ Der Routing-Schlüssel des Anwenders (und der Tankerkönig-Schlüssel nach dem e
 - Die App legt sie über die MAUI-Abstraktion `SecureStorage` mit der Zugriffsklasse **AfterFirstUnlock** an. Sie sind **nicht** mit iCloud synchronisiert, **können** aber in **verschlüsselten Gerätesicherungen** (Finder/iTunes) enthalten sein und mit einer solchen Sicherung auf ein anderes Gerät wandern.
 - Die Bezeichnung „gerätelokal“ ist deshalb zu ungenau und wird nicht mehr verwendet. Die Zugriffsklasse wurde bewusst nicht auf „ThisDeviceOnly“ geändert (siehe ADR 0015).
 
+Unter **Android** liegen die Schlüssel in einer Einstellungsdatei der App, die mit dem Keystore des Geräts verschlüsselt ist (ebenfalls über `SecureStorage`). Sie sind nicht in der Sicherung der App; da das automatische Gerätebackup für die App abgeschaltet ist, wandern sie auch nicht über ein System-Backup oder einen Gerätetransfer auf ein neues Gerät. Nach einer Neuinstallation oder einem Gerätewechsel sind der Routing-Schlüssel und der Schalter „Routensuche aktivieren“ daher neu einzugeben; den Tankerkönig-Schlüssel übernimmt die App automatisch wieder aus dem eingebauten Schlüssel (siehe [ADR 0022](../../adr/0022-android-backup.md)).
+
 ## Vorlage für die Angaben in App Store Connect
 
 **App-Datenschutz (Datenarten):**
