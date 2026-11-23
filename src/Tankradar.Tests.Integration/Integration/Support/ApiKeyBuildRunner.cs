@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Integration.Integration.Support;
 
@@ -155,22 +156,11 @@ public sealed class ApiKeyBuildRunner : IDisposable
     }
 
     /// <summary>
-    /// Entfernt das temporäre Verzeichnis.
+    /// Entfernt das temporäre Verzeichnis best-effort (Wiederholungen bei Dateisperren; ein Restfehler wird nur protokolliert).
     /// </summary>
     public void Dispose()
     {
-        try
-        {
-            Directory.Delete(_directory, recursive: true);
-        }
-        catch (IOException)
-        {
-            // Aufräumen ist best effort; das Verzeichnis liegt im Temp-Ordner.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Siehe oben.
-        }
+        TempDirectoryCleanup.DeleteBestEffort(_directory);
     }
 
     private static void AppendLine(StringBuilder output, string? line)

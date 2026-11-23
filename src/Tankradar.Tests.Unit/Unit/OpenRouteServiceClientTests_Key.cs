@@ -12,6 +12,7 @@ namespace Tankradar.Tests.Unit.Unit;
 /// Prüft, dass der Schlüssel nur im Anfragekopf steht, nie in der Adresse, dass ein fehlender Schlüssel vor jedem Aufruf erkannt wird
 /// und dass der Testmodus ohne Endpunkt den Abruf verweigert.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class OpenRouteServiceClientTests_Key : OpenRouteServiceClientTestBase
 {
     /// <summary>

@@ -7,6 +7,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Integrationstest: Kachelquelle gegen den lokalen Mock-Kachelserver (echtes HTTP über Loopback, nie ein produktiver Kachelserver).
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class TileSourceMockServerTests_Flow : IDisposable
 {
     private readonly MockTileServer _server = new();
@@ -25,10 +26,7 @@ public class TileSourceMockServerTests_Flow : IDisposable
     {
         _client.Dispose();
         _server.Dispose();
-        if (Directory.Exists(_directory))
-        {
-            Directory.Delete(_directory, recursive: true);
-        }
+        TempDirectoryCleanup.DeleteBestEffort(_directory);
 
         GC.SuppressFinalize(this);
     }

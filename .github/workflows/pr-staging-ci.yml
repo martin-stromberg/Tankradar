@@ -141,15 +141,19 @@ jobs:
         # Baut u. a. die Windows-App, die der FlaUI-E2E-Test startet.
         run: dotnet build Tankradar.sln --configuration Release --no-restore
 
-      - name: Test unit (blocking)
+      - name: Test regular (unit)
+        # Blockierende Lane: nur deterministische Tests (Category!=OsInterface); OS-nahe Tests laufen
+        # im Job "os-interface-tests" als best-effort (Issue #93).
         run: >
           dotnet test src/Tankradar.Tests.Unit --configuration Release --no-build
+          --filter "Category!=OsInterface"
           --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
           --logger "trx;LogFileName=test-results-unit.trx" --logger "console;verbosity=normal"
 
-      - name: Test integration (blocking)
+      - name: Test regular (integration)
         run: >
           dotnet test src/Tankradar.Tests.Integration --configuration Release --no-build
+          --filter "Category!=OsInterface"
           --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory TestResults
           --logger "trx;LogFileName=test-results-integration.trx" --logger "console;verbosity=normal"
 
@@ -166,15 +170,13 @@ jobs:
         # Issue #22: Zielverzeichnis für Speicherabzüge des App-Prozesses bei einem Absturz (0xC0000005 im WinRT-Finalizer).
         run: mkdir -p e2e-dumps
 
-      - name: Test E2E with FlaUI (blocking)
-        # Blockierend (bewusste Abweichung von der CI-Vorlage, Abschnitt 4: dort best-effort): Eine Auslieferung erfolgt nur mit
-        # vollständig grünen Tests. Der Schritt steht nach der Coverage-Prüfung, damit deren Ergebnis auch bei einem E2E-Fehlschlag
-        # vorliegt; kein Coverage-Collector (die UI-Tests dürfen die Abdeckung nicht verwässern). Die App läuft im Testmodus
-        # außerhalb des sichtbaren Bildschirmbereichs (Off-Screen); Rückfall auf den Vordergrundbetrieb ohne Codeänderung über die
-        # Repository-Variable TANKRADAR_E2E_WINDOW=foreground. Diagnose-Artefakte und die begrenzte Wiederholung bei UI-Automation-
-        # Timeouts (TransientRetry) bleiben erhalten. Die DOTNET_Dbg*-Variablen gelten nur für diesen Schritt und wirken auf den
-        # von FlaUI gestarteten App-Prozess (Umgebung wird vererbt); sie erzeugen bei einem Absturz (z. B. 0xC0000005 im
-        # WinRT-Finalizer, Issue #22) einen Speicherabzug mit der PID im Dateinamen statt nur die Absturzmeldung im Protokoll.
+      - name: Test regular (E2E)
+        # Blockierende Lane: Category!=OsInterface enthält derzeit nur die nicht markierten Tests
+        # (StartFailureCleanupE2ETests, FlakyConventionTests) — sämtliche FlaUI-E2E-Tests sind über die
+        # E2ETestBase als OsInterface markiert und laufen im Job "os-interface-tests" als best-effort
+        # (Issue #93). Der Schritt steht nach der Coverage-Prüfung, damit deren Ergebnis auch bei einem
+        # Fehlschlag vorliegt; kein Coverage-Collector. Die Env-Variablen bleiben für den Fall, dass
+        # später unmarkierte E2E-Tests die App starten.
         env:
           TANKRADAR_E2E_WINDOW: ${{ vars.TANKRADAR_E2E_WINDOW || 'offscreen' }}
           DOTNET_DbgEnableMiniDump: '1'
@@ -182,6 +184,7 @@ jobs:
           DOTNET_DbgMiniDumpName: ${{ github.workspace }}/e2e-dumps/tankradar-dump-%p.dmp
         run: >
           dotnet test src/Tankradar.Tests.E2E --configuration Release --no-build
+          --filter "Category!=OsInterface"
           --results-directory TestResults
           --logger "trx;LogFileName=test-results-e2e.trx" --logger "console;verbosity=normal"
 
@@ -219,6 +222,132 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: e2e-dumps-pr
+          path: e2e-dumps/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Best-effort-Lane für Tests mit echter Betriebssystem-Schnittstellen-Berührung (FlaUI/UI-Automation,
+  # echte Prozessstarts, Loopback-HttpListener): sichtbar, aber nicht blockierend — echte Desktop-
+  # Umgebungen sind auf GitHub-Runnern nicht immer zuverlässig (Issue #93). Der Job läuft bewusst
+  # getrennt von build-and-test, damit seine Laufzeit nicht gegen das 45-Minuten-Timeout des
+  # blockierenden Jobs zählt. Job-Level-continue-on-error hält die Lane nicht-blockierend; fehlgeschlagene
+  # Flaky-markierte Tests werden genau einmal gefiltert wiederholt.
+  os-interface-tests:
+    name: os-interface tests
+    needs: detect-backmerge
+    if: needs.detect-backmerge.outputs.is_backmerge != 'true'
+    continue-on-error: true
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      IncludeAndroidTarget: 'false'
+      IncludeIosTarget: 'false'
+      IncludeMacCatalystTarget: 'false'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '11.0.1xx'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install MAUI workloads
+        run: dotnet workload restore Tankradar.sln
+
+      - name: Restore
+        run: dotnet restore Tankradar.sln -p:Configuration=Release
+
+      - name: Build
+        run: dotnet build Tankradar.sln --configuration Release --no-restore
+
+      - name: Prepare E2E crash dump directory
+        run: mkdir -p e2e-dumps
+
+      - name: Test OS interface (unit)
+        run: >
+          dotnet test src/Tankradar.Tests.Unit --configuration Release --no-build
+          --filter "Category=OsInterface"
+          --results-directory TestResults
+          --logger "trx;LogFileName=test-results-os-interface-unit.trx" --logger "console;verbosity=normal"
+
+      - name: Test OS interface (integration)
+        run: >
+          dotnet test src/Tankradar.Tests.Integration --configuration Release --no-build
+          --filter "Category=OsInterface"
+          --results-directory TestResults
+          --logger "trx;LogFileName=test-results-os-interface-integration.trx" --logger "console;verbosity=normal"
+
+      - name: Test OS interface (E2E)
+        # Die DOTNET_Dbg*-Variablen wirken auf den von FlaUI gestarteten App-Prozess (Umgebung wird
+        # vererbt); sie erzeugen bei einem Absturz (z. B. 0xC0000005 im WinRT-Finalizer, Issue #22)
+        # einen Speicherabzug mit der PID im Dateinamen.
+        env:
+          TANKRADAR_E2E_WINDOW: ${{ vars.TANKRADAR_E2E_WINDOW || 'offscreen' }}
+          DOTNET_DbgEnableMiniDump: '1'
+          DOTNET_DbgMiniDumpType: '2'
+          DOTNET_DbgMiniDumpName: ${{ github.workspace }}/e2e-dumps/tankradar-dump-%p.dmp
+        run: >
+          dotnet test src/Tankradar.Tests.E2E --configuration Release --no-build
+          --filter "Category=OsInterface"
+          --results-directory TestResults
+          --logger "trx;LogFileName=test-results-os-interface-e2e.trx" --logger "console;verbosity=normal"
+
+      - name: Retry flaky tests once
+        # if: failure() ist bewusst breit: Bei Build-Fehlschlag oder fehlendem TRX meldet das Skript
+        # "keine Flaky-Fehlschläge" und endet mit 0, sodass der ursprüngliche Fehlschlag das führende
+        # Signal bleibt. Persistente Flaky-Fehlschläge lassen den Schritt fehlschlagen — der Job bleibt
+        # über das Job-Level-continue-on-error trotzdem nicht-blockierend.
+        if: failure()
+        shell: pwsh
+        run: |
+          $exitCode = 0
+          & scripts/Retry-FlakyTests.ps1 -TestProject src/Tankradar.Tests.Unit/Tankradar.Tests.Unit.csproj -PrimaryTrx TestResults/test-results-os-interface-unit.trx -Configuration Release
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+          & scripts/Retry-FlakyTests.ps1 -TestProject src/Tankradar.Tests.Integration/Tankradar.Tests.Integration.csproj -PrimaryTrx TestResults/test-results-os-interface-integration.trx -Configuration Release
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+          & scripts/Retry-FlakyTests.ps1 -TestProject src/Tankradar.Tests.E2E/Tankradar.Tests.E2E.csproj -PrimaryTrx TestResults/test-results-os-interface-e2e.trx -Configuration Release
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+          exit $exitCode
+
+      - name: Analyze flaky test results
+        # Reiner Sichtbarkeits-Report über die TestResults-Verzeichnisse dieses Laufs (Exit immer 0).
+        if: always()
+        shell: pwsh
+        run: |
+          & scripts/Analyze-FlakyTestResults.ps1 -Path TestResults
+
+      - name: Upload OS-interface test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results-os-interface-pr
+          path: TestResults/test-results-os-interface*.trx
+          retention-days: 14
+
+      - name: Upload OS-interface E2E diagnostics
+        # Screenshot, UI-Automation-Baum und Fehlerbeschreibung fehlgeschlagener FlaUI-Tests.
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-diagnostics-os-pr
+          path: e2e-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload OS-interface E2E crash dumps
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-dumps-os-pr
           path: e2e-dumps/
           if-no-files-found: ignore
           retention-days: 7

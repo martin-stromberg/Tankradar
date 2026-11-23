@@ -2,7 +2,7 @@
 
 ## Important Notes Before Update
 
-- There are no special notices.
+- CI change (Issue #93): environment-sensitive tests (FlaUI/UI automation, real process starts, loopback listeners) now run in a separate non-blocking `os-interface-tests` job (`continue-on-error`); E2E tests no longer block PR/staging merges. Deterministic tests (`Category!=OsInterface`) still block; `Flaky`-marked failures get exactly one automated re-run and stay visible via a TRX-based flake report.
 
 ## What's New
 
@@ -12,7 +12,7 @@
 
 ## Wichtige Hinweise vor dem Update
 
-- Es gibt keine besonderen Hinweise.
+- CI-Änderung (Issue #93): Umgebungssensitive Tests (FlaUI/UI-Automation, echte Prozessstarts, Loopback-Listener) laufen in einem eigenen, nicht blockierenden `os-interface-tests`-Job (`continue-on-error`); E2E-Tests blockieren PR-/Staging-Merges nicht mehr. Deterministische Tests (`Category!=OsInterface`) blockieren weiterhin; `Flaky`-markierte Fehlschläge erhalten genau einen automatisierten Re-Run und bleiben über eine TRX-basierte Flake-Statistik sichtbar.
 
 ## Neuerungen
 

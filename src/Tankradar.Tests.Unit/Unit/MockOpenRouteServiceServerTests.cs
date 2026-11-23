@@ -9,6 +9,7 @@ namespace Tankradar.Tests.Unit.Unit;
 /// <summary>
 /// Prüft den Mock-Server des Routingdienstes: Schlüsselprüfung, Route aus Start und Ziel oder fest vorgegeben, Fehlerfolgen und Protokoll der Anfragen.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class MockOpenRouteServiceServerTests : BaseTest
 {
     private const string Body = "{\"coordinates\":[[13.405,52.52],[13.405,52.88]],\"instructions\":false}";

@@ -38,6 +38,9 @@
     <Compile Include="..\TestSupport\PolylineEncoder.cs" Link="TestSupport\PolylineEncoder.cs" />
     <Compile Include="..\TestSupport\MockTileServer.cs" Link="TestSupport\MockTileServer.cs" />
     <Compile Include="..\TestSupport\LoopbackHttpListener.cs" Link="TestSupport\LoopbackHttpListener.cs" />
+    <Compile Include="..\TestSupport\TestCategories.cs" Link="TestSupport\TestCategories.cs" />
+    <Compile Include="..\TestSupport\TempDirectoryCleanup.cs" Link="TestSupport\TempDirectoryCleanup.cs" />
+    <Compile Include="..\TestSupport\FlakyConventionTests.cs" Link="TestSupport\FlakyConventionTests.cs" />
   </ItemGroup>
 
 </Project>

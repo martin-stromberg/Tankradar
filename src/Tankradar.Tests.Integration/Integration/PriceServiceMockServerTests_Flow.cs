@@ -10,6 +10,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Prüft Client, Dienst und Preis-Cache gegen einen lokalen Mock-Server über echtes HTTP (kein produktiver Endpunkt): Abruf, Wiederholung, Zeitlimit, Offline-Rückfall.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class PriceServiceMockServerTests_Flow : IDisposable
 {
     private readonly MockTankerkoenigServer _server = new();

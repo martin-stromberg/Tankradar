@@ -1,3 +1,5 @@
+using Tankradar.TestSupport;
+
 namespace Tankradar.Tests.E2E.E2E.FlaUI;
 
 /// <summary>
@@ -35,10 +37,8 @@ public class DiagnosticsCaptureE2ETests : E2ETestBase
         }
         finally
         {
-            if (Directory.Exists(_diagnosticsDirectory))
-            {
-                Directory.Delete(_diagnosticsDirectory, recursive: true);
-            }
+            // Best-effort mit Wiederholungen; ein Restfehler wird nur protokolliert und verdeckt nie den Assert.
+            TempDirectoryCleanup.DeleteBestEffort(_diagnosticsDirectory);
         }
     }
 

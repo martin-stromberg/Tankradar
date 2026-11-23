@@ -60,9 +60,9 @@ public class HttpTileSourceTests_AgeAndRevalidation : BaseTest
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        if (disposing && Directory.Exists(_directory))
+        if (disposing)
         {
-            Directory.Delete(_directory, recursive: true);
+            TempDirectoryCleanup.DeleteBestEffort(_directory);
         }
 
         base.Dispose(disposing);

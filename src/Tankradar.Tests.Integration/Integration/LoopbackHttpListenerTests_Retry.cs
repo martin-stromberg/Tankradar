@@ -6,6 +6,7 @@ namespace Tankradar.Tests.Integration.Integration;
 /// <summary>
 /// Prüft, dass der Start der Mock-Server bei einem zwischenzeitlich belegten Port mit einem neuen Port wiederholt wird.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class LoopbackHttpListenerTests_Retry
 {
     /// <summary>
