@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true"></application>
+	<application android:allowBackup="false" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
+		<!-- Auto-Backup/Gerätetransfer abgeschaltet: Die eigene Sicherung (Optionen → Sicherung) ist die
+		     alleinige Backup-Lösung; System-Backups würden unverschlüsselte eigene Sicherungen und die ohne den
+		     Geräte-Keystore unlesbare SecureStorage-Datei mitnehmen. Entscheidung: docs/adr/0022-android-backup.md -->
+	</application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 </manifest>
