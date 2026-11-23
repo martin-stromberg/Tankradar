@@ -10,6 +10,7 @@ namespace Tankradar.Tests.Unit.Unit;
 /// <summary>
 /// Prüft die Schlüsselprüfung per Testanfrage: Rückmeldung je Antwort, Schlüssel nur im Kopf, feste Koordinaten, neue Adresse, keine Wiederholung, keine Schlüssel in Protokollen.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class OpenRouteServiceKeyCheckerTests : BaseTest
 {
     private const string Key = "ZZPLATZHALTER-PRUEFSCHLUESSEL-ZZ";

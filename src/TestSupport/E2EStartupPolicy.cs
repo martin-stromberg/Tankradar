@@ -41,6 +41,19 @@ public static class E2EStartupPolicy
     }
 
     /// <summary>
+    /// Ermittelt die Frist für Warteschleifen des Test-Hosts (Poll-Warten auf Elemente, Seitenwechsel, Ein-/Ausblenden):
+    /// mindestens 30 Sekunden, sonst das Doppelte des UIA-Timeouts. Die Host-Frist liegt damit in der CI bei 120 Sekunden und
+    /// damit über dem 60-Sekunden-Budget einer einzelnen UIA-Anfrage, lokal bleibt sie bei 30 Sekunden.
+    /// </summary>
+    /// <param name="getEnvironmentVariable">Zugriff auf Umgebungsvariablen (für Tests austauschbar).</param>
+    /// <returns>Die Host-Poll-Frist.</returns>
+    public static TimeSpan ResolveHostPollTimeout(Func<string, string?> getEnvironmentVariable)
+    {
+        var uiaTimeout = ResolveUiaTimeout(getEnvironmentVariable);
+        return TimeSpan.FromSeconds(Math.Max(30, uiaTimeout.TotalSeconds * 2));
+    }
+
+    /// <summary>
     /// Führt den vollständigen Start (App starten und mit UIA verbinden) aus und startet ihn bei einem UIA-Timeout begrenzt neu.
     /// Echte Fehler werden sofort und unverändert weitergereicht.
     /// </summary>

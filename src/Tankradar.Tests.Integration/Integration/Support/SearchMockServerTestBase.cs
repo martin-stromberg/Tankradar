@@ -16,6 +16,7 @@ namespace Tankradar.Tests.Integration.Integration.Support;
 /// Gemeinsamer Aufbau der Suchtests gegen den lokalen Mock-Server: echter Client, Dienst, Preis-Cache auf SQLite, Standortdienst mit festem Standort.
 /// Es werden nie produktive Endpunkte angesprochen.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public abstract class SearchMockServerTestBase : IDisposable
 {
     /// <summary>

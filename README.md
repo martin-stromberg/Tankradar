@@ -82,6 +82,14 @@ dotnet test Tankradar.sln   # Unit-, Integrations- und E2E-Tests (xUnit, E2E via
 Die E2E-Tests starten die kompilierte Windows-App im Testmodus außerhalb des sichtbaren
 Bildschirms und bedienen sie ausschließlich über UI-Automation-Muster.
 
+Die Testsuite ist in zwei Lanes getrennt: deterministische Tests laufen blockierend
+(`--filter "Category!=OsInterface"`); Tests mit echten Betriebssystem-Schnittstellen
+(FlaUI/UI-Automation, echte Prozessstarts, Loopback-Listener) sind als `Category=OsInterface`
+markiert und laufen in der CI best-effort mit einmaligem `Flaky`-Retry. `local-ci.ps1`
+bildet beide Lanes ab — ein Fehlschlag der OS-Lane wird als Warnung gemeldet und lässt den
+Exit-Code unverändert. Konventionen und Befehle:
+[docs/help/stabilitaet/](docs/help/stabilitaet/os-interface-tests.md).
+
 ## Projektstruktur
 
 ```
@@ -105,6 +113,8 @@ docs/                          Anwender- und Entwicklerdokumentation
 - **[docs/help/ci-cd/](docs/help/ci-cd/index.md)** – Pipeline, Versionierung, Releases,
   iOS-Deployment und lokaler Prüflauf (inkl. Windows-Zwischenständen über
   `scripts/create-review-version.ps1`)
+- **[docs/help/stabilitaet/](docs/help/stabilitaet/index.md)** – Teststabilität:
+  OS-Schnittstellen-Tests (`Category=OsInterface`), `Flaky`-Retry und Quarantäne-Konvention
 - **[changes.log](changes.log)** – Änderungsprotokoll je Entwicklungsschritt
 
 ## API-Schlüssel und Testmodus

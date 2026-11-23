@@ -1,5 +1,6 @@
 using System.Text;
 using Tankradar.MAUI.Services.Tankbook;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Unit.Unit;
 
@@ -21,9 +22,9 @@ public class ReceiptPhotoStoreTests_Detection : BaseTest
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        if (disposing && Directory.Exists(_directory))
+        if (disposing)
         {
-            Directory.Delete(_directory, recursive: true);
+            TempDirectoryCleanup.DeleteBestEffort(_directory);
         }
 
         base.Dispose(disposing);

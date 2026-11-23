@@ -15,12 +15,16 @@
         5. Statische Analyse  dotnet build -p:TreatWarningsAsErrors=true (Windows-Job-Simulation: wie die Windows-Jobs
                               der CI mit IncludeAndroidTarget/IncludeIosTarget/IncludeMacCatalystTarget=false; die
                               Variablen werden am Ende wiederhergestellt)
-        6. Unit- und Integrationstests mit Coverage, Mindestabdeckung (Standard 70 %)
-        7. FlaUI-E2E-Tests (blockierend wie in der Pipeline; die App läuft im Testmodus außerhalb des sichtbaren
-                              Bildschirms. Rückfall auf den Vordergrundbetrieb: -E2EForeground. Diagnosedaten
-                              fehlgeschlagener Tests liegen unter e2e-diagnostics\)
-        8. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
-        9. iOS-Compile-Prüfung: net11.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
+        6. Unit- und Integrationstests der blockierenden Lane (Category!=OsInterface) mit Coverage,
+                              Mindestabdeckung (Standard 70 %)
+        7. FlaUI-E2E-Tests der blockierenden Lane (Category!=OsInterface; die App läuft im Testmodus außerhalb
+                              des sichtbaren Bildschirms. Rückfall auf den Vordergrundbetrieb: -E2EForeground.
+                              Diagnosedaten fehlgeschlagener Tests liegen unter e2e-diagnostics\)
+        8. Tests der OS-Schnittstellen-Lane (Category=OsInterface, best-effort wie der Job "os-interface-tests"
+                              der Pipeline, Issue #93): ein Fehlschlag wird als WARNUNG gemeldet und ändert den
+                              Exit-Code nicht. E2E-Anteil entfällt bei -SkipE2E.
+        9. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
+        10. iOS-Compile-Prüfung: net11.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
                               lokale iOS-Workload mit Hinweis übersprungen. Signierte Pakete/TestFlight nur auf dem Mac bzw. in der CI.
 
     Beispiele:
@@ -164,6 +168,7 @@ try {
     foreach ($project in @("Unit", "Integration")) {
         Invoke-Step "Tests: $project" {
             dotnet test "src/Tankradar.Tests.$project" --configuration Release --no-build `
+                --filter "Category!=OsInterface" `
                 --settings coverlet.runsettings --collect:"XPlat Code Coverage" --results-directory $testResults `
                 --logger "trx;LogFileName=test-results-$($project.ToLower()).trx"
         }
@@ -187,7 +192,8 @@ try {
             $savedWindow = [Environment]::GetEnvironmentVariable('TANKRADAR_E2E_WINDOW')
             try {
                 if ($E2EForeground) { Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' 'foreground' }
-                dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build --results-directory $testResults `
+                dotnet test "src/Tankradar.Tests.E2E" --configuration Release --no-build `
+                    --filter "Category!=OsInterface" --results-directory $testResults `
                     --logger "trx;LogFileName=test-results-e2e.trx"
                 if ($LASTEXITCODE -ne 0) {
                     Write-Host "Diagnosedaten fehlgeschlagener E2E-Tests (Screenshot, UI-Baum, Fehlertext): $e2eDiagnostics" -ForegroundColor Yellow
@@ -196,6 +202,30 @@ try {
             finally {
                 Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' $savedWindow
             }
+        }
+    }
+
+    # Best-effort-Lane wie der Job "os-interface-tests" der Pipeline (Issue #93): Tests mit echter
+    # Betriebssystem-Schnittstellen-Berührung (FlaUI, echte Prozessstarts, Loopback-HttpListener). Ein
+    # Fehlschlag wird als WARNUNG gemeldet und lässt den Exit-Code unverändert.
+    Invoke-Step -BestEffort "Tests: OS-Schnittstellen" {
+        $savedWindow = [Environment]::GetEnvironmentVariable('TANKRADAR_E2E_WINDOW')
+        try {
+            if ($E2EForeground) { Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' 'foreground' }
+            $osProjects = @("Unit", "Integration") + $(if ($SkipE2E) { @() } else { @("E2E") })
+            $failedProjects = @()
+            foreach ($project in $osProjects) {
+                dotnet test "src/Tankradar.Tests.$project" --configuration Release --no-build `
+                    --filter "Category=OsInterface" --results-directory $testResults `
+                    --logger "trx;LogFileName=test-results-os-interface-$($project.ToLower()).trx"
+                if ($LASTEXITCODE -ne 0) { $failedProjects += $project }
+            }
+            if ($failedProjects.Count -gt 0) {
+                throw "OS-Schnittstellen-Tests fehlgeschlagen in: $($failedProjects -join ', ') (best-effort — Fehlerbild ggf. in docs/help/stabilitaet/os-interface-tests.md prüfen)"
+            }
+        }
+        finally {
+            Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' $savedWindow
         }
     }
 

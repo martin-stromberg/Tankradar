@@ -31,15 +31,22 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Formatprüfung (`dotnet format --verify-no-changes --severity error`) | `Format check` |
 | Sicherheitsprüfung der Abhängigkeiten (JSON-Auswertung über `scripts/check-vulnerabilities.mjs`, unabhängig von der Sprache des .NET SDK; gleiche Logik wie in der CI) | `Security scan` |
 | Statische Analyse (Windows-Job-Simulation: nur Windows-Ziel, Warnungen als Fehler) | `Static analysis` |
-| Unit- und Integrationstests mit Coverage, Mindestabdeckung 70 % | `Test …` / `Enforce coverage threshold` |
-| FlaUI-E2E-Tests (blockierend, Off-Screen-Betrieb) | `Test E2E with FlaUI (blocking)` |
+| Unit- und Integrationstests der blockierenden Lane (`Category!=OsInterface`) mit Coverage, Mindestabdeckung 70 % | `Test regular (unit|integration)` / `Enforce coverage threshold` |
+| FlaUI-E2E-Tests der blockierenden Lane (`Category!=OsInterface`, Off-Screen-Betrieb) | `Test regular (E2E)` |
+| Tests der OS-Schnittstellen-Lane (`Category=OsInterface`) aller drei Projekte — best-effort: Fehlschlag nur `WARNUNG`, Exit-Code unverändert; E2E-Anteil entfällt bei `-SkipE2E` | `os-interface tests` (Job) |
 | Windows-Paket (`-Package`) | `Build and package` |
 | iOS-Compile-Prüfung (`net11.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
 
 Am Ende zeigt eine Tabelle den Status jedes Schritts. Exit-Code 0 bedeutet: alle blockierenden Prüfungen
-bestanden. Berichte liegen unter `TestResults/` und `coverage-report/` (nicht versioniert). Schlägt ein E2E-Test fehl,
+bestanden. Berichte liegen unter `TestResults/` (reguläre Lane `test-results-*.trx`, OS-Lane
+`test-results-os-interface-*.trx`) und `coverage-report/` (nicht versioniert). Schlägt ein E2E-Test fehl,
 weist der Lauf auf das Diagnoseverzeichnis `e2e-diagnostics/` hin (Screenshot, UI-Baum, Fehlertext je Test;
 nicht versioniert, siehe [E2E-Diagnosedaten](workflows.md#e2e-diagnosedaten)).
+
+Die beiden Lanes folgen der [OS-Schnittstellen-Konvention](../stabilitaet/os-interface-tests.md): Die
+blockierende Lane enthält nur deterministische Tests; `OsInterface`-markierte Tests (FlaUI, echte
+Prozessstarts, Loopback-Listener) laufen best-effort und können nach einem Lauf optional manuell ausgewertet
+werden (`scripts/Retry-FlakyTests.ps1`, `scripts/Analyze-FlakyTestResults.ps1` gegen `TestResults/`).
 
 Die Schritte von Restore bis Paketierung simulieren die Windows-Jobs der Pipeline: Das Skript setzt dafür
 `IncludeAndroidTarget`, `IncludeIosTarget` und `IncludeMacCatalystTarget` auf `false` und `IncludeWindowsTarget` auf

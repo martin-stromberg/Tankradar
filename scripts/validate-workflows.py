@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SCRIPT_CALL_RE = re.compile(r'(?:node |\./)(scripts/[\w./-]+)')
 IPA_RE = re.compile(r'\.ipa|ios-ipa', re.IGNORECASE)
 # Verzeichnisse, die von Workflow-Schritten als Artefakt hochgeladen werden dürfen (enthalten nie eine .ipa).
-SAFE_UPLOAD_DIRS = {'coverage-report', 'TestResults', 'e2e-diagnostics'}
+SAFE_UPLOAD_DIRS = {'coverage-report', 'TestResults', 'e2e-diagnostics', 'e2e-dumps'}
 # Dateiendungen, die als Artefakt bzw. Release-Asset unbedenklich sind.
 SAFE_FILE_EXTENSIONS = {'.json', '.trx', '.xml', '.html', '.txt', '.md', '.log', '.zip', '.sha256'}
 # Optionen von 'gh release create/upload', die einen Wert als eigenes Argument erwarten.
@@ -224,12 +224,16 @@ def main():
     staging = workflows.get('staging-ci.yml')
     promotion = workflows.get('staging-to-main-promotion.yml')
     if staging and promotion:
-        referenced = (trigger_block(promotion) or {}).get('workflow_run', {}).get('workflows', [])
-        if staging.get('name') not in referenced:
-            errors.append(
-                'staging-to-main-promotion.yml: workflow_run referenziert nicht den Anzeigenamen '
-                f'von staging-ci.yml ({staging.get("name")!r})'
-            )
+        # Der Anzeigenamen-Abgleich gilt nur, wenn die Promotion tatsächlich per workflow_run
+        # ausgelöst wird — aktuell triggert staging-to-main-promotion.yml per push auf staging.
+        workflow_run = (trigger_block(promotion) or {}).get('workflow_run')
+        if workflow_run is not None:
+            referenced = (workflow_run or {}).get('workflows', [])
+            if staging.get('name') not in referenced:
+                errors.append(
+                    'staging-to-main-promotion.yml: workflow_run referenziert nicht den Anzeigenamen '
+                    f'von staging-ci.yml ({staging.get("name")!r})'
+                )
 
     actionlint = shutil.which('actionlint')
     if actionlint:

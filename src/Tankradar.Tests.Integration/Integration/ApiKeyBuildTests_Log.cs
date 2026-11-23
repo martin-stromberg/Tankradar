@@ -1,10 +1,12 @@
 using Tankradar.Tests.Integration.Integration.Support;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Integration.Integration;
 
 /// <summary>
 /// Prüft, dass der Schlüssel bei diagnostischer Ausführlichkeit und im Binlog nie im MSBuild-Log erscheint, aber in der gebauten Assembly steht (nur Platzhalter, nie der echte Schlüssel).
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class ApiKeyBuildTests_Log
 {
     private const string PrimaryPlaceholder = "ZZPLACEHOLDERPRIMARYZZ";

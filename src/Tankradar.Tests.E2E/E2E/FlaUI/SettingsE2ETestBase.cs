@@ -15,7 +15,9 @@ public abstract class SettingsE2ETestBase : E2ETestBase
     /// </summary>
     protected static readonly string[] DefaultFuelTypeOrder = ["SuperE5", "SuperE10", "Diesel"];
 
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
+    // Gemeinsame Frist aller WaitUntil-Warteschleifen: mindestens 30 s, in der CI 120 s — über dem UIA-Timeout einer
+    // einzelnen Anfrage (60 s CI / 15 s lokal), den TransientWait intern aufbrauchen darf.
+    private static readonly TimeSpan DefaultTimeout = E2EStartupPolicy.ResolveHostPollTimeout(Environment.GetEnvironmentVariable);
 
     /// <summary>
     /// Startet die App mit Standardkonfiguration.

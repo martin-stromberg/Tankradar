@@ -10,11 +10,11 @@ Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vor
 | Datei | Anzeigename | Trigger | Aufgabe |
 |---|---|---|---|
 | `verify-pr-source.yml` | Verify PR Source | PR → `main` | Lehnt PRs nach `main` ab, die nicht von `staging` kommen. |
-| `pr-staging-ci.yml` | PR CI for Staging | PR → `staging` | Qualitätsprüfungen (`static checks`, `build & test`, `ios build`). Reine Rückführungs-PRs (`main` → `staging`) überspringen die Prüfungen (Erkennung siehe unten). |
+| `pr-staging-ci.yml` | PR CI for Staging | PR → `staging` | Qualitätsprüfungen (`static checks`, `build & test`, `os-interface tests`, `ios build`). Reine Rückführungs-PRs (`main` → `staging`) überspringen die Prüfungen (Erkennung siehe unten). |
 | `staging-ci.yml` | Pre-Release | Push → `staging` | Dieselben Prüfungen, dann `version`, `prerelease` (Windows-ZIP als GitHub-Pre-Release) und `ios-prerelease`. |
 | `staging-to-main-promotion.yml` | Staging to Main Promotion | nach erfolgreichem `Pre-Release` | Eröffnet den Entwurfs-PR `staging` → `main` (Label `automated-promotion`). |
 | `sync-staging-with-main.yml` | Backmerge Main to Staging | Push → `main` | Eröffnet den PR `main` → `staging` (Label `automated-backmerge`). |
-| `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, prüft/repariert vorhandene Releases, veröffentlicht `release-win-x64.zip` + `update.json`, baut iOS. |
+| `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, prüft/repariert vorhandene Releases, veröffentlicht `release-win-x64.zip` + `update.json`, baut iOS. Release-Gate: reguläre Tests blockierend, OS-Schnittstellen-Tests best-effort (`continue-on-error` auf Schrittebene), Ergebnisse als `test-results-release`. |
 | `security-scan.yml` | Security Scan | wöchentlich (Mo 04:00 UTC), manuell | Schwachstellenprüfung unabhängig von Codeänderungen. |
 | `pages.yml` | GitHub Pages | Push → `main` (nur `pages/` und die Workflow-Datei), manuell | Veröffentlicht die App-Präsentation auf GitHub Pages. |
 | `review-architecture-security.yml` | Monthly Architecture & Security Review | monatlich (1. des Monats, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Review-Auftrag für `@softwarewerkstatt` (Label `review-architecture-security`). |
@@ -58,6 +58,10 @@ Default-Branch `main` liegen (nach der Promotion `staging` → `main`).
 | `scripts/local-ci.ps1` | [Lokaler Prüflauf](lokaler-pruefung.md). |
 | `scripts/iOS-Deployment.ps1` | [iOS-Build, Simulator, Gerät und TestFlight-Upload](ios-deployment.md) (lokal, mit Mac). |
 | `scripts/test-ios-deployment.ps1` | Prüfung des iOS-Skripts ohne Mac (Syntax, Hilfe, Abbruchverhalten, Hilfsfunktionen). |
+| `scripts/Retry-FlakyTests.ps1` | Wiederholt fehlgeschlagene `Flaky`-markierte Tests genau einmal gefiltert (Primär-TRX → Retry-TRX `<primär>-flaky-retry.trx`); genutzt vom CI-Schritt `Retry flaky tests once` (Details: [OS-Schnittstellen-Tests](../stabilitaet/os-interface-tests.md)). |
+| `scripts/Analyze-FlakyTestResults.ps1` | Wertet TRX-Verzeichnisse auf Flake-Ereignisse aus und meldet Quarantäne-Kandidaten report-only (Exit immer 0); genutzt vom CI-Schritt `Analyze flaky test results`. |
+| `scripts/lib/Trx.ps1` | Gemeinsame TRX-Parser-Helfer der beiden Skripte (per Dot-Sourcing). |
+| `scripts/lib/TestDiscovery.ps1` | Ermittelt die `Category=Flaky`-Testmenge eines Projekts per `dotnet test --list-tests`. |
 
 Tests der Node-Skripte: `npm test` (`scripts/*.test.mjs`, keine Abhängigkeiten nötig).
 
@@ -79,21 +83,32 @@ Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion, Review-Issue-Erzeug
   `msTools.Updater` nicht.
 - **Plattformen:** `windows-latest`/`xcode-27` statt `ubuntu-latest` für Build und Tests.
 - **Testprojekte:** Unit, Integration und E2E laufen getrennt; nur Unit und Integration fließen in die
-  Coverage ein. E2E ist abweichend von der Vorlage („best-effort test category“) **blockierend**, siehe
-  [E2E-Tests als Auslieferungs-Gate](#e2e-tests-als-auslieferungs-gate).
+  Coverage ein. Tests mit echter Betriebssystem-Schnittstellen-Berührung (FlaUI, echte Prozessstarts,
+  Loopback-Listener) sind als `Category=OsInterface` markiert und laufen im best-effort-Job
+  `os-interface tests` — siehe [OS-Schnittstellen-Tests](../stabilitaet/os-interface-tests.md) und
+  [E2E-Tests und Lane-Modell](#e2e-tests-und-lane-modell).
 - **Restore:** `dotnet restore` läuft mit `-p:Configuration=Release`, weil die MacCatalyst-Laufzeiten
   konfigurationsabhängig sind; `dotnet list package` läuft deshalb mit `--no-restore`.
 
-## E2E-Tests als Auslieferungs-Gate
+## E2E-Tests und Lane-Modell
 
-**Abweichung von der CI-Vorlage:** Die Vorlage führt UI-Tests als *best-effort* (Fehlschlag nur Warnung).
-Tankatlas liefert nur mit vollständig grünen Tests aus. Deshalb ist der Schritt `Test E2E with FlaUI (blocking)`
-in `pr-staging-ci.yml` (PR nach `staging`) **und** in `staging-ci.yml` (vor Version, Pre-Release und iOS-Upload;
-`version` hängt per `needs` an `build-and-test`) blockierend: kein `continue-on-error`, ein Fehlschlag lässt den
-Job und damit PR-Merge bzw. Pre-Release scheitern. Der Schritt steht hinter der Coverage-Prüfung, damit deren
-Ergebnis auch bei einem E2E-Fehlschlag vorliegt; Diagnose-Artefakte (`if: always()`) und die begrenzte
-Wiederholung bei UI-Automation-Timeouts (`TransientRetry`) bleiben erhalten. Das Release auf `main` entsteht aus
-einem bereits geprüften `staging`-Stand.
+**Lane-Modell (Issue #93):** Tests sind in zwei Lanes getrennt. Die blockierende Lane
+(`Category!=OsInterface`) enthält nur deterministische Tests; alle Tests mit echter
+Betriebssystem-Schnittstellen-Berührung (sämtliche FlaUI-E2E-Tests über die `E2ETestBase`,
+echte Prozessstarts, Loopback-`HttpListener`) sind als `OsInterface` markiert und laufen
+im Job `os-interface tests` als **best-effort** (`continue-on-error: true`, sichtbar, nicht
+blockierend) — wie in der CI-Vorlage vorgesehen. Der Schritt `Test regular (E2E)` in
+`build-and-test` führt daher aktuell nur die unmarkierten Tests aus
+(`StartFailureCleanupE2ETests`, `FlakyConventionTests`) und bleibt blockierend. Fehlschläge
+`Flaky`-markierter OS-Tests werden genau einmal gefiltert wiederholt (`Retry flaky tests
+once`, `if: failure()`); `Analyze flaky test results` (`if: always()`) meldet
+Quarantäne-Kandidaten report-only. Details: [OS-Schnittstellen-Tests](../stabilitaet/os-interface-tests.md).
+
+`version` hängt in `staging-ci.yml` per `needs` nur an `detect-backmerge`, `static-checks`
+und `build-and-test` — der `os-interface tests`-Job beeinflusst das Release-Gate nicht.
+Das Release auf `main` entsteht aus einem bereits geprüften `staging`-Stand; in
+`release.yml` laufen die regulären Gates blockierend und die OS-Gates mit
+`continue-on-error: true` auf Schrittebene.
 
 `TransientRetry` wiederholt (höchstens drei Versuche) nur UIA-Timeouts: `TimeoutException`, `COMException` 0x80131505
 und `Win32Exception` mit ERROR_TIMEOUT (1460 bzw. 0x800705B4, so aus `UIA3Automation.FromHandle` beim Abfragen des
@@ -103,9 +118,11 @@ Startausnahme im Testergebnis sichtbar bleibt und nicht von einer `NullReference
 
 **Lokal stören die Tests den Anwender nicht:**
 
-- `pre-push` führt die E2E-Tests standardmäßig **nicht** mehr aus (Unit- und Integrationstests weiterhin);
-  `PRE_PUSH_E2E=1 git push ...` schaltet sie ein (siehe [`checks.md`](../git-hooks/checks.md#test-execution-checkpy)).
-- `scripts/local-ci.ps1` führt sie weiterhin aus (blockierend).
+- `pre-push` führt die E2E-Tests standardmäßig **nicht** mehr aus und filtert die übrigen Tests auf die
+  deterministische Lane (`Category!=OsInterface`); `PRE_PUSH_E2E=1 git push ...` läuft ungefiltert
+  (siehe [`checks.md`](../git-hooks/checks.md#test-execution-checkpy)).
+- `scripts/local-ci.ps1` führt sie im best-effort-Schritt `Tests: OS-Schnittstellen` aus
+  (`Category=OsInterface`, WARNUNG statt FEHLER).
 - **Off-Screen-Betrieb:** Im Testmodus (`TANKATLAS_TEST_DATA_PATH`) startet die App ihr Fenster bei
   `TANKATLAS_TEST_WINDOW=offscreen` außerhalb des Bildschirms (Position -32000/-32000), als nicht aktivierbares
   Werkzeugfenster ohne Taskleisteneintrag und ohne sich in den Vordergrund zu holen
@@ -125,8 +142,8 @@ unverändert bleibt.
 **Stand in der CI:** Die CI-Oberflächentests laufen per Repository-Variable `TANKRADAR_E2E_WINDOW=foreground`
 im Vordergrund. Der Off-Screen-Betrieb war auf den GitHub-Runnern nicht zuverlässig: Im Staging-Lauf trat ein
 UI-Automation-Timeout (`0x800705B4`) auf, obwohl zuvor fünf von fünf PR-Läufe grün waren. Lokal bleibt Off-Screen der
-Standard (`local-ci.ps1 -E2EForeground` schaltet lokal auf den Vordergrund um). Die übrigen Punkte (blockierende E2E
-in der PR-CI und in `staging-ci.yml`, `pre-push` ohne E2E) bleiben bestehen.
+Standard (`local-ci.ps1 -E2EForeground` schaltet lokal auf den Vordergrund um). Die übrigen Punkte
+(Lane-Trennung regulär/OS-Schnittstellen, `pre-push` ohne E2E) bleiben bestehen.
 
 ## Robuster App-Start der E2E-Tests (UIA-Timeouts)
 
@@ -141,6 +158,10 @@ Die Testbasis (`E2ETestBase`, `E2EStartupPolicy`, `TransientRetry` in `src/TestS
 - **Großzügigere UIA-Timeouts:** `ConnectionTimeout` und `TransactionTimeout` der `UIA3Automation` sind lokal 15 s,
   in der CI (`GITHUB_ACTIONS=true` bzw. `CI=true`) 60 s. Überschreibbar mit `TANKRADAR_E2E_UIA_TIMEOUT_SECONDS`
   (1 bis 600; ungültige Werte werden ignoriert).
+- **Angeglichene Host-Fristen (Issue #93):** Die Poll-Fristen des Test-Hosts (Seitenwechsel, Seitentitel,
+  Ein-/Ausblenden der Einrichtung, `SettingsE2ETestBase.WaitUntil`) folgen
+  `E2EStartupPolicy.ResolveHostPollTimeout` = `max(30 s, 2 × UIA-Timeout)` — lokal 30 s, in der CI 120 s, damit
+  keine Host-Frist unter dem Budget einer einzelnen UIA-Anfrage endet.
 - **Warten auf Bereitschaft:** Vor der ersten UIA-Abfrage wartet der Test (höchstens bis zum UIA-Timeout), bis der Prozess
   ein Hauptfenster-Handle hat und auf Eingaben wartet (`Process.WaitForInputIdle`).
 - **Backoff statt kurzer Pausen:** Die Abfrage des Hauptfensters wird bei UIA-Timeouts bis zu viermal wiederholt, mit
@@ -165,7 +186,9 @@ Die Wartephasen laufen über `TransientWait.Until` (`src/TestSupport/TransientWa
 ist (`ElementNotAvailableException`, z. B. weil die Liste neu aufgebaut wird), gelten als „noch nicht erfüllt“; gewartet wird bis zur Frist, andere Fehler bleiben sichtbar.
 Die Überladung mit `out TimeSpan timeoutTime` liefert die in solchen Fehlern verbrachte Zeit. Zeitgrenzen beziehen sich auf die **Messzeit abzüglich dieser Zeit**
 (`SearchE2ETests_LargeResult`: Sortierwechsel höchstens 10 s ohne UIA-Wartezeit; eine Sonderfrist bei Timeouts gibt es nicht mehr). Der Test prüft außerdem die
-Namensreihenfolge nach dem Sortierwechsel und zählt nach „Weitere anzeigen“ im Ruhezustand einmal 50 Einträge. Das Verhalten in künftigen CI-Läufen ist zu beobachten.
+Namensreihenfolge nach dem Sortierwechsel und zählt nach „Weitere anzeigen“ im Ruhezustand einmal 50 Einträge. Wegen des dokumentierten Flake-Ereignisses trägt der
+Test `Category=Flaky` und darf in der best-effort-Lane genau einmal wiederholt werden (siehe
+[OS-Schnittstellen-Tests](../stabilitaet/os-interface-tests.md)). Das Verhalten in künftigen CI-Läufen ist zu beobachten.
 
 E2E-Tests dürfen dem Anwender weder Tastatur- noch Maus- noch Fensterfokus nehmen (keine Aufrufe von `Focus()`, `SetForeground`, Tastatur- oder Mausaktionen; Eingaben per
 UIA-Wertemuster, Chips und Schaltflächen per `Invoke`); `E2EInputPolicyTests_NoFocus` prüft das per Quelltext. In Wartephasen entfallen breite `FindAll`-Suchen über das Fenster.

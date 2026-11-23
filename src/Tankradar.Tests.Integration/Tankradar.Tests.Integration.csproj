@@ -40,6 +40,9 @@
     <Compile Include="..\TestSupport\BackupEncryptedTestArchive.cs" Link="TestSupport\BackupEncryptedTestArchive.cs" />
     <Compile Include="..\TestSupport\BackupTestTampering.cs" Link="TestSupport\BackupTestTampering.cs" />
     <Compile Include="..\TestSupport\RecordingLogger.cs" Link="TestSupport\RecordingLogger.cs" />
+    <Compile Include="..\TestSupport\TestCategories.cs" Link="TestSupport\TestCategories.cs" />
+    <Compile Include="..\TestSupport\TempDirectoryCleanup.cs" Link="TestSupport\TempDirectoryCleanup.cs" />
+    <Compile Include="..\TestSupport\FlakyConventionTests.cs" Link="TestSupport\FlakyConventionTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

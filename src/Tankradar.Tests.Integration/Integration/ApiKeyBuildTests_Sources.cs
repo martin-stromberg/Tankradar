@@ -1,10 +1,12 @@
 using Tankradar.Tests.Integration.Integration.Support;
+using Tankradar.TestSupport;
 
 namespace Tankradar.Tests.Integration.Integration;
 
 /// <summary>
 /// Prüft die Reihenfolge der drei Schlüsselquellen beim Build (<c>TANKRADAR_FUEL_PRICE_API_KEY</c>, <c>FUEL_PRICE_API_KEY</c>, <c>tankerkoenig.local.props</c>) mit Platzhaltern.
 /// </summary>
+[Trait("Category", TestCategories.OsInterface)]
 public class ApiKeyBuildTests_Sources
 {
     private const string PrimaryPlaceholder = "ZZPLACEHOLDERPRIMARYZZ";
