@@ -53,6 +53,7 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
     public const int MaxPriceIds = 10;
 
     private const string CredentialParameter = "apikey";
+    private const string OversizedResponseMessage = "Die Antwort des Preisdienstes überschreitet die zulässige Größe.";
 
     private readonly HttpClient _httpClient;
     private readonly IApiKeyProvider _apiKeyProvider;
@@ -97,9 +98,8 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
         var query = string.Create(
             CultureInfo.InvariantCulture,
             $"list.php?lat={latitude:0.######}&lng={longitude:0.######}&rad={radiusKm}&sort=dist&type=all");
-        var body = await GetAsync(query, "list", cancellationToken).ConfigureAwait(false);
+        using var document = await GetAsync(query, "list", cancellationToken).ConfigureAwait(false);
         var retrievedUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        using var document = ParseDocument(body);
         EnsureOk(document.RootElement);
 
         if (!document.RootElement.TryGetProperty("stations", out var stations) || stations.ValueKind != JsonValueKind.Array)
@@ -127,9 +127,8 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
             throw new ArgumentException("Die Tankstellenkennung muss eine UUID sein.", nameof(stationId));
         }
 
-        var body = await GetAsync($"detail.php?id={id:D}", "detail", cancellationToken).ConfigureAwait(false);
+        using var document = await GetAsync($"detail.php?id={id:D}", "detail", cancellationToken).ConfigureAwait(false);
         var retrievedUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        using var document = ParseDocument(body);
         EnsureOk(document.RootElement);
 
         if (!document.RootElement.TryGetProperty("station", out var station)
@@ -162,9 +161,8 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
             ids.Add(id.ToString("D"));
         }
 
-        var body = await GetAsync($"prices.php?ids={string.Join(',', ids)}", "prices", cancellationToken).ConfigureAwait(false);
+        using var document = await GetAsync($"prices.php?ids={string.Join(',', ids)}", "prices", cancellationToken).ConfigureAwait(false);
         var retrievedUtc = _timeProvider.GetUtcNow().UtcDateTime;
-        using var document = ParseDocument(body);
         EnsureOk(document.RootElement);
 
         if (!document.RootElement.TryGetProperty("prices", out var prices) || prices.ValueKind != JsonValueKind.Object)
@@ -190,7 +188,7 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
         return result;
     }
 
-    private async Task<string> GetAsync(string relativeQuery, string endpointName, CancellationToken cancellationToken)
+    private async Task<JsonDocument> GetAsync(string relativeQuery, string endpointName, CancellationToken cancellationToken)
     {
         if (_options.EndpointNotConfigured)
         {
@@ -215,11 +213,12 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 timeout.CancelAfter(_options.RequestTimeout);
-                using var response = await _httpClient.GetAsync(uri, timeout.Token).ConfigureAwait(false);
+                using var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
+                    using var body = await ReadBodyWithLimitAsync(response.Content, timeout.Token).ConfigureAwait(false);
+                    return await ParseDocumentAsync(body, timeout.Token).ConfigureAwait(false);
                 }
 
                 var status = (int)response.StatusCode;
@@ -234,10 +233,12 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
             {
                 lastError = new TimeoutException("Zeitüberschreitung beim Abruf des Preisdienstes.");
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is HttpRequestException or IOException)
             {
                 // Nur der Typ wird weitergegeben: Meldungen des Netzwerkstacks könnten die Anfrageadresse samt Schlüssel enthalten.
-                lastError = new HttpRequestException($"Verbindungsfehler ({ex.GetType().Name}, {ex.HttpRequestError}).");
+                lastError = new HttpRequestException(ex is HttpRequestException requestException
+                    ? $"Verbindungsfehler ({ex.GetType().Name}, {requestException.HttpRequestError})."
+                    : $"Verbindungsfehler ({ex.GetType().Name}).");
             }
 
             _logger.LogWarning("Abruf '{Endpoint}' fehlgeschlagen (Versuch {Attempt} von {Max}): {Reason}", endpointName, attempt, _options.MaxAttempts, lastError.GetType().Name);
@@ -251,11 +252,44 @@ public sealed class TankerkoenigClient : ITankerkoenigClient
         throw new PriceApiException(PriceFailure.Unreachable, "Der Preisdienst ist nicht erreichbar.", lastError);
     }
 
-    private static JsonDocument ParseDocument(string body)
+    /// <summary>
+    /// Liest den Antwortkörper begrenzt auf <see cref="PriceApiOptions.MaxResponseBytes"/> in einen Puffer.
+    /// Übergroße Antworten werden ohne Wiederholung abgelehnt: zuerst anhand der Längenangabe, sonst beim begrenzten Lesen des Stroms.
+    /// </summary>
+    /// <param name="content">Der Antwortkörper.</param>
+    /// <param name="cancellationToken">Abbruchsignal (Zeitlimit der Anfrage eingeschlossen).</param>
+    /// <returns>Der gepufferte Körper, auf den Anfang zurückgesetzt.</returns>
+    /// <exception cref="PriceApiException">Die Antwort überschreitet die zulässige Größe.</exception>
+    private async Task<MemoryStream> ReadBodyWithLimitAsync(HttpContent content, CancellationToken cancellationToken)
+    {
+        if (content.Headers.ContentLength is { } length && length > _options.MaxResponseBytes)
+        {
+            throw new PriceApiException(PriceFailure.InvalidResponse, OversizedResponseMessage);
+        }
+
+        await using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        var buffer = new MemoryStream();
+        var chunk = new byte[16 * 1024];
+        int read;
+        while ((read = await stream.ReadAsync(chunk, cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            buffer.Write(chunk, 0, read);
+            if (buffer.Length > _options.MaxResponseBytes)
+            {
+                buffer.Dispose();
+                throw new PriceApiException(PriceFailure.InvalidResponse, OversizedResponseMessage);
+            }
+        }
+
+        buffer.Position = 0;
+        return buffer;
+    }
+
+    private static async Task<JsonDocument> ParseDocumentAsync(Stream body, CancellationToken cancellationToken)
     {
         try
         {
-            var document = JsonDocument.Parse(body);
+            var document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken).ConfigureAwait(false);
             if (document.RootElement.ValueKind != JsonValueKind.Object)
             {
                 document.Dispose();

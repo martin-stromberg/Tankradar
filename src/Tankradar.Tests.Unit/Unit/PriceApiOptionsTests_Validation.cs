@@ -50,7 +50,7 @@ public class PriceApiOptionsTests_Validation : BaseTest
     }
 
     /// <summary>
-    /// Prüft, dass unsinnige Zeit- und Wiederholungswerte abgelehnt werden.
+    /// Prüft, dass unsinnige Zeit-, Wiederholungs- und Mengenlimits abgelehnt werden.
     /// </summary>
     [Fact]
     public void Validate_InvalidLimits_AreRejected()
@@ -58,6 +58,7 @@ public class PriceApiOptionsTests_Validation : BaseTest
         Assert.Throws<InvalidOperationException>(() => new PriceApiOptions { MaxAttempts = 0 }.Validate());
         Assert.Throws<InvalidOperationException>(() => new PriceApiOptions { RequestTimeout = TimeSpan.Zero }.Validate());
         Assert.Throws<InvalidOperationException>(() => new PriceApiOptions { MaxRadiusKm = 0 }.Validate());
+        Assert.Throws<InvalidOperationException>(() => new PriceApiOptions { MaxResponseBytes = 0 }.Validate());
     }
 
     /// <summary>

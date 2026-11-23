@@ -33,12 +33,12 @@ Das Alter wird immer als „vor X Min.“ angegeben.
 
 - Jeder abgerufene Preis wird mit Zeitstempel in der lokalen Datenbank gespeichert. Ältere Preisstände bleiben für Auswertungen erhalten.
 - Innerhalb von fünf Minuten nach einem Abruf liefert der Cache die Daten statt eines erneuten Abrufs (Schonung des Dienstes gemäß Nutzungsbedingungen).
-- Ist kein Abruf möglich (keine Netzverbindung, Dienst nicht erreichbar, Schlüssel fehlt oder wird abgelehnt), liefert die App die zuletzt bekannten Preise samt Alter statt einer Fehlermeldung.
+- Ist kein Abruf möglich (keine Netzverbindung, Dienst nicht erreichbar, Schlüssel fehlt oder wird abgelehnt) oder liefert der Dienst eine unbrauchbare Antwort, zeigt die App die zuletzt bekannten Preise samt Alter statt einer Fehlermeldung.
 - Die App erkennt, ob eine Netzverbindung besteht und wann sie wiederhergestellt wird. Die Detailansicht und die Startseite nutzen das, um veraltete Preise selbstständig zu aktualisieren und den Offline-Hinweis zu entfernen.
 
 ### Datenschutz und Sicherheit
 
-- Die Kommunikation läuft ausschließlich über HTTPS, mit Zeitlimit (10 Sekunden je Anfrage), bis zu drei Versuchen mit zunehmender Wartezeit (1 s, 2 s) und einem Mindestabstand von einer Sekunde zwischen Anfragen an den Preisdienst. Öffnungszeiten und davon abgeleitete Hinweise („Automatentankstelle“) aus einer früheren Detailabfrage gelten höchstens 24 Stunden; danach werden sie ausgeblendet und von der Detailansicht neu abgefragt.
+- Die Kommunikation läuft ausschließlich über HTTPS, mit Zeitlimit (10 Sekunden je Anfrage), bis zu drei Versuchen mit zunehmender Wartezeit (1 s, 2 s) und einem Mindestabstand von einer Sekunde zwischen Anfragen an den Preisdienst. Antworten des Dienstes werden nur bis zu einer festen Obergrenze verarbeitet; eine übergroße Antwort gilt als unerwartete Antwort und führt wie andere Abruffehler auf die zuletzt bekannten Preise zurück. Öffnungszeiten und davon abgeleitete Hinweise („Automatentankstelle“) aus einer früheren Detailabfrage gelten höchstens 24 Stunden; danach werden sie ausgeblendet und von der Detailansicht neu abgefragt.
 - Standortdaten des Anwenders werden nur für die Anfrage verwendet und nie gespeichert; gespeichert werden Tankstellen und Preise.
 - Der API-Schlüssel steht nie im Quellcode, liegt zur Laufzeit in der Keychain (iOS) bzw. im Credential Locker (Windows) und wird nie angezeigt oder protokolliert.
 
