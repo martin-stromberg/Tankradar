@@ -3,7 +3,7 @@ using Tankradar.TestSupport;
 namespace Tankradar.MAUI.Services.Pricing;
 
 /// <summary>
-/// Einstellungen für den Zugriff auf die Preis-API: Adresse, Zeitlimit, Wiederholung, Drosselung und Cache-Dauer.
+/// Einstellungen für den Zugriff auf die Preis-API: Adresse, Zeitlimit, Wiederholung, Drosselung, Cache-Dauer und Antwortgrößenlimit.
 /// Produktiv gilt ausschließlich HTTPS; ein abweichender Endpunkt ist nur im Testmodus (gesetztes <c>TANKATLAS_TEST_DATA_PATH</c>) möglich.
 /// </summary>
 public sealed class PriceApiOptions
@@ -71,6 +71,11 @@ public sealed class PriceApiOptions
     public int MaxRadiusKm { get; init; } = 25;
 
     /// <summary>
+    /// Das größte zulässige Antwortvolumen des Preisdienstes in Bytes; größere Antworten werden ohne Wiederholung abgelehnt.
+    /// </summary>
+    public int MaxResponseBytes { get; init; } = 1024 * 1024;
+
+    /// <summary>
     /// Gibt an, ob unverschlüsseltes HTTP zu einer Loopback-Adresse zugelassen ist (nur Testmodus).
     /// </summary>
     public bool AllowLoopbackHttp { get; init; }
@@ -94,9 +99,14 @@ public sealed class PriceApiOptions
         }
 
         if (RequestTimeout <= TimeSpan.Zero || MaxAttempts < 1 || RetryBaseDelay < TimeSpan.Zero
-            || MinRequestInterval < TimeSpan.Zero || CacheLifetime < TimeSpan.Zero || MaxRadiusKm < 1)
+            || MinRequestInterval < TimeSpan.Zero || CacheLifetime < TimeSpan.Zero)
         {
             throw new InvalidOperationException("Die Zeit- und Wiederholungseinstellungen der Preis-API sind ungültig.");
+        }
+
+        if (MaxRadiusKm < 1 || MaxResponseBytes < 1)
+        {
+            throw new InvalidOperationException("Die Mengenlimits der Preis-API (Radius, Antwortgröße) sind ungültig.");
         }
     }
 

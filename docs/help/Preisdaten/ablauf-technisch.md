@@ -9,12 +9,12 @@ Alle Komponenten liegen im Projekt `Tankradar.MAUI` unter `Services/Pricing/` un
 | Komponente | Aufgabe |
 |------------|---------|
 | `FuelPriceService` (`IFuelPriceService`) | Fassade: Umkreissuche, Tankstellendetails, Preisaktualisierung nach Kennungen (`RefreshStationsAsync`, `GetKnownStationsAsync`), Verfügbarkeitsprüfung; entscheidet zwischen Cache, Live-Abruf und Offline-Rückfall |
-| `TankerkoenigClient` (`ITankerkoenigClient`) | HTTP-Zugriff auf `list.php`, `detail.php` und `prices.php` (`GetPricesAsync`), Auswertung der JSON-Antworten, Zeitlimit, Wiederholung, Drosselung |
+| `TankerkoenigClient` (`ITankerkoenigClient`) | HTTP-Zugriff auf `list.php`, `detail.php` und `prices.php` (`GetPricesAsync`), größenbegrenzte Auswertung der JSON-Antworten, Zeitlimit, Wiederholung, Drosselung |
 | `RequestThrottle`, `IDelay` | Mindestabstand zwischen Anfragen; austauschbares Warten für Tests |
 | `PriceRepository` (`IPriceRepository`) | Persistenz in SQLite (`Stations`, `PriceEntries`), letzte Preise, Umkreis per Haversine |
 | `ConnectionMonitor` (`IConnectionMonitor`) | Online/Offline-Zustand und Ereignis `ConnectionRestored` über `INetworkStatusSource` (MAUI-`Connectivity`) |
 | `ApiKeyProvider` (`IApiKeyProvider`), `IApiKeyStore` | Build-Schlüssel ist maßgeblich und aktualisiert bei Abweichung die sichere Ablage, sonst Schlüssel aus der Ablage; im Testmodus isolierte `InMemoryApiKeyStore` (`ApiKeyStoreSelector`); Windows: `CredentialLockerApiKeyStore`, sonst `SecureStorageApiKeyStore` (iOS-Keychain) |
-| `PriceApiOptions` | Basisadresse (HTTPS-Pflicht), Zeitlimit, Versuche, Abstände, Cache-Dauer, maximaler Radius |
+| `PriceApiOptions` | Basisadresse (HTTPS-Pflicht), Zeitlimit, Versuche, Abstände, Cache-Dauer, maximaler Radius, Antwortgrößenlimit (`MaxResponseBytes`) |
 | `PriceFreshness`, `StationHints` | Aktualitätsbewertung (ab 60 Minuten veraltet), „vor X Min.“, abgeleitete Hinweise |
 | `DataSourceViewModel` | Karte „Datenquelle“ in den Optionen |
 
@@ -23,7 +23,7 @@ Alle Komponenten liegen im Projekt `Tankradar.MAUI` unter `Services/Pricing/` un
 1. `FuelPriceService.SearchNearbyAsync` validiert die Anfrage (Breite/Länge, Radius 1 bis `MaxRadiusKm` = 25, mindestens eine Sorte) und wirft sonst `ArgumentException`, bevor etwas abgerufen wird.
 2. Cache: Wurde dieselbe Suche (Position auf drei Nachkommastellen gerundet, Radius) in den letzten fünf Minuten live abgerufen (nur im Arbeitsspeicher), liefert `PriceRepository.FindNearbyAsync` die Daten mit `PriceDataSource.Cache`.
 3. Ist `IConnectionMonitor.IsOnline` falsch, folgt der Rückfall (`OfflineFallback`, `PriceFailure.Offline`).
-4. Sonst ruft `TankerkoenigClient.SearchAsync` ab: Schlüssel über `IApiKeyProvider`, Drosselung, Anfrage mit eigenem Zeitlimit; Netz-, Zeitlimit- und 5xx/429-Fehler werden bis `MaxAttempts` mit Wartezeit `RetryBaseDelay · 2^(n-1)` wiederholt, andere 4xx sofort als `Rejected` gemeldet. Antworten mit `ok:false` ergeben `Rejected`, ungültiges JSON `InvalidResponse`.
+4. Sonst ruft `TankerkoenigClient.SearchAsync` ab: Schlüssel über `IApiKeyProvider`, Drosselung, Anfrage mit eigenem Zeitlimit; Netz-, Übertragungs-, Zeitlimit- und 5xx/429-Fehler werden bis `MaxAttempts` mit Wartezeit `RetryBaseDelay · 2^(n-1)` wiederholt, andere 4xx sofort als `Rejected` gemeldet. Antworten mit `ok:false` ergeben `Rejected`, ungültiges oder übergroßes JSON `InvalidResponse` (siehe Abschnitt „Antwortverarbeitung und Größenlimit").
 5. Erfolg: `PriceRepository.SaveAsync` legt die Stationen an bzw. aktualisiert sie und fügt je Preis eine Zeile in `PriceEntries` mit Abrufzeitpunkt hinzu (nichts wird überschrieben; Historie bleibt). Ergebnis: `Live`, gefiltert auf die gewünschten Sorten, nach Entfernung sortiert.
 6. Fehler (`PriceApiException`): Rückfall auf `FindNearbyAsync` (letzte bekannte Preise, Entfernung neu berechnet) mit `OfflineFallback` und dem Fehlergrund. Es entsteht keine Ausnahme für den Aufrufer.
 
@@ -39,7 +39,18 @@ Tankstellendetails (`GetStationDetailAsync`) folgen demselben Muster; der Cache 
 4. Sonst `TankerkoenigClient.GetPricesAsync` in Blöcken zu `MaxPriceIds` = 10 (`prices.php?ids=…`, gleiche Wiederholung, Drosselung und Fehlerabbildung wie die übrigen Abrufe; Status `open`/`closed` liefert Preise für `e5`, `e10`, `diesel`, andere Status eine leere Liste). `PriceRepository.SavePricesAsync` legt je Preis eine Zeile in `PriceEntries` an. Bei einem `PriceApiException` endet der Abruf; bereits abgerufene Blöcke bleiben erhalten, die übrigen Tankstellen zeigen den lokalen Stand (`OfflineFallback`, wenn gar nichts abgerufen wurde, sonst `Live`).
 5. `GetKnownStationsAsync` liefert den lokalen Stand ohne Abruf.
 
-Der Mock-Server (`MockTankerkoenigServer`) bildet `prices.php` nach.
+Der Mock-Server (`MockTankerkoenigServer`) bildet `prices.php` nach; `ResponsePaddingBytes` hängt auf Wunsch insignifikante Leerzeichen an die Antwort, um übergroße, weiterhin gültige JSON-Körper für Integrations- und E2E-Tests zu erzeugen.
+
+## Antwortverarbeitung und Größenlimit
+
+Alle drei Endpunkte laufen über `TankerkoenigClient.GetAsync`, das die Antwort mit `HttpCompletionOption.ResponseHeadersRead` anfordert (nur die Kopfzeilen werden zunächst gepuffert) und den Körper in `ReadBodyWithLimitAsync` zweistufig gegen `PriceApiOptions.MaxResponseBytes` (Standard 1 MiB, nicht konfigurierbar) begrenzt:
+
+1. Übersteigt die `Content-Length`-Kopfzeile das Limit, wird die Antwort sofort als `PriceApiException(PriceFailure.InvalidResponse)` abgelehnt — ohne Wiederholung und ohne den Körper zu lesen (gleiches Muster wie die `Rejected`-Ablehnung).
+2. Fehlt die Längenangabe (z. B. Chunked-Übertragung), wird der Strom in 16-KB-Schritten in einen `MemoryStream` gelesen; sobald der Puffer das Limit überschreitet, gilt dieselbe Ablehnung.
+
+Der begrenzte Puffer wird per `JsonDocument.ParseAsync` ausgewertet (`ParseDocumentAsync`); `JsonException` oder eine Nicht-Objekt-Wurzel bleiben wie bisher `InvalidResponse`. `Validate()` lehnt `MaxResponseBytes < 1` gemeinsam mit `MaxRadiusKm < 1` als ungültiges Mengenlimit ab.
+
+Bricht der Antwortstrom beim Lesen ab (`IOException`/`HttpIOException`, z. B. „The response ended prematurely" oder HTTP/2-/HTTP/3-Stream-Fehler), gilt das als Übertragungsfehler: Der `catch` in `GetAsync` ist auf `HttpRequestException or IOException` gefiltert, gibt nur den Ausnahmetyp weiter (nie die Originalmeldung, Anfrageadresse oder den Schlüssel) und mündet über `lastError` in die Wiederholung bis `PriceFailure.Unreachable`. `PriceApiException` (Größe, `Rejected`) und nutzerseitiger Abbruch werden vom Filter nicht erfasst und laufen nie in den Wiederholungszweig.
 
 ## Datenmodell (Migration `AddPriceCache`)
 
