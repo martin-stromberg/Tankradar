@@ -16,13 +16,26 @@ Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vor
 | `sync-staging-with-main.yml` | Backmerge Main to Staging | Push → `main` | Eröffnet den PR `main` → `staging` (Label `automated-backmerge`). |
 | `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, prüft/repariert vorhandene Releases, veröffentlicht `release-win-x64.zip` + `update.json`, baut iOS. Release-Gate: reguläre Tests blockierend, OS-Schnittstellen-Tests best-effort (`continue-on-error` auf Schrittebene), Ergebnisse als `test-results-release`. |
 | `security-scan.yml` | Security Scan | wöchentlich (Mo 04:00 UTC), manuell | Schwachstellenprüfung unabhängig von Codeänderungen. |
-| `pages.yml` | GitHub Pages | Push → `main` (nur `pages/` und die Workflow-Datei), manuell | Veröffentlicht die App-Präsentation auf GitHub Pages. |
+| `pages.yml` | GitHub Pages | Push → `main` (nur `pages/` und die Workflow-Datei), manuell | Veröffentlicht die App-Präsentation auf GitHub Pages (zwei Jobs `build` → `deploy` mit Sichtbarkeits-Polling — Details unten). |
 | `review-architecture-security.yml` | Monthly Architecture & Security Review | monatlich (1. des Monats, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Review-Auftrag für `@softwarewerkstatt` (Label `review-architecture-security`). |
 | `review-nuget-packages.yml` | Weekly NuGet Package Review | wöchentlich (Di 05:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit der Paketprüfungs-Aufgabe für `@softwarewerkstatt` (Label `review-nuget-packages`). |
 | `review-compliance.yml` | Yearly Compliance & Copyright Review | jährlich (1. Januar, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Compliance-Auftrag für `@softwarewerkstatt` (Label `review-compliance`). |
 
 Wichtig: `staging-to-main-promotion.yml` referenziert den **Anzeigenamen** `Pre-Release`. Wer den Namen
 in `staging-ci.yml` ändert, muss den Eintrag im selben Commit anpassen (`validate-workflows.py` prüft das).
+
+`pages.yml` läuft seit Issue #105 bewusst in **zwei Jobs** (`build` → `deploy` mit `needs: build`):
+Lagen `upload-pages-artifact` und `deploy-pages` im selben Job, fand der run-scoped Artifact-Lookup von
+`deploy-pages` das Bruchteile einer Sekunde zuvor finalisierte Artifact `github-pages` intermittierend
+nicht („Found 0 artifact(s)", Upstream `actions/deploy-pages#451`). Zusätzlich zur Job-Grenze beginnt der
+`deploy`-Job mit dem Schritt „Wait for artifact visibility", der per `gh api` (Token `github.token`,
+Permission `actions: read`) den run-scoped Endpoint `actions/runs/{run_id}/artifacts` abfragt und das
+Deployment erst nach zwei aufeinanderfolgenden positiven Abfragen durchlässt (5-s-Intervall, max.
+24 Versuche ≈ 2 min). Bleibt das Artifact unsichtbar, scheitert der Schritt mit klarer Diagnose-Meldung,
+bevor `deploy-pages` startet. Die beiden Jobs nicht wieder zusammenführen — das würde den Race
+zurückholen. Und bei `pages.yml`-Fehlläufen **kein „Re-run failed jobs"**: Ein Job-Re-Run erzeugt ein
+zweites `github-pages`-Artifact, der Lookup scheitert dann mit „Multiple artifacts" (Upstream
+`actions/deploy-pages#338`). Abhilfe ist nur ein neuer Lauf (Push oder `workflow_dispatch`).
 
 Die drei `review-*.yml`-Workflows folgen demselben Issue-/Dedup-Muster und rufen dafür die
 gemeinsame Composite Action [`.github/actions/create-review-issue`](../../../.github/actions/create-review-issue/action.yml)
