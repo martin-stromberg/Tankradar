@@ -3,6 +3,12 @@ name: GitHub Pages
 # Veroeffentlicht die statische App-Präsentation unter pages/ auf GitHub Pages.
 # Läuft bei jedem Merge/Push auf main (Issue #34) sowie manuell per workflow_dispatch.
 # Einmalige Einrichtung: Settings → Pages → Source "GitHub Actions" (siehe pages/README.md).
+#
+# Upload und Deploy laufen bewusst in getrennten Jobs (build → deploy, Issue #105):
+# Im selben Job sieht der run-scoped Artifact-Lookup von deploy-pages das soeben
+# hochgeladene Artifact "github-pages" teils noch nicht (intermittierender Race,
+# Upstream actions/deploy-pages#451). Zusätzlich wartet ein Polling-Schritt im
+# deploy-Job die Sichtbarkeit aktiv ab, bevor deploy-pages startet.
 
 on:
   push:
@@ -24,12 +30,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -41,6 +44,50 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Wait for artifact visibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          max_attempts=24
+          interval_seconds=5
+          consecutive_hits=0
+          endpoint="repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts"
+          err_file=$(mktemp)
+          for attempt in $(seq 1 "$max_attempts"); do
+            if count=$(gh api "$endpoint" \
+                --jq '[.artifacts[] | select(.name == "github-pages" and .expired == false)] | length' 2>"$err_file"); then
+              if [ "$count" -ge 1 ]; then
+                consecutive_hits=$((consecutive_hits + 1))
+                echo "Attempt $attempt of $max_attempts: artifact 'github-pages' visible (${consecutive_hits} consecutive positive query)."
+              else
+                consecutive_hits=0
+                echo "Attempt $attempt of $max_attempts: artifact 'github-pages' not yet visible."
+              fi
+            else
+              consecutive_hits=0
+              echo "Attempt $attempt of $max_attempts: artifact query failed: $(cat "$err_file")"
+            fi
+            if [ "$consecutive_hits" -ge 2 ]; then
+              echo "Visibility confirmed — continuing deployment."
+              exit 0
+            fi
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep "$interval_seconds"
+            fi
+          done
+          echo "::error::Artifact 'github-pages' is still not visible in run $GITHUB_RUN_ID after $max_attempts queries (approx. $((max_attempts * interval_seconds)) s) — 'deploy-pages' would fail with 'Found 0 artifact(s)'. Do not start a 'Re-run failed jobs' of this run (duplicate artifact, actions/deploy-pages#338); the only remedy is a new run via push or workflow_dispatch."
+          echo "State of the last query ($endpoint):"
+          gh api "$endpoint" --jq '.artifacts[] | {id, name, expired, created_at}' || true
+          exit 1
 
       - name: Deploy to GitHub Pages
         id: deployment

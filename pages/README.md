@@ -32,6 +32,15 @@ Voraussetzung: ein Debug-Build der Windows-App
 Netzwerkzugriff auf `tile.openstreetmap.org` für die Kartenkacheln.
 Optionales Argument: ein abweichendes Zielverzeichnis für die PNG-Dateien.
 
+## Deployment
+
+Der Workflow läuft seit Issue #105 in zwei Jobs (`build` → `deploy`): Laufen
+Upload (`actions/upload-pages-artifact`) und `actions/deploy-pages` im selben
+Job, sieht die run-scoped Artifact-Abfrage das soeben hochgeladene Artifact
+`github-pages` intermittierend noch nicht (Upstream-Issue
+`actions/deploy-pages#451`). Der `deploy`-Job wartet die Sichtbarkeit des
+Artifacts zusätzlich aktiv per Polling ab, bevor `deploy-pages` startet.
+
 ## Einmalige Einrichtung
 
 Im Repository muss einmalig **Settings → Pages → Source: GitHub Actions**
