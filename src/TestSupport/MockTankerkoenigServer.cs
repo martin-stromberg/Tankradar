@@ -125,6 +125,11 @@ public sealed class MockTankerkoenigServer : IDisposable
     public TimeSpan ResponseDelay { get; set; }
 
     /// <summary>
+    /// Zahl insignifikanter Leerzeichen, die an jeden JSON-Antwortkörper angehängt werden (der Körper bleibt gültiges JSON; zum Prüfen des Antwortgrößenlimits).
+    /// </summary>
+    public int ResponsePaddingBytes { get; set; }
+
+    /// <summary>
     /// Anzahl der empfangenen Umkreisanfragen.
     /// </summary>
     public int ListRequests => _listRequests;
@@ -624,6 +629,11 @@ public sealed class MockTankerkoenigServer : IDisposable
         {
             status = 404;
             body = "{}";
+        }
+
+        if (ResponsePaddingBytes > 0)
+        {
+            body += new string(' ', ResponsePaddingBytes);
         }
 
         var bytes = Encoding.UTF8.GetBytes(body);

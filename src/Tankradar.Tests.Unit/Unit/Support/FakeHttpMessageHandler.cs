@@ -73,6 +73,21 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
     }
 
     /// <summary>
+    /// Hängt eine Antwort mit Statuscode und Inhalt ohne <c>Content-Length</c>-Angabe an (simuliert eine Übertragung ohne Längenangabe).
+    /// </summary>
+    /// <param name="status">Der Statuscode.</param>
+    /// <param name="body">Der Inhalt.</param>
+    /// <returns>Der Handler für verkettete Aufrufe.</returns>
+    public FakeHttpMessageHandler RespondWithoutContentLength(HttpStatusCode status, byte[] body)
+    {
+        _steps.Add(_ => Task.FromResult(new HttpResponseMessage(status)
+        {
+            Content = new UnknownLengthContent(body),
+        }));
+        return this;
+    }
+
+    /// <summary>
     /// Hängt einen Schritt an, der eine Ausnahme auslöst.
     /// </summary>
     /// <param name="exception">Die Ausnahme.</param>
@@ -107,5 +122,31 @@ public sealed class FakeHttpMessageHandler : HttpMessageHandler
         var step = _steps[Math.Min(_index, _steps.Count - 1)];
         _index++;
         return step(cancellationToken);
+    }
+
+    private sealed class UnknownLengthContent : HttpContent
+    {
+        private readonly byte[] _body;
+
+        public UnknownLengthContent(byte[] body)
+        {
+            _body = body;
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            return stream.WriteAsync(_body, 0, _body.Length);
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+        {
+            return stream.WriteAsync(_body, 0, _body.Length, cancellationToken);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
     }
 }

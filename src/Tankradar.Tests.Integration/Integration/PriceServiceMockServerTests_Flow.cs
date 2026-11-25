@@ -145,6 +145,21 @@ public class PriceServiceMockServerTests_Flow : IDisposable
     }
 
     /// <summary>
+    /// Prüft, dass eine übergroße Antwort ohne Wiederholung als unerwartete Antwort in den Rückfall auf zuletzt bekannte Preise führt.
+    /// </summary>
+    [Fact]
+    public async Task Search_OversizedResponse_FallsBackWithInvalidResponse()
+    {
+        _server.ResponsePaddingBytes = 2 * 1024 * 1024;
+
+        var result = await CreateService().SearchNearbyAsync(Query);
+
+        Assert.Equal(PriceFailure.InvalidResponse, result.Failure);
+        Assert.Equal(PriceDataSource.OfflineFallback, result.Source);
+        Assert.Equal(1, _server.ListRequests);
+    }
+
+    /// <summary>
     /// Prüft die Erkennung einer wiederhergestellten Verbindung im Zusammenspiel mit dem Dienst.
     /// </summary>
     [Fact]
