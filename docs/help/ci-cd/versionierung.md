@@ -3,8 +3,8 @@
 # Versionierung
 
 Versionen werden aus den Commit-Nachrichten (Conventional Commits) abgeleitet; es gibt keine von Hand
-gepflegte Versionsnummer und kein handgeschriebenes Changelog. Die Release-Notes erzeugt GitHub
-(`--generate-notes`).
+gepflegte Versionsnummer. Als Release-Dokumentation dienen `docs/RELEASE_NOTES.md` und `changes.log`
+(redaktionell gepflegt; `--generate-notes` entfällt mit der GitHub-Release-Ablage, Issue #64).
 
 ## Regeln
 
@@ -25,11 +25,14 @@ Version 1.0.0 setzt der Projektleiter bewusst per manuell gepushtem Tag `v1.0.0`
 Jeder Push auf `staging` mit freigabefähigen Commits erzeugt `v<Version>-rc.<n>` (kleines `rc`, `n` ab 1,
 gezählt über die vorhandenen Tags dieser Version). Beispiel: Letztes Release `v0.1.0`, ein `feat:` →
 `v0.2.0-rc.1`, der nächste Push vor dem Release → `v0.2.0-rc.2`. Die RC-Version (mit Suffix, ohne `v`)
-wird als `Version` des Pakets und in `update.json` geschrieben.
+wird als `Version` des iOS-Builds verwendet.
 
 ## Voraussetzung
 
-Die Berechnung benötigt den letzten Release-Tag im Verlauf von `staging`. Deshalb den Backmerge-PR
+Die Berechnung benötigt den letzten Release-Tag im Verlauf von `staging` — die Tags sind die einzige
+Versionswahrheit: Sie werden von den Workflows per `git push` gesetzt (`finalize`-Job in `release.yml`
+nach erfolgreichem TestFlight-Upload, `rc-tag`-Job in `staging-ci.yml`); es existieren keine
+GitHub-Releases (Issue #64, ADR 0023). Deshalb den Backmerge-PR
 `main` → `staging` immer mit **„Create a merge commit“** mergen.
 
 ## Lokal ausprobieren

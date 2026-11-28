@@ -1,5 +1,6 @@
-// Löst für den Release-Workflow auf, welche Version veröffentlicht werden muss und ob ein bereits
-// vorhandenes Release repariert (fehlende Assets nachgeladen) werden muss.
+// Löst für den Release-Workflow auf, welche Version veröffentlicht werden muss. Die GitHub-Release-
+// Ablage ist entfernt (Issue #64, ADR 0023): die "already-released"-Erkennung prüft die Existenz des
+// Git-Tags statt der GitHub-Releases-API - der Tag ist die einzige verbliebene Versionswahrheit.
 // Struktur nach ci-workflows-instructions.md, Abschnitt 8.2; die Versionsermittlung stammt aus
 // versioning.mjs (0.x-Regeln statt semantic-release).
 import { execFileSync } from "node:child_process";
@@ -9,7 +10,6 @@ import { determine } from "./determine-next-version.mjs";
 
 const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 const AUTOMATIC_RELEASE_BRANCHES = ["main"];
-export const EXPECTED_ASSETS = ["release-win-x64.zip", "update.json"];
 
 export function parseManualTag(tagName) {
   if (!tagName?.startsWith("v")) {
@@ -32,100 +32,47 @@ export function classifyWorkflowRef({ refType, refName }) {
   throw new Error(`Unsupported release ref '${refType ?? ""}:${refName ?? ""}'.`);
 }
 
-export function releaseHasExpectedAsset(release) {
-  const assets = release.assets ?? [];
-  return EXPECTED_ASSETS.every((name) =>
-    assets.some((asset) => asset.name === name && asset.state === "uploaded" && asset.size > 0)
-  );
-}
-
-// CRITICAL GUARD (Vorlage, Abschnitt 11.1): Pre-Releases werden nie repariert. Sonst würde ein alter,
-// unvollständiger RC ausgecheckt, in dessen Commit die aktuellen Workflow-Dateien noch nicht existieren.
-export function incompleteReleases(releases) {
-  return releases.filter((release) => {
-    if (release.prerelease) {
-      return false;
-    }
-    return !releaseHasExpectedAsset(release);
-  });
-}
-
 /**
  * Kernlogik; alle Abhängigkeiten sind injiziert.
  * @param {object} input
  * @param {{refType: string, refName: string}} input.ref
  * @param {() => {changed: string, version: string}} input.determineVersion
- * @param {(tag: string) => Promise<object|null>|object|null} input.getRelease
- * @param {() => Promise<object[]>|object[]} input.listReleases
+ * @param {(tag: string) => Promise<boolean>|boolean} input.tagExists
  */
-export async function resolveReleaseVersion({ ref, determineVersion, getRelease, listReleases }) {
+export async function resolveReleaseVersion({ ref, determineVersion, tagExists }) {
   const classification = classifyWorkflowRef({ refType: ref.refType, refName: ref.refName });
 
-  let version = classification.version ?? "";
-  let tag = classification.tag ?? "";
-  if (classification.kind === "automatic") {
-    const next = determineVersion();
-    if (next.changed === "true") {
-      version = next.version;
-      tag = `v${version}`;
-    }
-  }
-
-  if (tag) {
-    const existing = await getRelease(tag);
-    const base = { version, tag, release_kind: classification.kind };
-    if (!existing) {
-      return { released: "true", reason: "new-release", ...base, release_action: "create" };
-    }
-    if (!releaseHasExpectedAsset(existing)) {
-      return { released: "true", reason: "repair-missing-assets", ...base, release_action: "upload-existing" };
-    }
-    return { released: "false", reason: "already-released", ...base, release_action: "" };
-  }
-
-  // Automatischer Lauf ohne freigabefähige Commits: unvollständiges (nicht Pre-) Release reparieren.
-  const incomplete = incompleteReleases(await listReleases());
-  if (incomplete.length > 0) {
-    const oldest = [...incomplete].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))[0];
+  if (classification.kind === "manual") {
+    // Der gepushte Tag ist selbst der Auslöser - keine Existenzprüfung nötig.
     return {
       released: "true",
-      reason: "repair-missing-assets",
-      version: oldest.tag_name.slice(1),
-      tag: oldest.tag_name,
-      release_kind: "automatic",
-      release_action: "upload-existing"
+      reason: "new-release",
+      version: classification.version,
+      tag: classification.tag,
+      release_kind: "manual"
     };
   }
-  return { released: "false", reason: "no-releasable-commits", version: "", tag: "", release_kind: "automatic", release_action: "" };
-}
 
-function gh(args) {
-  return execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-}
-
-export function ghGetRelease(repository, tag) {
-  try {
-    return JSON.parse(gh(["api", `repos/${repository}/releases/tags/${tag}`]));
-  } catch (error) {
-    if (String(error.stderr ?? error.message).includes("404")) {
-      return null;
-    }
-    throw error;
+  const next = determineVersion();
+  if (next.changed !== "true") {
+    return { released: "false", reason: "no-releasable-commits", version: "", tag: "", release_kind: "automatic" };
   }
-}
 
-export function ghListReleases(repository) {
-  const pages = gh(["api", "--paginate", "--slurp", `repos/${repository}/releases?per_page=100`]);
-  return JSON.parse(pages).flat();
+  const tag = `v${next.version}`;
+  if (await tagExists(tag)) {
+    // Restzustand: der Ziel-Tag existiert bereits, ohne in HEAD gemergt zu sein (sonst hätte
+    // determine ihn als letzten Tag gefunden) - kein erneutes Ausliefern.
+    return { released: "false", reason: "already-released", version: next.version, tag, release_kind: "automatic" };
+  }
+  return { released: "true", reason: "new-release", version: next.version, tag, release_kind: "automatic" };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const repository = process.env.GITHUB_REPOSITORY;
   const outputs = await resolveReleaseVersion({
     ref: { refType: (process.env.GITHUB_REF_TYPE ?? "").toLowerCase(), refName: process.env.GITHUB_REF_NAME },
     determineVersion: () => determine(),
-    getRelease: (tag) => ghGetRelease(repository, tag),
-    listReleases: () => ghListReleases(repository)
+    // Der Checkout läuft mit fetch-tags: true - alle Tags liegen lokal vor.
+    tagExists: (tag) => execFileSync("git", ["tag", "--list", tag], { encoding: "utf8" }).trim() !== ""
   });
   const lines = Object.entries(outputs).map(([key, value]) => `${key}=${value}`);
   console.log(lines.join("\n"));

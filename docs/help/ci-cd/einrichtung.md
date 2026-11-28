@@ -19,7 +19,8 @@ wurden noch nicht auf GitHub ausgeführt.
       aus `Verify PR Source`); direkte Pushes gesperrt, Bypass nur bewusst für Administratoren.
 - [ ] Merge-Methode für den Backmerge-PR `main` → `staging`: **„Create a merge commit“**.
 - [ ] Actions-Berechtigung: *Workflow permissions* auf „Read and write“ und „Allow GitHub Actions to
-      create and approve pull requests“ aktivieren (nötig für Promotion-/Backmerge-PRs und Releases).
+      create and approve pull requests“ aktivieren (nötig für Promotion-/Backmerge-PRs und den
+      Tag-Push der Release-Workflows — es gibt keine GitHub-Releases mehr, Issue #64).
 - [ ] Kontrolle: Branch-Schutz mit `gh api repos/<owner>/<repo>/branches/<branch>/protection` prüfen,
       nicht aus einem erfolgreichen Push schließen.
 
@@ -35,7 +36,8 @@ wurden noch nicht auf GitHub ausgeführt.
 ## 4. Apple-seitige Vorbereitung (für signierte iOS-Builds und TestFlight)
 
 Diese Schritte erfolgen im Apple-Developer-Konto (Mitgliedschaft im Apple Developer Program nötig). Ohne sie
-baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
+schlagen die Release- und Staging-Läufe fehl (der TestFlight-Upload ist dort verbindlich,
+`require-upload: 'true'`); nur die PR-CI baut iOS weiterhin unsigniert als Compile-Prüfung.
 
 - [ ] **App-ID / Bundle-ID** unter *Certificates, Identifiers & Profiles → Identifiers* anlegen (Typ *App IDs → App*).
       Die Bundle-ID von Tankatlas lautet `de.martinstromberg.tankradar` (steht als `ApplicationId` in der `.csproj`; keine
@@ -69,7 +71,7 @@ baut die Pipeline iOS weiterhin unsigniert als Compile-Prüfung.
 | `IOS_API_ISSUER_ID` | Issuer-ID des App-Store-Connect-API-Keys | für TestFlight-Upload |
 | `IOS_API_KEY_P8` | Inhalt der `.p8`-Datei des API-Keys (Klartext, mehrzeilig) | für TestFlight-Upload |
 
-Der Schlüssel `FUEL_PRICE_API_KEY` steht nur dem iOS-Build als Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY` zur Verfügung (das Repository ist öffentlich: das Windows-Paket wird ohne Schlüssel gebaut, die `.ipa` nicht als Artefakt hochgeladen). Für die Routensuche gibt es kein Secret: Jeder Anwender trägt seinen eigenen OpenRouteService-Schlüssel in den Optionen ein (siehe [API-Schlüssel](../Preisdaten/api-schluessel.md)). Die App übernimmt den Schlüssel beim Build als Tankerkönig-Schlüssel (er gelangt nie ins Build-Log; empfohlen ist eine regelmäßige Rotation, da er in der iOS-App selbst zwangsläufig enthalten ist) (siehe [Preisdaten](../Preisdaten/index.md)).
+Der Schlüssel `FUEL_PRICE_API_KEY` steht nur dem iOS-Build als Umgebungsvariable `TANKRADAR_FUEL_PRICE_API_KEY` zur Verfügung (das Repository ist öffentlich: die `.ipa` wird nicht als Artefakt hochgeladen; der Windows-Paketpfad entfällt seit Issue #64). Für die Routensuche gibt es kein Secret: Jeder Anwender trägt seinen eigenen OpenRouteService-Schlüssel in den Optionen ein (siehe [API-Schlüssel](../Preisdaten/api-schluessel.md)). Die App übernimmt den Schlüssel beim Build als Tankerkönig-Schlüssel (er gelangt nie ins Build-Log; empfohlen ist eine regelmäßige Rotation, da er in der iOS-App selbst zwangsläufig enthalten ist — siehe ADR 0023) (siehe [Preisdaten](../Preisdaten/index.md)).
 
 Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("datei.p12"))`
 (auf dem Mac: `base64 -i datei.p12 | pbcopy`).
@@ -78,17 +80,22 @@ Base64-Kodierung unter Windows: `[Convert]::ToBase64String([IO.File]::ReadAllByt
 
 | Name | Inhalt | Pflicht |
 |---|---|---|
-| `IOS_SIGNING_ENABLED` | `true` schaltet signierten iOS-Build und TestFlight-Upload ein; jeder andere Wert oder fehlende Variable = unsignierter Compile-Check | zum Aktivieren |
+| `IOS_SIGNING_ENABLED` | `true` schaltet signierten iOS-Build und TestFlight-Upload ein; jeder andere Wert oder fehlende Variable = Job-Fehlschlag bei `require-upload: 'true'` (Release-/Staging-Läufe), unsignierter Compile-Check nur in der PR-CI | zum Aktivieren |
 | `APP_BUNDLE_ID` | Bundle-ID der App; nur nötig, um den Standardwert `de.martinstromberg.tankradar` aus der `.csproj` zu überschreiben | optional |
 | `IOS_XCODE_VERSION` | Gewünschte Xcode-Version (aktuell `27.2`, passend zur gepinnten iOS-Workload); leer = Runner-Standard | optional |
 
-Verhalten der Pipeline:
+Verhalten der Pipeline (Release- und Staging-Läufe mit `require-upload: 'true'`):
 
-- `IOS_SIGNING_ENABLED` nicht `true` → iOS wird unsigniert gebaut, **kein Fehlschlag**.
-- `IOS_SIGNING_ENABLED=true`, aber ein Signierungs-Secret fehlt → Warnung mit den fehlenden Namen im Job-Protokoll,
-  iOS wird unsigniert gebaut, kein Fehlschlag.
-- Vollständige Signierungs-Secrets → signierte `release-ios.ipa` (nur im Runner, **kein** Workflow-Artefakt: Sie enthält den Tankerkönig-Schlüssel und das Repository ist öffentlich).
-- Zusätzlich `IOS_API_KEY_ID`, `IOS_API_ISSUER_ID`, `IOS_API_KEY_P8` → Upload nach TestFlight per iTMSTransporter.
+- `IOS_SIGNING_ENABLED` nicht `true` → **Job-Fehlschlag** mit `::error::` (verbindlicher Upload).
+- `IOS_SIGNING_ENABLED=true`, aber ein Signierungs-Secret fehlt → **Job-Fehlschlag** mit `::error::` und den
+  fehlenden Namen.
+- Vollständige Signierungs-Secrets, aber ein `IOS_API_KEY_*`-Secret fehlt → **Job-Fehlschlag** mit
+  `::error::` und den fehlenden Namen.
+- Vollständige Signierungs- und API-Key-Secrets → signierte `release-ios.ipa` (nur im Runner, **kein**
+  Workflow-Artefakt: Sie enthält den Tankerkönig-Schlüssel und das Repository ist öffentlich) und Upload
+  nach TestFlight per iTMSTransporter.
+- Nur die PR-CI (`pr-staging-ci.yml`, `require-upload: 'false'`) fällt bei fehlender Konfiguration wie
+  bisher auf den unsignierten Compile-Check zurück (Notiz/Warnung statt Fehlschlag).
 
 Die Team-ID wird nicht separat konfiguriert; sie steckt in Zertifikat und Provisioning-Profil
 (`APPLE_TEAM_ID` der früheren Pipeline-Fassung entfällt).
@@ -107,12 +114,13 @@ Ein `workflow_run`-Trigger nutzt nur die Workflow-Datei auf dem Standardbranch. 
 
 - [ ] Lokaler Prüflauf erfolgreich: [`scripts/local-ci.ps1`](lokaler-pruefung.md).
 - [ ] Erster PR nach `staging`: alle Statusprüfungen grün.
-- [ ] Erster Push auf `staging`: Pre-Release `v0.1.0-rc.1` mit `release-win-x64.zip` und `update.json`.
-- [ ] Erster Release auf `main`: `v0.1.0`.
-- [ ] Nach dem Setzen von `IOS_SIGNING_ENABLED=true` und der Secrets: ein Pre-Release-Lauf erzeugt die
-      signierte `.ipa`; bei gesetztem API-Key erscheint der Build nach der Verarbeitung in TestFlight.
-      Die Workload-Version (`ios-workload-version` in `.github/actions/package-ios`) muss zum Xcode des
-      Runners passen (der App Store lehnt Builds aus Beta-Xcode ab).
+- [ ] Erster Push auf `staging`: RC-Tag `v0.1.0-rc.1` wird gepusht, der iOS-Build erscheint nach der
+      Verarbeitung in TestFlight.
+- [ ] Erster Release auf `main`: Tag `v0.1.0` und TestFlight-Build (kein GitHub-Release).
+- [ ] Ohne `IOS_SIGNING_ENABLED=true` und die Secrets schlägt der `ios`-/`ios-prerelease`-Job fehl
+      (`require-upload: 'true'`). Die Workload-Version (`ios-workload-version` in
+      `.github/actions/package-ios`) muss zum Xcode des Runners passen (der App Store lehnt Builds aus
+      Beta-Xcode ab).
 
 Was **nur** auf GitHub/macOS geprüft werden kann (unter Windows nicht ausführbar): Workload-Pinning,
 signierter Build, Keychain-Import, iTMSTransporter-Suche/-Installation, TestFlight-Upload sowie alle

@@ -19,11 +19,12 @@
    FlaUI-E2E-Tests (Windows), laufen parallel im Job `os-interface tests` als best-effort. Dazu ein
    unsignierter iOS-Build (Compile-Prüfung).
 2. **Merge nach `staging`** — `Pre-Release` wiederholt die Prüfungen, ermittelt die nächste Version
-   und veröffentlicht ein GitHub-Pre-Release `vX.Y.Z-rc.N` mit der Windows-App. Zusätzlich wird iOS
-   gebaut (signiert und nach TestFlight hochgeladen, sobald `IOS_SIGNING_ENABLED` und die Secrets hinterlegt sind).
+   und pusht den RC-Tag `vX.Y.Z-rc.N`; der iOS-Job baut signiert und lädt verbindlich nach
+   TestFlight hoch (kein GitHub-Pre-Release mehr, Issue #64).
 3. **Automatischer Promotion-Pull-Request** — Nach erfolgreichem `Pre-Release` eröffnet
    `Staging to Main Promotion` einen Entwurfs-PR `staging` → `main`. Ein Maintainer prüft und mergt.
-4. **Merge nach `main`** — `Release` veröffentlicht `vX.Y.Z` als finales Release; `Backmerge Main to
+4. **Merge nach `main`** — `Release` ermittelt `vX.Y.Z`, baut iOS signiert, lädt nach TestFlight und
+   pusht danach den Release-Tag `vX.Y.Z` (kein GitHub-Release, Issue #64); `Backmerge Main to
    Staging` eröffnet einen PR `main` → `staging`, der **mit „Create a merge commit“** gemergt werden
    muss (nicht Squash/Rebase), damit der Release-Tag von `staging` aus erreichbar bleibt.
 5. **Wöchentlich** — `Security Scan` prüft die Abhängigkeiten auch ohne Codeänderung auf neu bekannt
@@ -37,19 +38,24 @@
 
 ## Release-Artefakte
 
+Einziges Auslieferungsergebnis ist die signierte iOS-`.ipa` in App Store Connect (TestFlight) —
+die GitHub-Release-Ablage ist entfernt (Issue #64, ADR 0023): Das Windows-ZIP `release-win-x64.zip`
+und das Manifest `update.json` entfallen ebenso wie der `gh release`-Pfad; Release- und RC-Tags
+werden als reine Git-Tags gepusht.
+
 | Artefakt | Inhalt |
 |---|---|
-| `release-win-x64.zip` | Windows-App, self-contained (.NET-Laufzeit enthalten), ohne Tankerkönig-Schlüssel. Nach dem Entpacken `Tankradar.MAUI.exe` starten — keine Installation. Ein Installer (MSIX/Setup) wird bewusst nicht erstellt. |
-| `update.json` | Manifest mit Version, Download-URL, SHA-256 und Größe des ZIPs. |
-| iOS-`.ipa` | Entsteht nur bei `IOS_SIGNING_ENABLED=true` und vollständiger Signierung und wird **nicht** als Workflow-Artefakt veröffentlicht (sie enthält den Tankerkönig-Schlüssel, das Repository ist öffentlich). Mit den API-Key-Secrets wird sie nach TestFlight hochgeladen. Sonst wird iOS unsigniert (Simulator-Build) gebaut; dieser Build dient als Compile-Prüfung und erzeugt kein Release-Asset. Lokal: [`scripts/iOS-Deployment.ps1`](ios-deployment.md). |
+| iOS-`.ipa` | Entsteht im signierten Build und wird **nicht** als Workflow-Artefakt veröffentlicht (sie enthält den Tankerkönig-Schlüssel, das Repository ist öffentlich). In `release.yml` und `staging-ci.yml` ist der Upload nach TestFlight per iTMSTransporter verbindlich (`require-upload: 'true'`): fehlende Signierung oder fehlende Secrets lassen den Job fehlschlagen. Nur die PR-CI baut weiterhin unsigniert (Simulator-Build) als Compile-Prüfung. Lokal: [`scripts/iOS-Deployment.ps1`](ios-deployment.md). |
 
 ## Geheimnisse und Konfiguration
 
 Geheimnisse und umgebungsspezifische Werte kommen **ausschließlich** über GitHub Secrets und
 Repository-Variablen in die Pipeline, nie aus dem Repository. Welche Namen erwartet werden, steht in
-der [Einrichtungs-Checkliste](einrichtung.md). Ist `IOS_SIGNING_ENABLED` nicht `true` oder fehlen Signierungsdaten, schlägt die
-Pipeline deswegen nicht fehl, sondern baut iOS unsigniert und schreibt eine Notiz bzw. Warnung mit den fehlenden
-Werten in das Job-Protokoll.
+der [Einrichtungs-Checkliste](einrichtung.md). In den Release- und Staging-Läufen ist der TestFlight-Upload
+verbindlich (`require-upload: 'true'`): Ist `IOS_SIGNING_ENABLED` nicht `true` oder fehlen Signierungs- bzw.
+API-Key-Secrets, schlägt der Job mit einer Fehlermeldung fehl — ein „Release ohne Auslieferung" kann nicht
+still entstehen. Lediglich die PR-CI (`pr-staging-ci.yml`) baut in diesem Fall weiterhin unsigniert und
+schreibt eine Notiz bzw. Warnung mit den fehlenden Werten in das Job-Protokoll.
 
 ## Wenn GitHub Actions nicht läuft
 
