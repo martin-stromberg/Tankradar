@@ -33,19 +33,19 @@ Variante B, nicht versionierte Datei `tankerkoenig.local.props` im Repository-Ro
 
 Der Schlüssel gelangt beim Build als Assembly-Metadatum in die App. Der beim Build mitgegebene Schlüssel ist maßgeblich: Beim Start vergleicht die App ihn mit dem Eintrag in der sicheren Ablage des Betriebssystems (Windows: Credential Locker „Tankatlas/PriceApi“, iOS: Keychain) und aktualisiert diesen, wenn er fehlt oder abweicht. Ein Update mit neuem oder rotiertem Schlüssel setzt sich dadurch automatisch durch; manuelles Löschen oder Neuinstallation ist nicht nötig. Wurde beim Build kein Schlüssel mitgegeben, nutzt die App weiter den gespeicherten.
 
-## GitHub (CI und Releases) und öffentliches Repository
+## GitHub (CI) und öffentliches Repository
 
 Das Repository ist öffentlich. Deshalb darf der Schlüssel nicht in öffentlich herunterladbaren Dateien landen:
 
 | Artefakt | Enthält den Schlüssel? |
 |----------|------------------------|
-| Windows-Paket `release-win-x64.zip` (Release und Pre-Release) | **Nein.** Es wird ohne Schlüssel gebaut (`scripts/package-windows.ps1` leert die Quellen; der Workflow übergibt keinen Schlüssel). Die App zeigt dort „API-Schlüssel: nicht hinterlegt“ und nur zuletzt bekannte Preise. Windows ist Entwicklungs- und Testplattform: Den Schlüssel hinterlegen Sie lokal beim Build (Variante A oder B) bzw. in der App-Ablage. |
+| Windows-Paket `release-win-x64.zip` | **Entfällt seit Issue #64** — es wird kein Windows-Paket mehr gebaut oder veröffentlicht (die GitHub-Release-Ablage ist entfernt, siehe ADR 0023). Windows bleibt Entwicklungs- und Testplattform: Den Schlüssel hinterlegen Sie lokal beim Build (Variante A oder B) bzw. in der App-Ablage. |
 | Signierte iOS-`.ipa` | Ja, zwangsläufig (die App hat kein Backend). Sie wird **nicht** als Workflow-Artefakt hochgeladen; der Upload nach TestFlight ist der einzige Weg. |
 | Quellcode, Workflow-Logs | Nein (GitHub maskiert das Secret in Logs; der Build gibt es ohnehin nicht aus). |
 
 1. Repository → Settings → Secrets and variables → Actions → Secrets → **New repository secret**.
 2. Name `FUEL_PRICE_API_KEY`, Wert ist Ihr Schlüssel.
-3. Nur der iOS-Build (`package-ios`) erhält das Secret als `TANKRADAR_FUEL_PRICE_API_KEY` und übernimmt es wie oben beschrieben. Das Windows-Paketieren (`build-and-package`) bekommt es nicht; `scripts/validate-workflows.py` schlägt fehl, wenn ein Windows-Paketschritt einen Schlüssel erhält oder eine `.ipa` als Artefakt hochgeladen wird. Siehe auch die [Einrichtungs-Checkliste](../ci-cd/einrichtung.md).
+3. Nur der iOS-Build (`package-ios`) erhält das Secret als `TANKRADAR_FUEL_PRICE_API_KEY` und übernimmt es wie oben beschrieben. `scripts/validate-workflows.py` schlägt fehl, wenn eine `.ipa` als Artefakt hochgeladen wird. Siehe auch die [Einrichtungs-Checkliste](../ci-cd/einrichtung.md).
 
 ## Tests
 
@@ -53,7 +53,7 @@ Tests verwenden nie den echten Schlüssel und nie produktive Endpunkte. Im Testm
 
 ## Hinweis zur Sicherheit des Build-Schlüssels
 
-Der beim Build mitgegebene Schlüssel steht als Metadatum in der ausgelieferten Assembly und ist daraus lesbar. Bei der iOS-App (TestFlight) ist das unvermeidbar, weil es kein Backend gibt, das den Schlüssel verwaltet; bei lokalen Windows-Builds liegt die Assembly nur auf Ihrem Rechner (Zwischenstände unter `review-versions/` nicht weitergeben). Er steht nicht im Quellcode und in keinem öffentlich herunterladbaren Windows-Paket. Verwenden Sie für den iOS-Build einen eigenen, jederzeit rotierbaren Schlüssel und tauschen Sie ihn bei Verdacht auf Weitergabe aus (empfohlen: regelmäßige Rotation, neuen Wert im Secret `FUEL_PRICE_API_KEY` hinterlegen).
+Der beim Build mitgegebene Schlüssel steht als Metadatum in der ausgelieferten Assembly und ist daraus lesbar. Bei der iOS-App (TestFlight) ist das unvermeidbar, weil es kein Backend gibt, das den Schlüssel verwaltet — eine bewusste Risikoentscheidung des Projektinhabers (Issue #64), dokumentiert mit Threat-Model, Rotationsweg und Betreiberhinweisen in [ADR 0023](../../adr/0023-release-verteilung-und-tankerkoenig-schluessel.md); bei lokalen Windows-Builds liegt die Assembly nur auf Ihrem Rechner (Zwischenstände unter `review-versions/` nicht weitergeben). Er steht nicht im Quellcode, und seit der Entfernung der GitHub-Release-Ablage (Issue #64) existiert kein öffentlich herunterladbares Build-Artefakt mehr. Verwenden Sie für den iOS-Build einen eigenen, jederzeit rotierbaren Schlüssel und tauschen Sie ihn bei Verdacht auf Weitergabe aus (empfohlen: regelmäßige Rotation, neuen Wert im Secret `FUEL_PRICE_API_KEY` hinterlegen).
 
 ## Schlüssel des Routingdienstes (OpenRouteService)
 
@@ -70,6 +70,6 @@ teilten sich Kontingent und Missbrauchsrisiko.
 - **Sicherung:** Schlüssel und Schalter gehören nicht zur lokalen Sicherung. Nach einer Wiederherstellung auf einem Gerät ohne Schlüssel ist die Routensuche aus; auf demselben Gerät bleibt sie unverändert.
 - **Adresse:** `https://api.heigit.org/openrouteservice/` (Directions: `v2/directions/driving-car`). Die frühere Adresse `api.openrouteservice.org` wird vom Anbieter Anfang November 2026 abgeschaltet
   (<https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912>).
-- **CI und Windows-Paket:** Weder die Workflows noch `scripts/package-windows.ps1` kennen einen Routing-Schlüssel; das Secret `ROUTING_API_KEY` wird nicht mehr benötigt (ein vorhandenes kann gelöscht werden).
+- **CI:** Weder die Workflows noch die CI-Skripte kennen einen Routing-Schlüssel; das Secret `ROUTING_API_KEY` wird nicht benötigt (ein vorhandenes kann gelöscht werden).
 - **Tests:** Im Testmodus belegt `TANKRADAR_ROUTING_TEST_API_KEY` die Testablage im Speicher vor (Schlüssel gesetzt, Routensuche eingeschaltet); ohne die Variable startet die App ohne Schlüssel.
   Das Schlüsselfeld ist im Testmodus unverdeckt, damit die UI-Automation es beschreiben kann. Mock: `MockOpenRouteServiceServer`, nie ein echter Schlüssel.
