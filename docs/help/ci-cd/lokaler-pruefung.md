@@ -20,7 +20,6 @@ Pipeline auf dem Entwicklungsrechner aus.
 .\scripts\local-ci.ps1                                  # alles
 .\scripts\local-ci.ps1 -SkipE2E -SkipSecurityScan       # schneller bzw. offline
 .\scripts\local-ci.ps1 -E2EForeground                  # Rückfall: E2E-Tests mit sichtbarem Fenster im Vordergrund
-.\scripts\local-ci.ps1 -Package -PackageVersion 0.1.0   # zusätzlich Windows-Paket unter artifacts\
 ```
 
 ## Was geprüft wird
@@ -34,7 +33,6 @@ Pipeline auf dem Entwicklungsrechner aus.
 | Unit- und Integrationstests der blockierenden Lane (`Category!=OsInterface`) mit Coverage, Mindestabdeckung 70 % | `Test regular (unit|integration)` / `Enforce coverage threshold` |
 | FlaUI-E2E-Tests der blockierenden Lane (`Category!=OsInterface`, Off-Screen-Betrieb) | `Test regular (E2E)` |
 | Tests der OS-Schnittstellen-Lane (`Category=OsInterface`) aller drei Projekte — best-effort: Fehlschlag nur `WARNUNG`, Exit-Code unverändert; E2E-Anteil entfällt bei `-SkipE2E` | `os-interface tests` (Job) |
-| Windows-Paket (`-Package`) | `Build and package` |
 | iOS-Compile-Prüfung (`net11.0-ios`, Simulator, Warnungen als Fehler, ohne Signierung; ohne lokale iOS-Workload übersprungen) | `iOS build` (unsignierter Simulator-Build) |
 
 Am Ende zeigt eine Tabelle den Status jedes Schritts. Exit-Code 0 bedeutet: alle blockierenden Prüfungen
@@ -48,7 +46,7 @@ blockierende Lane enthält nur deterministische Tests; `OsInterface`-markierte T
 Prozessstarts, Loopback-Listener) laufen best-effort und können nach einem Lauf optional manuell ausgewertet
 werden (`scripts/Retry-FlakyTests.ps1`, `scripts/Analyze-FlakyTestResults.ps1` gegen `TestResults/`).
 
-Die Schritte von Restore bis Paketierung simulieren die Windows-Jobs der Pipeline: Das Skript setzt dafür
+Die Schritte von Restore bis zu den Tests simulieren die Windows-Jobs der Pipeline: Das Skript setzt dafür
 `IncludeAndroidTarget`, `IncludeIosTarget` und `IncludeMacCatalystTarget` auf `false` und `IncludeWindowsTarget` auf
 `true` (nur das Windows-Ziel wird gebaut, auch bei vorbelegter Sitzung) und stellt die ursprünglichen Werte am Ende in jedem Fall wieder her (auch bei Fehler oder Abbruch), sodass
 eine aufrufende PowerShell-Sitzung unverändert bleibt. Der iOS-Teil läuft als eigener Schritt

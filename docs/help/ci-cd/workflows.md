@@ -11,10 +11,10 @@ Alle Dateien liegen unter [`.github/`](../../../.github/). Grundlage ist die Vor
 |---|---|---|---|
 | `verify-pr-source.yml` | Verify PR Source | PR → `main` | Lehnt PRs nach `main` ab, die nicht von `staging` kommen. |
 | `pr-staging-ci.yml` | PR CI for Staging | PR → `staging` | Qualitätsprüfungen (`static checks`, `build & test`, `os-interface tests`, `ios build`). Reine Rückführungs-PRs (`main` → `staging`) überspringen die Prüfungen (Erkennung siehe unten). |
-| `staging-ci.yml` | Pre-Release | Push → `staging` | Dieselben Prüfungen, dann `version`, `prerelease` (Windows-ZIP als GitHub-Pre-Release) und `ios-prerelease`. |
+| `staging-ci.yml` | Pre-Release | Push → `staging` | Dieselben Prüfungen, dann `version`, `rc-tag` (Git-Tag-Push `vX.Y.Z-rc.N`) und `ios-prerelease` (verbindlicher TestFlight-Upload). |
 | `staging-to-main-promotion.yml` | Staging to Main Promotion | nach erfolgreichem `Pre-Release` | Eröffnet den Entwurfs-PR `staging` → `main` (Label `automated-promotion`). |
 | `sync-staging-with-main.yml` | Backmerge Main to Staging | Push → `main` | Eröffnet den PR `main` → `staging` (Label `automated-backmerge`). |
-| `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, prüft/repariert vorhandene Releases, veröffentlicht `release-win-x64.zip` + `update.json`, baut iOS. Release-Gate: reguläre Tests blockierend, OS-Schnittstellen-Tests best-effort (`continue-on-error` auf Schrittebene), Ergebnisse als `test-results-release`. |
+| `release.yml` | Release | Push → `main` oder Tag `v*.*.*` | Ermittelt die Version, baut iOS signiert und lädt verbindlich nach TestFlight; `finalize` pusht den Release-Tag `vX.Y.Z` (nur automatischer Weg). Kein GitHub-Release, kein Release-Asset (Issue #64). Release-Gate: reguläre Tests blockierend, OS-Schnittstellen-Tests best-effort (`continue-on-error` auf Schrittebene), Ergebnisse als `test-results-release`. |
 | `security-scan.yml` | Security Scan | wöchentlich (Mo 04:00 UTC), manuell | Schwachstellenprüfung unabhängig von Codeänderungen. |
 | `pages.yml` | GitHub Pages | Push → `main` (nur `pages/` und die Workflow-Datei), manuell | Veröffentlicht die App-Präsentation auf GitHub Pages. |
 | `review-architecture-security.yml` | Monthly Architecture & Security Review | monatlich (1. des Monats, 06:00 UTC), manuell | Erzeugt bei Bedarf ein Issue mit dem Review-Auftrag für `@softwarewerkstatt` (Label `review-architecture-security`). |
@@ -41,9 +41,8 @@ Default-Branch `main` liegen (nach der Promotion `staging` → `main`).
 | Baustein | Zweck |
 |---|---|
 | `.github/actions/security-scan` | `dotnet list package --vulnerable --include-transitive --format json`, ausgewertet sprachunabhängig über `scripts/check-vulnerabilities.mjs` (derselbe Code wie im lokalen Prüflauf; Bericht `vulnerable-packages.json`); lässt den Schritt bei Funden **fehlschlagen**. Von `static checks` und vom wöchentlichen Scan genutzt. |
-| `.github/actions/build-and-package` | Veröffentlicht die Windows-App und erzeugt ZIP und `update.json` (ruft `scripts/package-windows.ps1`). Das Paket ist öffentlich herunterladbar und wird deshalb **ohne Tankerkönig-Schlüssel** gebaut: kein Schlüssel-Input, die Schlüsselquellen werden explizit geleert. `scripts/validate-workflows.py` prüft das. |
 | `.github/actions/create-review-issue` | Gemeinsame Logik der drei `review-*.yml`-Workflows: legt das Prüftyp-Label idempotent an (`gh label create --force`) und erzeugt per `gh issue create` ein Issue, sofern kein offenes Issue mit diesem Label existiert (Dedup über `gh issue list` + `jq length`). Inputs: `label`, `color`, `description`, `title`, `date-format`, `body`; der Datumsteil des Titels wird zur Laufzeit per `date -u` gebildet. Benötigt `issues: write` und einen Checkout im aufrufenden Job. |
-| `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`11.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa` (nur im Runner; sie wird **nicht** als Workflow-Artefakt hochgeladen, weil sie den Tankerkönig-Schlüssel enthält und das Repository öffentlich ist), optional TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Sonst unsignierter Simulator-Build als Compile-Prüfung (kein Fehlschlag). Blendet die übrigen Zielframeworks per Eigenschaft aus (`IncludeAndroidTarget=false`, `IncludeMacCatalystTarget=false`), weil der Restore alle Zielframeworks der `.csproj` auswertet und bei fehlender Workload mit `NETSDK1147` scheitern würde; die Windows-Jobs blenden umgekehrt die Apple-Ziele aus (`IncludeIosTarget=false`, `IncludeMacCatalystTarget=false`). Der lokale Prüflauf (`scripts/local-ci.ps1`) simuliert die Windows-Jobs mit diesen `false`-Werten, stellt die Variablen danach wieder her und prüft iOS in einem eigenen Schritt „iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus; ohne iOS-Workload übersprungen). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
+| `.github/actions/package-ios` | Baut iOS (iOS 16). Pinnt SDK-Band (`11.0.1xx`) und iOS-Workload auf eine zu Release-Xcode passende Version, setzt `MauiXamlInflator=XamlC`, die Buildnummer (`ApplicationVersion` = Commit-Anzahl + `run_attempt` − 1) und die Anzeigeversion (Pre-Release-Suffix gekürzt). Mit `IOS_SIGNING_ENABLED=true` und vollständigen Secrets: Import von Zertifikat und Profil in eine temporäre Keychain, signierte `release-ios.ipa` (nur im Runner; sie wird **nicht** als Workflow-Artefakt hochgeladen, weil sie den Tankerkönig-Schlüssel enthält und das Repository öffentlich ist), TestFlight-Upload per iTMSTransporter, Aufräumen der Keychain. Der Input `require-upload` (Standard `'false'`) macht signierten Build und Upload verbindlich: `'true'` in `release.yml`/`staging-ci.yml` führt bei fehlendem `IOS_SIGNING_ENABLED` oder fehlenden Signierungs-/API-Key-Secrets zum Job-Fehlschlag statt zum stillen Rückfall auf den unsignierten Simulator-Build als Compile-Prüfung; `'false'` (PR-CI) behält das Rückfallverhalten. Blendet die übrigen Zielframeworks per Eigenschaft aus (`IncludeAndroidTarget=false`, `IncludeMacCatalystTarget=false`), weil der Restore alle Zielframeworks der `.csproj` auswertet und bei fehlender Workload mit `NETSDK1147` scheitern würde; die Windows-Jobs blenden umgekehrt die Apple-Ziele aus (`IncludeIosTarget=false`, `IncludeMacCatalystTarget=false`). Der lokale Prüflauf (`scripts/local-ci.ps1`) simuliert die Windows-Jobs mit diesen `false`-Werten, stellt die Variablen danach wieder her und prüft iOS in einem eigenen Schritt „iOS-Compile-Prüfung“ (Apple-Ziel aktiv, Android aus; ohne iOS-Workload übersprungen). Einziger iOS-Pfad der Pipeline; der frühere Baustein `build-ios` entfällt. |
 
 ## Skripte
 
@@ -51,10 +50,9 @@ Default-Branch `main` liegen (nach der Promotion `staging` → `main`).
 |---|---|
 | `scripts/versioning.mjs` | Reine Versionslogik (0.x-Regeln, RC-Nummer). |
 | `scripts/determine-next-version.mjs` | Liest die Git-Historie und liefert `changed`, `version`, `rc_tag`, `rc_version`. |
-| `scripts/resolve-release-version.mjs` | Entscheidet im Release-Workflow: neues Release, vorhandenes Release reparieren oder nichts tun. Pre-Releases werden nie repariert. |
+| `scripts/resolve-release-version.mjs` | Entscheidet im Release-Workflow: neues Release oder nichts tun; „already-released" erkennt es an der Existenz des Git-Tags (kein GitHub-Release-Zugriff mehr, Issue #64). |
 | `scripts/check-coverage.mjs` | Prüft die Zeilenabdeckung gegen die Schwelle. |
-| `scripts/package-windows.ps1` | Windows-Publish, ZIP und `update.json` (auch lokal nutzbar). |
-| `scripts/validate-workflows.py` | Syntaktische und strukturelle Prüfung der Workflows; verbietet außerdem .ipa-Veröffentlichungen, auch über Verzeichnis-/Muster-Uploads (`actions/upload-artifact`) und `gh release create/upload` mit Verzeichnissen, Mustern oder Variablen als Asset (Tests: `scripts/test_validate_workflows.py`). |
+| `scripts/validate-workflows.py` | Syntaktische und strukturelle Prüfung der Workflows; verbietet außerdem .ipa-Veröffentlichungen über Verzeichnis-/Muster-Uploads (`actions/upload-artifact`) sowie mutierende `gh release`-Aufrufe (`create`/`upload`/`edit`/`delete`) — die GitHub-Release-Ablage ist entfernt (Issue #64, ADR 0023) (Tests: `scripts/test_validate_workflows.py`). |
 | `scripts/local-ci.ps1` | [Lokaler Prüflauf](lokaler-pruefung.md). |
 | `scripts/iOS-Deployment.ps1` | [iOS-Build, Simulator, Gerät und TestFlight-Upload](ios-deployment.md) (lokal, mit Mac). |
 | `scripts/test-ios-deployment.ps1` | Prüfung des iOS-Skripts ohne Mac (Syntax, Hilfe, Abbruchverhalten, Hilfsfunktionen). |
@@ -67,7 +65,7 @@ Tests der Node-Skripte: `npm test` (`scripts/*.test.mjs`, keine Abhängigkeiten 
 
 ## Runner
 
-Windows-spezifische Schritte (Format, Analyse, Build, Tests, Paket) laufen auf `windows-latest`, weil die
+Windows-spezifische Schritte (Format, Analyse, Build, Tests) laufen auf `windows-latest`, weil die
 MAUI-Windows-App und die FlaUI-Tests Windows benötigen. iOS läuft auf `xcode-27` (macOS-27-Runner-Image mit Xcode 27). Leichtgewichtige
 Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion, Review-Issue-Erzeugung) laufen auf
 `ubuntu-latest`.
@@ -78,7 +76,9 @@ Schritte (PR-Quellenprüfung, Versionsermittlung, Promotion, Review-Issue-Erzeug
   bei Breaking Changes automatisch auf 1.0 anheben, was der Projektvorgabe (0.1.0, keine automatische 1.0)
   widerspricht. Stattdessen ermittelt `determine-next-version.mjs` die Version nach denselben
   Conventional-Commits-Regeln. Folglich entfallen `release.config.js` und die npm-Abhängigkeiten.
-- **Release-Erstellung:** Auch der automatische Weg nutzt die `gh` CLI (Vorlage, Abschnitt 11.3).
+- **Release-Ablage:** Es gibt keine GitHub-Releases (Issue #64, ADR 0023): Der Release-/RC-Tag wird per
+  `git tag` + `git push` gesetzt, ausgeliefert wird ausschließlich über TestFlight. Mutierende
+  `gh release`-Aufrufe sind CI-erzwungen verboten (`validate-workflows.py`).
 - **Linux-Variante und `release-metadata.json`** entfallen: Die App ist Windows/iOS-only und nutzt
   `msTools.Updater` nicht.
 - **Plattformen:** `windows-latest`/`xcode-27` statt `ubuntu-latest` für Build und Tests.

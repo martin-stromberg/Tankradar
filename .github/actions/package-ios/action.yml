@@ -1,10 +1,12 @@
 name: Package iOS
 description: >
   Baut die iOS-Variante (Mindestversion iOS 16) nach der bewährten Vorlage. Ist die Signierung aktiviert
-  und sind alle Signierungsdaten vorhanden, entsteht eine signierte .ipa (release-ios.ipa), die optional
+  und sind alle Signierungsdaten vorhanden, entsteht eine signierte .ipa (release-ios.ipa), die
   per iTMSTransporter nach TestFlight hochgeladen wird. Andernfalls wird unsigniert gebaut (Simulator-Build
-  als Compile-Prüfung) und der Schritt schlägt deswegen nicht fehl. Läuft ausschließlich auf macOS-Runnern
-  und benötigt einen Checkout mit vollständiger Historie (fetch-depth 0) für die Buildnummer.
+  als Compile-Prüfung) und der Schritt schlägt deswegen nicht fehl. Mit require-upload='true' wird der
+  signierte Build samt TestFlight-Upload verbindlich: fehlende Signierung oder fehlende Secrets führen
+  dann zum Fehlschlag statt zum stillen Rückfall. Läuft ausschließlich auf macOS-Runnern und benötigt
+  einen Checkout mit vollständiger Historie (fetch-depth 0) für die Buildnummer.
 
 inputs:
   release-version:
@@ -63,6 +65,10 @@ inputs:
     description: API-Schlüssel des Kraftstoffpreis-Dienstes (aus GitHub Secrets); darf leer sein.
     required: false
     default: ''
+  require-upload:
+    description: "'true' macht signierten Build + TestFlight-Upload verbindlich; der Job schlägt fehl, wenn Signierung oder API-Key-Secrets fehlen."
+    required: false
+    default: 'false'
 
 outputs:
   signed:
@@ -80,11 +86,15 @@ runs:
       run: sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
 
     # Signiert wird nur, wenn die Signierung aktiviert ist UND alle Signierungsdaten vorhanden sind.
-    # Fehlt etwas, wird bewusst unsigniert gebaut statt zu scheitern (Projektvorgabe).
+    # Fehlt etwas, wird bewusst unsigniert gebaut statt zu scheitern (Projektvorgabe) - außer
+    # require-upload='true': dann sind signierter Build und TestFlight-Upload verbindlich (Issue #64,
+    # ohne GitHub-Release gäbe ein unsignierter Compile-Check ein "Release" ohne Auslieferungsergebnis)
+    # und jede fehlende Voraussetzung führt zum Fehlschlag statt zum stillen Rückfall.
     - name: Determine signing mode
       id: mode
       shell: bash
       env:
+        REQUIRE_UPLOAD: ${{ inputs.require-upload }}
         ENABLED: ${{ inputs.signing-enabled }}
         P12: ${{ inputs.certificate-p12-base64 }}
         P12_PASSWORD: ${{ inputs.certificate-p12-password }}
@@ -96,6 +106,10 @@ runs:
         API_KEY_P8: ${{ inputs.api-key-p8 }}
       run: |
         if [ "$ENABLED" != "true" ]; then
+          if [ "$REQUIRE_UPLOAD" = "true" ]; then
+            echo "::error::require-upload='true', aber IOS_SIGNING_ENABLED ist nicht 'true' - kein signierter Build/TestFlight-Upload möglich."
+            exit 1
+          fi
           echo "signed=false" >> "$GITHUB_OUTPUT"
           echo "::notice::iOS wird unsigniert gebaut (IOS_SIGNING_ENABLED ist nicht 'true')."
           exit 0
@@ -106,15 +120,27 @@ runs:
         [ -n "$PROFILE" ] || missing="$missing IOS_PROVISIONING_PROFILE_BASE64"
         [ -n "$CODESIGN_KEY" ] || missing="$missing IOS_CODESIGN_KEY"
         [ -n "$PROFILE_NAME" ] || missing="$missing IOS_PROVISIONING_PROFILE"
-        if [ -z "$missing" ]; then
-          echo "signed=true" >> "$GITHUB_OUTPUT"
-          if [ -z "$API_KEY_P8" ] || [ -z "$API_KEY_ID" ] || [ -z "$API_ISSUER_ID" ]; then
-            echo "::notice::Signierter Build ohne TestFlight-Upload: IOS_API_KEY_ID, IOS_API_ISSUER_ID oder IOS_API_KEY_P8 fehlt."
+        if [ -n "$missing" ]; then
+          if [ "$REQUIRE_UPLOAD" = "true" ]; then
+            echo "::error::require-upload='true', aber es fehlen Signierungs-Secrets:$missing - kein signierter Build möglich."
+            exit 1
           fi
-        else
           echo "signed=false" >> "$GITHUB_OUTPUT"
           echo "::warning::IOS_SIGNING_ENABLED ist 'true', aber es fehlen Secrets:$missing - iOS wird unsigniert gebaut."
+          exit 0
         fi
+        missing_api=""
+        [ -n "$API_KEY_ID" ] || missing_api="$missing_api IOS_API_KEY_ID"
+        [ -n "$API_ISSUER_ID" ] || missing_api="$missing_api IOS_API_ISSUER_ID"
+        [ -n "$API_KEY_P8" ] || missing_api="$missing_api IOS_API_KEY_P8"
+        if [ -n "$missing_api" ]; then
+          if [ "$REQUIRE_UPLOAD" = "true" ]; then
+            echo "::error::require-upload='true', aber es fehlen API-Key-Secrets:$missing_api - kein TestFlight-Upload möglich."
+            exit 1
+          fi
+          echo "::notice::Signierter Build ohne TestFlight-Upload: IOS_API_KEY_ID, IOS_API_ISSUER_ID oder IOS_API_KEY_P8 fehlt."
+        fi
+        echo "signed=true" >> "$GITHUB_OUTPUT"
 
     # SDK-Band 11.0.1xx pinnen: die iOS-Workload-Manifeste werden pro SDK-Band publiziert; das 27.2-Manifest
     # (iOS 27.2 SDK, Release-Xcode 27.2) liegt im 11.0.100-Feed. Das gilt auch für den unsignierten

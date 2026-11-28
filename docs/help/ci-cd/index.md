@@ -3,9 +3,11 @@
 # CI/CD-Pipeline mit Pre-Releases und Releases
 
 Tankatlas nutzt GitHub Actions, um Build, Prüfungen und Veröffentlichung zu automatisieren: Jeder
-Pull Request wird geprüft, jeder Push auf `staging` erzeugt automatisch eine Pre-Release-Version und
-jeder Push auf `main` ein finales Release. Die Windows-App wird als ZIP veröffentlicht, das nach dem
-Entpacken ohne Installation startet.
+Pull Request wird geprüft, jeder Push auf `staging` erzeugt automatisch einen RC-Tag
+(`vX.Y.Z-rc.N`) und jeder Push auf `main` den Release-Tag `vX.Y.Z` — jeweils per `git push`.
+Ausgeliefert wird ausschließlich über App Store Connect (TestFlight): Der signierte iOS-Build wird
+verbindlich hochgeladen; es gibt keine GitHub-Releases und kein Windows-ZIP mehr (Issue #64,
+ADR 0023).
 
 ## Inhalt
 
