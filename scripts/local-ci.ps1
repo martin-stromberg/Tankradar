@@ -23,14 +23,12 @@
         8. Tests der OS-Schnittstellen-Lane (Category=OsInterface, best-effort wie der Job "os-interface-tests"
                               der Pipeline, Issue #93): ein Fehlschlag wird als WARNUNG gemeldet und ändert den
                               Exit-Code nicht. E2E-Anteil entfällt bei -SkipE2E.
-        9. Optional (-Package): Windows-Paket release-win-x64.zip + update.json
-        10. iOS-Compile-Prüfung: net11.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
+        9. iOS-Compile-Prüfung: net11.0-ios (Simulator-RID, Warnungen als Fehler, ohne Signierung); wird ohne
                               lokale iOS-Workload mit Hinweis übersprungen. Signierte Pakete/TestFlight nur auf dem Mac bzw. in der CI.
 
     Beispiele:
         .\scripts\local-ci.ps1
         .\scripts\local-ci.ps1 -SkipE2E -SkipSecurityScan     # schneller / offline
-        .\scripts\local-ci.ps1 -Package -PackageVersion 0.1.0
 
     Exit-Code 0 = alle blockierenden Prüfungen bestanden, 1 = mindestens eine fehlgeschlagen.
 #>
@@ -43,12 +41,6 @@ param(
 
     [Parameter(HelpMessage = "Sicherheitsprüfung überspringen (benötigt Zugriff auf nuget.org).")]
     [switch]$SkipSecurityScan,
-
-    [Parameter(HelpMessage = "Erzeugt zusätzlich das Windows-Release-Paket (release-win-x64.zip + update.json) unter artifacts/.")]
-    [switch]$Package,
-
-    [Parameter(HelpMessage = "Version für -Package (ohne führendes v).")]
-    [string]$PackageVersion = "0.0.0-local",
 
     [Parameter(HelpMessage = "Mindest-Zeilenabdeckung in Prozent.")]
     [int]$CoverageThreshold = 70
@@ -227,15 +219,6 @@ try {
         finally {
             Set-ProcessEnv 'TANKRADAR_E2E_WINDOW' $savedWindow
         }
-    }
-
-    if ($Package) {
-        Invoke-Step "Windows-Paket (release-win-x64.zip)" {
-            & (Join-Path $PSScriptRoot "package-windows.ps1") -Version $PackageVersion -Tag "v$PackageVersion" -OutputDirectory "artifacts"
-        }
-    }
-    else {
-        Skip-Step "Windows-Paket (release-win-x64.zip)" "mit -Package aktivierbar"
     }
 
     # Eigener Schritt: iOS-Compile-Prüfung (Apple-Ziel aktiv, Android aus), da die Windows-Job-Simulation oben die

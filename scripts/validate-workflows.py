@@ -10,16 +10,19 @@ Prüft ohne Netzwerkzugriff:
     von staging-ci.yml (Vorlage, Abschnitt 11.5),
   - lokale Skripte, die in 'run:'-Schritten per 'node scripts/...' oder './scripts/...' aufgerufen
     werden, existieren,
-  - (öffentliches Repository) keine .ipa als Workflow-Artefakt oder GitHub-Release-Asset: auch Verzeichnis- und
-    Muster-Uploads ('actions/upload-artifact') sowie 'gh release create/upload'-Aufrufe mit Verzeichnissen, Mustern
-    oder Variablen, die eine .ipa enthalten könnten, gelten als Verstoß; erlaubt sind nur bekannte Verzeichnisse
-    und Dateien mit unbedenklicher Endung.
+  - (öffentliches Repository) keine .ipa als Workflow-Artefakt: auch Verzeichnis- und Muster-Uploads
+    ('actions/upload-artifact'), die eine .ipa enthalten könnten, gelten als Verstoß; erlaubt sind nur
+    bekannte Verzeichnisse und Dateien mit unbedenklicher Endung,
+  - keine GitHub-Release-Ablage (Issue #64, ADR 0023): mutierende 'gh release'-Aufrufe
+    (create/upload/edit/delete) und mutierende 'gh api'-Aufrufe auf Release-Endpunkte
+    ('-X POST/PUT/PATCH/DELETE' bzw. '-f'/'-F'/'--field' auf einen 'releases'-Pfad) in
+    'run:'-Schritten sind ein Verstoß; lesende Aufrufe ('gh release view/list', 'gh api'
+    ohne Mutationsmethode) bleiben zulässig.
 
 Wenn 'actionlint' im PATH liegt, wird es zusätzlich ausgeführt (tiefergehende Prüfung).
 Exit-Code 0 = alles in Ordnung, 1 = Verstöße.
 """
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -39,13 +42,32 @@ SCRIPT_CALL_RE = re.compile(r'(?:node |\./)(scripts/[\w./-]+)')
 IPA_RE = re.compile(r'\.ipa|ios-ipa', re.IGNORECASE)
 # Verzeichnisse, die von Workflow-Schritten als Artefakt hochgeladen werden dürfen (enthalten nie eine .ipa).
 SAFE_UPLOAD_DIRS = {'coverage-report', 'TestResults', 'e2e-diagnostics', 'e2e-dumps'}
-# Dateiendungen, die als Artefakt bzw. Release-Asset unbedenklich sind.
+# Dateiendungen, die als Artefakt unbedenklich sind.
 SAFE_FILE_EXTENSIONS = {'.json', '.trx', '.xml', '.html', '.txt', '.md', '.log', '.zip', '.sha256'}
-# Optionen von 'gh release create/upload', die einen Wert als eigenes Argument erwarten.
-GH_VALUE_OPTIONS = {
-    '--target', '-t', '--title', '-T', '--notes', '-n', '--notes-file', '-F', '--repo', '-R',
-    '--discussion-category', '--notes-start-tag', '--verify-tag',
-}
+# Mutierende 'gh release'-Unterbefehle - die GitHub-Release-Ablage ist entfernt (Issue #64, ADR 0023).
+GH_RELEASE_MUTATION_RE = re.compile(r'\bgh\s+release\s+(?:create|upload|edit|delete)\b')
+# Mutierende 'gh api'-Aufrufe auf Release-Endpunkte: explizite Methode (-X/--method POST|PUT|PATCH|DELETE)
+# oder -f/-F/--field/--raw-field (setzt implizit POST) auf einem Pfad mit 'releases'-Segment.
+GH_API_RELEASES_RE = re.compile(r'\bgh\s+api\b[^\n]*\breleases\b')
+GH_API_MUTATION_RE = re.compile(
+    r'(?:-X|--method)[ =]?(?:POST|PUT|PATCH|DELETE)\b'
+    r'|\s-[fF](?:\s|$)'
+    r'|--(?:raw-)?field(?:\s|=|$)',
+    re.IGNORECASE)
+# Shell-Fortsetzungszeilen ('\' am Zeilenende) werden vor dem Scan zu einer Zeile zusammengeführt,
+# damit ein Umbruch zwischen 'gh', 'release' und dem Unterbefehl das Verbot nicht umgeht.
+CONTINUATION_RE = re.compile(r'\\\r?\n')
+
+
+def contains_release_mutation(text):
+    """True, wenn der Text eine mutierende GitHub-Release-Ablage enthält ('gh release create/upload/
+    edit/delete' oder 'gh api' mit Mutationsmethode auf einem 'releases'-Pfad)."""
+    normalized = CONTINUATION_RE.sub(' ', str(text))
+    return any(
+        GH_RELEASE_MUTATION_RE.search(line)
+        or (GH_API_RELEASES_RE.search(line) and GH_API_MUTATION_RE.search(line))
+        for line in normalized.splitlines()
+    )
 
 
 def load(path):
@@ -71,7 +93,7 @@ def check_run_steps(steps, label, errors):
 
 
 def classify_upload_path(entry):
-    """Prüft einen Pfad (Zeile von 'path' bzw. Asset von 'gh release') auf eine mögliche .ipa. Liefert einen Grund oder None."""
+    """Prüft einen Pfad (Zeile von 'path') auf eine mögliche .ipa. Liefert einen Grund oder None."""
     entry = entry.strip().split('#', 1)[0]
     if not entry or entry.startswith('!'):
         return None
@@ -93,50 +115,11 @@ def classify_upload_path(entry):
     return None
 
 
-def gh_release_assets(command_line):
-    """Liefert die Asset-Argumente eines 'gh release create/upload'-Aufrufs (ohne Tag und Optionen); None, wenn die Zeile keiner ist."""
-    try:
-        tokens = shlex.split(command_line, comments=True, posix=True)
-    except ValueError:
-        return None
-    for index in range(len(tokens) - 2):
-        if tokens[index] == 'gh' and tokens[index + 1] == 'release' and tokens[index + 2] in ('create', 'upload'):
-            rest = tokens[index + 3:]
-            break
-    else:
-        return None
-    assets = []
-    positional = 0
-    skip_next = False
-    for token in rest:
-        if skip_next:
-            skip_next = False
-            continue
-        if token in GH_VALUE_OPTIONS:
-            skip_next = True
-            continue
-        if token.startswith('-') or re.fullmatch(r'\$\{?\w+\[@\]\}?', token):
-            continue
-        positional += 1
-        if positional > 1:  # das erste Argument ist der Tag
-            assets.append(token)
-    return assets
-
-
 def check_release_commands(run_text, label, step_name, errors):
-    """'gh release create/upload' darf nur eindeutig benannte, unbedenkliche Dateien als Asset veröffentlichen (kein .ipa, kein Verzeichnis, kein Muster, keine Variable)."""
-    text = re.sub(r'\\\r?\n', ' ', str(run_text))
-    for line in text.splitlines():
-        assets = gh_release_assets(line)
-        if assets is None:
-            continue
-        if IPA_RE.search(line):
-            errors.append(f'{label}: Schritt "{step_name}" veröffentlicht eine .ipa als Release-Asset (nur der TestFlight-Upload ist erlaubt)')
-            continue
-        for asset in assets:
-            reason = classify_upload_path(asset)
-            if reason:
-                errors.append(f'{label}: Schritt "{step_name}" veröffentlicht per gh release das Asset "{asset}", das {reason}')
+    """Mutierende Aufrufe der GitHub-Release-Ablage ('gh release create/upload/edit/delete',
+    'gh api' mit Mutationsmethode auf 'releases'-Pfade) sind verboten (Issue #64, ADR 0023)."""
+    if contains_release_mutation(run_text):
+        errors.append(f'{label}: Schritt "{step_name}" ruft die GitHub-Release-Ablage mutierend auf - sie ist entfernt (Issue #64, ADR 0023)')
 
 
 def check_upload_artifact(label, step, errors):

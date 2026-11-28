@@ -371,50 +371,40 @@ jobs:
       - name: Determine next version and RC number
         # scripts/determine-next-version.mjs ersetzt `semantic-release --dry-run` der Vorlage (erste Version
         # 0.1.0, nie automatisch auf 1.0). rc_version (mit Suffix, ohne v) - nicht `version` - muss in die
-        # Build-Jobs fließen, sonst melden update.json und das Paket die stabile statt der RC-Version
-        # (Vorlage, Abschnitt 11.2).
+        # Build-Jobs fließen, sonst melden die Build-Jobs/TestFlight-Builds die stabile statt der
+        # RC-Version (Vorlage, Abschnitt 11.2).
         id: semver
         run: node scripts/determine-next-version.mjs --rc
 
-  prerelease:
-    name: prerelease
+  # RC-Tag als reiner Git-Tag-Push (kein GitHub-Release, Issue #64): RC-Tags dienen primär der
+  # Nummernzählung von determine-next-version.mjs --rc. Der Push läuft mit den GITHUB_TOKEN-Credentials
+  # von actions/checkout und löst daher keinen neuen Workflow-Lauf aus. Läuft wie bisher parallel zu
+  # ios-prerelease - ein fehlgeschlagener iOS-Job hinterlässt bewusst einen RC-Tag ohne TestFlight-Build.
+  rc-tag:
+    name: rc-tag
     needs: [detect-backmerge, version]
     if: needs.detect-backmerge.outputs.is_backmerge != 'true' && needs.version.outputs.changed == 'true'
-    runs-on: windows-latest
-    # Apple-Zielframeworks ausblenden: nur der macOS-Job installiert die iOS-Workload (siehe Tankradar.MAUI.csproj).
-    env:
-      IncludeAndroidTarget: 'false'
-      IncludeIosTarget: 'false'
-      IncludeMacCatalystTarget: 'false'
-    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Build and package release candidate
-        uses: ./.github/actions/build-and-package
         with:
-          release-version: ${{ needs.version.outputs.rc_version }}
-          release-tag: ${{ needs.version.outputs.rc_tag }}
+          fetch-depth: 0
 
-      - name: Create GitHub pre-release
+      - name: Tag and push RC tag
         env:
-          GH_TOKEN: ${{ github.token }}
           RC_TAG: ${{ needs.version.outputs.rc_tag }}
         run: |
-          gh release create "$RC_TAG" artifacts/release-win-x64.zip artifacts/update.json \
-            --target "$GITHUB_SHA" \
-            --title "$RC_TAG" \
-            --prerelease \
-            --generate-notes
+          set -euo pipefail
+          git tag "$RC_TAG" "$GITHUB_SHA"
+          git push origin "$RC_TAG"
 
-  # iOS-Pre-Release-Build: signiert (und optional nach TestFlight hochgeladen), wenn IOS_SIGNING_ENABLED='true'
-  # und alle Secrets vorhanden sind, sonst unsigniert (Compile-Prüfung) - ohne Fehlschlag.
+  # iOS-Pre-Release-Build: signiert und verbindlich per iTMSTransporter nach TestFlight hochgeladen
+  # (require-upload='true') - fehlende Signierung oder fehlende Secrets lassen den Job fehlschlagen
+  # statt still auf einen unsignierten Compile-Check zurückzufallen (Issue #64).
   ios-prerelease:
     name: ios prerelease
     needs: [detect-backmerge, version]
@@ -444,6 +434,7 @@ jobs:
           api-key-p8: ${{ secrets.IOS_API_KEY_P8 }}
           xcode-version: ${{ vars.IOS_XCODE_VERSION }}
           fuel-price-api-key: ${{ secrets.FUEL_PRICE_API_KEY }}
+          require-upload: 'true'
 
   back-merge-skip:
     needs: detect-backmerge

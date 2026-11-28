@@ -110,9 +110,9 @@ docs/                          Anwender- und Entwicklerdokumentation
   Entwicklerthemen (Einstellungen, Suche, Favoriten, Tankbuch, Sicherung, Preisdaten, ...)
 - **[docs/adr/](docs/adr/)** – Architekturentscheidungen (ADRs)
 - **[docs/design-system.md](docs/design-system.md)** – Design-Token, Typografie, Komponenten
-- **[docs/help/ci-cd/](docs/help/ci-cd/index.md)** – Pipeline, Versionierung, Releases,
-  iOS-Deployment und lokaler Prüflauf (inkl. Windows-Zwischenständen über
-  `scripts/create-review-version.ps1`)
+- **[docs/help/ci-cd/](docs/help/ci-cd/index.md)** – Pipeline, Versionierung, Release-Tags und
+  TestFlight-Verteilung (keine GitHub-Releases, Issue #64), iOS-Deployment und lokaler Prüflauf
+  (inkl. Windows-Zwischenständen über `scripts/create-review-version.ps1`)
 - **[docs/help/stabilitaet/](docs/help/stabilitaet/index.md)** – Teststabilität:
   OS-Schnittstellen-Tests (`Category=OsInterface`), `Flaky`-Retry und Quarantäne-Konvention
 - **[changes.log](changes.log)** – Änderungsprotokoll je Entwicklungsschritt
